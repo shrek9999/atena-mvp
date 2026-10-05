@@ -13,7 +13,17 @@ def decide(data):
     recovery = response.get("recovery")
     symptoms = response.get("symptoms")
 
+    # Accept the canonical v0.1 input schema as well as the compact response fields.
+    performance_change = state.get("performance_change")
+    rpe_change = state.get("rpe_change")
+    if performance is None and isinstance(performance_change, str):
+        performance = "declining" if performance_change.strip().startswith("-") else performance
+    if rpe is None and isinstance(rpe_change, str):
+        rpe = 10 if rpe_change.strip().startswith("+") else rpe
+
     # Minimal ATENA v0.1 decision logic
+    # Performance decline + higher RPE without clear recovery/symptom deterioration
+    # means uncertainty is still too high to justify changing the program.
     if performance == "declining" and not recovery and not symptoms:
         return {
             "assessment": "Performance is declining, but the available context is insufficient to identify the cause.",
