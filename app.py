@@ -32,6 +32,12 @@ def decide(data):
     if symptoms is None and state_symptoms:
         symptoms = state_symptoms
 
+    # Normalize explicit absence values so they do not trigger symptom logic.
+    if isinstance(symptoms, str) and symptoms.strip().lower() in {"none", "no", "absent", "nil"}:
+        symptoms = None
+    if isinstance(recovery, str) and recovery.strip().lower() in {"stable", "normal", "good"}:
+        recovery = recovery.strip().lower()
+
     # 1. High uncertainty: do not guess when performance declines without a clear cause.
     if performance == "declining" and not recovery and not symptoms:
         return {
