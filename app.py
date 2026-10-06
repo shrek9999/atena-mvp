@@ -6,24 +6,33 @@ def decide(data):
     goal = data.get("goal", {})
     response = data.get("response", {})
     state = data.get("state", {})
-    question = data.get("question", "")
+    constraints = data.get("constraints", {})
+    question = data.get("question", "").lower()
+    history = data.get("history", {})
+
+    primary_goal = str(goal.get("primary", "")).lower()
+    secondary_goal = str(goal.get("secondary", "")).lower()
+    recovery_capacity = str(constraints.get("recovery_capacity", "")).lower()
 
     performance = response.get("performance")
     rpe = response.get("rpe")
     recovery = response.get("recovery")
     symptoms = response.get("symptoms")
 
-    # Accept the canonical v0.1 input schema as well as the compact response fields.
+    # Read canonical v0.1 state fields as well as compact response fields.
     performance_change = state.get("performance_change")
     rpe_change = state.get("rpe_change")
+    state_symptoms = state.get("symptoms")
+    fatigue = str(state.get("fatigue", "")).lower()
+
     if performance is None and isinstance(performance_change, str):
         performance = "declining" if performance_change.strip().startswith("-") else performance
     if rpe is None and isinstance(rpe_change, str):
         rpe = 10 if rpe_change.strip().startswith("+") else rpe
+    if symptoms is None and state_symptoms:
+        symptoms = state_symptoms
 
-    # Minimal ATENA v0.1 decision logic
-    # Performance decline + higher RPE without clear recovery/symptom deterioration
-    # means uncertainty is still too high to justify changing the program.
+    # 1. High uncertainty: do not guess when performance declines without a clear cause.
     if performance == "declining" and not recovery and not symptoms:
         return {
             "assessment": "Performance is declining, but the available context is insufficient to identify the cause.",
@@ -35,7 +44,32 @@ def decide(data):
             "confidence": 0.82
         }
 
-    if recovery in ["poor", "declining"] or (rpe is not None and isinstance(rpe, (int, float)) and rpe >= 9):
+    # 2. Primary-goal protection: do not add a hard secondary stimulus when recovery is limited.
+    adding_hard_conditioning = any(term in question for term in ["add", "third", "extra"]) and any(term in question for term in ["hard conditioning", "hard conditioning session", "conditioning session"])
+    if primary_goal == "strength" and secondary_goal == "aerobic_fitness" and adding_hard_conditioning:
+        return {
+            "assessment": "Strength is the primary goal and the proposed third hard conditioning session adds interference and recovery cost without evidence that the current structure is failing.",
+            "decision": "maintain",
+            "action": "Do not add a third hard conditioning session. Preserve the current strength structure and improve aerobic stimulus within the existing recovery budget if needed.",
+            "monitor": ["strength performance", "RPE", "recovery", "aerobic response"],
+            "decision_rule": "If aerobic fitness remains insufficient while strength and recovery remain stable, modify an existing aerobic session before adding another hard session.",
+            "uncertainty": "Low to moderate",
+            "confidence": 0.93
+        }
+
+    # 3. Symptoms: modify the smallest relevant dose before removing a useful exercise.
+    if symptoms:
+        return {
+            "assessment": "A symptom is present during a specific training stimulus, so the first step is to modify the dose rather than automatically remove the exercise or infer a diagnosis.",
+            "decision": "modify",
+            "action": "Reduce the smallest relevant variable (for example ROM, load, volume or variation) while preserving the desired strength stimulus, then observe the response.",
+            "monitor": ["symptom intensity", "symptom during exercise", "response after training", "next-day response", "performance"],
+            "decision_rule": "If symptoms improve with the modification, gradually restore the stimulus; if symptoms worsen, persist or become unusual/progressive, reassess and consider referral.",
+            "uncertainty": "Moderate",
+            "confidence": 0.91
+        }
+
+    if recovery in ["poor", "declining"] or (rpe is not None and isinstance(rpe, (int, float)) and rpe >= 9) or fatigue == "high":
         return {
             "assessment": "The current response suggests increased fatigue cost relative to the desired training stimulus.",
             "decision": "reduce_fatigue_cost",
