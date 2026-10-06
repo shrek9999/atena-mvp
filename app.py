@@ -57,7 +57,25 @@ def decide(data):
             "confidence": 0.93
         }
 
-    # 3. Symptoms: modify the smallest relevant dose before removing a useful exercise.
+    # 3. Longitudinal response: a positive response to a previous modification supports progression.
+    previous_result = str(response.get("result", "")).lower()
+    previous_response = str(history.get("previous_response", history.get("previous_result", ""))).lower()
+    positive_response = any(term in (previous_result + " " + previous_response) for term in [
+        "improved", "positive", "better", "decreased rpe", "performance improved"
+    ])
+    previous_modification = response.get("previous_modification") or history.get("previous_decision")
+    if positive_response and previous_modification and not symptoms:
+        return {
+            "assessment": "The previous modification produced a positive response, with stable recovery and no current symptoms; the next step can be a small progression while monitoring the response.",
+            "decision": "progress",
+            "action": "Gradually restore or progress the previously reduced training stimulus in a small step, then observe the response.",
+            "monitor": ["performance", "RPE", "recovery", "symptoms", "next-day response"],
+            "decision_rule": "If performance remains stable or improves and recovery remains stable, continue gradual progression; if symptoms or fatigue increase, reassess and modify.",
+            "uncertainty": "Low to moderate",
+            "confidence": 0.92
+        }
+
+    # 4. Symptoms: modify the smallest relevant dose before removing a useful exercise.
     if symptoms:
         return {
             "assessment": "A symptom is present during a specific training stimulus, so the first step is to modify the dose rather than automatically remove the exercise or infer a diagnosis.",
