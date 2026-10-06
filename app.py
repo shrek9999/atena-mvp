@@ -494,7 +494,7 @@ def decide(data):
 
 @app.get("/health")
 def health():
-    return jsonify({"status": "ok", "service": "ATENA", "version": "0.8"})
+    return jsonify({"status": "ok", "service": "ATENA", "version": "0.9"})
 
 
 @app.post("/decision")
