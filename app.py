@@ -221,7 +221,7 @@ def decide(data):
 
     # 2. High uncertainty: declining performance with insufficient recovery context.
     recovery_missing = recovery_class == "unknown" and not fatigue and not sleep and not wellness
-    if perf_class == "declining" and recovery_missing:
+    if perf_class == "declining" and (recovery_missing or recovery_class == "stable") and not fatigue and not sleep and not wellness and rpe_class != "increased":
         return {
             "assessment": "Performance is declining, but the available context is insufficient to identify the cause.",
             "decision": "collect_data",
@@ -337,7 +337,10 @@ def decide(data):
     ])
     stress_load = any(term in energy_text for term in [
         "stress", "high_stress", "work_stress", "increased_stress"
-    ])
+    ]) or any(
+        constraints.get(k) not in (None, "", False)
+        for k in ["work_stress", "stress", "stress_load"]
+    )
     if (
         primary_goal == "strength"
         and primary_declining
@@ -350,6 +353,18 @@ def decide(data):
             "action": "Reduce strength training volume modestly while preserving intensity and movement exposure; reduce or remove lower-priority conditioning cost if needed, and address the energy/stress constraint before adding load.",
             "monitor": ["strength performance", "RPE", "energy availability", "stress", "recovery"],
             "decision_rule": "If strength stabilizes and RPE/recovery improve, hold the reduced volume before progressing; if decline continues, reassess both training and energy availability.",
+            "uncertainty": "Low to moderate",
+            "confidence": 0.92
+        }
+
+    # Clear primary decline with worsening recovery is convergent evidence.
+    if primary_declining and recovery_class == "worsening" and not symptom_present:
+        return {
+            "assessment": "The primary goal is declining while recovery is worsening; this is sufficient converging evidence to reduce training cost before adding stimulus.",
+            "decision": "reduce",
+            "action": "Reduce the smallest appropriate training variable while preserving the primary movement/intensity exposure where possible, then reassess performance and recovery.",
+            "monitor": [f"{primary_goal or 'primary goal'} performance", "RPE", "recovery", "sleep", "wellness"],
+            "decision_rule": "If performance stabilizes and recovery improves, hold the reduced cost before progressing; if decline continues, reassess the primary stimulus and external constraints.",
             "uncertainty": "Low to moderate",
             "confidence": 0.92
         }
