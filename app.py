@@ -63,14 +63,62 @@ def decide(data):
             "confidence": 0.93
         }
 
-    # 3. Longitudinal response: a positive response to a previous modification supports progression.
+    # 3. Longitudinal state tracking: current response overrides generic defaults.
+    # Use explicit current-state signals before relying on historical text.
+    state_blob = " ".join(str(state.get(k, "")).lower() for k in [
+        "strength", "performance", "rpe", "recovery", "fatigue", "wellness", "sleep"
+    ])
+    response_blob = " ".join(str(response.get(k, "")).lower() for k in [
+        "performance_response", "rpe_response", "recovery_response", "result"
+    ])
+    combined_state = state_blob + " " + response_blob
+
+    positive_performance = any(x in combined_state for x in [
+        "improved", "improvement", "+2", "increased"
+    ])
+    lower_rpe = any(x in combined_state for x in [
+        "lower", "decreased", "down", "slightly_lower"
+    ])
+    worsening_recovery = any(x in combined_state for x in [
+        "slightly_worse", "worse", "declining", "poor"
+    ])
+    increased_rpe = any(x in combined_state for x in [
+        "increased_1", "increased", "higher", "rising", "+1"
+    ])
+    stable_performance = "stable" in combined_state
+
+    if positive_performance and lower_rpe and not worsening_recovery and not increased_rpe and not symptoms:
+        return {
+            "assessment": "Performance improved with lower RPE and stable recovery; the current stimulus is producing a positive response.",
+            "decision": "progress",
+            "action": "Make a small progression of the current training stimulus while keeping volume and recovery cost controlled.",
+            "monitor": ["performance", "RPE", "recovery"],
+            "decision_rule": "If performance remains stable or improves and recovery remains good, continue small progression; if fatigue or RPE rises, reassess.",
+            "uncertainty": "Low",
+            "confidence": 0.92
+        }
+
+    if stable_performance and increased_rpe and worsening_recovery and not symptoms:
+        return {
+            "assessment": "Performance is stable but RPE and recovery have worsened, indicating a higher fatigue cost than the current response supports.",
+            "decision": "reduce",
+            "action": "Reduce the smallest appropriate training variable, preferably auxiliary volume, while preserving the primary strength stimulus.",
+            "monitor": ["performance", "RPE", "recovery", "sleep"],
+            "decision_rule": "If RPE decreases and recovery improves while performance remains stable or improves, maintain the reduced load before progressing again.",
+            "uncertainty": "Low to moderate",
+            "confidence": 0.91
+        }
+
+    # 4. Longitudinal response: a positive response to a previous modification supports progression.
     previous_result = str(response.get("result", "")).lower()
     previous_response = str(history.get("previous_response", history.get("previous_result", ""))).lower()
     positive_response = any(term in (previous_result + " " + previous_response) for term in [
         "improved", "positive", "better", "decreased rpe", "performance improved"
     ])
-    previous_modification = response.get("previous_modification") or history.get("previous_decision")
-    if positive_response and previous_modification and not symptoms:
+    previous_modification = response.get("previous_modification")
+    historical_decision = str(history.get("previous_decision", "")).lower()
+    actual_modification = previous_modification or (historical_decision if any(x in historical_decision for x in ["reduce", "modify", "deload", "replace"]) else "")
+    if positive_response and actual_modification and not symptoms:
         return {
             "assessment": "The previous modification produced a positive response, with stable recovery and no current symptoms; the next step can be a small progression while monitoring the response.",
             "decision": "progress",
