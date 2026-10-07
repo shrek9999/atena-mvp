@@ -1,0 +1,159 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ATENA Decision Intelligence API",
+    "version": "1.0.0",
+    "description": "Decision-control layer for AI fitness and human-performance agents."
+  },
+  "servers": [
+    {
+      "url": "https://atena-mvp.onrender.com"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "Service health"
+          }
+        }
+      }
+    },
+    "/capabilities": {
+      "get": {
+        "operationId": "capabilities",
+        "responses": {
+          "200": {
+            "description": "ATENA capabilities"
+          }
+        }
+      }
+    },
+    "/decision": {
+      "post": {
+        "operationId": "atena_decide",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Structured decision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DecisionRequest": {
+        "type": "object",
+        "required": [
+          "goal"
+        ],
+        "properties": {
+          "goal": {
+            "type": "object"
+          },
+          "person": {
+            "type": "object"
+          },
+          "constraints": {
+            "type": "object"
+          },
+          "state": {
+            "type": "object"
+          },
+          "response": {
+            "type": "object"
+          },
+          "question": {
+            "type": "string"
+          },
+          "history": {
+            "type": "object"
+          }
+        }
+      },
+      "DecisionResponse": {
+        "type": "object",
+        "properties": {
+          "assessment": {
+            "type": "string"
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "maintain",
+              "progress",
+              "reduce",
+              "modify",
+              "collect_data",
+              "refer",
+              "maintain_or_progress"
+            ]
+          },
+          "action": {
+            "type": "string"
+          },
+          "monitor": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "decision_rule": {
+            "type": "string"
+          },
+          "uncertainty": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "reason_codes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "priority": {
+            "type": "object"
+          },
+          "required_information": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "next_review": {
+            "type": "string"
+          },
+          "schema_version": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
