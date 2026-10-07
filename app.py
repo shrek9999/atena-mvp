@@ -424,7 +424,7 @@ def decide(data):
     if primary_declining is False and primary_perf_class == "improving" and recovery_class in {"stable", "improving"} and not symptom_present:
         return {
             "assessment": "The primary goal is improving with adequate recovery; the higher effort signal alone is not sufficient evidence to reduce the current stimulus.",
-            "decision": "maintain_or_progress",
+            "decision": "progress",
             "action": "Maintain the current progression and monitor whether the higher effort persists or is accompanied by declining performance or recovery.",
             "monitor": [f"{primary_goal or 'primary goal'} performance", "RPE", "recovery"],
             "decision_rule": "If performance remains positive and recovery stays adequate, continue; if performance declines or a second fatigue signal appears, reassess cost.",
