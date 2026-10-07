@@ -32,8 +32,6 @@ def parse_delta(value):
     m = re.search(r"([+-]\d+(?:\.\d+)?)\s*%?", value.replace(",", "."))
     if m:
         return float(m.group(1))
-    if re.fullmatch(r"\s*\d+(?:\.\d+)?\s*", value.replace(",", ".")):
-        return float(value.replace(",", ".").strip())
     return None
 
 
@@ -218,7 +216,26 @@ def decide(data):
         or "lower" in time_reduction
     )
 
-    # 1. Symptoms always take precedence over generic progression.
+    # 1. Safety gate: ATENA does not diagnose, but clear red-flag language
+    # should stop ordinary training optimization and trigger referral.
+    symptom_text = text_blob(symptoms, question)
+    red_flags = [
+        "chest_pain", "chest_tightness", "fainting", "syncope",
+        "loss_of_consciousness", "severe_shortness_of_breath",
+        "neurological_deficit", "sudden_weakness", "new_numbness",
+        "severe_headache", "acute_injury", "major_trauma"
+    ]
+    if any(flag in symptom_text for flag in red_flags):
+        return build_decision(
+            "refer",
+            "The reported context contains a potential red-flag symptom or event that is outside ordinary training-program optimization.",
+            "Stop the relevant training activity and seek appropriate medical assessment. Do not use ATENA to diagnose or progressively load the problem.",
+            ["symptom progression", "new or worsening symptoms"],
+            "Resume ordinary training optimization only after the relevant concern has been assessed and the agent has sufficient scope-appropriate information.",
+            "High", 0.97, ["potential_red_flag"], {"primary": primary_goal, "secondary": secondary_goal}
+        )
+
+    # 2. Symptoms always take precedence over generic progression.
     if symptom_present:
         return {
             "assessment": "A symptom is present during the current training context, so the smallest relevant dose should be modified before removing a useful stimulus or inferring a diagnosis.",
@@ -531,7 +548,7 @@ def health():
     return jsonify({
         "status": "ok",
         "service": "ATENA",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "api_version": "v1"
     })
 
@@ -574,7 +591,8 @@ def decision():
     else:
         result.setdefault("required_information", [])
     result.setdefault("next_review", "after the next meaningful response or when the decision rule is triggered")
-    result["schema_version"] = "1.0"
+    result["schema_version"] = "1.1"
+    result.setdefault("tool_use", {"role": "decision_control", "diagnostic": False, "next_step": "follow_decision_rule"})
     return jsonify(result)
 
 
