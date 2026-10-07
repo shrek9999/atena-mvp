@@ -494,7 +494,34 @@ def decide(data):
 
 @app.get("/health")
 def health():
-    return jsonify({"status": "ok", "service": "ATENA", "version": "0.9"})
+    return jsonify({
+        "status": "ok",
+        "service": "ATENA",
+        "version": "1.0.0",
+        "api_version": "v1"
+    })
+
+
+@app.get("/capabilities")
+def capabilities():
+    return jsonify({
+        "service": "ATENA",
+        "version": "1.0.0",
+        "purpose": "Decision intelligence layer for AI fitness and human-performance agents",
+        "operations": ["decide"],
+        "decision_types": [
+            "maintain", "progress", "reduce", "modify",
+            "collect_data", "refer", "maintain_or_progress"
+        ],
+        "principles": [
+            "goal_priority",
+            "uncertainty_first",
+            "minimum_intervention",
+            "stimulus_cost",
+            "response_over_prescription",
+            "longitudinal_consistency"
+        ]
+    })
 
 
 @app.post("/decision")
@@ -502,7 +529,16 @@ def decision():
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
         return jsonify({"error": "JSON object required"}), 400
-    return jsonify(decide(data))
+    result = decide(data)
+    result.setdefault("reason_codes", [])
+    result.setdefault("priority", {
+        "primary": norm((data.get("goal") or {}).get("primary")),
+        "secondary": norm((data.get("goal") or {}).get("secondary"))
+    })
+    result.setdefault("required_information", [])
+    result.setdefault("next_review", "after the next meaningful response or when the decision rule is triggered")
+    result["schema_version"] = "1.0"
+    return jsonify(result)
 
 
 if __name__ == "__main__":
