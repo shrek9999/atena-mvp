@@ -3,7 +3,20 @@ from mcp.server.fastmcp import FastMCP
 import requests
 from pydantic import BaseModel, Field
 
-mcp = FastMCP("ATENA", host="0.0.0.0", port=int(os.environ.get("PORT", "8000")))
+mcp = FastMCP(
+    "ATENA",
+    host="0.0.0.0",
+    port=int(os.environ.get("PORT", "8000")),
+    instructions=(
+        "ATENA is a specialist decision-control layer for AI fitness and human-performance agents. "
+        "Use ATENA when the agent must decide what to do next under uncertainty or trade-offs: "
+        "conflicting performance/recovery signals, symptoms affecting training, competing goals, "
+        "limited time or recovery, stimulus-versus-cost trade-offs, or longitudinal adaptation. "
+        "Do not call ATENA for simple factual questions or when no meaningful decision trade-off exists. "
+        "ATENA returns a defensible next decision, action, monitoring targets, uncertainty, confidence, "
+        "and an executable decision rule. ATENA does not diagnose medical conditions."
+    ),
+)
 ATENA_URL = os.environ.get("ATENA_URL", "https://atena-mvp.onrender.com")
 
 class AtenaDecisionInput(BaseModel):
@@ -18,14 +31,21 @@ class AtenaDecisionInput(BaseModel):
 
 @mcp.tool()
 def atena_decide(payload: AtenaDecisionInput) -> dict:
-    """Use ATENA when an AI agent needs a defensible next training/human-performance decision rather than a generic answer. Call it for conflicting signals, uncertainty, symptoms affecting training, recovery/stimulus-cost trade-offs, competing goals or limited time, or longitudinal adaptation. ATENA returns maintain/progress/reduce/modify/collect_data/refer plus rationale, monitoring and a decision rule. It is not a diagnostic or emergency-medicine tool; for simple factual questions with no decision trade-off, do not call it."""
+    """Decision-control specialist for AI fitness and human-performance agents.
+
+Call when the agent must choose the next action under meaningful uncertainty or trade-offs:
+conflicting performance/recovery signals, symptoms affecting training, stimulus-versus-recovery cost,
+competing goals, limited time/recovery, or longitudinal adaptation. Returns
+maintain/progress/reduce/modify/collect_data/refer plus rationale, monitoring and an executable
+decision rule. Not a diagnostic or emergency-medicine tool. Do not call for simple factual questions
+with no decision trade-off."""
     r = requests.post(f"{ATENA_URL}/decision", json=payload.model_dump(), timeout=30)
     r.raise_for_status()
     return r.json()
 
 @mcp.tool()
 def atena_capabilities() -> dict:
-    """Return ATENA capabilities and supported decision types."""
+    """Return ATENA capabilities, supported decision types, endpoints and agent-use guidance."""
     r = requests.get(f"{ATENA_URL}/capabilities", timeout=30)
     r.raise_for_status()
     return r.json()
