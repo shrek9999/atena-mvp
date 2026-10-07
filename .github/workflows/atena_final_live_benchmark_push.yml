@@ -1,0 +1,31 @@
+name: ATENA final live benchmark
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  live-benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for production
+        run: sleep 45
+      - name: Run 20 unseen cases against production
+        run: |
+          python - <<'PY'
+          import json, urllib.request
+          url="https://atena-mvp.onrender.com/decision"
+          cases=json.load(urllib.request.urlopen("https://raw.githubusercontent.com/shrek9999/atena-mvp/main/tests/unseen_20_cases.json"))["cases"]
+          results=[]
+          for c in cases:
+              req=urllib.request.Request(url,data=json.dumps(c["input"]).encode(),headers={"Content-Type":"application/json"},method="POST")
+              with urllib.request.urlopen(req,timeout=30) as r:
+                  out=json.load(r)
+              got=out.get("decision")
+              ok=(got==c["expected_decision"])
+              results.append(ok)
+              print(f'{c["id"]}: expected={c["expected_decision"]} got={got} {"PASS" if ok else "FAIL"}')
+          passed=sum(results)
+          print(f'FINAL_RESULT: {passed}/{len(results)}')
+          if passed != len(results):
+              raise SystemExit(1)
+          PY
