@@ -3,8 +3,9 @@ import os
 import re
 
 from x402 import x402ResourceServerSync
-from x402.http import HTTPFacilitatorClientSync
+from x402.http import HTTPFacilitatorClientSync, FacilitatorConfig, PaymentOption
 from x402.http.middleware.flask import PaymentMiddleware
+from x402.http.types import RouteConfig
 from x402.mechanisms.svm.exact import ExactSvmServerScheme
 
 app = Flask(__name__)
@@ -25,19 +26,19 @@ def configure_x402_payment():
     """Protect the paid decision route with x402 V2 when configured."""
     if not ATENA_PAYMENT_ADDRESS:
         return None
-    facilitator = HTTPFacilitatorClientSync(url=ATENA_PAYMENT_FACILITATOR)
+    facilitator = HTTPFacilitatorClientSync(FacilitatorConfig(url=ATENA_PAYMENT_FACILITATOR))
     server = x402ResourceServerSync(facilitator)
     server.register("solana:*", ExactSvmServerScheme())
     routes = {
-        "POST /paid/decision": {
-            "accepts": {
-                "scheme": "exact",
-                "payTo": ATENA_PAYMENT_ADDRESS,
-                "price": ATENA_PAYMENT_PRICE,
-                "network": ATENA_PAYMENT_NETWORK,
-            },
-            "description": "ATENA decision-control API: choose the next action under uncertainty or trade-offs.",
-        }
+        "POST /paid/decision": RouteConfig(
+            accepts=PaymentOption(
+                scheme="exact",
+                pay_to=ATENA_PAYMENT_ADDRESS,
+                price=ATENA_PAYMENT_PRICE,
+                network=ATENA_PAYMENT_NETWORK,
+            ),
+            description="ATENA decision-control API: choose the next action under uncertainty or trade-offs.",
+        )
     }
     PaymentMiddleware(app, routes, server, sync_facilitator_on_start=True)
     return True
