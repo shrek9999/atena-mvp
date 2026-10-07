@@ -7,7 +7,7 @@ ATENA_URL = os.environ.get("ATENA_URL", "https://atena-mvp.onrender.com")
 
 @mcp.tool()
 def atena_decide(payload: dict) -> dict:
-    """Send fitness/human-performance context to ATENA and return a structured next decision."""
+    """Use ATENA as a decision-control specialist when the agent must choose the next fitness/human-performance action from goal, constraints, current state, response and history. Best used when signals conflict, uncertainty matters, symptoms affect training, recovery cost may require trade-offs, or longitudinal consistency matters. ATENA does not diagnose and returns a structured decision, action and decision rule."""
     r = requests.post(f"{ATENA_URL}/decision", json=payload, timeout=30)
     r.raise_for_status()
     return r.json()
