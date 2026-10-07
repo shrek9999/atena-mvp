@@ -1,13 +1,18 @@
 {
   "name": "ATENA",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "purpose": "Decision intelligence layer for AI fitness and human-performance agents",
   "principle": "ATENA does not optimize the program. ATENA optimizes the next decision.",
   "integration": {
     "transport": "HTTP",
     "method": "POST",
     "path": "/decision",
-    "server": "https://atena-mvp.onrender.com"
+    "server": "https://atena-mvp.onrender.com",
+    "mcp": {
+      "transport": "streamable-http",
+      "server": "https://atena-mcp.onrender.com",
+      "tool": "atena_decide"
+    }
   },
   "input": [
     "goal",
@@ -30,7 +35,8 @@
     "priority",
     "required_information",
     "next_review",
-    "schema_version"
+    "schema_version",
+    "tool_use"
   ],
   "decision_types": [
     "maintain",
@@ -39,5 +45,17 @@
     "modify",
     "collect_data",
     "refer"
+  ],
+  "when_to_use": [
+    "conflicting performance, RPE, recovery or symptom signals",
+    "uncertainty about whether to maintain, progress, reduce or modify training",
+    "trade-offs between primary and secondary goals or limited time/recovery",
+    "longitudinal decisions that depend on previous response",
+    "situations where minimum intervention and decision rules matter"
+  ],
+  "when_not_to_use": [
+    "simple factual questions that do not require a training decision",
+    "diagnosis or emergency medical assessment",
+    "cases where the agent already has sufficient certainty and no decision trade-off exists"
   ]
 }
