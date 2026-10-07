@@ -33,3 +33,16 @@ jobs:
             d=r.json()
             print(json.dumps({"case":cid,"expected":gold,"decision":d.get("decision"),"reason_codes":d.get("reason_codes"),"confidence":d.get("confidence")},ensure_ascii=False))
           PY
+      - name: Verify x402 payment gate
+        run: |
+          python - <<'PY'
+          import requests
+          payload={"goal":{"primary":"strength"},"state":{"performance":"stable"},"question":"What should I do next?"}
+          r=requests.post("https://atena-mvp.onrender.com/paid/decision",json=payload,timeout=60)
+          print("status:", r.status_code)
+          print("payment-required header present:", "payment-required" in {k.lower(): v for k,v in r.headers.items()})
+          print("body:", r.text[:1000])
+          assert r.status_code == 402, f"Expected 402, got {r.status_code}"
+          assert "payment-required" in {k.lower(): v for k,v in r.headers.items()}, "Missing payment-required header"
+          PY
+
