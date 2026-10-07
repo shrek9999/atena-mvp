@@ -1,0 +1,347 @@
+{
+  "name": "ATENA v1.0 unseen robustness benchmark",
+  "version": "1.0",
+  "cases": [
+    {
+      "id": "U01",
+      "description": "Strength primary; all stable; no reason to change",
+      "expected_decision": "maintain",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "stable",
+          "recovery": "good",
+          "rpe": "stable",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "U02",
+      "description": "Strength improving, lower RPE, recovery good",
+      "expected_decision": "progress",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "improving",
+          "rpe": "decreased",
+          "recovery": "good",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "U03",
+      "description": "Performance down with insufficient context",
+      "expected_decision": "collect_data",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "declining",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "U04",
+      "description": "Primary strength down, RPE up, recovery worse",
+      "expected_decision": "reduce",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "declining",
+          "rpe": "increased",
+          "recovery": "worse",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "U05",
+      "description": "Knee symptom during squat",
+      "expected_decision": "modify",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "stable",
+          "symptoms": "knee pain during squat"
+        }
+      }
+    },
+    {
+      "id": "U06",
+      "description": "Strength stable, aerobic fitness declining",
+      "expected_decision": "modify",
+      "input": {
+        "goal": {
+          "primary": "strength",
+          "secondary": "aerobic_fitness"
+        },
+        "state": {
+          "strength": "stable",
+          "aerobic_fitness": "declining",
+          "recovery": "good",
+          "rpe": "stable",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "U07",
+      "description": "Time reduced, aerobic secondary declining, strength stable",
+      "expected_decision": "modify",
+      "input": {
+        "goal": {
+          "primary": "strength",
+          "secondary": "aerobic_fitness"
+        },
+        "constraints": {
+          "available_time": "limited"
+        },
+        "state": {
+          "strength": "stable",
+          "aerobic_fitness": "declining",
+          "recovery": "good",
+          "rpe": "stable",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "U08",
+      "description": "Do not add a hard conditioning session to strength-primary plan",
+      "expected_decision": "maintain",
+      "input": {
+        "goal": {
+          "primary": "strength",
+          "secondary": "aerobic_fitness"
+        },
+        "state": {
+          "strength": "stable",
+          "recovery": "good"
+        },
+        "question": "Should I add a third hard conditioning session?"
+      }
+    },
+    {
+      "id": "U09",
+      "description": "Strength down, RPE up, calorie deficit",
+      "expected_decision": "reduce",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "constraints": {
+          "energy_deficit": "-400 kcal"
+        },
+        "state": {
+          "strength": "declining",
+          "rpe": "increased",
+          "recovery": "stable",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "U10",
+      "description": "Performance stable, RPE up, recovery worse",
+      "expected_decision": "reduce",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "stable",
+          "rpe": "increased",
+          "recovery": "worse",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "U11",
+      "description": "Multiple fatigue signals without performance change",
+      "expected_decision": "reduce",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "stable",
+          "rpe": "stable",
+          "recovery": "worse",
+          "sleep": "poor",
+          "fatigue": "high",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "U12",
+      "description": "Only high absolute RPE; no other fatigue evidence",
+      "expected_decision": "collect_data",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "stable",
+          "rpe": 9,
+          "recovery": "good",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "U13",
+      "description": "Previous modification improved response",
+      "expected_decision": "progress",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "response": {
+          "result": "performance improved and RPE decreased",
+          "previous_modification": "reduced volume"
+        },
+        "state": {
+          "performance": "stable",
+          "recovery": "good",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "U14",
+      "description": "No clear benefit-cost imbalance",
+      "expected_decision": "maintain",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "stable",
+          "rpe": "stable",
+          "recovery": "stable",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "U15",
+      "description": "Explicit no-pain statement must not trigger modification",
+      "expected_decision": "maintain",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "stable",
+          "symptoms": "no pain",
+          "recovery": "good",
+          "rpe": "stable"
+        }
+      }
+    },
+    {
+      "id": "U16",
+      "description": "Explicit asymptomatic statement",
+      "expected_decision": "maintain",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "stable",
+          "symptoms": "asymptomatic",
+          "recovery": "good",
+          "rpe": "stable"
+        }
+      }
+    },
+    {
+      "id": "U17",
+      "description": "Absolute performance score and absolute RPE are not deltas",
+      "expected_decision": "maintain",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": 100,
+          "rpe": 8,
+          "recovery": "good",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "U18",
+      "description": "Aerobic secondary decline while strength improves",
+      "expected_decision": "modify",
+      "input": {
+        "goal": {
+          "primary": "strength",
+          "secondary": "aerobic_fitness"
+        },
+        "state": {
+          "strength": "improving",
+          "aerobic_fitness": "declining",
+          "rpe": "stable",
+          "recovery": "stable",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "U19",
+      "description": "Primary decline with recovery decline under time constraint",
+      "expected_decision": "reduce",
+      "input": {
+        "goal": {
+          "primary": "strength",
+          "secondary": "aerobic_fitness"
+        },
+        "constraints": {
+          "available_time": "limited"
+        },
+        "state": {
+          "strength": "declining",
+          "recovery": "worse",
+          "rpe": "increased",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "U20",
+      "description": "Stress plus energy deficit with strength decline",
+      "expected_decision": "reduce",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "constraints": {
+          "energy_deficit": "-300 kcal",
+          "work_stress": "high"
+        },
+        "state": {
+          "strength": "declining",
+          "rpe": "increased",
+          "recovery": "stable",
+          "symptoms": "none"
+        }
+      }
+    }
+  ]
+}
