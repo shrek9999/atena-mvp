@@ -176,9 +176,10 @@ def decide(data):
         strength_response,
     )
 
-    rpe_is_absolute = any(
-        key in state for key in ["rpe"]
-    ) and "rpe_change" not in state
+    rpe_is_absolute = (
+        isinstance(state.get("rpe"), (int, float))
+        and "rpe_change" not in state
+    )
     rpe = first_value(
         state.get("rpe"),
         state.get("rpe_change"),
