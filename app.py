@@ -4,7 +4,7 @@ import re
 
 from x402 import x402ResourceServerSync
 from x402.http import HTTPFacilitatorClientSync
-from x402.http.middleware import PaymentMiddleware
+from x402.http.middleware.flask import PaymentMiddleware
 from x402.mechanisms.svm.exact import ExactSvmServerScheme
 
 app = Flask(__name__)
@@ -599,7 +599,7 @@ def health():
 def capabilities():
     return jsonify({
         "service": "ATENA",
-        "version": "1.1.4",
+        "version": "1.2.0",
         "purpose": "Decision intelligence layer for AI fitness and human-performance agents",
         "operations": ["decide"],
         "decision_types": [
