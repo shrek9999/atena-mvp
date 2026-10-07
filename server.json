@@ -1,18 +1,1 @@
-{
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.shrek9999/atena",
-  "title": "ATENA Decision Intelligence",
-  "description": "Specialist decision-control layer for AI fitness and human-performance agents. Helps agents choose the next action under uncertainty, trade-offs and longitudinal adaptation.",
-  "websiteUrl": "https://github.com/shrek9999/atena-mvp",
-  "repository": {
-    "url": "https://github.com/shrek9999/atena-mvp",
-    "source": "github"
-  },
-  "version": "1.1.5",
-  "remotes": [
-    {
-      "type": "streamable-http",
-      "url": "https://atena-mcp.onrender.com/mcp"
-    }
-  ]
-}
+{"$schema":"https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json","name":"io.github.shrek9999/atena","title":"ATENA Decision Intelligence","description":"Decision-control specialist for AI fitness and human-performance agents.","websiteUrl":"https://github.com/shrek9999/atena-mvp","repository":{"url":"https://github.com/shrek9999/atena-mvp","source":"github"},"version":"1.1.5","remotes":[{"type":"streamable-http","url":"https://atena-mcp.onrender.com/mcp"}]}
