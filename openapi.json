@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "ATENA Decision Intelligence API",
-    "version": "1.1.0",
+    "version": "1.1.4",
     "description": "Decision-control layer for AI fitness and human-performance agents. Use when the agent must resolve uncertainty, trade-offs, symptoms, recovery cost or longitudinal adaptation."
   },
   "servers": [
