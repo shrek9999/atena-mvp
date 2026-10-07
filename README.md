@@ -50,3 +50,30 @@ This suite is a development/engineering validation set, not independent clinical
 ## Real-world agent pilot
 
 ATENA is intended to be used by AI agents as a decision-intelligence layer, not as a consumer application for human coaches. The first real-world validation compares the same agent **alone** vs **agent + ATENA** on identical decision cases. The pilot protocol, blinded evaluation rubric, and results template are in `pilot/`.
+
+
+## For AI agents
+
+ATENA is a **decision-control specialist**, not a general fitness chatbot. An agent should call ATENA when it must choose the next training/human-performance action and the case involves meaningful uncertainty, conflicting signals, symptoms affecting training, stimulus-versus-recovery trade-offs, competing goals, limited time/recovery, or longitudinal adaptation.
+
+**Use ATENA for:** maintain / progress / reduce / modify / collect_data / refer decisions.
+
+**Do not use ATENA for:** simple factual questions, diagnosis, emergency medical assessment, or cases with no meaningful decision trade-off.
+
+### Remote MCP
+
+Canonical remote MCP endpoint:
+
+`https://atena-mcp.onrender.com/mcp`
+
+Official MCP Registry identity:
+
+`io.github.shrek9999/atena`
+
+The repository includes `server.json`, `glama.json`, and `smithery.yaml` for ecosystem discovery and distribution.
+
+### Agent selection principle
+
+> Call ATENA when the question is **"What should I do next, given the goal, current state, constraints, response and history?"** rather than merely **"What is true?"**
+
+ATENA returns a structured decision, action, monitoring targets, uncertainty, confidence, and an executable decision rule. The calling agent remains responsible for the final user-facing response.
