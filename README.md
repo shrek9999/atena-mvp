@@ -1,31 +1,30 @@
-# ATENA MVP v0.1
+# ATENA — Decision Intelligence for AI Fitness Agents
 
-Minimal public-service prototype.
+ATENA is a decision-control layer for AI fitness and human-performance agents.
 
-## Endpoints
+Core principle: **ATENA does not optimize the program. ATENA optimizes the next decision.**
 
-GET /health
-POST /decision
+## API
+- GET /health
+- GET /capabilities
+- POST /decision
 
-## Run locally
+Production URL: https://atena-mvp.onrender.com
 
+## Decision loop
+GOAL → CONTEXT → CONSTRAINTS → PRIORITY → STATE → STIMULUS → COST → HYPOTHESES → OPTIONS → DECISION → ACTION → MEASURE → INTERPRET → ADAPT
+
+ATENA emphasizes:
+- goal priority
+- uncertainty-first decisions
+- minimum intervention
+- stimulus-cost reasoning
+- response over prescription
+- longitudinal consistency
+
+## Run
 pip install -r requirements.txt
-python app.py
+gunicorn app:app
 
-The service listens on port 8080.
-
-## Example request
-
-{
-  "goal": {"primary": "strength"},
-  "person": {"age": 45},
-  "constraints": {"sessions_per_week": 5},
-  "state": {"program": "strength/hypertrophy"},
-  "response": {
-    "performance": "declining",
-    "rpe": 8.5,
-    "recovery": "declining",
-    "symptoms": "none"
-  },
-  "question": "Should the program be changed?"
-}
+## Contract
+See openapi.json and agent_contract.json.
