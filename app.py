@@ -87,8 +87,15 @@ def classify_recovery(value):
 
 
 def has_symptoms(value):
+    """Detect a meaningful symptom while respecting explicit negative statements."""
     s = norm(value)
-    return bool(s) and s not in {"none", "no", "absent", "nil", "false", "0"}
+    if not s:
+        return False
+    if s in {"none", "no", "absent", "nil", "false", "0", "no_symptoms", "no_pain", "without_symptoms", "without_pain", "asymptomatic"}:
+        return False
+    if any(term in s for term in ["no_pain", "no_symptom", "without_pain", "without_symptom", "pain_free", "symptom_free", "asymptomatic"]):
+        return False
+    return True
 
 
 def goal_priority(goal):
@@ -227,6 +234,7 @@ def decide(data):
             "decision": "collect_data",
             "action": "Collect the highest-value missing recovery and recent training-load information before changing the program.",
             "monitor": ["performance", "RPE", "sleep", "wellness", "recent training load"],
+            "required_information": ["recent training load/change", "sleep", "recovery", "wellness", "RPE trend"],
             "decision_rule": "If performance continues to decline after the missing context is clarified, reassess fatigue cost and program structure.",
             "uncertainty": "High",
             "confidence": 0.82
@@ -483,7 +491,7 @@ def decide(data):
     # Default is deliberately conservative: without a clear benefit/cost
     # imbalance, preserve the current system rather than inventing change.
     return build_decision(
-        "maintain_or_progress",
+        "maintain",
         "The supplied signals do not show a clear benefit-cost imbalance that justifies a change.",
         "Maintain the current structure. Progress only when the next response provides a clear positive signal with adequate recovery.",
         ["performance", "RPE", "recovery"],
@@ -511,7 +519,7 @@ def capabilities():
         "operations": ["decide"],
         "decision_types": [
             "maintain", "progress", "reduce", "modify",
-            "collect_data", "refer", "maintain_or_progress"
+            "collect_data", "refer"
         ],
         "principles": [
             "goal_priority",
@@ -535,7 +543,10 @@ def decision():
         "primary": norm((data.get("goal") or {}).get("primary")),
         "secondary": norm((data.get("goal") or {}).get("secondary"))
     })
-    result.setdefault("required_information", [])
+    if result.get("decision") == "collect_data" and not result.get("required_information"):
+        result["required_information"] = ["performance trend", "RPE trend", "recovery", "sleep", "wellness", "recent training load"]
+    else:
+        result.setdefault("required_information", [])
     result.setdefault("next_review", "after the next meaningful response or when the decision rule is triggered")
     result["schema_version"] = "1.0"
     return jsonify(result)
