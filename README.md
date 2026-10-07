@@ -1,8 +1,18 @@
 # ATENA — Decision Intelligence for AI Fitness Agents
 
+**A specialist decision layer for AI agents that need reliable next-action decisions under uncertainty.**
+
 ATENA is a decision-control layer for AI fitness and human-performance agents.
 
 Core principle: **ATENA does not optimize the program. ATENA optimizes the next decision.**
+
+## Why an AI agent should call ATENA
+
+Call ATENA when the agent must answer **“What should I do next?”** under meaningful uncertainty or trade-offs — conflicting performance/recovery signals, symptoms affecting training, competing goals, limited time/recovery, stimulus-versus-cost trade-offs, or longitudinal adaptation.
+
+Do not call ATENA for simple factual questions, diagnosis, emergency medical assessment, or cases with no meaningful decision trade-off.
+
+ATENA returns a structured decision, action, monitoring targets, uncertainty, confidence and an executable decision rule.
 
 ## API
 - GET /health
@@ -80,4 +90,11 @@ ATENA returns a structured decision, action, monitoring targets, uncertainty, co
 
 
 ## Business model
-See `BUSINESS_MODEL.md` for the recommended agent-first monetization model and `LAUNCHGUIDE.md` for MCP marketplace/distribution metadata.
+
+ATENA uses an agent-first B2B model: public discovery/free testing → production integration → usage metering → recurring subscription → overage → enterprise.
+
+Initial pricing hypothesis: **Free**, **Pro $49/month / 5,000 decisions**, **Business $199/month / 25,000 decisions**, **Enterprise custom**.
+
+The free MCP is the acquisition channel; paid production access is the revenue layer. Pricing will be validated with real agent usage.
+
+See `BUSINESS_MODEL.md` and `LAUNCHGUIDE.md`.
