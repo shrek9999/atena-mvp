@@ -77,3 +77,7 @@ The repository includes `server.json`, `glama.json`, and `smithery.yaml` for eco
 > Call ATENA when the question is **"What should I do next, given the goal, current state, constraints, response and history?"** rather than merely **"What is true?"**
 
 ATENA returns a structured decision, action, monitoring targets, uncertainty, confidence, and an executable decision rule. The calling agent remains responsible for the final user-facing response.
+
+
+## Business model
+See `BUSINESS_MODEL.md` for the recommended agent-first monetization model and `LAUNCHGUIDE.md` for MCP marketplace/distribution metadata.
