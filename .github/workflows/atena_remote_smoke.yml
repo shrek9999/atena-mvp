@@ -18,14 +18,14 @@ jobs:
           python - <<'PY'
           import json, requests
           cases=[
-            ("P01","Strength primary; strength stable 3 weeks; RPE stable; recovery good; sleep good; no symptoms.","maintain"),
-            ("P02","Strength primary; strength +3% over 3 weeks; RPE slightly lower; recovery good; sleep good; no symptoms.","progress"),
-            ("P03","Strength down 3%; RPE +1; recovery worse; sleep slightly worse for 2 weeks; no symptoms.","reduce"),
-            ("P04","Performance down 4% once; RPE unchanged; recovery and sleep normal; no symptoms; no recent load change.","collect_data"),
-            ("P05","Knee pain during squat; strength otherwise stable; recovery good; user asks whether to progress squat load.","modify"),
+            ("P01",{"goal":{"primary":"strength"},"state":{"strength_trend":"stable","rpe_trend":"stable","recovery":"good","sleep":"good","symptoms":"none"},"question":"Should volume be increased?","gold":"maintain"),
+            ("P02",{"goal":{"primary":"strength"},"state":{"strength_change_pct":3,"rpe_trend":"decreasing","recovery":"good","sleep":"good","symptoms":"none"},"question":"Should I make a small progression?","gold":"progress"),
+            ("P03",{"goal":{"primary":"strength"},"state":{"strength_change_pct":-3,"rpe_change":1,"recovery":"worse","sleep":"slightly worse","symptoms":"none"},"question":"What is the next decision?","gold":"reduce"),
+            ("P04",{"goal":{"primary":"strength"},"state":{"performance_change_pct":-4,"rpe_trend":"stable","recovery":"normal","sleep":"normal","symptoms":"none","observation_count":1},"question":"What should I change?","gold":"collect_data"),
+            ("P05",{"goal":{"primary":"strength"},"state":{"symptoms":"knee pain during squat","strength_trend":"stable","recovery":"good"},"question":"Should squat load be progressed?","gold":"modify"),
           ]
-          for cid,scenario,gold in cases:
-            p={"goal":{"primary":"strength"},"person":{},"constraints":{},"state":{"scenario":scenario},"response":{},"question":"What is the next decision?","history":{}}
+          for cid,p,gold in cases:
+            p.update({"person":{},"constraints":{},"response":{},"history":{}})
             r=requests.post("https://atena-mvp.onrender.com/decision",json=p,timeout=60)
             r.raise_for_status()
             d=r.json()
