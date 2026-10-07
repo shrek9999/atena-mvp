@@ -1,7 +1,49 @@
 from flask import Flask, request, jsonify
+import os
 import re
 
+from x402 import x402ResourceServerSync
+from x402.http import HTTPFacilitatorClientSync
+from x402.http.middleware import PaymentMiddleware
+from x402.mechanisms.svm.exact import ExactSvmServerScheme
+
 app = Flask(__name__)
+
+# x402 V2 payment configuration. The receiving address is public, but is kept
+# in Render environment variables so it can be changed without code changes.
+ATENA_PAYMENT_ADDRESS = os.getenv("ATENA_PAYMENT_ADDRESS", "").strip()
+ATENA_PAYMENT_FACILITATOR = os.getenv(
+    "ATENA_PAYMENT_FACILITATOR", "https://facilitator.payai.network"
+).strip()
+ATENA_PAYMENT_NETWORK = os.getenv(
+    "ATENA_PAYMENT_NETWORK", "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+).strip()
+ATENA_PAYMENT_PRICE = os.getenv("ATENA_PAYMENT_PRICE", "$0.01").strip()
+
+
+def configure_x402_payment():
+    """Protect the paid decision route with x402 V2 when configured."""
+    if not ATENA_PAYMENT_ADDRESS:
+        return None
+    facilitator = HTTPFacilitatorClientSync(url=ATENA_PAYMENT_FACILITATOR)
+    server = x402ResourceServerSync(facilitator)
+    server.register("solana:*", ExactSvmServerScheme())
+    routes = {
+        "POST /paid/decision": {
+            "accepts": {
+                "scheme": "exact",
+                "payTo": ATENA_PAYMENT_ADDRESS,
+                "price": ATENA_PAYMENT_PRICE,
+                "network": ATENA_PAYMENT_NETWORK,
+            },
+            "description": "ATENA decision-control API: choose the next action under uncertainty or trade-offs.",
+        }
+    }
+    PaymentMiddleware(app, routes, server, sync_facilitator_on_start=True)
+    return True
+
+
+x402_payment_enabled = configure_x402_payment()
 
 
 def norm(value):
@@ -548,7 +590,7 @@ def health():
     return jsonify({
         "status": "ok",
         "service": "ATENA",
-        "version": "1.1.4",
+        "version": "1.2.0",
         "api_version": "v1"
     })
 
@@ -573,6 +615,38 @@ def capabilities():
             "longitudinal_consistency"
         ]
     })
+
+
+@app.post("/paid/decision")
+def paid_decision():
+    if not x402_payment_enabled:
+        return jsonify({
+            "error": "ATENA x402 payment route is not configured",
+            "required_environment": "ATENA_PAYMENT_ADDRESS"
+        }), 503
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON object required"}), 400
+    result = decide(data)
+    result.setdefault("reason_codes", [])
+    result.setdefault("priority", {
+        "primary": norm((data.get("goal") or {}).get("primary")),
+        "secondary": norm((data.get("goal") or {}).get("secondary"))
+    })
+    if result.get("decision") == "collect_data" and not result.get("required_information"):
+        result["required_information"] = ["performance trend", "RPE trend", "recovery", "sleep", "wellness", "recent training load"]
+    else:
+        result.setdefault("required_information", [])
+    result.setdefault("next_review", "after the next meaningful response or when the decision rule is triggered")
+    result["schema_version"] = "1.1"
+    result.setdefault("tool_use", {"role": "decision_control", "diagnostic": False, "next_step": "follow_decision_rule"})
+    result["payment"] = {
+        "protocol": "x402-v2",
+        "network": ATENA_PAYMENT_NETWORK,
+        "price": ATENA_PAYMENT_PRICE,
+        "asset": "USDC"
+    }
+    return jsonify(result)
 
 
 @app.post("/decision")
