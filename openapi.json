@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "ATENA Decision Intelligence API",
-    "version": "1.0.0",
-    "description": "Decision-control layer for AI fitness and human-performance agents."
+    "version": "1.1.0",
+    "description": "Decision-control layer for AI fitness and human-performance agents. Use when the agent must resolve uncertainty, trade-offs, symptoms, recovery cost or longitudinal adaptation."
   },
   "servers": [
     {
@@ -120,7 +120,8 @@
             }
           },
           "decision_rule": {
-            "type": "string"
+            "type": "string",
+            "description": "Executable next-step rule for the calling agent."
           },
           "uncertainty": {
             "type": "string"
@@ -128,7 +129,8 @@
           "confidence": {
             "type": "number",
             "minimum": 0,
-            "maximum": 1
+            "maximum": 1,
+            "description": "Confidence in the selected decision, not probability that a hypothesis is true."
           },
           "reason_codes": {
             "type": "array",
@@ -150,6 +152,9 @@
           },
           "schema_version": {
             "type": "string"
+          },
+          "tool_use": {
+            "type": "object"
           }
         }
       }
