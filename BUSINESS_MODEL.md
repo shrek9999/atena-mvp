@@ -1,4 +1,4 @@
-# ATENA — Business Model v1
+# ATENA — Business Model v2
 
 ## Product
 
@@ -78,11 +78,23 @@ Sell:
 
 Do not optimize for enterprise first. First prove repeated agent usage and measurable decision value.
 
+## Profitability logic
+
+Keep infrastructure and product costs deliberately low until demand is proven. Current Render pricing includes a free web-service tier for development/testing; paid always-on web services can start around $7/month for 0.5 CPU/512 MB, with a 1 CPU/2 GB tier around $25/month. Stripe currently lists 1.5% + €0.25 for standard EEA cards.
+
+This supports a high gross-margin target at the proposed subscription prices, but it is not proof of profitability: customer acquisition, support, usage, reliability and retention still determine the real economics.
+
 ## Why not pure per-call pricing?
 
-MCP/tool ecosystems are moving toward usage-based and per-call monetization, but extremely small per-call prices can produce little revenue unless call volume is very high. Current 2026 MCP monetization sources show freemium, subscriptions and usage-based models all emerging, while hosted B2B services remain the strongest path to meaningful recurring revenue. DigitalOcean's Action Gateway, for example, prices standard MCP/tool invocations at $0.10 per 1,000 calls, illustrating how low infrastructure-level tool-call prices can be.
+MCP/tool ecosystems are moving toward usage-based and per-call monetization, but extremely small per-call prices can produce little revenue unless call volume is very high. Current 2026 MCP monetization sources show freemium, subscriptions and usage-based models all emerging, while hosted B2B services remain the strongest path to meaningful recurring revenue. Ultra-low per-call pricing is unattractive for a specialist whose value is decision quality rather than raw tool execution volume.
 
 For ATENA, the better commercial unit is therefore a **decision credit inside a recurring production plan**, not a tiny standalone micro-payment for every call.
+
+## Commercial architecture
+
+**Public discovery → free usage → developer integration → API identity → usage metering → paid subscription → overage → enterprise**
+
+The public MCP remains the acquisition/discovery surface. Paid production access should ultimately be authenticated and metered.
 
 ## Long-term pricing evolution
 
