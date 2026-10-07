@@ -7,6 +7,8 @@ jobs:
   live-benchmark:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Wait for production
         run: sleep 45
       - name: Run 20 unseen cases against production
@@ -14,7 +16,7 @@ jobs:
           python - <<'PY'
           import json, urllib.request
           url="https://atena-mvp.onrender.com/decision"
-          cases=json.load(urllib.request.urlopen("https://raw.githubusercontent.com/shrek9999/atena-mvp/main/tests/unseen_20_cases.json"))["cases"]
+          cases=json.load(open("tests/unseen_20_cases.json", encoding="utf-8"))["cases"]
           results=[]
           for c in cases:
               req=urllib.request.Request(url,data=json.dumps(c["input"]).encode(),headers={"Content-Type":"application/json"},method="POST")
