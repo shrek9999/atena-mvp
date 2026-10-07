@@ -1,0 +1,9 @@
+startCommand:
+  type: http
+
+configSchema:
+  type: object
+  required: []
+  properties: {}
+
+exampleConfig: {}
