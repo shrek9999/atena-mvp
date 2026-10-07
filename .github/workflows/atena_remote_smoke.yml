@@ -16,6 +16,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Call production ATENA
         run: |
+          sleep 60
           python - <<'PY'
           import json, requests
           cases=[
