@@ -548,7 +548,7 @@ def health():
     return jsonify({
         "status": "ok",
         "service": "ATENA",
-        "version": "1.1.0",
+        "version": "1.1.4",
         "api_version": "v1"
     })
 
@@ -557,7 +557,7 @@ def health():
 def capabilities():
     return jsonify({
         "service": "ATENA",
-        "version": "1.0.0",
+        "version": "1.1.4",
         "purpose": "Decision intelligence layer for AI fitness and human-performance agents",
         "operations": ["decide"],
         "decision_types": [
