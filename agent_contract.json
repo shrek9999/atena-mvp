@@ -1,0 +1,44 @@
+{
+  "name": "ATENA",
+  "version": "1.0.0",
+  "purpose": "Decision intelligence layer for AI fitness and human-performance agents",
+  "principle": "ATENA does not optimize the program. ATENA optimizes the next decision.",
+  "integration": {
+    "transport": "HTTP",
+    "method": "POST",
+    "path": "/decision",
+    "server": "https://atena-mvp.onrender.com"
+  },
+  "input": [
+    "goal",
+    "person",
+    "constraints",
+    "state",
+    "response",
+    "question",
+    "history"
+  ],
+  "output": [
+    "assessment",
+    "decision",
+    "action",
+    "monitor",
+    "decision_rule",
+    "uncertainty",
+    "confidence",
+    "reason_codes",
+    "priority",
+    "required_information",
+    "next_review",
+    "schema_version"
+  ],
+  "decision_types": [
+    "maintain",
+    "progress",
+    "reduce",
+    "modify",
+    "collect_data",
+    "refer",
+    "maintain_or_progress"
+  ]
+}
