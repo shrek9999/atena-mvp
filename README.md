@@ -47,3 +47,6 @@ The v1.0 decision engine includes:
 A new 20-case unseen robustness suite is included in `tests/unseen_20_cases.json` with an executable pytest regression test in `tests/test_unseen_20.py`.
 
 This suite is a development/engineering validation set, not independent clinical validation or proof that ATENA outperforms a general LLM.
+## Real-world agent pilot
+
+ATENA is intended to be used by AI agents as a decision-intelligence layer, not as a consumer application for human coaches. The first real-world validation compares the same agent **alone** vs **agent + ATENA** on identical decision cases. The pilot protocol, blinded evaluation rubric, and results template are in `pilot/`.
