@@ -1,6 +1,6 @@
 {
   "name": "ATENA",
-  "version": "1.1.0",
+  "version": "1.1.4",
   "purpose": "Decision intelligence layer for AI fitness and human-performance agents",
   "principle": "ATENA does not optimize the program. ATENA optimizes the next decision.",
   "integration": {
