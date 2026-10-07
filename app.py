@@ -22,9 +22,9 @@ def first_value(*values):
 
 
 def parse_delta(value):
-    """Return a numeric signed change when one is explicitly present."""
+    """Return a numeric signed change only when the value explicitly represents a delta."""
     if isinstance(value, (int, float)):
-        return float(value)
+        return None
     if not isinstance(value, str):
         return None
     # Only treat a number as a signed delta when it has an explicit sign.
@@ -176,6 +176,9 @@ def decide(data):
         strength_response,
     )
 
+    rpe_is_absolute = any(
+        key in state for key in ["rpe"]
+    ) and "rpe_change" not in state
     rpe = first_value(
         state.get("rpe"),
         state.get("rpe_change"),
@@ -193,12 +196,12 @@ def decide(data):
     sleep = first_value(state.get("sleep"), response.get("sleep"))
 
     perf_class = classify_performance(performance)
-    rpe_class = classify_rpe(rpe)
+    rpe_class = classify_rpe(rpe) if not rpe_is_absolute else ("high" if isinstance(rpe, (int, float)) and rpe >= 9 else "absolute")
     recovery_class = classify_recovery(recovery)
     symptom_present = has_symptoms(symptoms)
 
     # Explicit numeric RPE remains supported.
-    numeric_rpe = rpe if isinstance(rpe, (int, float)) else None
+    numeric_rpe = rpe if isinstance(rpe, (int, float)) and rpe_is_absolute else None
 
     available_time = norm(constraints.get("available_time"))
     time_reduction = text_blob(
