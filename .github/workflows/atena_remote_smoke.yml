@@ -1,0 +1,33 @@
+name: ATENA Remote Smoke Test
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Call production ATENA
+        run: |
+          python - <<'PY'
+          import json, requests
+          cases=[
+            ("P01","Strength primary; strength stable 3 weeks; RPE stable; recovery good; sleep good; no symptoms.","maintain"),
+            ("P02","Strength primary; strength +3% over 3 weeks; RPE slightly lower; recovery good; sleep good; no symptoms.","progress"),
+            ("P03","Strength down 3%; RPE +1; recovery worse; sleep slightly worse for 2 weeks; no symptoms.","reduce"),
+            ("P04","Performance down 4% once; RPE unchanged; recovery and sleep normal; no symptoms; no recent load change.","collect_data"),
+            ("P05","Knee pain during squat; strength otherwise stable; recovery good; user asks whether to progress squat load.","modify"),
+          ]
+          for cid,scenario,gold in cases:
+            p={"goal":{"primary":"strength"},"person":{},"constraints":{},"state":{"scenario":scenario},"response":{},"question":"What is the next decision?","history":{}}
+            r=requests.post("https://atena-mvp.onrender.com/decision",json=p,timeout=60)
+            r.raise_for_status()
+            d=r.json()
+            print(json.dumps({"case":cid,"expected":gold,"decision":d.get("decision"),"reason_codes":d.get("reason_codes"),"confidence":d.get("confidence")},ensure_ascii=False))
+          PY
