@@ -243,6 +243,28 @@ def decide(data):
             "confidence": 0.82
         }
 
+    # 2b. Isolated performance decline with otherwise stable context:
+    # avoid an unnecessary intervention when the signal is not corroborated.
+    if (
+        perf_class == "declining"
+        and recovery_class in {"stable", "unknown"}
+        and rpe_class != "increased"
+        and not fatigue
+        and norm(sleep) not in {"poor", "worse", "declining", "reduced"}
+        and norm(wellness) not in {"poor", "worse", "declining", "reduced", "low"}
+        and not symptom_present
+    ):
+        return {
+            "assessment": "Performance has declined without converging fatigue or symptom signals, so the evidence is insufficient for an immediate training change.",
+            "decision": "collect_data",
+            "action": "Keep the current stimulus temporarily and collect repeated performance and recent-load information before changing training cost.",
+            "monitor": ["performance trend", "RPE", "recovery", "sleep", "recent training load"],
+            "required_information": ["performance trend over additional observations", "recent training load/change"],
+            "decision_rule": "If the decline persists or a second negative signal appears, reassess training cost; if performance returns, maintain the current structure.",
+            "uncertainty": "Moderate",
+            "confidence": 0.86
+        }
+
     # 3. Explicit conflict: do not add a hard secondary conditioning session
     # when strength is primary and recovery budget is limited.
     adding_hard_conditioning = (
