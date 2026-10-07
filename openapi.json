@@ -107,8 +107,7 @@
               "reduce",
               "modify",
               "collect_data",
-              "refer",
-              "maintain"
+              "refer"
             ]
           },
           "action": {
