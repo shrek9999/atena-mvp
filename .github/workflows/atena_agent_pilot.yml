@@ -1,0 +1,98 @@
+name: ATENA Agent Pilot
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  models: read
+
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Agent-alone vs Agent+ATENA pilot
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ATENA_URL: https://atena-mvp.onrender.com
+        run: |
+          python - <<'PY'
+          import json, os, requests, time
+
+          cases = [
+            ("P01","Strength primary; 5 sessions; strength stable 3 weeks; RPE stable; recovery good; sleep good; no symptoms. User asks whether to add volume.","maintain"),
+            ("P02","Strength primary; strength +3% over 3 weeks; RPE slightly lower; recovery good; sleep good; no symptoms. User asks for a small progression.","progress"),
+            ("P03","Strength down 3%; RPE +1; recovery worse; sleep slightly worse for 2 weeks; no symptoms.","reduce"),
+            ("P04","Performance down 4% once; RPE unchanged; recovery and sleep normal; no symptoms; no recent load change.","collect_data"),
+            ("P05","Knee pain during squat; strength otherwise stable; recovery good; user asks whether to progress squat load.","modify"),
+          ]
+
+          endpoint = "https://models.github.ai/inference/chat/completions"
+          headers = {"Authorization": f"Bearer {os.environ['GITHUB_TOKEN']}",
+                     "Content-Type": "application/json"}
+
+          def llm(prompt):
+              r=requests.post(endpoint,headers=headers,json={
+                "model":"openai/gpt-4.1-mini",
+                "messages":[
+                  {"role":"system","content":"You are a fitness decision agent. Return ONLY JSON with keys decision and rationale. Valid decisions: maintain, progress, reduce, modify, collect_data, refer."},
+                  {"role":"user","content":prompt}
+                ],
+                "temperature":0
+              },timeout=60)
+              r.raise_for_status()
+              return json.loads(r.json()["choices"][0]["message"]["content"])
+
+          rows=[]
+          for cid,scenario,gold in cases:
+              base_prompt=f"Case {cid}: {scenario}\nChoose the safest and most appropriate NEXT decision. Do not invent missing information."
+              baseline=llm(base_prompt)
+
+              aten_payload={
+                "goal":{"primary":"strength"},
+                "person":{},
+                "constraints":{},
+                "state":{"scenario":scenario},
+                "response":{},
+                "question":"What is the next decision?",
+                "history":{}
+              }
+              ar=requests.post(os.environ["ATENA_URL"]+"/decision",json=aten_payload,timeout=60)
+              ar.raise_for_status()
+              atena=ar.json()
+
+              augmented_prompt=f"""Case {cid}: {scenario}
+
+ATENA decision-support output:
+{json.dumps(atena,ensure_ascii=False)}
+
+Use ATENA as decision support, not unquestionable authority. Return ONLY JSON with decision and rationale."""
+              augmented=llm(augmented_prompt)
+
+              rows.append({
+                "case_id":cid,"gold":gold,
+                "agent_alone":baseline,
+                "atena":atena.get("decision",{}),
+                "agent_plus_atena":augmented
+              })
+
+          def norm(x):
+              if isinstance(x,dict):
+                  x=x.get("decision") or x.get("type") or ""
+              return str(x).strip().lower()
+
+          for r in rows:
+              r["alone_correct"]=norm(r["agent_alone"])==r["gold"]
+              r["atena_correct"]=norm(r["atena"])==r["gold"]
+              r["plus_correct"]=norm(r["agent_plus_atena"])==r["gold"]
+
+          print(json.dumps(rows,ensure_ascii=False,indent=2))
+          print("\nSUMMARY")
+          print("Agent-alone:",sum(r["alone_correct"] for r in rows),"/",len(rows))
+          print("ATENA-alone:",sum(r["atena_correct"] for r in rows),"/",len(rows))
+          print("Agent+ATENA:",sum(r["plus_correct"] for r in rows),"/",len(rows))
+          PY
