@@ -1,4 +1,5 @@
 name: ATENA Remote Smoke Test
+# Re-run on every main commit to validate the currently deployed API
 
 on:
   push:
