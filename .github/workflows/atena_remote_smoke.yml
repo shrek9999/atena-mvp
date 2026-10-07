@@ -18,11 +18,11 @@ jobs:
           python - <<'PY'
           import json, requests
           cases=[
-            ("P01",{"goal":{"primary":"strength"},"state":{"strength_trend":"stable","rpe_trend":"stable","recovery":"good","sleep":"good","symptoms":"none"},"question":"Should volume be increased?"},"maintain"),
-            ("P02",{"goal":{"primary":"strength"},"state":{"strength_change_pct":3,"rpe_trend":"decreasing","recovery":"good","sleep":"good","symptoms":"none"},"question":"Should I make a small progression?"},"progress"),
-            ("P03",{"goal":{"primary":"strength"},"state":{"strength_change_pct":-3,"rpe_change":1,"recovery":"worse","sleep":"slightly worse","symptoms":"none"},"question":"What is the next decision?"},"reduce"),
-            ("P04",{"goal":{"primary":"strength"},"state":{"performance_change_pct":-4,"rpe_trend":"stable","recovery":"normal","sleep":"normal","symptoms":"none","observation_count":1},"question":"What should I change?"},"collect_data"),
-            ("P05",{"goal":{"primary":"strength"},"state":{"symptoms":"knee pain during squat","strength_trend":"stable","recovery":"good"},"question":"Should squat load be progressed?"},"modify"),
+            ("P01",{"goal":{"primary":"strength"},"state":{"performance":"stable","rpe_change":"0","recovery":"good","sleep":"good","symptoms":"none"},"question":"Should volume be increased?"},"maintain"),
+            ("P02",{"goal":{"primary":"strength"},"state":{"performance":"+3%","rpe_change":"-1","recovery":"good","sleep":"good","symptoms":"none"},"question":"Should I make a small progression?"},"progress"),
+            ("P03",{"goal":{"primary":"strength"},"state":{"performance":"-3%","rpe_change":"+1","recovery":"worse","sleep":"slightly worse","symptoms":"none"},"question":"What is the next decision?"},"reduce"),
+            ("P04",{"goal":{"primary":"strength"},"state":{"performance":"-4%","rpe_change":"0","recovery":"normal","sleep":"normal","symptoms":"none","observation_count":1},"question":"What should I change?"},"collect_data"),
+            ("P05",{"goal":{"primary":"strength"},"state":{"symptoms":"knee pain during squat","performance":"stable","recovery":"good"},"question":"Should squat load be progressed?"},"modify"),
           ]
           for cid,p,gold in cases:
             p.update({"person":{},"constraints":{},"response":{},"history":{}})
