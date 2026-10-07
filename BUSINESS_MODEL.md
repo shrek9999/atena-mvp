@@ -80,7 +80,7 @@ Do not optimize for enterprise first. First prove repeated agent usage and measu
 
 ## Why not pure per-call pricing?
 
-MCP/tool ecosystems are moving toward usage-based and per-call monetization, but extremely small per-call prices can produce little revenue unless call volume is very high. Current 2026 MCP monetization sources show freemium, subscriptions and usage-based models all emerging, while hosted B2B services remain the strongest path to meaningful recurring revenue. DigitalOcean's Action Gateway, for example, prices standard MCP/tool invocations at $0.10 per 1,000 calls, illustrating how low infrastructure-level tool-call prices can be. citeturn0search2turn0search1
+MCP/tool ecosystems are moving toward usage-based and per-call monetization, but extremely small per-call prices can produce little revenue unless call volume is very high. Current 2026 MCP monetization sources show freemium, subscriptions and usage-based models all emerging, while hosted B2B services remain the strongest path to meaningful recurring revenue. DigitalOcean's Action Gateway, for example, prices standard MCP/tool invocations at $0.10 per 1,000 calls, illustrating how low infrastructure-level tool-call prices can be.
 
 For ATENA, the better commercial unit is therefore a **decision credit inside a recurring production plan**, not a tiny standalone micro-payment for every call.
 
@@ -115,7 +115,7 @@ The important distinction is:
 
 **directories create discovery; hosted API/MCP creates recurring revenue.**
 
-Current MCP monetization research supports this distinction: many directories are primarily discovery channels, while dedicated marketplaces provide subscription or per-call payment infrastructure. citeturn0search1turn0search4
+Current MCP monetization research supports this distinction: many directories are primarily discovery channels, while dedicated marketplaces provide subscription or per-call payment infrastructure.
 
 ## Go-to-market wedge
 
