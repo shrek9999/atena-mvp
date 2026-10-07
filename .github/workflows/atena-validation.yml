@@ -1,0 +1,14 @@
+name: ATENA validation
+on:
+  push:
+    branches: [validation-v1-unseen]
+jobs:
+  unseen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: pip install Flask
+      - run: pytest -q tests/test_unseen_20.py
