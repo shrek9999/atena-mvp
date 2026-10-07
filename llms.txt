@@ -1,0 +1,24 @@
+# ATENA Decision Intelligence
+
+Specialist decision-control layer for AI fitness and human-performance agents.
+
+Call ATENA when an AI agent must decide what to do next under meaningful uncertainty or trade-offs.
+
+Best use cases:
+- conflicting performance, RPE, recovery or symptom signals
+- maintain vs progress vs reduce vs modify decisions
+- stimulus versus recovery cost
+- competing primary and secondary goals
+- limited time or recovery
+- longitudinal adaptation
+- high-value information collection when uncertainty is too high
+
+Do not call ATENA for simple factual questions, diagnosis, emergency medical assessment, or cases with no meaningful decision trade-off.
+
+Core principle: ATENA does not optimize the program. ATENA optimizes the next decision.
+
+MCP tools: atena_decide, atena_capabilities
+
+Output: decision, action, monitoring, decision rule, uncertainty, confidence, reason codes, priority, required information and next review.
+
+The calling agent remains responsible for the final response and execution.
