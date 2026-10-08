@@ -1,0 +1,307 @@
+{
+  "name": "ATENA Agent Pilot v1 — blinded cases",
+  "version": "1.0",
+  "cases": [
+    {
+      "id": "P01",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "stable",
+          "recovery": "good",
+          "rpe": "stable",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "P02",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "improving",
+          "rpe": "decreased",
+          "recovery": "good",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "P03",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "declining",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "P04",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "declining",
+          "rpe": "increased",
+          "recovery": "worse",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "P05",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "stable",
+          "symptoms": "knee pain during squat"
+        }
+      }
+    },
+    {
+      "id": "P06",
+      "input": {
+        "goal": {
+          "primary": "strength",
+          "secondary": "aerobic_fitness"
+        },
+        "state": {
+          "strength": "stable",
+          "aerobic_fitness": "declining",
+          "recovery": "good",
+          "rpe": "stable",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "P07",
+      "input": {
+        "goal": {
+          "primary": "strength",
+          "secondary": "aerobic_fitness"
+        },
+        "constraints": {
+          "available_time": "limited"
+        },
+        "state": {
+          "strength": "stable",
+          "aerobic_fitness": "declining",
+          "recovery": "good",
+          "rpe": "stable",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "P08",
+      "input": {
+        "goal": {
+          "primary": "strength",
+          "secondary": "aerobic_fitness"
+        },
+        "state": {
+          "strength": "stable",
+          "recovery": "good"
+        },
+        "question": "Should I add a third hard conditioning session?"
+      }
+    },
+    {
+      "id": "P09",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "constraints": {
+          "energy_deficit": "-400 kcal"
+        },
+        "state": {
+          "strength": "declining",
+          "rpe": "increased",
+          "recovery": "stable",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "P10",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "stable",
+          "rpe": "increased",
+          "recovery": "worse",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "P11",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "stable",
+          "rpe": "stable",
+          "recovery": "worse",
+          "sleep": "poor",
+          "fatigue": "high",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "P12",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "stable",
+          "rpe": 9,
+          "recovery": "good",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "P13",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "response": {
+          "result": "performance improved and RPE decreased",
+          "previous_modification": "reduced volume"
+        },
+        "state": {
+          "performance": "stable",
+          "recovery": "good",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "P14",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "stable",
+          "rpe": "stable",
+          "recovery": "stable",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "P15",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "stable",
+          "symptoms": "no pain",
+          "recovery": "good",
+          "rpe": "stable"
+        }
+      }
+    },
+    {
+      "id": "P16",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": "stable",
+          "symptoms": "asymptomatic",
+          "recovery": "good",
+          "rpe": "stable"
+        }
+      }
+    },
+    {
+      "id": "P17",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "state": {
+          "performance": 100,
+          "rpe": 8,
+          "recovery": "good",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "P18",
+      "input": {
+        "goal": {
+          "primary": "strength",
+          "secondary": "aerobic_fitness"
+        },
+        "state": {
+          "strength": "improving",
+          "aerobic_fitness": "declining",
+          "rpe": "stable",
+          "recovery": "stable",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "P19",
+      "input": {
+        "goal": {
+          "primary": "strength",
+          "secondary": "aerobic_fitness"
+        },
+        "constraints": {
+          "available_time": "limited"
+        },
+        "state": {
+          "strength": "declining",
+          "recovery": "worse",
+          "rpe": "increased",
+          "symptoms": "none"
+        }
+      }
+    },
+    {
+      "id": "P20",
+      "input": {
+        "goal": {
+          "primary": "strength"
+        },
+        "constraints": {
+          "energy_deficit": "-300 kcal",
+          "work_stress": "high"
+        },
+        "state": {
+          "strength": "declining",
+          "rpe": "increased",
+          "recovery": "stable",
+          "symptoms": "none"
+        }
+      }
+    }
+  ]
+}
