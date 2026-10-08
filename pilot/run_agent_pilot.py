@@ -3,7 +3,7 @@ from pathlib import Path
 import requests
 
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
-MODEL = os.getenv("MODEL", "gpt-5.6")
+MODEL = os.getenv("MODEL", "gpt-6-luna")
 ATENA_URL = os.getenv("ATENA_URL", "https://atena-mvp.onrender.com/decision")
 OUT = Path(os.getenv("OUT", "pilot/results_raw.json"))
 
@@ -39,6 +39,8 @@ def call_openai(payload):
       "https://api.openai.com/v1/responses",
       headers={"Authorization":f"Bearer {OPENAI_API_KEY}","Content-Type":"application/json"},
       json=payload, timeout=120)
+    if r.status_code == 429:
+        raise RuntimeError(f"OpenAI API 429: {r.text[:1000]}")
     r.raise_for_status()
     return r.json()
 
