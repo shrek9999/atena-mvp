@@ -586,6 +586,106 @@ def decide(data):
     )
 
 
+def enrich_decision(data, result):
+    """Expose ATENA's decision basis and incremental value in a consistent agent-facing schema."""
+    goal = data.get("goal") or {}
+    state = data.get("state") or {}
+    response = data.get("response") or {}
+    constraints = data.get("constraints") or {}
+    history = data.get("history") or {}
+    primary = norm(goal.get("primary"))
+    secondary = norm(goal.get("secondary"))
+
+    performance = first_value(
+        state.get(primary) if primary else None,
+        state.get("performance"),
+        state.get("performance_change"),
+        response.get(f"{primary}_response") if primary else None,
+        response.get("performance_response"),
+        response.get("performance"),
+    )
+    secondary_performance = first_value(
+        state.get(secondary) if secondary else None,
+        state.get(f"{secondary}_change") if secondary else None,
+        response.get(f"{secondary}_response") if secondary else None,
+    )
+    rpe = first_value(state.get("rpe_change"), state.get("rpe"), response.get("rpe_response"), response.get("rpe"))
+    recovery = first_value(state.get("recovery"), response.get("recovery_response"), response.get("recovery"))
+    symptoms = first_value(state.get("symptoms"), response.get("symptoms"))
+    sleep = first_value(state.get("sleep"), response.get("sleep"))
+    fatigue = first_value(state.get("fatigue"), response.get("fatigue"))
+    decision = result.get("decision", "maintain")
+
+    signals = []
+    perf_class = classify_performance(performance)
+    if perf_class != "unknown":
+        signals.append(f"primary_performance_{perf_class}")
+    secondary_class = classify_performance(secondary_performance)
+    if secondary and secondary_class != "unknown":
+        signals.append(f"secondary_performance_{secondary_class}")
+    rpe_class = classify_rpe(rpe)
+    if rpe_class != "unknown":
+        signals.append(f"rpe_{rpe_class}")
+    recovery_class = classify_recovery(recovery)
+    if recovery_class != "unknown":
+        signals.append(f"recovery_{recovery_class}")
+    if has_symptoms(symptoms):
+        signals.append("symptom_reported")
+    if norm(sleep) in {"poor", "worse", "declining", "reduced"}:
+        signals.append("sleep_worsening")
+    if norm(fatigue) in {"high", "increased", "rising"}:
+        signals.append("fatigue_increased")
+    if any(k in constraints for k in ("energy_deficit", "calorie_deficit", "work_stress", "stress")):
+        signals.append("energy_or_stress_constraint")
+    if history or response:
+        signals.append("longitudinal_context_available")
+
+    value_by_decision = {
+        "maintain": "Prevents unnecessary program changes when the available evidence does not justify intervention.",
+        "progress": "Links progression to a positive response while keeping the next increase small and reversible.",
+        "reduce": "Identifies rising training cost or converging fatigue signals and protects the primary goal by reducing lower-value cost first.",
+        "modify": "Preserves useful training where possible while changing the smallest relevant variable or the lower-priority stimulus.",
+        "collect_data": "Makes uncertainty explicit and identifies what must be measured before committing to a potentially premature change.",
+        "refer": "Enforces a safety boundary and prevents ordinary program optimization from replacing appropriate assessment."
+    }
+    boundary_by_decision = {
+        "maintain": "Reassess if performance changes, a second negative signal appears, symptoms emerge, or constraints change.",
+        "progress": "Pause progression if performance stalls/declines, RPE rises persistently, recovery worsens, or symptoms appear.",
+        "reduce": "Hold the lower-cost plan until recovery and performance stabilize; reassess if decline persists.",
+        "modify": "Retain the modification only while it improves tolerance or goal alignment; reassess if symptoms persist/worsen or the target response fails to improve.",
+        "collect_data": "Do not make a larger program change until the listed missing information is collected, unless a safety concern emerges.",
+        "refer": "Do not resume ordinary optimization until the safety concern has been appropriately assessed."
+    }
+    decision_reason = {
+        "maintain": "No clear benefit-cost imbalance is established.",
+        "progress": "Available response signals support a cautious progression.",
+        "reduce": "The current training cost is not justified by the response or recovery signals.",
+        "modify": "A targeted change can address the limiting signal while preserving higher-priority work.",
+        "collect_data": "The evidence is insufficient to choose a larger intervention confidently.",
+        "refer": "The reported context crosses a safety boundary."
+    }
+
+    result.setdefault("reason_codes", [])
+    result["reason_codes"] = list(dict.fromkeys(result["reason_codes"] + signals + [f"decision_{decision}"]))
+    result.setdefault("priority", {"primary": primary, "secondary": secondary})
+    result.setdefault("required_information", [])
+    result.setdefault("next_review", "after the next meaningful response or when the decision boundary is triggered")
+    result["decision_support"] = {
+        "value_added": value_by_decision.get(decision, "Provides structured decision support under uncertainty."),
+        "decision_basis": decision_reason.get(decision, "Uses the available context to select a next action."),
+        "detected_signals": signals,
+        "decision_boundary": boundary_by_decision.get(decision, "Reassess when the state or constraints materially change."),
+        "consultation_triggers": [
+            "conflicting performance, effort, recovery or symptom signals",
+            "trade-offs between primary and secondary goals or limited resources",
+            "a decision whose outcome depends on previous response",
+            "insufficient evidence to justify progression or reduction"
+        ]
+    }
+    result.setdefault("tool_use", {"role": "decision_control", "diagnostic": False, "next_step": "follow_decision_rule"})
+    return result
+
+
 @app.get("/health")
 def health():
     return jsonify({
@@ -628,7 +728,7 @@ def paid_decision():
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
         return jsonify({"error": "JSON object required"}), 400
-    result = decide(data)
+    result = enrich_decision(data, decide(data))
     result.setdefault("reason_codes", [])
     result.setdefault("priority", {
         "primary": norm((data.get("goal") or {}).get("primary")),
@@ -655,7 +755,7 @@ def decision():
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
         return jsonify({"error": "JSON object required"}), 400
-    result = decide(data)
+    result = enrich_decision(data, decide(data))
     result.setdefault("reason_codes", [])
     result.setdefault("priority", {
         "primary": norm((data.get("goal") or {}).get("primary")),
