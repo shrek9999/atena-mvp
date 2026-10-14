@@ -1,0 +1,108 @@
+name: ATENA Live Verification
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install no-LLM verification dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install requests "mcp>=1.0,<2"
+      - name: Verify production HTTP API against 20 unseen cases
+        run: |
+          python - <<'PY'
+          import json, time, requests
+          base = "https://atena-mvp.onrender.com"
+          health = requests.get(base + "/health", timeout=60)
+          health.raise_for_status()
+          print("HTTP health: PASS")
+          caps = requests.get(base + "/capabilities", timeout=60)
+          caps.raise_for_status()
+          print("HTTP capabilities: PASS")
+          cases = json.load(open("tests/unseen_20_cases.json", encoding="utf-8"))["cases"]
+          failures = []
+          for case in cases:
+              response = requests.post(base + "/decision", json=case["input"], timeout=60)
+              response.raise_for_status()
+              output = response.json()
+              got, expected = output.get("decision"), case["expected_decision"]
+              passed = got == expected
+              print(f'{case["id"]}: expected={expected} got={got} {"PASS" if passed else "FAIL"}')
+              if not passed:
+                  failures.append({"id": case["id"], "expected": expected, "actual": got})
+          print(f"HTTP benchmark: {len(cases)-len(failures)}/{len(cases)} passed")
+          if failures:
+              print(json.dumps(failures, indent=2))
+              raise SystemExit(1)
+          PY
+      - name: Verify real MCP tool discovery and decision call
+        run: |
+          python - <<'PY'
+          import asyncio, json, requests
+          from mcp import ClientSession
+          from mcp.client.streamable_http import streamablehttp_client
+
+          URL = "https://atena-mcp.onrender.com/mcp"
+          API = "https://atena-mvp.onrender.com/decision"
+          case = {
+              "goal": {"primary": "strength"},
+              "person": {},
+              "constraints": {},
+              "state": {
+                  "performance": "declining",
+                  "rpe": "increased",
+                  "recovery": "worse",
+                  "symptoms": "none"
+              },
+              "response": {},
+              "question": "What should the agent do next?",
+              "history": {}
+          }
+
+          async def main():
+              async with streamablehttp_client(URL, timeout=60) as (read_stream, write_stream, _):
+                  async with ClientSession(read_stream, write_stream) as session:
+                      await session.initialize()
+                      listed = await session.list_tools()
+                      names = {tool.name for tool in listed.tools}
+                      print("MCP tools:", sorted(names))
+                      assert "atena_decide" in names, "atena_decide not exposed"
+                      assert "atena_capabilities" in names, "atena_capabilities not exposed"
+                      result = await session.call_tool("atena_decide", {"payload": case})
+                      if getattr(result, "isError", False):
+                          raise RuntimeError(f"MCP tool returned error: {result}")
+                      texts = [item.text for item in (result.content or []) if getattr(item, "text", None)]
+                      parsed = None
+                      for item in texts:
+                          try:
+                              parsed = json.loads(item)
+                              break
+                          except json.JSONDecodeError:
+                              continue
+                      if parsed is None:
+                          structured = getattr(result, "structuredContent", None)
+                          if structured is None:
+                              raise RuntimeError(f"No structured JSON result from MCP: {texts}")
+                          parsed = structured
+                      http = requests.post(API, json=case, timeout=60)
+                      http.raise_for_status()
+                      http_decision = http.json().get("decision")
+                      mcp_decision = parsed.get("decision")
+                      print("HTTP decision:", http_decision)
+                      print("MCP decision:", mcp_decision)
+                      assert mcp_decision == http_decision, "HTTP and MCP decisions differ"
+                      assert parsed.get("decision_support"), "MCP result missing decision_support"
+                      print("MCP initialize/list/call/parity: PASS")
+          asyncio.run(main())
+          PY
