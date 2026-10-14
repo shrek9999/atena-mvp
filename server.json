@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.shrek9999/atena",
   "title": "ATENA Decision Intelligence",
-  "description": "Decision-control layer for AI fitness and human-performance agents. Helps choose the next action under uncertainty, conflicting recovery/performance signals, symptoms, goal trade-offs and limited recovery.",
+  "description": "Decision-support MCP for AI fitness and human-performance agents. Returns maintain, progress, reduce, modify, collect-data or refer decisions with detected signals, uncertainty, monitoring and reassessment boundaries.",
   "websiteUrl": "https://github.com/shrek9999/atena-mvp",
   "repository": {
     "url": "https://github.com/shrek9999/atena-mvp",
