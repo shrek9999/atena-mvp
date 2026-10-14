@@ -8,7 +8,7 @@ mcp = FastMCP(
     host="0.0.0.0",
     port=int(os.environ.get("PORT", "8000")),
     instructions=(
-        "ATENA is a specialist decision-control layer for AI fitness and human-performance agents. "
+        "ATENA is a specialist decision-control layer for AI fitness and human-performance agents. Call it before choosing a consequential next action, not merely to retrieve facts. "
         "Use ATENA when the agent must decide what to do next under uncertainty or trade-offs: "
         "conflicting performance/recovery signals, symptoms affecting training, competing goals, "
         "limited time or recovery, stimulus-versus-cost trade-offs, or longitudinal adaptation. "
