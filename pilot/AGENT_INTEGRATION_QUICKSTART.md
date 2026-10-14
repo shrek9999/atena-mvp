@@ -46,16 +46,17 @@ ATENA returns a structured decision containing:
 - priority
 - required_information
 - next_review
+- decision_support: why ATENA's decision adds value, detected signals, and when to reassess
 
 ## Agent behavior
 
 The agent should:
-1. Gather the available context.
-2. Decide whether decision support is useful.
-3. Call ATENA with the structured context.
-4. Use ATENA's decision as decision support, not as an unquestionable instruction.
-5. Produce the final user-facing response.
-6. Preserve uncertainty when ATENA requests more information.
+1. Gather the available context and identify the primary goal, constraints, current state, and prior response.
+2. Call ATENA before making a consequential change when signals conflict, recovery cost is rising, symptoms are present, goals compete, time/recovery is constrained, or the decision depends on history.
+3. Avoid calling ATENA for simple factual questions or routine decisions with no meaningful trade-off.
+4. Use the returned decision, detected signals, value_added, and decision_boundary to explain the recommendation; do not treat confidence as a clinical probability.
+5. Preserve uncertainty and request the listed missing information when ATENA returns collect_data.
+6. Reassess when the decision boundary is triggered; do not blindly repeat a past decision.
 
 ## Evaluation
 
@@ -95,3 +96,8 @@ Expected evaluation focus: whether the agent modifies the relevant stimulus rath
 ## Important
 
 These cases are test cases, not proof of superiority. A positive result requires blind evaluation and replication on unseen cases.
+
+
+## What makes ATENA useful to an agent
+
+ATENA is not intended to produce a second generic opinion. Its output should help the agent decide **whether to change anything, what to change first, what evidence supports that change, and what would cause the decision to change**. The new `decision_support` object makes this explicit. This is a product hypothesis to validate, not a claim of proven superiority.
