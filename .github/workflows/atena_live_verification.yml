@@ -22,7 +22,7 @@ jobs:
       - name: Verify production HTTP API against 20 unseen cases
         run: |
           python - <<'PY'
-          import json, time, requests
+          import json, requests
           base = "https://atena-mvp.onrender.com"
           health = requests.get(base + "/health", timeout=60)
           health.raise_for_status()
@@ -50,6 +50,7 @@ jobs:
         run: |
           python - <<'PY'
           import asyncio, json, requests
+          from datetime import timedelta
           from mcp import ClientSession
           from mcp.client.streamable_http import streamablehttp_client
 
@@ -71,7 +72,10 @@ jobs:
           }
 
           async def main():
-              async with streamablehttp_client(URL, timeout=60) as (read_stream, write_stream, _):
+              async with streamablehttp_client(
+                  URL, timeout=timedelta(seconds=60),
+                  sse_read_timeout=timedelta(seconds=60)
+              ) as (read_stream, write_stream, _):
                   async with ClientSession(read_stream, write_stream) as session:
                       await session.initialize()
                       listed = await session.list_tools()
