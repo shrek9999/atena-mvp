@@ -624,7 +624,9 @@ def enrich_decision(data, result):
     if secondary and secondary_class != "unknown":
         signals.append(f"secondary_performance_{secondary_class}")
     rpe_class = classify_rpe(rpe)
-    if rpe_class != "unknown":
+    if isinstance(rpe, (int, float)):
+        signals.append("rpe_high_absolute" if rpe >= 9 else "rpe_absolute")
+    elif rpe_class != "unknown":
         signals.append(f"rpe_{rpe_class}")
     recovery_class = classify_recovery(recovery)
     if recovery_class != "unknown":
@@ -635,8 +637,14 @@ def enrich_decision(data, result):
         signals.append("sleep_worsening")
     if norm(fatigue) in {"high", "increased", "rising"}:
         signals.append("fatigue_increased")
-    if any(k in constraints for k in ("energy_deficit", "calorie_deficit", "work_stress", "stress")):
+    if any(constraints.get(k) not in (None, "", False) for k in ("energy_deficit", "calorie_deficit", "work_stress", "stress")):
         signals.append("energy_or_stress_constraint")
+    if perf_class == "declining" and (recovery_class == "worsening" or rpe_class == "increased"):
+        signals.append("converging_negative_signals")
+    if secondary and secondary_class == "declining" and perf_class != "declining":
+        signals.append("primary_secondary_goal_tradeoff")
+    if decision == "collect_data":
+        signals.append("decision_uncertainty_requires_data")
     if history or response:
         signals.append("longitudinal_context_available")
 
@@ -713,8 +721,28 @@ def capabilities():
             "minimum_intervention",
             "stimulus_cost",
             "response_over_prescription",
-            "longitudinal_consistency"
-        ]
+            "longitudinal_consistency",
+            "explicit_decision_boundary",
+            "agent_incremental_value"
+        ],
+        "value_proposition": [
+            "avoid unnecessary intervention",
+            "protect primary goals while adjusting lower-priority cost",
+            "make uncertainty and missing information explicit",
+            "provide detected signals and reassessment boundaries"
+        ],
+        "when_to_use": [
+            "conflicting performance, effort, recovery or symptom signals",
+            "a consequential maintain/progress/reduce/modify choice",
+            "trade-offs between primary and secondary goals or limited time/recovery",
+            "a decision that depends on previous response or modification"
+        ],
+        "when_not_to_use": [
+            "simple factual questions",
+            "routine decisions with no meaningful uncertainty or trade-off",
+            "diagnosis or emergency medical assessment"
+        ],
+        "response_extensions": ["decision_support"]
     })
 
 
