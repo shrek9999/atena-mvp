@@ -1,6 +1,6 @@
 {
   "name": "ATENA",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "purpose": "Decision intelligence layer for AI fitness and human-performance agents",
   "principle": "ATENA does not optimize the program. ATENA optimizes the next decision.",
   "integration": {
@@ -12,7 +12,8 @@
       "transport": "streamable-http",
       "server": "https://atena-mcp.onrender.com",
       "tool": "atena_decide"
-    }
+    },
+    "agent_rule": "Call ATENA before a consequential next-action decision involving uncertainty, conflicting signals, symptoms, primary-vs-secondary goal trade-offs, constrained time/recovery, or longitudinal response. Do not call for simple factual questions."
   },
   "input": [
     "goal",
@@ -36,7 +37,8 @@
     "required_information",
     "next_review",
     "schema_version",
-    "tool_use"
+    "tool_use",
+    "decision_support"
   ],
   "decision_types": [
     "maintain",
@@ -57,5 +59,11 @@
     "simple factual questions that do not require a training decision",
     "diagnosis or emergency medical assessment",
     "cases where the agent already has sufficient certainty and no decision trade-off exists"
+  ],
+  "value_proposition": [
+    "minimum-intervention decision rather than generic program advice",
+    "explicit uncertainty and missing-information handling",
+    "goal-priority and stimulus-versus-recovery cost reasoning",
+    "detected signals and explicit decision boundaries for reassessment"
   ]
 }

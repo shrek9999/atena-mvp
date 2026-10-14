@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "ATENA Decision Intelligence API",
-    "version": "1.1.4",
-    "description": "Decision-control layer for AI fitness and human-performance agents. Use when the agent must resolve uncertainty, trade-offs, symptoms, recovery cost or longitudinal adaptation."
+    "version": "1.2.0",
+    "description": "Decision-control layer for AI fitness and human-performance agents. Adds explicit decision basis, detected signals, incremental value and decision boundaries for agent workflows."
   },
   "servers": [
     {
@@ -155,6 +155,33 @@
           },
           "tool_use": {
             "type": "object"
+          },
+          "decision_support": {
+            "type": "object",
+            "description": "Agent-facing explanation of ATENA's incremental value and when the decision should be revisited.",
+            "properties": {
+              "value_added": {
+                "type": "string"
+              },
+              "decision_basis": {
+                "type": "string"
+              },
+              "detected_signals": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "decision_boundary": {
+                "type": "string"
+              },
+              "consultation_triggers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
           }
         }
       }
