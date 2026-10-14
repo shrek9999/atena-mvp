@@ -27,7 +27,7 @@ def test_declining_performance_without_context_prioritizes_information():
     assert result["decision"] == "collect_data"
     assert result["required_information"]
     assert "decision_uncertainty_requires_data" in result["reason_codes"]
-    assert "missing information" in result["decision_support"]["value_added"]
+    assert "uncertainty explicit" in result["decision_support"]["value_added"]
 
 
 def test_red_flag_overrides_ordinary_progression():
