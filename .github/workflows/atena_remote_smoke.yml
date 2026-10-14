@@ -1,9 +1,7 @@
 name: ATENA Remote Smoke Test
-# Re-run on every main commit to validate the currently deployed API
+# Manual production smoke test; avoid unsolicited requests on every commit
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
