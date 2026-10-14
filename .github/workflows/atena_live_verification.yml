@@ -1,6 +1,11 @@
 name: ATENA Live Verification
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "tests/unseen_20_cases.json"
+      - ".github/workflows/atena_live_verification.yml"
   workflow_dispatch:
 
 permissions:
