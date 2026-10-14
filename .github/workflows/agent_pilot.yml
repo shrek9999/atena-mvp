@@ -1,32 +1,38 @@
 name: ATENA Agent Pilot
 on:
-  push:
-    paths:
-      - "pilot/**"
-      - ".github/workflows/agent_pilot.yml"
   workflow_dispatch:
     inputs:
       model:
         description: "OpenAI model to evaluate"
-        required: false
+        required: true
         default: "gpt-4.1-mini"
+        type: string
+      limit:
+        description: "Maximum cases to run (smallest pilot recommended)"
+        required: true
+        default: "5"
+        type: string
 permissions:
   contents: read
 jobs:
   pilot:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Run blinded Agent vs Agent+ATENA pilot
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           MODEL: ${{ inputs.model || 'gpt-4.1-mini' }}
+          PILOT_LIMIT: ${{ inputs.limit || '5' }}
         run: |
           python -m pip install --quiet requests
           python pilot/run_agent_pilot.py
-      - name: Upload raw pilot results
+      - name: Upload raw pilot results, including partial results after failure
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: atena-agent-pilot-results
           path: pilot/results_raw.json
-          retention-days: 30
+          if-no-files-found: ignore
+          retention-days: 7
