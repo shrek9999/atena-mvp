@@ -1,7 +1,5 @@
 name: ATENA final live benchmark v2
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 jobs:
   live-benchmark:
