@@ -12,7 +12,7 @@ This is a separate, manually triggered experimental runner. It does not change t
 - **No API key in code:** the key is read only from the GitHub Actions secret `GEMINI_API_KEY`.
 - The workflow does not itself enable billing or create a billing account. Nevertheless, the operator must verify the project is still on Free Tier immediately before each run; if a billing account is linked, do not run this workflow.
 
-Google states that the Free Tier allows access to selected Gemini API models within model-specific limits. Confirm the selected model and its quota in AI Studio before running:
+The initial `gemini-3.8-flash` attempt returned HTTP 503 three times, including after bounded retries. To test a different model without enabling billing, the pilot now defaults to Google's lighter `gemini-3.5-flash-lite` model. Provider availability can still vary. Google states that Free Tier access is model- and quota-specific; confirm the selected model in AI Studio before running:
 https://ai.google.dev/gemini-api/docs/billing
 https://ai.google.dev/gemini-api/docs/rate-limits
 https://ai.google.dev/gemini-api/docs/pricing
@@ -23,7 +23,7 @@ https://ai.google.dev/gemini-api/docs/pricing
 2. Add a repository secret named `GEMINI_API_KEY` and paste the key directly into GitHub's secret form. Never put the key in a file, workflow input, issue, pull request, or chat.
 3. Confirm the Gemini API project remains on Free Tier and has no linked billing account.
 4. Open **Actions → ATENA Gemini Free-Tier Pilot → Run workflow**.
-5. Keep the default case limit at `1`. Keep the default `gemini-3.8-flash` unless AI Studio shows it is unavailable on your project. Confirm that the model is Free Tier for this project and that no billing account is linked.
+5. Keep the default case limit at `1`. Keep the default `gemini-3.5-flash-lite` unless AI Studio shows it is unavailable on your project. Confirm that the model is Free Tier for this project and that no billing account is linked.
 6. Type `I_CONFIRM_FREE_TIER` and run only if the above checks are true.
 
 ## Interpretation
