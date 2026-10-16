@@ -3,7 +3,7 @@ from pathlib import Path
 import requests
 
 API_KEY = os.environ["GEMINI_API_KEY"]
-MODEL = os.getenv("MODEL", "gemini-3.8-flash")
+MODEL = os.getenv("MODEL", "gemini-3.5-flash-lite")
 ATENA_URL = os.getenv("ATENA_URL", "https://atena-mvp.onrender.com/decision")
 OUT = Path(os.getenv("OUT", "pilot/results_gemini_raw.json"))
 MAX_CASES = 5
@@ -39,7 +39,10 @@ def generate(contents, use_tool=False, system=None):
     body = {
         "systemInstruction": {"parts": [{"text": system or SYSTEM}]},
         "contents": contents,
-        "generationConfig": {"temperature": 0, "maxOutputTokens": 512}
+        "generationConfig": {
+            "maxOutputTokens": 512,
+            "thinkingConfig": {"thinkingLevel": "medium"}
+        }
     }
     if use_tool:
         body["tools"] = [TOOL]
