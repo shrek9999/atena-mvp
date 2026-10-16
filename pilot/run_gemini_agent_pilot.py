@@ -53,6 +53,23 @@ def generate(contents, use_tool=False, system=None):
         raise RuntimeError(f"Gemini rate/quota limit reached (HTTP 429); stopping without retries. {response.text[:500]}")
     if response.status_code in (401, 403):
         raise RuntimeError(f"Gemini authentication/permission error (HTTP {response.status_code}); check the secret and project tier. No retries.")
+    # Retry only transient server errors. Never retry quota, auth, or client errors.
+    # Two short retries are bounded and help with temporary provider-side 503s.
+    for attempt in range(2):
+        if response.status_code not in (500, 502, 503, 504):
+            break
+        delay = 2 ** (attempt + 1)
+        print(f"Gemini transient HTTP {response.status_code}; retrying once in {delay}s (attempt {attempt + 1}/2).", flush=True)
+        time.sleep(delay)
+        response = requests.post(
+            f"{API_BASE}/{MODEL}:generateContent",
+            headers={"x-goog-api-key": API_KEY, "Content-Type": "application/json"},
+            json=body, timeout=90
+        )
+        if response.status_code == 429:
+            raise RuntimeError(f"Gemini rate/quota limit reached (HTTP 429); stopping without retries. {response.text[:500]}")
+        if response.status_code in (401, 403):
+            raise RuntimeError(f"Gemini authentication/permission error (HTTP {response.status_code}); check the secret and project tier. No retries.")
     response.raise_for_status()
     return response.json()
 
