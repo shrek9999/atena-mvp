@@ -39,7 +39,10 @@ def generate(contents, use_tool=False, system=None):
     body = {
         "systemInstruction": {"parts": [{"text": system or SYSTEM}]},
         "contents": contents,
-        "generationConfig": {"temperature": 0, "maxOutputTokens": 512}
+        "generationConfig": {
+            "maxOutputTokens": 512,
+            "thinkingConfig": {"thinkingLevel": "medium"}
+        }
     }
     if use_tool:
         body["tools"] = [TOOL]
