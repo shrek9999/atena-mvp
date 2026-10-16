@@ -101,19 +101,34 @@ def run_agent(case, with_atena):
     user_text = json.dumps(case["input"], ensure_ascii=False)
     history = [{"role": "user", "parts": [{"text": user_text}]}]
     totals = {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}
-    first = generate(history, use_tool=with_atena,
-        system=SYSTEM + (" ATENA is available as a specialist tool. Use it only when trigger conditions are met; otherwise decide yourself." if with_atena else ""))
+    system = SYSTEM + (" ATENA is available as a specialist tool. Use it only when trigger conditions are met; otherwise decide yourself." if with_atena else "")
+    first = generate(history, use_tool=with_atena, system=system)
     add_usage(totals, first)
     if not with_atena:
-        return {"final": text_from_response(first), "usage": totals}
+        final = text_from_response(first)
+        if not final:
+            raise RuntimeError("Gemini returned an empty final response for agent-alone arm")
+        return {"final": final, "usage": totals, "atena_tool_calls": 0}
 
+    tool_calls = 0
     for _ in range(3):
         candidate = first.get("candidates", [{}])[0]
         model_content = candidate.get("content", {})
         parts = model_content.get("parts", [])
         calls = [p["functionCall"] for p in parts if "functionCall" in p]
         if not calls:
-            return {"final": text_from_response(first), "usage": totals}
+            final = text_from_response(first)
+            if final:
+                return {"final": final, "usage": totals, "atena_tool_calls": tool_calls}
+            # Do not silently score an empty answer as a completed A/B result.
+            history.append({"role": "user", "parts": [{"text":
+                "Provide your final decision now in concise plain text, using the ATENA result already returned if applicable. Do not call any more tools."}]})
+            first = generate(history, use_tool=False, system=system)
+            add_usage(totals, first)
+            final = text_from_response(first)
+            if not final:
+                raise RuntimeError("Gemini returned an empty final response after one repair attempt")
+            return {"final": final, "usage": totals, "atena_tool_calls": tool_calls, "empty_final_repaired": True}
         history.append(model_content)
         response_parts = []
         for call in calls:
@@ -121,10 +136,10 @@ def run_agent(case, with_atena):
             if name != "atena_decide":
                 raise RuntimeError(f"Unexpected function call: {name}")
             result = call_atena(call.get("args", {}))
+            tool_calls += 1
             response_parts.append({"functionResponse": {"name": name, "response": {"result": result}}})
         history.append({"role": "user", "parts": response_parts})
-        first = generate(history, use_tool=True,
-            system=SYSTEM + " ATENA is available as a specialist tool. Use it only when trigger conditions are met; otherwise decide yourself.")
+        first = generate(history, use_tool=True, system=system)
         add_usage(totals, first)
     raise RuntimeError("Agent exceeded the 3-round ATENA tool-call limit")
 
