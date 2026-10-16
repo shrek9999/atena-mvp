@@ -23,7 +23,7 @@ https://ai.google.dev/gemini-api/docs/pricing
 2. Add a repository secret named `GEMINI_API_KEY` and paste the key directly into GitHub's secret form. Never put the key in a file, workflow input, issue, pull request, or chat.
 3. Confirm the Gemini API project remains on Free Tier and has no linked billing account.
 4. Open **Actions → ATENA Gemini Free-Tier Pilot → Run workflow**.
-5. Keep the default case limit at `1`. Choose a model that AI Studio explicitly shows as available on Free Tier.
+5. Keep the default case limit at `1`. Keep the default `gemini-3.8-flash` unless AI Studio shows it is unavailable on your project. Confirm that the model is Free Tier for this project and that no billing account is linked.
 6. Type `I_CONFIRM_FREE_TIER` and run only if the above checks are true.
 
 ## Interpretation
