@@ -3,7 +3,7 @@ from pathlib import Path
 import requests
 
 API_KEY = os.environ["GEMINI_API_KEY"]
-MODEL = os.getenv("MODEL", "gemini-2.5-flash")
+MODEL = os.getenv("MODEL", "gemini-3.8-flash")
 ATENA_URL = os.getenv("ATENA_URL", "https://atena-mvp.onrender.com/decision")
 OUT = Path(os.getenv("OUT", "pilot/results_gemini_raw.json"))
 MAX_CASES = 5
