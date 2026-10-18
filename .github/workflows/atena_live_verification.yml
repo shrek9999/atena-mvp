@@ -32,6 +32,7 @@ jobs:
           health = requests.get(base + "/health", timeout=60)
           health.raise_for_status()
           print("HTTP health: PASS")
+          assert health.json().get("status") == "ok", "Health payload status is not ok"
           caps = requests.get(base + "/capabilities", timeout=60)
           caps.raise_for_status()
           print("HTTP capabilities: PASS")
@@ -42,7 +43,11 @@ jobs:
               response.raise_for_status()
               output = response.json()
               got, expected = output.get("decision"), case["expected_decision"]
-              passed = got == expected
+              required = ["assessment", "action", "uncertainty", "monitor", "decision_support"]
+              missing = [key for key in required if key not in output]
+              if missing:
+                  failures.append({"id": case["id"], "missing_fields": missing})
+              passed = got == expected and not missing
               print(f'{case["id"]}: expected={expected} got={got} {"PASS" if passed else "FAIL"}')
               if not passed:
                   failures.append({"id": case["id"], "expected": expected, "actual": got})
