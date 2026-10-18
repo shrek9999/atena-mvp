@@ -10,6 +10,15 @@ from x402.mechanisms.svm.exact import ExactSvmServerScheme
 
 app = Flask(__name__)
 
+# Bound incoming request bodies to reduce accidental or abusive memory use.
+# The decision API only needs compact structured JSON, so 64 KiB is generous.
+app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("ATENA_MAX_REQUEST_BYTES", str(64 * 1024)))
+
+
+@app.errorhandler(413)
+def request_too_large(_error):
+    return jsonify({"error": "Request body too large", "max_bytes": app.config["MAX_CONTENT_LENGTH"]}), 413
+
 # x402 V2 payment configuration. The receiving address is public, but is kept
 # in Render environment variables so it can be changed without code changes.
 ATENA_PAYMENT_ADDRESS = os.getenv("ATENA_PAYMENT_ADDRESS", "").strip()
