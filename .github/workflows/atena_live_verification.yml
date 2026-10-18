@@ -7,6 +7,7 @@ on:
       - "tests/unseen_20_cases.json"
       - ".github/workflows/atena_live_verification.yml"
       - "pilot/run_gemini_agent_pilot.py"
+      - "mcp_http_server.py"
   workflow_dispatch:
 
 permissions:
