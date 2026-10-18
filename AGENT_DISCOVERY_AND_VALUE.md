@@ -106,3 +106,32 @@ ATENA provides decision support for training/human-performance workflows. It doe
 - **Sensitive data minimization:** send only context necessary for the decision. Avoid names, contact details, identifiers, and unrelated health or personal data.
 - **Validation boundary:** technical checks and the 20-case regression suite are engineering tests, not independent clinical validation or proof of superiority over an agent without ATENA. Measure incremental value with blinded A/B cases before making performance claims.
 - **Production readiness checks still required:** confirm request-volume limits, abuse protection, authentication/authorization requirements, uptime monitoring, and the service's configured HTTP health-check path before opening a paid or high-volume integration. These settings must be verified in the hosting dashboard; do not assume they are enabled.
+
+
+## Minimal copy-paste integration recipe
+
+### Agent system-instruction snippet
+
+Use this as a starting point in the calling agent's system instructions:
+
+> For consequential fitness or human-performance decisions, call ATENA before deciding when performance, RPE, recovery or symptoms conflict; when goals compete; when time or recovery is constrained; or when the next step depends on prior response. Do not call ATENA for simple factual questions, diagnosis, emergencies, or routine choices without a meaningful trade-off. Send only the context needed for the decision. Treat ATENA output as decision support, not as medical truth. Preserve uncertainty, explain the final recommendation in plain language, and follow the agent's own safety policies. If ATENA is unavailable, do not claim it was consulted; apply the agent's fallback safety rules and seek human review when warranted.
+
+### First integration smoke test
+
+1. Configure a compatible MCP client with the remote endpoint `https://atena-mcp.onrender.com/mcp` using Streamable HTTP.
+2. Discover tools and confirm that both `atena_capabilities` and `atena_decide` are listed.
+3. Call `atena_capabilities` first.
+4. Call `atena_decide` with a synthetic case, not a real person's identifiable or sensitive information.
+5. Confirm that the result includes a decision and useful action/monitoring/uncertainty fields.
+6. Repeat the same case through `POST https://atena-mvp.onrender.com/decision` and compare the decision. The no-cost GitHub Actions workflow automates this parity check.
+
+### Safe failure handling
+
+- Use a bounded retry policy with backoff for network errors and transient HTTP 5xx only.
+- Do not automatically retry 4xx validation/authentication errors or repeat a consequential decision indefinitely.
+- Set an overall deadline. If the deadline expires, use a transparent fallback and record that ATENA was unavailable.
+- Never send names, emails, account IDs, or unrelated health details unless a documented use case and appropriate consent require them.
+
+### What a successful smoke test means
+
+A successful tool discovery and call confirms technical interoperability for that test client. It does not prove that the agent will call ATENA at the right times, that the recommendation is correct, or that ATENA improves decisions. Those require a blinded agent-alone versus agent-plus-ATENA evaluation on the same unseen cases.
