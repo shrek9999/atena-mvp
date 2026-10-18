@@ -41,6 +41,16 @@ jobs:
           caps = requests.get(base + "/capabilities", timeout=60)
           caps.raise_for_status()
           print("HTTP capabilities: PASS")
+          oversized = requests.post(
+              base + "/decision",
+              data=b" " * (64 * 1024 + 1),
+              headers={"Content-Type": "application/json"},
+              timeout=60,
+          )
+          assert oversized.status_code == 413, (
+              f"Expected 413 for oversized request, got {oversized.status_code}"
+          )
+          print("HTTP request-size limit (413): PASS")
           cases = json.load(open("tests/unseen_20_cases.json", encoding="utf-8"))["cases"]
           failures = []
           for case in cases:
