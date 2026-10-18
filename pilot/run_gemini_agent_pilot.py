@@ -93,9 +93,30 @@ def add_usage(total, response):
         total[key] += value or 0
 
 def call_atena(args):
-    response = requests.post(ATENA_URL, json=args, timeout=30)
-    response.raise_for_status()
-    return response.json()
+    # Render Free services can be cold-starting. Retry only network errors and
+    # transient 5xx responses; never retry 4xx validation/authentication errors.
+    last_error = None
+    for attempt in range(3):
+        try:
+            response = requests.post(ATENA_URL, json=args, timeout=60)
+            if response.status_code in (500, 502, 503, 504):
+                last_error = RuntimeError(
+                    f"ATENA transient HTTP {response.status_code}: {response.text[:300]}"
+                )
+            else:
+                response.raise_for_status()
+                return response.json()
+        except (requests.Timeout, requests.ConnectionError) as exc:
+            last_error = exc
+        if attempt < 2:
+            delay = 2 ** (attempt + 1)
+            print(
+                f"ATENA temporarily unavailable; retrying in {delay}s "
+                f"(attempt {attempt + 1}/3).",
+                flush=True,
+            )
+            time.sleep(delay)
+    raise RuntimeError(f"ATENA request failed after 3 bounded attempts: {last_error}")
 
 def run_agent(case, with_atena):
     user_text = json.dumps(case["input"], ensure_ascii=False)
