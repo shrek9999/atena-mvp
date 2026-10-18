@@ -39,14 +39,14 @@ competing goals, limited time/recovery, or longitudinal adaptation. Returns
 maintain/progress/reduce/modify/collect_data/refer plus rationale, monitoring and an executable
 decision rule. Not a diagnostic or emergency-medicine tool. Do not call for simple factual questions
 with no decision trade-off."""
-    r = requests.post(f"{ATENA_URL}/decision", json=payload.model_dump(), timeout=30)
+    r = requests.post(f"{ATENA_URL}/decision", json=payload.model_dump(), timeout=60)
     r.raise_for_status()
     return r.json()
 
 @mcp.tool()
 def atena_capabilities() -> dict:
     """Return ATENA capabilities, supported decision types, endpoints and agent-use guidance."""
-    r = requests.get(f"{ATENA_URL}/capabilities", timeout=30)
+    r = requests.get(f"{ATENA_URL}/capabilities", timeout=60)
     r.raise_for_status()
     return r.json()
 
