@@ -94,3 +94,15 @@ The registry helps developers discover the server; it does not automatically con
 ## Safety and limitations
 
 ATENA provides decision support for training/human-performance workflows. It does not diagnose, replace clinical judgment, or handle emergencies. Confidence is a score associated with the selected decision, not a calibrated probability that a medical or causal hypothesis is true.
+
+
+## Operational limits and integration requirements
+
+- **No automatic agent connection:** publishing or registering ATENA does not grant an agent access. The agent owner must explicitly configure the remote MCP endpoint or call the HTTP API.
+- **MCP protocol:** use Streamable HTTP at `https://atena-mcp.onrender.com/mcp` with a compatible MCP client. A plain browser `GET /mcp` is not a valid end-to-end test; verify with MCP initialization and tool discovery/call instead.
+- **Cold starts and transient failures:** the current Render services use the Free plan. Allow for cold-start latency and implement bounded retries with backoff for transient 5xx/network errors. Do not blindly retry invalid requests (4xx), and do not repeat a consequential decision indefinitely.
+- **Check service readiness:** verify `GET https://atena-mvp.onrender.com/health` and `GET https://atena-mvp.onrender.com/capabilities` before a pilot. A successful health check proves availability, not decision quality.
+- **Fallback behavior:** if ATENA is unavailable, the calling agent should state that decision support could not be reached, use its own safety rules, avoid pretending ATENA was consulted, and request human review when uncertainty or symptoms make that appropriate.
+- **Sensitive data minimization:** send only context necessary for the decision. Avoid names, contact details, identifiers, and unrelated health or personal data.
+- **Validation boundary:** technical checks and the 20-case regression suite are engineering tests, not independent clinical validation or proof of superiority over an agent without ATENA. Measure incremental value with blinded A/B cases before making performance claims.
+- **Production readiness checks still required:** confirm request-volume limits, abuse protection, authentication/authorization requirements, uptime monitoring, and the service's configured HTTP health-check path before opening a paid or high-volume integration. These settings must be verified in the hosting dashboard; do not assume they are enabled.
