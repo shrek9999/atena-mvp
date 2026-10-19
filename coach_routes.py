@@ -1,6 +1,7 @@
 """Conservative, server-side conversational coach pilot for ATENA."""
 import json
 import os
+import hmac
 import urllib.error
 import urllib.request
 from flask import Blueprint, jsonify, request
@@ -15,7 +16,7 @@ def add_cors_headers(response):
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Vary"] = "Origin"
         response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Pilot-Token"
         response.headers["Access-Control-Max-Age"] = "600"
     return response
 
@@ -30,6 +31,12 @@ Safety: you are not a doctor or physiotherapist and must not diagnose injuries, 
 def coach_chat():
     if request.method == "OPTIONS":
         return ("", 204)
+    expected_token = os.getenv("AI_COACH_TEST_TOKEN", "").strip()
+    supplied_token = request.headers.get("X-Pilot-Token", "").strip()
+    if not expected_token:
+        return jsonify({"error": "Testni dostop še ni nastavljen na strežniku."}), 503
+    if not supplied_token or not hmac.compare_digest(supplied_token, expected_token):
+        return jsonify({"error": "Testni dostopni ključ ni pravilen."}), 403
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     if not api_key:
         return jsonify({"error": "Pilot še ni aktiviran: skrbnik mora na strežniku nastaviti GEMINI_API_KEY."}), 503
