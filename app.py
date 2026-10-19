@@ -10,6 +10,10 @@ from x402.mechanisms.svm.exact import ExactSvmServerScheme
 
 app = Flask(__name__)
 
+# Optional conversational pilot. The model key is read server-side only.
+from coach_routes import coach_bp
+app.register_blueprint(coach_bp)
+
 # Bound incoming request bodies to reduce accidental or abusive memory use.
 # The decision API only needs compact structured JSON, so 64 KiB is generous.
 app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("ATENA_MAX_REQUEST_BYTES", str(64 * 1024)))
