@@ -68,7 +68,7 @@ def coach_chat():
         with urllib.request.urlopen(req, timeout=35) as response:
             data = json.loads(response.read().decode("utf-8"))
         parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
-        answer = "\\n".join(p.get("text", "") for p in parts if isinstance(p, dict)).strip()
+        answer = "\n".join(p.get("text", "") for p in parts if isinstance(p, dict)).strip()
         if not answer:
             logger.warning("Gemini returned no text for model %s", model)
             return jsonify({"error": "Model ni vrnil odgovora. Poskusi znova."}), 502
