@@ -1,4 +1,4 @@
-""""Conservative, server-side conversational coach pilot for ATENA."""
+"""Conservative, server-side conversational coach pilot for ATENA."""
 import json
 import os
 import hmac
@@ -56,7 +56,7 @@ def coach_chat():
         if not isinstance(content, str) or not content.strip() or len(content) > MAX_MESSAGE_CHARS:
             return jsonify({"error": "Sporočilo je prazno ali predolgo (največ 1800 znakov)."}), 400
         contents.append({"role": item["role"], "parts": [{"text": content.strip()}]})
-    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
+    model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
     url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + api_key
     body = {
         "systemInstruction": {"parts": [{"text": SYSTEM_PROMPT}]},
