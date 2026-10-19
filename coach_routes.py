@@ -1,11 +1,13 @@
-"""Conservative, server-side conversational coach pilot for ATENA."""
+""""Conservative, server-side conversational coach pilot for ATENA."""
 import json
 import os
 import hmac
+import logging
 import urllib.error
 import urllib.request
 from flask import Blueprint, jsonify, request
 
+logger = logging.getLogger(__name__)
 coach_bp = Blueprint("coach", __name__)
 ALLOWED_ORIGINS = {"https://gregajenko.si", "https://www.gregajenko.si"}
 
@@ -66,16 +68,19 @@ def coach_chat():
         with urllib.request.urlopen(req, timeout=35) as response:
             data = json.loads(response.read().decode("utf-8"))
         parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
-        answer = "\n".join(p.get("text", "") for p in parts if isinstance(p, dict)).strip()
+        answer = "\\n".join(p.get("text", "") for p in parts if isinstance(p, dict)).strip()
         if not answer:
+            logger.warning("Gemini returned no text for model %s", model)
             return jsonify({"error": "Model ni vrnil odgovora. Poskusi znova."}), 502
         return jsonify({"reply": answer, "model": model, "pilot": True})
     except urllib.error.HTTPError as exc:
-        # Never return the provider's response body or secret-bearing URL to the browser.
+        # Log only status and model; never log provider body, API key, or secret-bearing URL.
+        logger.error("Gemini provider returned HTTP %s for model %s", exc.code, model)
         if exc.code in (400, 401, 403):
             return jsonify({"error": "Povezava z modelom ni pravilno nastavljena. Skrbnik naj preveri ključ in model."}), 502
         if exc.code == 429:
             return jsonify({"error": "Trenutno je dosežena omejitev uporabe. Poskusi pozneje."}), 429
         return jsonify({"error": "Storitev trenutno ni dosegljiva. Poskusi znova."}), 502
     except (TimeoutError, urllib.error.URLError, json.JSONDecodeError):
+        logger.warning("Gemini request failed due to timeout, network error, or invalid JSON for model %s", model)
         return jsonify({"error": "Odgovor se je predolgo pripravljal ali povezava ni uspela. Poskusi znova."}), 504
