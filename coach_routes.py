@@ -6,6 +6,19 @@ import urllib.request
 from flask import Blueprint, jsonify, request
 
 coach_bp = Blueprint("coach", __name__)
+ALLOWED_ORIGINS = {"https://gregajenko.si", "https://www.gregajenko.si"}
+
+@coach_bp.after_request
+def add_cors_headers(response):
+    origin = request.headers.get("Origin", "")
+    if origin in ALLOWED_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Vary"] = "Origin"
+        response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        response.headers["Access-Control-Max-Age"] = "600"
+    return response
+
 MAX_MESSAGE_CHARS = 1800
 MAX_MESSAGES = 12
 
@@ -13,8 +26,10 @@ SYSTEM_PROMPT = """You are Grega Jenko's pilot AI fitness coach, speaking Sloven
 Approach: functional fitness, strength, mobility, stability, capacity and gradual load management. Help users understand their goal, current ability, constraints, and response to exercise. Ask one concise follow-up question at a time when essential information is missing. Give practical, conservative, general exercise guidance, explain the reasoning briefly, and encourage gradual, reversible changes.
 Safety: you are not a doctor or physiotherapist and must not diagnose injuries, prescribe treatment, or promise pain relief. Do not tell users to train through worsening pain. If symptoms are severe, sudden, unexplained or worsening, recommend assessment by an appropriate healthcare professional. For chest pain, fainting, severe breathing difficulty, new weakness/numbness, loss of bladder/bowel control with back pain, or other possible emergency symptoms, advise urgent local medical care. Do not ask for full names, exact addresses, or other unnecessary personal data. If a user shares health details, use only what is needed to answer. If unsure, say so. Never fabricate credentials, measurements, research or outcomes. Keep answers clear and warm, usually under 180 words. This is a pilot, not individualized medical care."""
 
-@coach_bp.post("/coach/chat")
+@coach_bp.route("/coach/chat", methods=["POST", "OPTIONS"])
 def coach_chat():
+    if request.method == "OPTIONS":
+        return ("", 204)
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     if not api_key:
         return jsonify({"error": "Pilot še ni aktiviran: skrbnik mora na strežniku nastaviti GEMINI_API_KEY."}), 503
