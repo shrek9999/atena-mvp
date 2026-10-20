@@ -59,7 +59,7 @@ EXPECTED_CSV_COLUMNS = [
     "predlagani_popravek",
     "datum_ocenjevanja",
     "oznaka_ocenjevalca",
-}
+]
 
 
 def test_scenario_dataset_is_explicitly_synthetic_and_contains_no_answers():
