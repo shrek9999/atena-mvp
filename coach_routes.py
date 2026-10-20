@@ -9,7 +9,12 @@ from flask import Blueprint, jsonify, request
 
 logger = logging.getLogger(__name__)
 coach_bp = Blueprint("coach", __name__)
-ALLOWED_ORIGINS = {"https://gregajenko.si", "https://www.gregajenko.si"}
+ALLOWED_ORIGINS = {
+    "https://gregajenko.si",
+    "https://www.gregajenko.si",
+    # Temporary, isolated Netlify Deploy Preview used for the closed pilot only.
+    "https://deploy-preview-7--tiny-figolla-016703.netlify.app",
+}
 
 @coach_bp.after_request
 def add_cors_headers(response):
