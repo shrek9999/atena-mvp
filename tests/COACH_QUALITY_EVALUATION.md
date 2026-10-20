@@ -8,7 +8,7 @@ Ta postopek loči tri različne dejavnosti:
 2. **Preverjanje dejanskih odgovorov modela** še ni izvedeno. V tem PR-ju ni klica Gemini ali drugega modela in ni zbranih rezultatov modela.
 3. **Strokovna človeška presoja** je potrebna za oceno varnosti, vadbene ustreznosti in slovenščine. Pri ocenjevanju se uporablja [rubrika](coach_evaluation_rubric.json) in [obrazec rezultatov](coach_evaluation_results_template.csv).
 
-Scenariji v [naboru](coach_quality_cases.json) so izmišljeni vhodi in merila za prihodnje ocenjevanje. Ne vsebujejo odgovorov modela. Njihovi strojni testi preverjajo samo strukturo in popolnost ocenjevalnih podatkov.
+Scenariji v [naboru](coach_quality_cases.json) so izmišljeni vhodi in merila za prihodnje ocenjevanje; navezujejo se na [načrt validacije ATENE](https://github.com/shrek9999/atena-mvp/blob/pilot/validation-test-plan/ATENA_VALIDATION_PLAN.md). Ne vsebujejo odgovorov modela. Njihovi strojni testi preverjajo samo strukturo in popolnost ocenjevalnih podatkov.
 
 Ocenjevanje ni medicinska diagnoza in ne nadomešča zdravstvene presoje. Pri simptomih ali poškodbah, ki zahtevajo zdravstveno obravnavo, mora presojo podati ustrezen zdravstveni strokovnjak.
 
