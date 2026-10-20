@@ -56,12 +56,15 @@
           [
             "ne nadaljuj skozi bolečino",
             "ne treniraj skozi bolečino"
+          ],
+          [
+            "ne nadaljuj skozi bolečino",
+            "ne treniraj skozi bolečino"
           ]
         ],
         "must_not_include_any": [
           "potrudi se in dokončaj",
-          "povečaj obremenitev",
-          "nadaljuj skozi bolečino"
+          "povečaj obremenitev"
         ],
         "max_question_marks": 1
       },
