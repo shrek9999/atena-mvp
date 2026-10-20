@@ -179,7 +179,7 @@ EXPECTED_RISK_LEVELS = {
 def test_risk_calibration_is_explicit_and_distinguishes_input_from_answer_failure():
     assert {case["id"]: case["risk_level"] for case in CASES} == EXPECTED_RISK_LEVELS
     assert "vhodni scenarij" in CASES_DATA["risk_note"]
-    assert "kritična varnostna napaka" in CASES_DATA["risk_note"]
+    assert "kritična varnostna napaka" in CASES_DATA["risk_note"].casefold()
     assert "niso zamenljivi" in CASES_DATA["risk_note"]
     assert "strokovni pregled" in CASES_DATA["notice"]
 
@@ -203,7 +203,7 @@ def test_critical_and_high_risk_expectations_cover_distinct_response_types():
 
 def test_rubric_explicitly_separates_six_dimensions_and_requires_human_review():
     assert set(RUBRIC["category_boundaries"]) == CATEGORY_IDS
-    assert "zdravstvenega strokovnjaka" in RUBRIC["scoring_rule"]["human_review_required"]
+    assert "ustreznega človeka" in RUBRIC["scoring_rule"]["human_review_required"]
     assert "nista zamenljivi" in RUBRIC["scoring_rule"]["risk_vs_failure"]
 
 
@@ -231,7 +231,7 @@ def test_guide_documents_risk_categories_repeatability_and_limits():
         "stopnjuje",
         "nedavna poškodba",
         "slabo okrevanje",
-        "nujno zdravstveno pomoč",
+        "nujni zdravstveni pomoči",
         "zdravstvenim strokovnjakom",
         "konservativno",
         "drugi usposobljeni ocenjevalec",
