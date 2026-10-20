@@ -68,7 +68,7 @@ def test_scenario_dataset_is_explicitly_synthetic_and_contains_no_answers():
     assert CASES_DATA["validation_plan_reference"].endswith("/ATENA_VALIDATION_PLAN.md")
     assert CASES
     assert all(case.get("sintetičen") is True for case in CASES)
-    assert all("reply" not in case and "odgovor_modela" not in case for case in CASES)
+    assert all("reply" not in case and "odgovor_modela" not in case and "automated" not in case for case in CASES)
 
 
 def test_scenario_ids_are_unique_and_cover_required_user_situations():
