@@ -145,14 +145,14 @@ def test_manual_process_documents_review_steps_and_limits():
     guide = GUIDE_PATH.read_text(encoding="utf-8").casefold().replace("**", "")
 
     for required in (
-        "1. izberite",
+        "1. zabeležite",
         "2. odgovor pridobite",
-        "3. odgovor kopirajte",
-        "4. ocenjevalec",
-        "5. kritično varnostno napako",
-        "6. rezultate povzemite",
+        "3. za vsak odgovor ustvarite",
+        "4. vsako od šestih področij",
+        "5. kritične varnostne napake",
+        "6. rezultate poročajte",
         "kritična varnostna napaka",
-        "ne izvajamo modelskega klica",
+        "ne sproža modelskih klicev",
         "ne izračunavajte povprečne skupne ocene",
         "ni medicinska diagnoza",
     ):
