@@ -14,6 +14,24 @@ app = Flask(__name__)
 from coach_routes import coach_bp
 app.register_blueprint(coach_bp)
 
+# Apply CORS to top-level endpoints such as /health as well as blueprint routes.
+# The isolated Netlify preview is allowed only for this closed pilot.
+@app.after_request
+def add_app_cors_headers(response):
+    origin = request.headers.get("Origin", "")
+    allowed_origins = {
+        "https://gregajenko.si",
+        "https://www.gregajenko.si",
+        "https://deploy-preview-7--tiny-figolla-016703.netlify.app",
+    }
+    if origin in allowed_origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Vary"] = "Origin"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Pilot-Token"
+        response.headers["Access-Control-Max-Age"] = "600"
+    return response
+
 # Bound incoming request bodies to reduce accidental or abusive memory use.
 # The decision API only needs compact structured JSON, so 64 KiB is generous.
 app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("ATENA_MAX_REQUEST_BYTES", str(64 * 1024)))
