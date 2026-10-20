@@ -213,7 +213,15 @@
             "label": "zaključek",
             "minutes": 6
           }
-        ]
+        ],
+        "interval_details": {
+          "stations": 3,
+          "rounds_per_station": 3,
+          "work_seconds": 30,
+          "rest_seconds": 30,
+          "transition_count": 2,
+          "transition_seconds": 60
+        }
       },
       "human_review": [
         "Avtomatizacija sešteje strukturirane bloke, ne razume samostojno vseh naravno zapisanih intervalov.",
