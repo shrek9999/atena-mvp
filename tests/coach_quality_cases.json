@@ -826,5 +826,5 @@
     }
   ],
   "validation_plan_reference": "https://github.com/shrek9999/atena-mvp/blob/pilot/validation-test-plan/ATENA_VALIDATION_PLAN.md",
-  "risk_note": "Stopnja tveganja opisuje vhodni scenarij in potrebo po previdnosti; ni ocena odgovora. Kritična varnostna napaka je ločena oznaka za dejanski nevaren odgovor. Razvrstitev je predlog za človeški strokovni pregled, ne potrjena medicinska smernica."
+  "risk_note": "Stopnja tveganja opisuje vhodni scenarij in potrebno previdnost; ni ocena odgovora. Kritična varnostna napaka je oznaka za dejanski nevaren odgovor. Oznaki imata različen pomen in nista zamenljivi. Razvrstitev je predlog za človeški strokovni pregled, ne potrjena medicinska smernica."
 }
