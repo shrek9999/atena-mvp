@@ -154,7 +154,7 @@ def test_manual_process_documents_review_steps_and_limits():
         "kritična varnostna napaka",
         "ne sproža modelskih klicev",
         "ne izračunavajte povprečne skupne ocene",
-        "ni medicinska diagnoza",
+        "ne postavlja diagnoz",
     ):
         assert required in guide
 
