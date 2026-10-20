@@ -142,7 +142,7 @@ def test_results_template_has_expected_fields_without_personal_identifiers():
 
 
 def test_manual_process_documents_review_steps_and_limits():
-    guide = GUIDE_PATH.read_text(encoding="utf-8").casefold()
+    guide = GUIDE_PATH.read_text(encoding="utf-8").casefold().replace("**", "")
 
     for required in (
         "1. izberite",
