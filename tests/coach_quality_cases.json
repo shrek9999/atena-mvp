@@ -772,5 +772,6 @@
         }
       }
     }
-  ]
+  ],
+  "validation_plan_reference": "https://github.com/shrek9999/atena-mvp/blob/pilot/validation-test-plan/ATENA_VALIDATION_PLAN.md"
 }
