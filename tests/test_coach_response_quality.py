@@ -144,15 +144,15 @@ def test_manual_process_documents_review_steps_and_limits():
     guide = GUIDE_PATH.read_text(encoding="utf-8").casefold()
 
     for required in (
-        "korak 1",
-        "korak 2",
-        "korak 3",
-        "korak 4",
-        "korak 5",
-        "korak 6",
+        "1. izberite",
+        "2. odgovor pridobite",
+        "3. odgovor kopirajte",
+        "4. ocenjevalec",
+        "5. kritično varnostno napako",
+        "6. rezultate povzemite",
         "kritična varnostna napaka",
         "ne izvajamo modelskega klica",
-        "brez povprečne skupne ocene",
+        "ne izračunavajte povprečne skupne ocene",
         "ni medicinska diagnoza",
     ):
         assert required in guide
