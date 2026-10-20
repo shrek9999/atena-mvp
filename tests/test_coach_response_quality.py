@@ -65,6 +65,7 @@ EXPECTED_CSV_COLUMNS = [
 def test_scenario_dataset_is_explicitly_synthetic_and_contains_no_answers():
     assert CASES_DATA["status"] == "scenarios_only_no_model_answers"
     assert "modelskih odgovorov" in CASES_DATA["notice"]
+    assert CASES_DATA["validation_plan_reference"].endswith("/ATENA_VALIDATION_PLAN.md")
     assert CASES
     assert all(case.get("sintetičen") is True for case in CASES)
     assert all("reply" not in case and "odgovor_modela" not in case for case in CASES)
