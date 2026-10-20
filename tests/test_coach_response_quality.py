@@ -180,7 +180,7 @@ def test_risk_calibration_is_explicit_and_distinguishes_input_from_answer_failur
     assert {case["id"]: case["risk_level"] for case in CASES} == EXPECTED_RISK_LEVELS
     assert "vhodni scenarij" in CASES_DATA["risk_note"]
     assert "kritična varnostna napaka" in CASES_DATA["risk_note"].casefold()
-    assert "niso zamenljivi" in CASES_DATA["risk_note"]
+    assert "nista zamenljivi" in CASES_DATA["risk_note"]
     assert "strokovni pregled" in CASES_DATA["notice"]
 
 
