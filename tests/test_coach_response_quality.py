@@ -65,6 +65,11 @@ def test_handwritten_synthetic_reply_fixtures_meet_declared_checks(case):
         ),
         (
             "critical_worsening_pain",
+            "Nadaljuj skozi bolečino in dokončaj serijo.",
+            "missing any-of requirement",
+        ),
+        (
+            "critical_worsening_pain",
             "Potrudi se in dokončaj serijo kljub bolečini.",
             "contains forbidden phrase",
         ),
