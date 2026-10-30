@@ -192,7 +192,8 @@
     "equipment_any": [
       "bodyweight",
       "dumbbell"
-    ]
+    ],
+    "unilateral": true
   },
   {
     "id": "reverse_lunge",
@@ -241,7 +242,8 @@
     "equipment_any": [
       "bodyweight",
       "dumbbell"
-    ]
+    ],
+    "unilateral": true
   },
   {
     "id": "forward_lunge",
@@ -290,7 +292,8 @@
     "equipment_any": [
       "bodyweight",
       "dumbbell"
-    ]
+    ],
+    "unilateral": true
   },
   {
     "id": "rear_foot_elevated_split_squat",
@@ -339,7 +342,8 @@
     "equipment_any": [
       "bodyweight",
       "dumbbell"
-    ]
+    ],
+    "unilateral": true
   },
   {
     "id": "atg_split_squat",
@@ -389,7 +393,8 @@
     "equipment_any": [
       "bodyweight",
       "dumbbell"
-    ]
+    ],
+    "unilateral": true
   },
   {
     "id": "romanian_deadlift",
@@ -770,7 +775,8 @@
       "Izberi oporo, ki omogoča stabilen položaj."
     ],
     "single_joint": false,
-    "equipment_any": []
+    "equipment_any": [],
+    "unilateral": true
   },
   {
     "id": "farmer_carry",
@@ -830,7 +836,8 @@
     "goals": [
       "general_fitness",
       "functional",
-      "strength"
+      "strength",
+      "hypertrophy"
     ],
     "equipment": [],
     "level": "beginner",
@@ -878,7 +885,8 @@
     "goals": [
       "general_fitness",
       "functional",
-      "mobility"
+      "mobility",
+      "hypertrophy"
     ],
     "equipment": [
       "bodyweight"
@@ -1191,7 +1199,7 @@
     "id": "glute_bridge",
     "name": "Most za zadnjico",
     "name_en": "Glute bridge",
-    "pattern": "hinge",
+    "pattern": "hip_extension",
     "joint_type": "multi_joint",
     "goals": [
       "hypertrophy",
@@ -1379,5 +1387,53 @@
     ],
     "single_joint": false,
     "equipment_any": []
+  },
+  {
+    "id": "band_lat_pulldown",
+    "name": "Vleka elastike od zgoraj",
+    "name_en": "Band lat pulldown",
+    "pattern": "vertical_pull",
+    "joint_type": "multi_joint",
+    "goals": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "equipment": [
+      "resistance_band",
+      "anchor_point"
+    ],
+    "equipment_any": [],
+    "level": "beginner",
+    "primary_muscles": [
+      "latissimus_dorsi"
+    ],
+    "secondary_muscles": [
+      "biceps",
+      "trunk"
+    ],
+    "cues": [
+      "Elastiko varno pritrdi nad višino glave.",
+      "Vleci komolce navzdol ob trupu.",
+      "Vrnitev izvedi nadzorovano."
+    ],
+    "common_errors": [
+      "Pritrditev elastike na nestabilno točko.",
+      "Pretirano usločanje trupa.",
+      "Sunkovito vlečenje."
+    ],
+    "regressions": [
+      "Vleka z lažjo elastiko"
+    ],
+    "progressions": [
+      "Enoročna vleka elastike od zgoraj"
+    ],
+    "alternatives": [
+      "pull_up"
+    ],
+    "warnings": [
+      "Pred začetkom preveri pritrditev in stanje elastike."
+    ],
+    "single_joint": false
   }
 ]

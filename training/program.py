@@ -13,6 +13,7 @@ PATTERN_LABELS = {
     "squat": "počep",
     "lunge": "izpadni korak",
     "hinge": "predklon z ravnim hrbtom",
+    "hip_extension": "izteg kolkov",
     "horizontal_push": "horizontalni potisk",
     "horizontal_pull": "horizontalni poteg",
     "vertical_push": "vertikalni potisk",
@@ -25,7 +26,7 @@ PATTERN_LABELS = {
     "accessory": "dopolnilna vaja",
 }
 PATTERN_ORDER = [
-    "squat", "lunge", "hinge", "horizontal_push", "horizontal_pull",
+    "squat", "lunge", "hinge", "hip_extension", "horizontal_push", "horizontal_pull",
     "vertical_push", "vertical_pull", "carry", "anti_rotation",
     "trunk_stability", "jump", "hinge_power",
 ]
@@ -127,6 +128,8 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
             ["vertical_pull", "carry", "anti_rotation"],
         ]
     patterns = base + extras[session_index]
+    if goal == "hypertrophy" and session_index == sessions - 1:
+        patterns += ["hip_extension"]
     if goal == "power":
         patterns += ["jump", "hinge_power"]
     if include_accessories:
@@ -134,18 +137,39 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
     return patterns
 
 
-def _prescription(goal: str, level: str, pattern: str) -> dict:
-    if goal == "strength":
-        sets, reps, rir, rest = (4, "3–6", 2, 180) if level == "advanced" else (3, "4–6", 2, 150)
+def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
+    """Exercise-class prescriptions; avoid one generic dose for every movement."""
+    unilateral = bool(exercise.get("unilateral"))
+    if goal == "power" or pattern in {"jump", "hinge_power"}:
+        sets, reps, rir, rest = 3, "3–5", 4, 150
+    elif goal == "strength":
+        if pattern in {"squat", "hinge"}:
+            sets, reps, rir, rest = (4, "3–6", 2, 180) if level == "advanced" else (3, "4–6", 2, 150)
+        elif pattern in {"trunk_stability", "anti_rotation", "carry", "hip_extension"}:
+            sets, reps, rir, rest = 2, "8–12", 3, 75
+        else:
+            sets, reps, rir, rest = 3, ("6–8" if unilateral else "5–8"), 2, (120 if unilateral else 150)
     elif goal == "hypertrophy":
-        sets, reps, rir, rest = (3, "6–12", 2, 120) if level == "advanced" else (3, "8–12", 2 if level == "intermediate" else 3, 90)
-    elif goal == "power" or pattern in {"jump", "hinge_power"}:
-        sets, reps, rir, rest = 3, "3–5", 4, 120
+        if pattern in {"squat", "hinge"}:
+            sets, reps, rir, rest = 3, "6–10", (2 if level != "beginner" else 3), 150 if level == "advanced" else 120
+        elif pattern == "lunge" or unilateral:
+            sets, reps, rir, rest = 2, "8–10", (2 if level != "beginner" else 3), 90
+        elif pattern in {"vertical_push", "vertical_pull"}:
+            sets, reps, rir, rest = 2, "8–12", (2 if level != "beginner" else 3), 90
+        elif pattern in {"trunk_stability", "anti_rotation"}:
+            sets, reps, rir, rest = 2, "10–15", 3, 60
+        elif pattern in {"hip_extension", "carry"}:
+            sets, reps, rir, rest = 2, "10–15", 2 if level != "beginner" else 3, 75
+        else:
+            sets, reps, rir, rest = 3, "8–12", (2 if level != "beginner" else 3), 90
     else:
-        sets, reps, rir, rest = (3, "6–12", 3, 90) if level != "beginner" else (2, "8–12", 3, 75)
-    if pattern in {"jump", "hinge_power"}:
-        sets, reps, rir, rest = 3, "3–5", 4, 120
-    return {"sets": sets, "reps": reps, "rir": rir, "rest_seconds": rest}
+        if pattern in {"trunk_stability", "anti_rotation"}:
+            sets, reps, rir, rest = 2, "10–15", 3, 60
+        elif pattern in {"hip_extension", "carry"}:
+            sets, reps, rir, rest = 2, "10–15", 3, 75
+        else:
+            sets, reps, rir, rest = (3, "6–12", 3, 90) if level != "beginner" else (2, "8–12", 3, 75)
+    return {"sets": sets, "reps": reps, "rir": rir, "rest_seconds": rest, "rep_unit": "per_side" if unilateral else "total"}
 
 
 def _estimated_minutes(exercises: list[dict]) -> int:
@@ -155,7 +179,7 @@ def _estimated_minutes(exercises: list[dict]) -> int:
         prescription = item["prescription"]
         reps = int(prescription["reps"].split("–")[-1])
         sets = prescription["sets"]
-        execution = reps * 3 * sets
+        execution = reps * 3 * sets * (2 if prescription.get("rep_unit") == "per_side" else 1)
         rests = max(0, sets - 1) * prescription["rest_seconds"]
         total_seconds += execution + rests + 75
     return round(total_seconds / 60)
@@ -190,7 +214,26 @@ def generate_program(profile: object, feedback: object = None) -> dict:
         if item["id"] not in p["excluded_exercise_ids"]
         and item["pattern"] not in p["excluded_patterns"]
     ]
-    catalogue_names = {item["id"]: item["name"] for item in get_exercises(include_accessories=True)}
+    reference_catalogue = get_exercises(include_accessories=True)
+    catalogue_names = {item["id"]: item["name"] for item in reference_catalogue}
+    reference_by_name = {item["name"]: item for item in reference_catalogue}
+
+    def safe_references(values: list[str], current_id: str) -> list[str]:
+        resolved = []
+        for value in values:
+            reference = next((item for item in reference_catalogue if item["id"] == value), None)
+            if reference is None:
+                reference = reference_by_name.get(value)
+            if reference is None or reference["id"] == current_id:
+                continue
+            available = set(p["equipment"]) | {"bodyweight"}
+            if not set(reference["equipment"]).issubset(available):
+                continue
+            if reference["equipment_any"] and not set(reference["equipment_any"]).intersection(available):
+                continue
+            if reference["name"] not in resolved:
+                resolved.append(reference["name"])
+        return resolved
     by_pattern: dict[str, list[dict]] = {}
     for exercise in catalogue:
         by_pattern.setdefault(exercise["pattern"], []).append(exercise)
@@ -219,7 +262,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             # Rotate variants across sessions and prefer the least-used exercise to distribute exposure.
             candidate = min(candidates, key=lambda item: (used_counts[item["id"]], item["level"] != p["experience"], item["id"]))
             used_counts[candidate["id"]] += 1
-            prescription = _prescription(p["goal"], p["experience"], pattern)
+            prescription = _prescription(p["goal"], p["experience"], pattern, candidate)
             if reduce_load:
                 prescription["sets"] = max(2, prescription["sets"] - 1)
                 prescription["rir"] = min(4, prescription["rir"] + 1)
@@ -235,12 +278,13 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 "pattern": pattern,
                 "pattern_label": PATTERN_LABELS.get(pattern, pattern),
                 "joint_type": candidate["joint_type"],
+                "reps_per_side": bool(candidate.get("unilateral")),
                 "primary_muscles": candidate["primary_muscles"],
                 "equipment": selected_equipment,
                 "cues": candidate["cues"],
                 "warnings": candidate["warnings"],
-                "regressions": [_display_exercise_reference(value, catalogue_names) for value in candidate["regressions"]],
-                "alternatives": [_display_exercise_reference(value, catalogue_names) for value in candidate["alternatives"]],
+                "regressions": safe_references(candidate["regressions"], candidate["id"]),
+                "alternatives": safe_references(candidate["alternatives"], candidate["id"]),
                 "prescription": prescription,
             })
             for muscle in candidate["primary_muscles"]:
@@ -249,7 +293,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
         # Keep the most important four-to-six items and reduce accessory load to fit the clock.
         while selected and _estimated_minutes(selected) > p["session_minutes"]:
             removable = next((i for i in range(len(selected) - 1, -1, -1)
-                              if selected[i]["pattern"] in {"accessory", "carry", "anti_rotation", "trunk_stability", "vertical_push", "vertical_pull", "lunge"}), None)
+                              if selected[i]["pattern"] in {"accessory", "hip_extension", "carry", "vertical_push", "vertical_pull", "lunge", "anti_rotation", "trunk_stability"}), None)
             if removable is None:
                 break
             removed = selected.pop(removable)
@@ -284,7 +328,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             pattern_session_frequency[item["pattern"]] += 1
             pattern_work_sets[item["pattern"]] += item["prescription"]["sets"]
     return {
-        "program_version": "2.1.0",
+        "program_version": "2.2.0",
         "goal": p["goal"],
         "experience": p["experience"],
         "sessions_per_week": p["sessions_per_week"],
