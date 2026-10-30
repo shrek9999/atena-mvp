@@ -14,7 +14,7 @@ BASE = {
 
 def test_generates_two_day_hypertrophy_program_from_catalogue_only():
     plan = generate_program(BASE)
-    assert plan["program_version"] == "2.0.0"
+    assert plan["program_version"] == "2.1.0"
     assert len(plan["sessions"]) == 2
     assert all(len(session["exercises"]) >= 3 for session in plan["sessions"])
     assert all(ex["joint_type"] == "multi_joint" for session in plan["sessions"] for ex in session["exercises"])
