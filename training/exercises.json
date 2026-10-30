@@ -432,9 +432,7 @@
     "progressions": [
       "Romunski mrtvi dvig z drogom"
     ],
-    "alternatives": [
-      "hip_thrust"
-    ],
+    "alternatives": [],
     "warnings": [
       "Obseg giba omeji z nadzorom položaja trupa."
     ],
@@ -498,7 +496,7 @@
     "id": "hip_thrust",
     "name": "Potisk bokov",
     "name_en": "Hip thrust",
-    "pattern": "hinge",
+    "pattern": "hip_extension",
     "joint_type": "multi_joint",
     "goals": [
       "hypertrophy",
@@ -1231,8 +1229,7 @@
       "Most za zadnjico z ročko na medenici"
     ],
     "alternatives": [
-      "hip_thrust",
-      "romanian_deadlift"
+      "hip_thrust"
     ],
     "warnings": [
       "Obremenitev namesti varno in uporabi podlogo."
