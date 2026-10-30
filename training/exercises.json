@@ -10,10 +10,7 @@
       "strength",
       "general_fitness"
     ],
-    "equipment": [
-      "dumbbell",
-      "kettlebell"
-    ],
+    "equipment": [],
     "level": "beginner",
     "primary_muscles": [
       "quadriceps",
@@ -45,7 +42,11 @@
     "warnings": [
       "Obseg giba in obremenitev prilagodi trenutnim sposobnostim."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": [
+      "dumbbell",
+      "kettlebell"
+    ]
   },
   {
     "id": "back_squat",
@@ -94,7 +95,8 @@
     "warnings": [
       "Zahteva ustrezno tehniko, stojalo in varovala."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": []
   },
   {
     "id": "front_squat",
@@ -139,7 +141,8 @@
     "warnings": [
       "Obseg in položaj prijema prilagodi gibljivosti zapestij in ramen."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": []
   },
   {
     "id": "split_squat",
@@ -152,10 +155,7 @@
       "strength",
       "general_fitness"
     ],
-    "equipment": [
-      "bodyweight",
-      "dumbbell"
-    ],
+    "equipment": [],
     "level": "beginner",
     "primary_muscles": [
       "quadriceps",
@@ -188,7 +188,11 @@
     "warnings": [
       "Začni z obsegom, ki ga lahko nadzoruješ."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": [
+      "bodyweight",
+      "dumbbell"
+    ]
   },
   {
     "id": "reverse_lunge",
@@ -201,10 +205,7 @@
       "strength",
       "general_fitness"
     ],
-    "equipment": [
-      "bodyweight",
-      "dumbbell"
-    ],
+    "equipment": [],
     "level": "beginner",
     "primary_muscles": [
       "quadriceps",
@@ -236,7 +237,11 @@
     "warnings": [
       "Prilagodi dolžino koraka in globino."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": [
+      "bodyweight",
+      "dumbbell"
+    ]
   },
   {
     "id": "forward_lunge",
@@ -249,10 +254,7 @@
       "strength",
       "general_fitness"
     ],
-    "equipment": [
-      "bodyweight",
-      "dumbbell"
-    ],
+    "equipment": [],
     "level": "intermediate",
     "primary_muscles": [
       "quadriceps",
@@ -284,7 +286,11 @@
     "warnings": [
       "Zahteva več nadzora pri zaviranju kot izpadni korak nazaj."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": [
+      "bodyweight",
+      "dumbbell"
+    ]
   },
   {
     "id": "rear_foot_elevated_split_squat",
@@ -297,8 +303,6 @@
       "strength"
     ],
     "equipment": [
-      "bodyweight",
-      "dumbbell",
       "bench"
     ],
     "level": "intermediate",
@@ -331,7 +335,11 @@
     "warnings": [
       "Višino opore in globino prilagodi posamezniku."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": [
+      "bodyweight",
+      "dumbbell"
+    ]
   },
   {
     "id": "atg_split_squat",
@@ -344,10 +352,7 @@
       "strength",
       "mobility"
     ],
-    "equipment": [
-      "bodyweight",
-      "dumbbell"
-    ],
+    "equipment": [],
     "level": "advanced",
     "primary_muscles": [
       "quadriceps",
@@ -380,7 +385,11 @@
     "warnings": [
       "Velik obseg giba ni obvezen; ne izvajaj skozi naraščajočo bolečino."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": [
+      "bodyweight",
+      "dumbbell"
+    ]
   },
   {
     "id": "romanian_deadlift",
@@ -392,10 +401,7 @@
       "hypertrophy",
       "strength"
     ],
-    "equipment": [
-      "barbell",
-      "dumbbell"
-    ],
+    "equipment": [],
     "level": "intermediate",
     "primary_muscles": [
       "hamstrings",
@@ -427,7 +433,11 @@
     "warnings": [
       "Obseg giba omeji z nadzorom položaja trupa."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": [
+      "barbell",
+      "dumbbell"
+    ]
   },
   {
     "id": "deadlift",
@@ -476,7 +486,8 @@
     "warnings": [
       "Zahteva učenje postavitve in obvladovanje obremenitve."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": []
   },
   {
     "id": "hip_thrust",
@@ -489,9 +500,7 @@
       "strength"
     ],
     "equipment": [
-      "barbell",
-      "bench",
-      "bodyweight"
+      "bench"
     ],
     "level": "beginner",
     "primary_muscles": [
@@ -522,7 +531,10 @@
     "warnings": [
       "Opora za hrbet mora biti stabilna."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": [
+      "barbell"
+    ]
   },
   {
     "id": "push_up",
@@ -569,7 +581,8 @@
     "warnings": [
       "Višino opore prilagodi sposobnosti."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": []
   },
   {
     "id": "dumbbell_bench_press",
@@ -614,7 +627,8 @@
     "warnings": [
       "Uporabi obremenitev, ki jo lahko varno odložiš."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": []
   },
   {
     "id": "overhead_press",
@@ -626,10 +640,7 @@
       "hypertrophy",
       "strength"
     ],
-    "equipment": [
-      "barbell",
-      "dumbbell"
-    ],
+    "equipment": [],
     "level": "intermediate",
     "primary_muscles": [
       "deltoids"
@@ -660,7 +671,11 @@
     "warnings": [
       "Obseg in različico prilagodi gibljivosti ter toleranci ramen."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": [
+      "barbell",
+      "dumbbell"
+    ]
   },
   {
     "id": "pull_up",
@@ -706,7 +721,8 @@
     "warnings": [
       "Prilagodi obseg in pomoč trenutni sposobnosti."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": []
   },
   {
     "id": "one_arm_row",
@@ -753,7 +769,8 @@
     "warnings": [
       "Izberi oporo, ki omogoča stabilen položaj."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": []
   },
   {
     "id": "farmer_carry",
@@ -766,10 +783,7 @@
       "general_fitness",
       "functional"
     ],
-    "equipment": [
-      "dumbbell",
-      "kettlebell"
-    ],
+    "equipment": [],
     "level": "beginner",
     "primary_muscles": [
       "grip",
@@ -801,7 +815,11 @@
     "warnings": [
       "Pot naj bo prosta in nedrseča."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": [
+      "dumbbell",
+      "kettlebell"
+    ]
   },
   {
     "id": "pallof_press",
@@ -814,10 +832,7 @@
       "functional",
       "strength"
     ],
-    "equipment": [
-      "cable",
-      "resistance_band"
-    ],
+    "equipment": [],
     "level": "beginner",
     "primary_muscles": [
       "obliques",
@@ -848,7 +863,11 @@
     "warnings": [
       "Upor naj omogoča popoln nadzor."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": [
+      "cable",
+      "resistance_band"
+    ]
   },
   {
     "id": "dead_bug",
@@ -893,7 +912,8 @@
     "warnings": [
       "Zmanjšaj obseg, če izgubiš nadzor."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": []
   },
   {
     "id": "lateral_raise",
@@ -935,7 +955,8 @@
     "warnings": [
       "Obseg prilagodi toleranci ramen."
     ],
-    "single_joint": true
+    "single_joint": true,
+    "equipment_any": []
   },
   {
     "id": "biceps_curl",
@@ -978,7 +999,8 @@
     "warnings": [
       "Izberi obremenitev brez izgube nadzora."
     ],
-    "single_joint": true
+    "single_joint": true,
+    "equipment_any": []
   },
   {
     "id": "triceps_pressdown",
@@ -1018,7 +1040,8 @@
     "warnings": [
       "Obremenitev prilagodi udobju komolcev."
     ],
-    "single_joint": true
+    "single_joint": true,
+    "equipment_any": []
   },
   {
     "id": "box_jump",
@@ -1065,7 +1088,8 @@
     "warnings": [
       "Izvajaj le ob ustrezni pripravljenosti in varnem prostoru; sestopi, ne skači dol."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": []
   },
   {
     "id": "kettlebell_swing",
@@ -1113,6 +1137,7 @@
     "warnings": [
       "Najprej obvladaj kolčni pregib in mrtvi dvig."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "equipment_any": []
   }
 ]
