@@ -53,7 +53,7 @@ def validate_catalogue(exercises: object) -> None:
             raise CatalogueValidationError(f"{exercise_id}: neveljavna zahtevnost.")
         if exercise["single_joint"] != (exercise["joint_type"] == "single_joint"):
             raise CatalogueValidationError(f"{exercise_id}: single_joint in joint_type nista usklajena.")
-        for field in ("goals", "equipment", "primary_muscles", "secondary_muscles",
+        for field in ("goals", "equipment", "equipment_any", "primary_muscles", "secondary_muscles",
                       "cues", "common_errors", "regressions", "progressions",
                       "alternatives", "warnings"):
             value = exercise[field]
