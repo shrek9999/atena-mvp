@@ -86,3 +86,11 @@ def test_required_equipment_still_requires_all_items():
     assert "back_squat" not in records
     records_with_rack = {item["id"] for item in get_exercises(equipment={"barbell", "rack"})}
     assert "back_squat" in records_with_rack
+
+
+
+def test_equipment_any_must_be_a_list():
+    item = load_catalogue()[0]
+    item["equipment_any"] = "dumbbell"
+    with pytest.raises(CatalogueValidationError, match="equipment_any"):
+        validate_catalogue([item])
