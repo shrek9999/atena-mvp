@@ -173,7 +173,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
 
 
 def _estimated_minutes(exercises: list[dict]) -> int:
-    # Approximation includes execution, inter-set rests, and 75 s transitions.
+    # Approximation includes execution, inter-set rests, and 60 s transitions.
     total_seconds = 6 * 60
     for item in exercises:
         prescription = item["prescription"]
@@ -181,7 +181,7 @@ def _estimated_minutes(exercises: list[dict]) -> int:
         sets = prescription["sets"]
         execution = reps * 3 * sets * (2 if prescription.get("rep_unit") == "per_side" else 1)
         rests = max(0, sets - 1) * prescription["rest_seconds"]
-        total_seconds += execution + rests + 75
+        total_seconds += execution + rests + 60
     return round(total_seconds / 60)
 
 
@@ -218,13 +218,18 @@ def generate_program(profile: object, feedback: object = None) -> dict:
     catalogue_names = {item["id"]: item["name"] for item in reference_catalogue}
     reference_by_name = {item["name"]: item for item in reference_catalogue}
 
-    def safe_references(values: list[str], current_id: str) -> list[str]:
+    def safe_references(values: list[str], current_id: str, current_pattern: str) -> list[str]:
         resolved = []
+        compatible_patterns = {current_pattern}
+        if current_pattern in {"anti_rotation", "trunk_stability"}:
+            compatible_patterns.update({"anti_rotation", "trunk_stability"})
         for value in values:
             reference = next((item for item in reference_catalogue if item["id"] == value), None)
             if reference is None:
                 reference = reference_by_name.get(value)
             if reference is None or reference["id"] == current_id:
+                continue
+            if reference["pattern"] not in compatible_patterns:
                 continue
             available = set(p["equipment"]) | {"bodyweight"}
             if not set(reference["equipment"]).issubset(available):
@@ -272,8 +277,20 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 key=lambda item: (item == "bodyweight", item),
             )
             selected_equipment = candidate["equipment"] + optional_equipment[:1]
+            regressions = safe_references(candidate["regressions"], candidate["id"], pattern)
+            alternatives = [
+                value for value in safe_references(candidate["alternatives"], candidate["id"], pattern)
+                if value not in regressions
+            ]
+            exercise_category = (
+                "stability" if pattern in {"trunk_stability", "anti_rotation"}
+                else "hip_extension" if pattern == "hip_extension"
+                else "accessory" if candidate["single_joint"]
+                else "compound"
+            )
             selected.append({
                 "exercise_id": candidate["id"],
+                "exercise_category": exercise_category,
                 "name": candidate["name"],
                 "pattern": pattern,
                 "pattern_label": PATTERN_LABELS.get(pattern, pattern),
@@ -283,8 +300,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 "equipment": selected_equipment,
                 "cues": candidate["cues"],
                 "warnings": candidate["warnings"],
-                "regressions": safe_references(candidate["regressions"], candidate["id"]),
-                "alternatives": safe_references(candidate["alternatives"], candidate["id"]),
+                "regressions": regressions,
+                "alternatives": alternatives,
                 "prescription": prescription,
             })
             for muscle in candidate["primary_muscles"]:
@@ -328,7 +345,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             pattern_session_frequency[item["pattern"]] += 1
             pattern_work_sets[item["pattern"]] += item["prescription"]["sets"]
     return {
-        "program_version": "2.2.0",
+        "program_version": "2.3.0",
         "goal": p["goal"],
         "experience": p["experience"],
         "sessions_per_week": p["sessions_per_week"],
