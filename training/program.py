@@ -169,7 +169,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
             sets, reps, rir, rest = 2, "10–15", 3, 75
         else:
             sets, reps, rir, rest = (3, "6–12", 3, 90) if level != "beginner" else (2, "8–12", 3, 75)
-    return {"sets": sets, "reps": reps, "rir": rir, "rest_seconds": rest, "rep_unit": "per_side" if unilateral else "total"}
+    return {"sets": sets, "reps": reps, "rir": rir, "rest_seconds": rest, "rep_unit": "per_side" if (unilateral or exercise.get("reps_per_side")) else "total"}
 
 
 def _estimated_minutes(exercises: list[dict]) -> int:
@@ -307,7 +307,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 "pattern": pattern,
                 "pattern_label": PATTERN_LABELS.get(pattern, pattern),
                 "joint_type": candidate["joint_type"],
-                "reps_per_side": bool(candidate.get("unilateral")),
+                "reps_per_side": bool(candidate.get("unilateral") or candidate.get("reps_per_side")),
                 "primary_muscles": candidate["primary_muscles"],
                 "equipment": selected_equipment,
                 "cues": candidate["cues"],
