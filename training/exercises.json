@@ -872,7 +872,8 @@
     "equipment_any": [
       "cable",
       "resistance_band"
-    ]
+    ],
+    "reps_per_side": true
   },
   {
     "id": "dead_bug",
@@ -919,7 +920,8 @@
       "Zmanjšaj obseg, če izgubiš nadzor."
     ],
     "single_joint": false,
-    "equipment_any": []
+    "equipment_any": [],
+    "reps_per_side": true
   },
   {
     "id": "lateral_raise",
