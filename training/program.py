@@ -35,6 +35,33 @@ class ProgramValidationError(ValueError):
     """Raised when the supplied training profile cannot be safely planned."""
 
 
+class ProgramSafetyBlock(ProgramValidationError):
+    """Raised when feedback indicates that automatic programme adaptation must stop."""
+
+
+def _validate_feedback(feedback: object) -> dict | None:
+    if feedback is None:
+        return None
+    if not isinstance(feedback, dict):
+        raise ProgramValidationError("Povratna informacija mora biti JSON objekt.")
+    difficulty = feedback.get("difficulty", "right")
+    completed = feedback.get("completed", True)
+    discomfort = feedback.get("discomfort", "no")
+    if difficulty not in {"easy", "right", "hard"}:
+        raise ProgramValidationError("Težavnost mora biti easy, right ali hard.")
+    if not isinstance(completed, bool):
+        raise ProgramValidationError("completed mora biti true ali false.")
+    if discomfort not in {"no", "yes"}:
+        raise ProgramValidationError("discomfort mora biti yes ali no.")
+    if discomfort == "yes":
+        raise ProgramSafetyBlock(
+            "Ob bolečini ali novem nelagodju ne bom samodejno spreminjal programa. " 
+            "Prekini oziroma prilagodi vadbo; če so simptomi novi, izraziti ali vztrajajo, " 
+            "se posvetuj z ustreznim zdravstvenim strokovnjakom."
+        )
+    return {"difficulty": difficulty, "completed": completed}
+
+
 def _positive_int(value: Any, field: str, minimum: int, maximum: int) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or not minimum <= value <= maximum:
         raise ProgramValidationError(f"Polje {field} mora biti celo število med {minimum} in {maximum}.")
@@ -134,9 +161,11 @@ def _estimated_minutes(exercises: list[dict]) -> int:
     return round(total_seconds / 60)
 
 
-def generate_program(profile: object) -> dict:
-    """Generate a repeatable weekly plan from validated catalogue entries only."""
+def generate_program(profile: object, feedback: object = None) -> dict:
+    """Generate a repeatable catalogue plan, conservatively adapting to the last session."""
     p = validate_profile(profile)
+    response = _validate_feedback(feedback)
+    reduce_load = bool(response and (response["difficulty"] == "hard" or not response["completed"]))
     goal_sources = {
         "functional": ["functional", "general_fitness", "strength"],
         "general_fitness": ["general_fitness", "functional", "strength"],
@@ -185,6 +214,10 @@ def generate_program(profile: object) -> dict:
             candidate = min(candidates, key=lambda item: (used_counts[item["id"]], item["level"] != p["experience"], item["id"]))
             used_counts[candidate["id"]] += 1
             prescription = _prescription(p["goal"], p["experience"], pattern)
+            if reduce_load:
+                prescription["sets"] = max(2, prescription["sets"] - 1)
+                prescription["rir"] = min(4, prescription["rir"] + 1)
+                prescription["rest_seconds"] += 30
             optional_equipment = sorted(
                 set(candidate["equipment_any"]) & set(p["equipment"]),
                 key=lambda item: (item == "bodyweight", item),
@@ -250,7 +283,9 @@ def generate_program(profile: object) -> dict:
             "single_joint_accessories": p["include_accessories"],
             "progression": "Ko pri vseh serijah dosežeš zgornjo mejo ponovitev in ohraniš predpisani RIR, pri naslednjem treningu rahlo zvišaj obremenitev. Če tehnika ali regeneracija odstopata, obdrži ali znižaj obremenitev.",
             "deload": "Razbremenitev se ne določa avtomatično po koledarju; uporabi jo ob vztrajnem slabšanju zmogljivosti, regeneracije ali kakovosti izvedbe.",
+            "last_session_adjustment": "reduce_sets_increase_reserve" if reduce_load else ("hold_and_progress_by_rule" if response and response["difficulty"] == "easy" else "maintain"),
         },
+        "feedback_applied": response,
         "sessions": plans,
         "weekly_summary": {
             "total_work_sets": total_sets,
