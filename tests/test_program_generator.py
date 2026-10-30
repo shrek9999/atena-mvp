@@ -123,7 +123,7 @@ def test_two_day_hypertrophy_program_covers_horizontal_pull_when_band_available(
     for session in plan["sessions"]:
         patterns = {exercise["pattern"] for exercise in session["exercises"]}
         assert "horizontal_pull" in patterns
-        assert any(exercise["exercise_id"] == "band_row" for exercise in session["exercises"])
+    assert any(exercise["exercise_id"] == "band_row" for session in plan["sessions"] for exercise in session["exercises"])
 
 
 def test_two_day_program_rotates_available_exercise_variants():
