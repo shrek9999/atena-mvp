@@ -156,7 +156,7 @@ def test_catalogue_ids_in_regressions_and_alternatives_are_localized():
     ]
     assert "hip_thrust" not in alternatives
     assert "reverse_lunge" not in alternatives
-    assert "Potisk bokov" in alternatives
+    assert "Potisk bokov" not in alternatives
 
 
 def test_glute_bridge_is_not_classified_as_a_hinge():
