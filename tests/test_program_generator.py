@@ -14,7 +14,7 @@ BASE = {
 
 def test_generates_two_day_hypertrophy_program_from_catalogue_only():
     plan = generate_program(BASE)
-    assert plan["program_version"] == "2.2.0"
+    assert plan["program_version"] == "2.3.0"
     assert len(plan["sessions"]) == 2
     assert all(len(session["exercises"]) >= 3 for session in plan["sessions"])
     assert all(ex["joint_type"] == "multi_joint" for session in plan["sessions"] for ex in session["exercises"])
@@ -241,3 +241,37 @@ def test_band_vertical_pull_is_selected_only_with_explicit_anchor_equipment():
     ]
     assert any(ex["exercise_id"] == "band_lat_pulldown" for ex in vertical_pulls)
     assert all("anchor_point" in ex["equipment"] for ex in vertical_pulls if ex["exercise_id"] == "band_lat_pulldown")
+
+
+def test_hip_thrust_and_glute_bridge_are_classified_as_hip_extension():
+    from training.catalogue import get_exercise
+    assert get_exercise("glute_bridge")["pattern"] == "hip_extension"
+    assert get_exercise("hip_thrust")["pattern"] == "hip_extension"
+
+
+def test_core_stability_exercises_are_not_labelled_as_compound_lifts():
+    plan = generate_program({**BASE, "session_minutes": 60})
+    core = [
+        ex for session in plan["sessions"] for ex in session["exercises"]
+        if ex["pattern"] in {"trunk_stability", "anti_rotation"}
+    ]
+    assert core
+    assert all(ex["exercise_category"] == "stability" for ex in core)
+
+
+def test_alternatives_preserve_movement_pattern_and_do_not_duplicate_regressions():
+    plan = generate_program({**BASE, "equipment": ["dumbbell", "resistance_band"], "session_minutes": 60})
+    for session in plan["sessions"]:
+        for ex in session["exercises"]:
+            assert not set(ex["alternatives"]).intersection(ex["regressions"])
+    bridge = next(ex for session in plan["sessions"] for ex in session["exercises"] if ex["exercise_id"] == "glute_bridge")
+    assert "Romunski mrtvi dvig" not in bridge["alternatives"]
+
+
+def test_45_minute_hypertrophy_program_keeps_a_three_minute_time_buffer():
+    plan = generate_program({**BASE, "session_minutes": 45})
+    assert all(session["estimated_minutes"] <= 42 for session in plan["sessions"])
+    first = {ex["pattern"] for ex in plan["sessions"][0]["exercises"]}
+    second = {ex["pattern"] for ex in plan["sessions"][1]["exercises"]}
+    assert "trunk_stability" in first
+    assert "anti_rotation" in second
