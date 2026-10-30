@@ -135,11 +135,20 @@ def _estimated_minutes(exercises: list[dict]) -> int:
 def generate_program(profile: object) -> dict:
     """Generate a repeatable weekly plan from validated catalogue entries only."""
     p = validate_profile(profile)
-    catalogue = get_exercises(
-        goal=p["goal"],
-        equipment=p["equipment"],
-        include_accessories=p["include_accessories"],
-    )
+    goal_sources = {
+        "functional": ["functional", "general_fitness", "strength"],
+        "general_fitness": ["general_fitness", "functional", "strength"],
+        "power": ["power", "strength", "general_fitness"],
+    }.get(p["goal"], [p["goal"]])
+    catalogue_by_id = {}
+    for source_goal in goal_sources:
+        for exercise in get_exercises(
+            goal=source_goal,
+            equipment=p["equipment"],
+            include_accessories=p["include_accessories"],
+        ):
+            catalogue_by_id[exercise["id"]] = exercise
+    catalogue = list(catalogue_by_id.values())
     catalogue = [
         item for item in catalogue
         if item["id"] not in p["excluded_exercise_ids"]
