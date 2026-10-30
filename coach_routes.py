@@ -6,7 +6,7 @@ import logging
 import urllib.error
 import urllib.request
 from flask import Blueprint, jsonify, request
-from training.program import ProgramValidationError, generate_program
+from training.program import ProgramSafetyBlock, ProgramValidationError, generate_program
 
 logger = logging.getLogger(__name__)
 coach_bp = Blueprint("coach", __name__)
@@ -139,8 +139,12 @@ def coach_program():
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return jsonify({"error": "Pričakovan je JSON objekt s profilom vadečega."}), 400
+    profile = payload.get("profile", payload)
+    feedback = payload.get("feedback")
     try:
-        result = generate_program(payload)
+        result = generate_program(profile, feedback=feedback)
+    except ProgramSafetyBlock as exc:
+        return jsonify({"blocked": True, "message": str(exc)}), 409
     except ProgramValidationError as exc:
         return jsonify({"error": str(exc)}), 400
     except (OSError, ValueError):

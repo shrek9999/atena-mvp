@@ -46,3 +46,65 @@ def test_program_endpoint_rejects_invalid_profile(monkeypatch):
         },
     )
     assert response.status_code == 400
+
+
+
+def test_program_endpoint_accepts_nested_profile_and_reduces_hard_feedback(monkeypatch):
+    client = _client(monkeypatch)
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-secret"},
+        json={
+            "profile": {
+                "goal": "hypertrophy", "experience": "intermediate",
+                "equipment": ["dumbbell", "bench"], "sessions_per_week": 2,
+                "session_minutes": 60,
+            },
+            "feedback": {"difficulty": "hard", "completed": True, "discomfort": "no"},
+        },
+    )
+    assert response.status_code == 200
+    program = response.get_json()["program"]
+    assert program["feedback_applied"]["difficulty"] == "hard"
+    assert program["methodology"]["last_session_adjustment"] == "reduce_sets_increase_reserve"
+    first = program["sessions"][0]["exercises"][0]["prescription"]
+    assert first["sets"] == 2
+    assert first["rir"] == 3
+
+
+def test_program_endpoint_holds_after_easy_feedback_instead_of_auto_progressing(monkeypatch):
+    client = _client(monkeypatch)
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-secret"},
+        json={
+            "profile": {
+                "goal": "hypertrophy", "experience": "intermediate",
+                "equipment": ["dumbbell", "bench"], "sessions_per_week": 2,
+                "session_minutes": 60,
+            },
+            "feedback": {"difficulty": "easy", "completed": True, "discomfort": "no"},
+        },
+    )
+    assert response.status_code == 200
+    program = response.get_json()["program"]
+    assert program["methodology"]["last_session_adjustment"] == "hold_and_progress_by_rule"
+    assert program["sessions"][0]["exercises"][0]["prescription"]["sets"] == 3
+
+
+def test_program_endpoint_blocks_automatic_adaptation_when_discomfort_reported(monkeypatch):
+    client = _client(monkeypatch)
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-secret"},
+        json={
+            "profile": {
+                "goal": "hypertrophy", "experience": "intermediate",
+                "equipment": ["dumbbell", "bench"], "sessions_per_week": 2,
+                "session_minutes": 60,
+            },
+            "feedback": {"difficulty": "hard", "completed": False, "discomfort": "yes"},
+        },
+    )
+    assert response.status_code == 409
+    assert response.get_json()["blocked"] is True
