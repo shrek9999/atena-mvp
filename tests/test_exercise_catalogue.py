@@ -55,6 +55,7 @@ def test_equipment_filter_does_not_return_unavailable_gear():
     records = get_exercises(goal="hypertrophy", equipment={"dumbbell", "bench"})
     assert records
     assert all(set(item["equipment"]).issubset({"dumbbell", "bench", "bodyweight"}) for item in records)
+    assert all(not item["equipment_any"] or set(item["equipment_any"]) & {"dumbbell", "bench", "bodyweight"} for item in records)
 
 
 def test_pattern_filter_supports_lunge_variants():
@@ -70,3 +71,18 @@ def test_lookup_returns_none_for_unknown_id():
 def test_catalogue_is_json_not_python_executable_content():
     raw = json.loads(Path("training/exercises.json").read_text(encoding="utf-8"))
     assert isinstance(raw, list)
+
+
+
+def test_any_equipment_options_accept_either_dumbbell_or_kettlebell():
+    dumbbell = {item["id"] for item in get_exercises(equipment={"dumbbell"})}
+    kettlebell = {item["id"] for item in get_exercises(equipment={"kettlebell"})}
+    assert "squat_goblet" in dumbbell
+    assert "squat_goblet" in kettlebell
+
+
+def test_required_equipment_still_requires_all_items():
+    records = {item["id"] for item in get_exercises(equipment={"barbell"})}
+    assert "back_squat" not in records
+    records_with_rack = {item["id"] for item in get_exercises(equipment={"barbell", "rack"})}
+    assert "back_squat" in records_with_rack
