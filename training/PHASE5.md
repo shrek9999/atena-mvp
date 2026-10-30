@@ -21,3 +21,13 @@ Generator ne izbira več le vaj po osnovnem gibalnem vzorcu. Upošteva tudi tip 
 
 ## Testiranje
 - Dodani so regresijski testi za klasifikacijo iztega kolkov, enostranske ponovitve in oceno trajanja, različno programiranje, opremo pri alternativah ter varno sidrišče za vleko elastike.
+
+
+## Dopolnitve po praktičnem testu – Phase 5.1
+- Tudi potisk bokov (hip thrust) je razvrščen pod izteg kolkov, ne pod predklon z ravnim hrbtom.
+- Vaje za stabilizacijo trupa in preprečevanje rotacije imajo ločeno kategorijo prikaza; niso označene kot običajne večsklepne vaje za hipertrofijo.
+- Alternative morajo ohraniti isti gibalni vzorec; pri stabilizaciji trupa je dovoljena zamenjava med sorodnima vzorcema stabilizacije in preprečevanja rotacije.
+- Ista vaja se ne prikazuje hkrati kot lažja različica in alternativa.
+- Most za zadnjico nima več Romunskega mrtvega dviga kot alternative.
+- Ocena časa uporablja 60-sekundni prehod med vajami; pri 45-minutnem treningu je preverjena najmanj 3-minutna časovna rezerva.
+- Različica generatorja: 2.3.0.
