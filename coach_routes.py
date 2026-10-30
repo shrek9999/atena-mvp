@@ -6,6 +6,7 @@ import logging
 import urllib.error
 import urllib.request
 from flask import Blueprint, jsonify, request
+from training.program import ProgramSafetyBlock, ProgramValidationError, generate_program
 
 logger = logging.getLogger(__name__)
 coach_bp = Blueprint("coach", __name__)
@@ -122,3 +123,31 @@ def coach_chat():
     except (TimeoutError, urllib.error.URLError, json.JSONDecodeError):
         logger.warning("Gemini request failed due to timeout, network error, or invalid JSON for model %s", model)
         return jsonify({"error": "Odgovor se je predolgo pripravljal ali povezava ni uspela. Poskusi znova."}), 504
+
+
+@coach_bp.route("/coach/program", methods=["POST", "OPTIONS"])
+def coach_program():
+    """Return a deterministic programme generated only from the curated catalogue."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    expected_token = os.getenv("AI_COACH_TEST_TOKEN", "").strip()
+    supplied_token = request.headers.get("X-Pilot-Token", "").strip()
+    if not expected_token:
+        return jsonify({"error": "Testni dostop še ni nastavljen na strežniku."}), 503
+    if not supplied_token or not hmac.compare_digest(supplied_token, expected_token):
+        return jsonify({"error": "Testni dostopni ključ ni pravilen."}), 403
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"error": "Pričakovan je JSON objekt s profilom vadečega."}), 400
+    profile = payload.get("profile", payload)
+    feedback = payload.get("feedback")
+    try:
+        result = generate_program(profile, feedback=feedback)
+    except ProgramSafetyBlock as exc:
+        return jsonify({"blocked": True, "message": str(exc)}), 409
+    except ProgramValidationError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except (OSError, ValueError):
+        logger.exception("ATENA catalogue/program generation failed")
+        return jsonify({"error": "Programa trenutno ni mogoče sestaviti iz kataloga."}), 500
+    return jsonify({"program": result, "source": "curated_exercise_catalogue", "pilot": True}), 200
