@@ -1139,5 +1139,195 @@
     ],
     "single_joint": false,
     "equipment_any": []
+  },
+  {
+    "id": "two_dumbbell_squat",
+    "name": "Počep z dvema ročkama",
+    "name_en": "Dumbbell front squat",
+    "pattern": "squat",
+    "joint_type": "multi_joint",
+    "goals": [
+      "hypertrophy",
+      "strength"
+    ],
+    "equipment": [
+      "dumbbell"
+    ],
+    "level": "intermediate",
+    "primary_muscles": [
+      "quadriceps",
+      "gluteus_maximus"
+    ],
+    "secondary_muscles": [
+      "adductors",
+      "trunk"
+    ],
+    "cues": [
+      "Ročki drži ob ramenih ali ob straneh v stabilnem položaju.",
+      "Spuščaj se nadzorovano in ohrani celotno stopalo na tleh.",
+      "Kolena vodi v smeri prstov."
+    ],
+    "common_errors": [
+      "Izguba stabilnosti trupa.",
+      "Prenos teže na sprednji del stopal."
+    ],
+    "regressions": [
+      "Goblet počep",
+      "Počep do klopi"
+    ],
+    "progressions": [
+      "Počep z večjo obremenitvijo ročk"
+    ],
+    "alternatives": [
+      "squat_goblet"
+    ],
+    "warnings": [
+      "Obremenitev izberi tako, da lahko ročki varno namestiš in odložiš."
+    ],
+    "single_joint": false,
+    "equipment_any": []
+  },
+  {
+    "id": "glute_bridge",
+    "name": "Most za zadnjico",
+    "name_en": "Glute bridge",
+    "pattern": "hinge",
+    "joint_type": "multi_joint",
+    "goals": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "equipment": [],
+    "level": "beginner",
+    "primary_muscles": [
+      "gluteus_maximus"
+    ],
+    "secondary_muscles": [
+      "hamstrings",
+      "trunk"
+    ],
+    "cues": [
+      "Stopala postavi tako, da so goleni približno navpične v vrhu giba.",
+      "Medenico dvigni z iztegovanjem kolkov.",
+      "Vrh giba dosezi brez pretiranega usločenja ledvenega dela."
+    ],
+    "common_errors": [
+      "Pretiran izteg v ledvenem delu.",
+      "Odriv pretežno skozi prste."
+    ],
+    "regressions": [
+      "Krajši obseg mostu"
+    ],
+    "progressions": [
+      "Most za zadnjico z ročko na medenici"
+    ],
+    "alternatives": [
+      "hip_thrust",
+      "romanian_deadlift"
+    ],
+    "warnings": [
+      "Obremenitev namesti varno in uporabi podlogo."
+    ],
+    "single_joint": false,
+    "equipment_any": [
+      "bodyweight",
+      "dumbbell"
+    ]
+  },
+  {
+    "id": "dumbbell_floor_press",
+    "name": "Potisk ročk na tleh",
+    "name_en": "Dumbbell floor press",
+    "pattern": "horizontal_push",
+    "joint_type": "multi_joint",
+    "goals": [
+      "hypertrophy",
+      "strength"
+    ],
+    "equipment": [
+      "dumbbell"
+    ],
+    "level": "beginner",
+    "primary_muscles": [
+      "pectorals"
+    ],
+    "secondary_muscles": [
+      "triceps",
+      "anterior_deltoids"
+    ],
+    "cues": [
+      "Lezi na hrbet s pokrčenimi koleni in stabilnim trupom.",
+      "Spuščaj ročki nadzorovano, dokler nadlakti nežno ne dosežeta tal.",
+      "Potisni ročki navzgor brez sunkov."
+    ],
+    "common_errors": [
+      "Prevelik razmik komolcev.",
+      "Nenadzorovano spuščanje ročk."
+    ],
+    "regressions": [
+      "Skleca z rokami na višji opori"
+    ],
+    "progressions": [
+      "Potisk ročk na klopi"
+    ],
+    "alternatives": [
+      "push_up",
+      "dumbbell_bench_press"
+    ],
+    "warnings": [
+      "Ročki odloži nadzorovano; izberi breme, ki ga lahko varno obvladaš."
+    ],
+    "single_joint": false,
+    "equipment_any": []
+  },
+  {
+    "id": "band_row",
+    "name": "Veslanje z elastiko",
+    "name_en": "Resistance band row",
+    "pattern": "horizontal_pull",
+    "joint_type": "multi_joint",
+    "goals": [
+      "hypertrophy",
+      "strength",
+      "general_fitness",
+      "functional"
+    ],
+    "equipment": [
+      "resistance_band"
+    ],
+    "level": "beginner",
+    "primary_muscles": [
+      "latissimus_dorsi",
+      "rhomboids"
+    ],
+    "secondary_muscles": [
+      "biceps",
+      "rear_deltoids",
+      "trunk"
+    ],
+    "cues": [
+      "Elastiko varno pritrdi v višini spodnjega dela prsnega koša.",
+      "Vleci komolce nazaj ob trupu.",
+      "Vrnitev izvedi počasi, brez izgube položaja trupa."
+    ],
+    "common_errors": [
+      "Zamahovanje s trupom.",
+      "Dvignjena ramena in skrajšan obseg giba."
+    ],
+    "regressions": [
+      "Veslanje z lažjo elastiko"
+    ],
+    "progressions": [
+      "Veslanje z močnejšo elastiko ali daljšim vzvodom"
+    ],
+    "alternatives": [
+      "one_arm_row"
+    ],
+    "warnings": [
+      "Pred vadbo preveri obrabo elastike in varnost pritrditve."
+    ],
+    "single_joint": false,
+    "equipment_any": []
   }
 ]
