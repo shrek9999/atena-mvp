@@ -161,6 +161,11 @@ def _estimated_minutes(exercises: list[dict]) -> int:
     return round(total_seconds / 60)
 
 
+def _display_exercise_reference(value: str, names: dict[str, str]) -> str:
+    """Translate catalogue IDs used in regressions/alternatives to user-facing names."""
+    return names.get(value, value)
+
+
 def generate_program(profile: object, feedback: object = None) -> dict:
     """Generate a repeatable catalogue plan, conservatively adapting to the last session."""
     p = validate_profile(profile)
@@ -185,6 +190,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
         if item["id"] not in p["excluded_exercise_ids"]
         and item["pattern"] not in p["excluded_patterns"]
     ]
+    catalogue_names = {item["id"]: item["name"] for item in catalogue}
     by_pattern: dict[str, list[dict]] = {}
     for exercise in catalogue:
         by_pattern.setdefault(exercise["pattern"], []).append(exercise)
@@ -233,8 +239,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 "equipment": selected_equipment,
                 "cues": candidate["cues"],
                 "warnings": candidate["warnings"],
-                "regressions": candidate["regressions"],
-                "alternatives": candidate["alternatives"],
+                "regressions": [_display_exercise_reference(value, catalogue_names) for value in candidate["regressions"]],
+                "alternatives": [_display_exercise_reference(value, catalogue_names) for value in candidate["alternatives"]],
                 "prescription": prescription,
             })
             for muscle in candidate["primary_muscles"]:
@@ -271,8 +277,14 @@ def generate_program(profile: object, feedback: object = None) -> dict:
         })
 
     total_sets = sum(item["prescription"]["sets"] for session in plans for item in session["exercises"])
+    pattern_session_frequency: Counter[str] = Counter()
+    pattern_work_sets: Counter[str] = Counter()
+    for session in plans:
+        for item in session["exercises"]:
+            pattern_session_frequency[item["pattern"]] += 1
+            pattern_work_sets[item["pattern"]] += item["prescription"]["sets"]
     return {
-        "program_version": "2.0.0",
+        "program_version": "2.1.0",
         "goal": p["goal"],
         "experience": p["experience"],
         "sessions_per_week": p["sessions_per_week"],
@@ -291,6 +303,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "total_work_sets": total_sets,
             "exercise_frequency": dict(used_counts),
             "primary_muscle_set_exposure": {key: value for key, value in exposure.items() if value > 0},
+            "pattern_session_frequency": dict(pattern_session_frequency),
+            "pattern_work_sets": dict(pattern_work_sets),
             "unfilled_patterns": sorted(missing_patterns),
         },
         "limitations": [
