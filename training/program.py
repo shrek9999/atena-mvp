@@ -288,8 +288,20 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 else "accessory" if candidate["single_joint"]
                 else "compound"
             )
+            regressions = safe_references(candidate["regressions"], candidate["id"], pattern)
+            alternatives = [
+                value for value in safe_references(candidate["alternatives"], candidate["id"], pattern)
+                if value not in regressions
+            ]
+            exercise_category = (
+                "stability" if pattern in {"trunk_stability", "anti_rotation"}
+                else "hip_extension" if pattern == "hip_extension"
+                else "accessory" if candidate["single_joint"]
+                else "compound"
+            )
             selected.append({
                 "exercise_id": candidate["id"],
+                "exercise_category": exercise_category,
                 "exercise_category": exercise_category,
                 "name": candidate["name"],
                 "pattern": pattern,
