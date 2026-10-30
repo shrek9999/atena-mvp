@@ -190,7 +190,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
         if item["id"] not in p["excluded_exercise_ids"]
         and item["pattern"] not in p["excluded_patterns"]
     ]
-    catalogue_names = {item["id"]: item["name"] for item in catalogue}
+    catalogue_names = {item["id"]: item["name"] for item in get_exercises(include_accessories=True)}
     by_pattern: dict[str, list[dict]] = {}
     for exercise in catalogue:
         by_pattern.setdefault(exercise["pattern"], []).append(exercise)
