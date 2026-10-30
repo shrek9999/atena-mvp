@@ -422,7 +422,7 @@
       "Iskanje globine z upogibanjem hrbtenice."
     ],
     "regressions": [
-      "Učenje kolčnega pregiba s palico"
+      "Učenje predklona z ravnim hrbtom s palico"
     ],
     "progressions": [
       "Romunski mrtvi dvig z drogom"
@@ -1121,11 +1121,11 @@
       "Breme naj lebdi zaradi iztega kolkov."
     ],
     "common_errors": [
-      "Počep namesto kolčnega pregiba.",
+      "Počep namesto predklona z ravnim hrbtom.",
       "Pretiran izteg v ledvenem delu."
     ],
     "regressions": [
-      "Učenje kolčnega pregiba s palico",
+      "Učenje predklona z ravnim hrbtom s palico",
       "Mrtvi dvig s kettlebellom"
     ],
     "progressions": [
@@ -1135,7 +1135,7 @@
       "Met medicinke ob tla"
     ],
     "warnings": [
-      "Najprej obvladaj kolčni pregib in mrtvi dvig."
+      "Najprej obvladaj predklon z ravnim hrbtom in mrtvi dvig."
     ],
     "single_joint": false,
     "equipment_any": []
