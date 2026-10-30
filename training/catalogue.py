@@ -7,7 +7,7 @@ from typing import Iterable
 
 CATALOGUE_PATH = Path(__file__).with_name("exercises.json")
 REQUIRED_FIELDS = {
-    "id", "name", "name_en", "pattern", "joint_type", "goals", "equipment",
+    "id", "name", "name_en", "pattern", "joint_type", "goals", "equipment", "equipment_any",
     "level", "primary_muscles", "secondary_muscles", "cues", "common_errors",
     "regressions", "progressions", "alternatives", "warnings", "single_joint",
 }
@@ -59,8 +59,8 @@ def validate_catalogue(exercises: object) -> None:
             value = exercise[field]
             if not isinstance(value, list) or any(not isinstance(item, str) or not item.strip() for item in value):
                 raise CatalogueValidationError(f"{exercise_id}: polje {field} mora biti seznam nepraznih nizov.")
-        if not exercise["goals"] or not exercise["equipment"] or not exercise["primary_muscles"]:
-            raise CatalogueValidationError(f"{exercise_id}: goals, equipment in primary_muscles ne smejo biti prazni.")
+        if not exercise["goals"] or not (exercise["equipment"] or exercise["equipment_any"]) or not exercise["primary_muscles"]:
+            raise CatalogueValidationError(f"{exercise_id}: goals, vsaj ena zahteva glede opreme in primary_muscles ne smejo biti prazni.")
 
 
 def get_exercises(
@@ -90,8 +90,12 @@ def get_exercises(
         if exercise["single_joint"] and not include_accessories:
             continue
         required = set(exercise["equipment"])
-        if available and not required.issubset(available | {"bodyweight"}):
-            continue
+        optional_match = set(exercise["equipment_any"])
+        if available:
+            if not required.issubset(available | {"bodyweight"}):
+                continue
+            if optional_match and not (optional_match & (available | {"bodyweight"})):
+                continue
         result.append(exercise)
     return result
 
