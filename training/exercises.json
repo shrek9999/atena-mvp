@@ -33,14 +33,14 @@
       "Nenadzorovan padec v spodnji položaj."
     ],
     "regressions": [
-      "sit_to_stand"
+      "Vstajanje s stola ali klopi"
     ],
     "progressions": [
       "front_squat",
-      "double_dumbbell_front_squat"
+      "Sprednji počep z dvema ročkama"
     ],
     "alternatives": [
-      "box_squat"
+      "Počep do klopi"
     ],
     "warnings": [
       "Obseg giba in obremenitev prilagodi trenutnim sposobnostim."
@@ -82,11 +82,11 @@
       "Neenakomeren pritisk skozi stopala."
     ],
     "regressions": [
-      "goblet_squat",
-      "box_squat"
+      "Goblet počep",
+      "Počep do klopi"
     ],
     "progressions": [
-      "paused_back_squat"
+      "Počep zadaj s premorom"
     ],
     "alternatives": [
       "front_squat"
@@ -128,13 +128,13 @@
       "Prehiter prehod v spodnji položaj."
     ],
     "regressions": [
-      "goblet_squat"
+      "Goblet počep"
     ],
     "progressions": [
-      "paused_front_squat"
+      "Sprednji počep s premorom"
     ],
     "alternatives": [
-      "goblet_squat"
+      "Goblet počep"
     ],
     "warnings": [
       "Obseg in položaj prijema prilagodi gibljivosti zapestij in ramen."
@@ -176,10 +176,10 @@
       "Prekratek ali predolg korak glede na izvedbo."
     ],
     "regressions": [
-      "supported_split_squat"
+      "Izpadni počep na mestu z oporo"
     ],
     "progressions": [
-      "dumbbell_split_squat",
+      "Izpadni počep na mestu z ročkama",
       "rear_foot_elevated_split_squat"
     ],
     "alternatives": [
@@ -225,10 +225,10 @@
       "Odriv predvsem z zadnjo nogo."
     ],
     "regressions": [
-      "supported_split_squat"
+      "Izpadni počep na mestu z oporo"
     ],
     "progressions": [
-      "dumbbell_reverse_lunge"
+      "Izpadni korak nazaj z ročkama"
     ],
     "alternatives": [
       "split_squat"
@@ -276,7 +276,7 @@
       "reverse_lunge"
     ],
     "progressions": [
-      "dumbbell_forward_lunge"
+      "Izpadni korak naprej z ročkama"
     ],
     "alternatives": [
       "split_squat"
@@ -323,7 +323,7 @@
       "split_squat"
     ],
     "progressions": [
-      "dumbbell_rear_foot_elevated_split_squat"
+      "Bolgarski počep z ročkama"
     ],
     "alternatives": [
       "reverse_lunge"
@@ -369,10 +369,10 @@
     ],
     "regressions": [
       "split_squat",
-      "supported_split_squat"
+      "Izpadni počep na mestu z oporo"
     ],
     "progressions": [
-      "loaded_atg_split_squat"
+      "ATG izpadni počep z dodatno obremenitvijo"
     ],
     "alternatives": [
       "reverse_lunge"
@@ -416,10 +416,10 @@
       "Iskanje globine z upogibanjem hrbtenice."
     ],
     "regressions": [
-      "dowel_hip_hinge"
+      "Učenje kolčnega pregiba s palico"
     ],
     "progressions": [
-      "barbell_rdl"
+      "Romunski mrtvi dvig z drogom"
     ],
     "alternatives": [
       "hip_thrust"
@@ -463,14 +463,14 @@
       "Breme se oddalji od telesa."
     ],
     "regressions": [
-      "kettlebell_deadlift",
-      "elevated_deadlift"
+      "Mrtvi dvig s kettlebellom",
+      "Mrtvi dvig z dvignjenega položaja"
     ],
     "progressions": [
-      "paused_deadlift"
+      "Mrtvi dvig s premorom"
     ],
     "alternatives": [
-      "trap_bar_deadlift",
+      "Mrtvi dvig s trap drogom",
       "romanian_deadlift"
     ],
     "warnings": [
@@ -511,10 +511,10 @@
       "Odriv skozi prste."
     ],
     "regressions": [
-      "glute_bridge"
+      "Most za zadnjico"
     ],
     "progressions": [
-      "barbell_hip_thrust"
+      "Potisk bokov z drogom"
     ],
     "alternatives": [
       "romanian_deadlift"
@@ -557,11 +557,11 @@
       "Skrajšan obseg zaradi izgube kontrole."
     ],
     "regressions": [
-      "incline_push_up"
+      "Skleca z rokami na višji opori"
     ],
     "progressions": [
-      "decline_push_up",
-      "weighted_push_up"
+      "Skleca z nogami na višji opori",
+      "Skleca z dodatno obremenitvijo"
     ],
     "alternatives": [
       "dumbbell_bench_press"
@@ -606,7 +606,7 @@
       "push_up"
     ],
     "progressions": [
-      "barbell_bench_press"
+      "Potisk z drogom leže"
     ],
     "alternatives": [
       "push_up"
@@ -649,13 +649,13 @@
       "Breme potuje daleč pred telo."
     ],
     "regressions": [
-      "half_kneeling_dumbbell_press"
+      "Potisk ročke kleče na enem kolenu"
     ],
     "progressions": [
-      "push_press"
+      "Potisk nad glavo z odrivom nog"
     ],
     "alternatives": [
-      "landmine_press"
+      "Potisk z drogom iz poševnega položaja"
     ],
     "warnings": [
       "Obseg in različico prilagodi gibljivosti ter toleranci ramen."
@@ -694,14 +694,14 @@
       "Nenadzorovan spust."
     ],
     "regressions": [
-      "band_assisted_pull_up",
-      "lat_pulldown"
+      "Zgib z elastiko",
+      "Vleka na prsi na škripcu"
     ],
     "progressions": [
-      "weighted_pull_up"
+      "Zgib z dodatno obremenitvijo"
     ],
     "alternatives": [
-      "inverted_row"
+      "Veslanje z lastno težo"
     ],
     "warnings": [
       "Prilagodi obseg in pomoč trenutni sposobnosti."
@@ -742,13 +742,13 @@
       "Sunkovito vlečenje."
     ],
     "regressions": [
-      "chest_supported_row"
+      "Veslanje z oporo prsnega koša"
     ],
     "progressions": [
-      "heavier_one_arm_row"
+      "Veslanje z eno roko z večjo obremenitvijo"
     ],
     "alternatives": [
-      "inverted_row"
+      "Veslanje z lastno težo"
     ],
     "warnings": [
       "Izberi oporo, ki omogoča stabilen položaj."
@@ -790,13 +790,13 @@
       "Pretežko breme, ki spremeni hojo."
     ],
     "regressions": [
-      "suitcase_carry_light"
+      "Nošenje enoročne uteži z lažjim bremenom"
     ],
     "progressions": [
-      "heavy_farmer_carry"
+      "Kmečka hoja z večjo obremenitvijo"
     ],
     "alternatives": [
-      "suitcase_carry"
+      "Enoročno nošenje uteži"
     ],
     "warnings": [
       "Pot naj bo prosta in nedrseča."
@@ -837,10 +837,10 @@
       "Pretirano zadrževanje diha."
     ],
     "regressions": [
-      "short_lever_pallof"
+      "Pallof potisk s krajšim vzvodom"
     ],
     "progressions": [
-      "split_stance_pallof_press"
+      "Pallof potisk v razkoraku"
     ],
     "alternatives": [
       "dead_bug"
@@ -882,13 +882,13 @@
       "Prevelik obseg giba."
     ],
     "regressions": [
-      "heel_tap"
+      "Dotik pete v ležečem položaju"
     ],
     "progressions": [
-      "dead_bug_band_resisted"
+      "Dead bug z uporom elastike"
     ],
     "alternatives": [
-      "bird_dog"
+      "Izteg nasprotne roke in noge v opori klečno"
     ],
     "warnings": [
       "Zmanjšaj obseg, če izgubiš nadzor."
@@ -924,13 +924,13 @@
       "Prevelika obremenitev."
     ],
     "regressions": [
-      "band_lateral_raise"
+      "Odmik rok z elastiko"
     ],
     "progressions": [
-      "cable_lateral_raise"
+      "Odmik rok na škripcu"
     ],
     "alternatives": [
-      "machine_lateral_raise"
+      "Odmik rok na napravi"
     ],
     "warnings": [
       "Obseg prilagodi toleranci ramen."
@@ -967,13 +967,13 @@
       "Prekratek spust."
     ],
     "regressions": [
-      "light_biceps_curl"
+      "Upogib komolca z lažjimi ročkami"
     ],
     "progressions": [
-      "incline_dumbbell_curl"
+      "Upogib komolca na poševni klopi"
     ],
     "alternatives": [
-      "cable_curl"
+      "Upogib komolca na škripcu"
     ],
     "warnings": [
       "Izberi obremenitev brez izgube nadzora."
@@ -1007,13 +1007,13 @@
       "Nagib trupa za pomoč."
     ],
     "regressions": [
-      "band_triceps_pressdown"
+      "Izteg komolca z elastiko"
     ],
     "progressions": [
-      "overhead_cable_extension"
+      "Izteg komolca nad glavo na škripcu"
     ],
     "alternatives": [
-      "close_grip_push_up"
+      "Skleca z ožjo postavitvijo rok"
     ],
     "warnings": [
       "Obremenitev prilagodi udobju komolcev."
@@ -1053,14 +1053,14 @@
       "Nestabilen pristanek ali utrujene ponovitve."
     ],
     "regressions": [
-      "low_box_jump",
-      "snap_down"
+      "Skok na nizek zaboj",
+      "Hiter spust v atletski položaj"
     ],
     "progressions": [
-      "higher_box_jump"
+      "Skok na višji zaboj"
     ],
     "alternatives": [
-      "broad_jump"
+      "Skok v daljino z mesta"
     ],
     "warnings": [
       "Izvajaj le ob ustrezni pripravljenosti in varnem prostoru; sestopi, ne skači dol."
@@ -1101,14 +1101,14 @@
       "Pretiran izteg v ledvenem delu."
     ],
     "regressions": [
-      "dowel_hip_hinge",
-      "kettlebell_deadlift"
+      "Učenje kolčnega pregiba s palico",
+      "Mrtvi dvig s kettlebellom"
     ],
     "progressions": [
-      "heavier_kettlebell_swing"
+      "Zamah s težjim kettlebellom"
     ],
     "alternatives": [
-      "medicine_ball_slam"
+      "Met medicinke ob tla"
     ],
     "warnings": [
       "Najprej obvladaj kolčni pregib in mrtvi dvig."
