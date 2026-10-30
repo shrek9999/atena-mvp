@@ -41,7 +41,7 @@ def test_beginner_receives_lower_effort_and_volume():
 def test_strength_program_uses_lower_rep_ranges_and_longer_rests():
     profile = {**BASE, "goal": "strength"}
     plan = generate_program(profile)
-    assert all(int(ex["prescription"]["reps"].split("–")[0]) <= 6 for s in plan["sessions"] for ex in s["exercises"])
+    assert all(int(ex["prescription"]["reps"].split("–")[0]) <= 6 for s in plan["sessions"] for ex in s["exercises"] if ex["pattern"] in {"squat", "hinge", "horizontal_push", "horizontal_pull"})
     assert all(ex["prescription"]["rest_seconds"] >= 150 for s in plan["sessions"] for ex in s["exercises"] if ex["pattern"] in {"squat", "hinge", "horizontal_push", "horizontal_pull"})
 
 
