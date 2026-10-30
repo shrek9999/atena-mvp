@@ -213,3 +213,16 @@ def test_alternatives_are_distinct_and_equipment_compatible():
         for exercise in session["exercises"]:
             assert exercise["name"] not in exercise["alternatives"]
             assert all(isinstance(value, str) and value for value in exercise["alternatives"])
+
+
+def test_45_minute_two_day_hypertrophy_keeps_core_and_vertical_patterns():
+    plan = generate_program({**BASE, "session_minutes": 45})
+    first = {ex["pattern"] for ex in plan["sessions"][0]["exercises"]}
+    second = {ex["pattern"] for ex in plan["sessions"][1]["exercises"]}
+    assert "trunk_stability" in first
+    assert "vertical_push" in first
+    assert "lunge" in first
+    assert "anti_rotation" in second
+    assert "vertical_pull" in second
+    assert "lunge" in second
+    assert all(session["estimated_minutes"] <= 45 for session in plan["sessions"])
