@@ -920,8 +920,7 @@
       "Zmanjšaj obseg, če izgubiš nadzor."
     ],
     "single_joint": false,
-    "equipment_any": [],
-    "reps_per_side": true
+    "equipment_any": []
   },
   {
     "id": "lateral_raise",
