@@ -78,7 +78,7 @@ def validate_profile(profile: object) -> dict:
     }
 
 
-def _session_patterns(session_index: int, sessions: int, goal: str) -> list[str]:
+def _session_patterns(session_index: int, sessions: int, goal: str, include_accessories: bool = False) -> list[str]:
     """Balanced full-body templates; rotate emphasis without omitting key patterns."""
     base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
     if sessions == 2:
@@ -102,6 +102,8 @@ def _session_patterns(session_index: int, sessions: int, goal: str) -> list[str]
     patterns = base + extras[session_index]
     if goal == "power":
         patterns += ["jump", "hinge_power"]
+    if include_accessories:
+        patterns += ["accessory"]
     return patterns
 
 
@@ -124,7 +126,7 @@ def _estimated_minutes(exercises: list[dict]) -> int:
     total_seconds = 6 * 60
     for item in exercises:
         prescription = item["prescription"]
-        reps = int(prescription["reps"].split("–")[0])
+        reps = int(prescription["reps"].split("–")[-1])
         sets = prescription["sets"]
         execution = reps * 3 * sets
         rests = max(0, sets - 1) * prescription["rest_seconds"]
@@ -164,7 +166,7 @@ def generate_program(profile: object) -> dict:
     missing_patterns: set[str] = set()
 
     for session_index in range(p["sessions_per_week"]):
-        patterns = _session_patterns(session_index, p["sessions_per_week"], p["goal"])
+        patterns = _session_patterns(session_index, p["sessions_per_week"], p["goal"], p["include_accessories"])
         selected = []
         seen_patterns = set()
         for pattern in patterns:
@@ -203,7 +205,7 @@ def generate_program(profile: object) -> dict:
         # Keep the most important four-to-six items and reduce accessory load to fit the clock.
         while selected and _estimated_minutes(selected) > p["session_minutes"]:
             removable = next((i for i in range(len(selected) - 1, -1, -1)
-                              if selected[i]["pattern"] in {"carry", "anti_rotation", "trunk_stability", "vertical_push", "vertical_pull", "lunge"}), None)
+                              if selected[i]["pattern"] in {"accessory", "carry", "anti_rotation", "trunk_stability", "vertical_push", "vertical_pull", "lunge"}), None)
             if removable is None:
                 break
             removed = selected.pop(removable)
