@@ -226,3 +226,18 @@ def test_45_minute_two_day_hypertrophy_keeps_core_and_vertical_patterns():
     assert "vertical_pull" in second
     assert "lunge" in second
     assert all(session["estimated_minutes"] <= 45 for session in plan["sessions"])
+
+
+def test_band_vertical_pull_is_selected_only_with_explicit_anchor_equipment():
+    profile = {
+        **BASE,
+        "equipment": ["dumbbell", "bench", "resistance_band", "anchor_point"],
+        "session_minutes": 60,
+    }
+    plan = generate_program(profile)
+    vertical_pulls = [
+        ex for session in plan["sessions"] for ex in session["exercises"]
+        if ex["pattern"] == "vertical_pull"
+    ]
+    assert any(ex["exercise_id"] == "band_lat_pulldown" for ex in vertical_pulls)
+    assert all("anchor_point" in ex["equipment"] for ex in vertical_pulls if ex["exercise_id"] == "band_lat_pulldown")
