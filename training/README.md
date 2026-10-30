@@ -8,7 +8,7 @@ Vsaka vaja ima stabilen ID, slovensko in angleško ime, gibalni vzorec, tip skle
 
 ## Trenutni obseg
 
-Katalog vključuje osnovne vzorce počepa, kolčnega pregiba, izpadnih korakov, potiskov, vlekov, nošenja, antirotacije, stabilizacije trupa, skokov in eksplozivnega kolčnega pregiba. Med izpadnimi koraki so počep na mestu, izpadni korak naprej/nazaj, bolgarski počep in ATG različica.
+Katalog vključuje osnovne vzorce počepa, predklona z ravnim hrbtom, izpadnih korakov, potiskov, vlekov, nošenja, antirotacije, stabilizacije trupa, skokov in eksplozivnega predklona z ravnim hrbtom. Med izpadnimi koraki so počep na mestu, izpadni korak naprej/nazaj, bolgarski počep in ATG različica.
 
 ## Pravila izbora
 
