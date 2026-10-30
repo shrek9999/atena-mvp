@@ -15,6 +15,8 @@ Neobvezno:
 
 ## Načela
 
+- Za gibalni vzorec, ki se v angleščini pogosto označuje kot *hip hinge*, uporabljamo slovensko poimenovanje **predklon z ravnim hrbtom**.
+
 - Izbor uporablja izključno preverjeni katalog; jezikovni model ne izmišlja vaj.
 - Pri hipertrofiji so privzeto izbrane večsklepne vaje. Enosklepne dopolnilne vaje so opt-in za napredne.
 - Predloge so zasnovane kot treningi celotnega telesa z razporeditvijo osnovnih gibalnih vzorcev.
@@ -37,6 +39,10 @@ plan = generate_program({
     "session_minutes": 60,
 })
 ```
+
+## API in stanje integracije
+
+Zaščiten endpoint je na voljo kot `POST /coach/program`. Zahteva glavo `X-Pilot-Token` in profil v JSON telesu. Endpoint je del backend pilotne veje; spletni vmesnik ga v tej fazi še ne kliče samodejno.
 
 ## Omejitve
 
