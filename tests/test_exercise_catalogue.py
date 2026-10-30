@@ -94,3 +94,10 @@ def test_equipment_any_must_be_a_list():
     item["equipment_any"] = "dumbbell"
     with pytest.raises(CatalogueValidationError, match="equipment_any"):
         validate_catalogue([item])
+
+
+def test_unilateral_metadata_must_be_boolean():
+    item = load_catalogue()[0]
+    item["unilateral"] = "yes"
+    with pytest.raises(CatalogueValidationError, match="unilateral"):
+        validate_catalogue([item])
