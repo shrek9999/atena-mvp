@@ -197,6 +197,18 @@ def test_exercise_prescriptions_are_not_uniform_for_hypertrophy():
     assert any(pattern == "squat" and reps == "6–10" and rest >= 120 for pattern, reps, rest in prescriptions)
 
 
+
+def test_core_stability_reps_are_explicitly_per_side():
+    plan = generate_program({**BASE, "session_minutes": 60})
+    core = [
+        ex for session in plan["sessions"] for ex in session["exercises"]
+        if ex["exercise_id"] in {"dead_bug", "pallof_press"}
+    ]
+    assert {ex["exercise_id"] for ex in core} == {"dead_bug", "pallof_press"}
+    assert all(ex["reps_per_side"] is True for ex in core)
+    assert all(ex["prescription"]["rep_unit"] == "per_side" for ex in core)
+
+
 def test_unilateral_time_estimate_accounts_for_both_sides():
     from training.program import _estimated_minutes
     item = {"prescription": {"reps": "8–10", "sets": 3, "rest_seconds": 90, "rep_unit": "per_side"}}
