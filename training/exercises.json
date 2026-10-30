@@ -1329,5 +1329,55 @@
     ],
     "single_joint": false,
     "equipment_any": []
+  },
+  {
+    "id": "dumbbell_bent_over_row",
+    "name": "Veslanje z dvema ročkama v predklonu",
+    "name_en": "Bent-over dumbbell row",
+    "pattern": "horizontal_pull",
+    "joint_type": "multi_joint",
+    "goals": [
+      "hypertrophy",
+      "strength"
+    ],
+    "equipment": [
+      "dumbbell"
+    ],
+    "level": "intermediate",
+    "primary_muscles": [
+      "latissimus_dorsi",
+      "rhomboids"
+    ],
+    "secondary_muscles": [
+      "biceps",
+      "rear_deltoids",
+      "spinal_erectors",
+      "trunk"
+    ],
+    "cues": [
+      "Kolena rahlo pokrči in izvedi predklon z ravnim hrbtom.",
+      "Trup ohrani stabilen, ročki naj visita pod rameni.",
+      "Komolca vodi nazaj, nato ročki nadzorovano spusti."
+    ],
+    "common_errors": [
+      "Zamahovanje s trupom.",
+      "Izguba stabilnega položaja hrbtenice.",
+      "Dvigovanje ramen proti ušesom."
+    ],
+    "regressions": [
+      "Veslanje z elastiko"
+    ],
+    "progressions": [
+      "Veslanje z večjo obremenitvijo ročk"
+    ],
+    "alternatives": [
+      "one_arm_row",
+      "band_row"
+    ],
+    "warnings": [
+      "Izberi obremenitev, pri kateri lahko ves čas ohranjaš stabilen predklon."
+    ],
+    "single_joint": false,
+    "equipment_any": []
   }
 ]
