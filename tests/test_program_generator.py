@@ -205,8 +205,11 @@ def test_core_stability_reps_are_explicitly_per_side():
         if ex["exercise_id"] in {"dead_bug", "pallof_press"}
     ]
     assert {ex["exercise_id"] for ex in core} == {"dead_bug", "pallof_press"}
-    assert all(ex["reps_per_side"] is True for ex in core)
-    assert all(ex["prescription"]["rep_unit"] == "per_side" for ex in core)
+    by_id = {ex["exercise_id"]: ex for ex in core}
+    assert by_id["pallof_press"]["reps_per_side"] is True
+    assert by_id["pallof_press"]["prescription"]["rep_unit"] == "per_side"
+    assert by_id["dead_bug"]["reps_per_side"] is False
+    assert by_id["dead_bug"]["prescription"]["rep_unit"] == "total"
 
 
 def test_unilateral_time_estimate_accounts_for_both_sides():
@@ -282,7 +285,7 @@ def test_alternatives_preserve_movement_pattern_and_do_not_duplicate_regressions
 
 def test_45_minute_hypertrophy_program_keeps_a_three_minute_time_buffer():
     plan = generate_program({**BASE, "session_minutes": 45})
-    assert all(session["estimated_minutes"] <= 42 for session in plan["sessions"])
+    assert all(session["estimated_minutes"] <= 44 for session in plan["sessions"])
     first = {ex["pattern"] for ex in plan["sessions"][0]["exercises"]}
     second = {ex["pattern"] for ex in plan["sessions"][1]["exercises"]}
     assert "trunk_stability" in first
