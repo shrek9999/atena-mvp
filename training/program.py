@@ -185,6 +185,11 @@ def generate_program(profile: object) -> dict:
             candidate = min(candidates, key=lambda item: (used_counts[item["id"]], item["level"] != p["experience"], item["id"]))
             used_counts[candidate["id"]] += 1
             prescription = _prescription(p["goal"], p["experience"], pattern)
+            optional_equipment = sorted(
+                set(candidate["equipment_any"]) & set(p["equipment"]),
+                key=lambda item: (item == "bodyweight", item),
+            )
+            selected_equipment = candidate["equipment"] + optional_equipment[:1]
             selected.append({
                 "exercise_id": candidate["id"],
                 "name": candidate["name"],
@@ -192,7 +197,7 @@ def generate_program(profile: object) -> dict:
                 "pattern_label": PATTERN_LABELS.get(pattern, pattern),
                 "joint_type": candidate["joint_type"],
                 "primary_muscles": candidate["primary_muscles"],
-                "equipment": candidate["equipment"] + candidate["equipment_any"],
+                "equipment": selected_equipment,
                 "cues": candidate["cues"],
                 "warnings": candidate["warnings"],
                 "regressions": candidate["regressions"],
