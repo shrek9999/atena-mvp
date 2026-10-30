@@ -14,7 +14,7 @@ Katalog vključuje osnovne vzorce počepa, kolčnega pregiba, izpadnih korakov, 
 
 - Pri cilju hipertrofije so privzeto vključene večsklepne vaje.
 - Enosklepne dopolnilne vaje so na voljo le, ko klicatelj izrecno nastavi `include_accessories=True`.
-- Filtriranje po opremi zahteva, da je vsa navedena oprema v naboru uporabnika; telesna teža je vedno dovoljena.
+- Polje `equipment` vsebuje obvezno opremo (zahtevani so vsi elementi); `equipment_any` vsebuje možnosti, pri katerih zadošča vsaj ena razpoložljiva. Telesna teža je vedno dovoljena.
 - Filtri so deterministični in ne sklepajo o poškodbah ali diagnozah.
 - Polje `warnings` opozarja na tehnične oziroma izvedbene omejitve; ne predstavlja medicinske presoje.
 
