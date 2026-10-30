@@ -148,7 +148,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         elif pattern in {"trunk_stability", "anti_rotation", "carry", "hip_extension"}:
             sets, reps, rir, rest = 2, "8–12", 3, 75
         else:
-            sets, reps, rir, rest = 3, ("6–8" if unilateral else "5–8"), 2, 120
+            sets, reps, rir, rest = 3, ("6–8" if unilateral else "5–8"), 2, (120 if unilateral else 150)
     elif goal == "hypertrophy":
         if pattern in {"squat", "hinge"}:
             sets, reps, rir, rest = 3, "6–10", (2 if level != "beginner" else 3), 150 if level == "advanced" else 120
@@ -212,7 +212,26 @@ def generate_program(profile: object, feedback: object = None) -> dict:
         if item["id"] not in p["excluded_exercise_ids"]
         and item["pattern"] not in p["excluded_patterns"]
     ]
-    catalogue_names = {item["id"]: item["name"] for item in get_exercises(include_accessories=True)}
+    reference_catalogue = get_exercises(include_accessories=True)
+    catalogue_names = {item["id"]: item["name"] for item in reference_catalogue}
+    reference_by_name = {item["name"]: item for item in reference_catalogue}
+
+    def safe_references(values: list[str], current_id: str) -> list[str]:
+        resolved = []
+        for value in values:
+            reference = next((item for item in reference_catalogue if item["id"] == value), None)
+            if reference is None:
+                reference = reference_by_name.get(value)
+            if reference is None or reference["id"] == current_id:
+                continue
+            available = set(p["equipment"]) | {"bodyweight"}
+            if not set(reference["equipment"]).issubset(available):
+                continue
+            if reference["equipment_any"] and not set(reference["equipment_any"]).intersection(available):
+                continue
+            if reference["name"] not in resolved:
+                resolved.append(reference["name"])
+        return resolved
     by_pattern: dict[str, list[dict]] = {}
     for exercise in catalogue:
         by_pattern.setdefault(exercise["pattern"], []).append(exercise)
@@ -262,8 +281,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 "equipment": selected_equipment,
                 "cues": candidate["cues"],
                 "warnings": candidate["warnings"],
-                "regressions": [_display_exercise_reference(value, catalogue_names) for value in candidate["regressions"]],
-                "alternatives": [_display_exercise_reference(value, catalogue_names) for value in candidate["alternatives"]],
+                "regressions": safe_references(candidate["regressions"], candidate["id"]),
+                "alternatives": safe_references(candidate["alternatives"], candidate["id"]),
                 "prescription": prescription,
             })
             for muscle in candidate["primary_muscles"]:
