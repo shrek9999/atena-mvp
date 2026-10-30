@@ -47,11 +47,11 @@ def _validate_feedback(feedback: object) -> dict | None:
     difficulty = feedback.get("difficulty", "right")
     completed = feedback.get("completed", True)
     discomfort = feedback.get("discomfort", "no")
-    if difficulty not in {"easy", "right", "hard"}:
+    if not isinstance(difficulty, str) or difficulty not in {"easy", "right", "hard"}:
         raise ProgramValidationError("Težavnost mora biti easy, right ali hard.")
     if not isinstance(completed, bool):
         raise ProgramValidationError("completed mora biti true ali false.")
-    if discomfort not in {"no", "yes"}:
+    if not isinstance(discomfort, str) or discomfort not in {"no", "yes"}:
         raise ProgramValidationError("discomfort mora biti yes ali no.")
     if discomfort == "yes":
         raise ProgramSafetyBlock(
