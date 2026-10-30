@@ -89,3 +89,29 @@ def test_program_does_not_invent_exercises():
     known = {item["id"] for item in load_catalogue()}
     plan = generate_program(BASE)
     assert all(ex["exercise_id"] in known for s in plan["sessions"] for ex in s["exercises"])
+
+
+
+def test_advanced_accessory_option_adds_single_joint_exercise():
+    profile = {**BASE, "experience": "advanced", "include_accessories": True}
+    plan = generate_program(profile)
+    assert any(ex["joint_type"] == "single_joint" for s in plan["sessions"] for ex in s["exercises"])
+
+
+def test_functional_goal_uses_supported_general_fitness_catalogue_pool():
+    plan = generate_program({**BASE, "goal": "functional"})
+    assert len(plan["sessions"]) == 2
+    assert all(len(s["exercises"]) >= 3 for s in plan["sessions"])
+
+
+def test_power_goal_uses_catalogue_power_exercises():
+    plan = generate_program({**BASE, "goal": "power"})
+    patterns = {ex["pattern"] for s in plan["sessions"] for ex in s["exercises"]}
+    assert "jump" in patterns
+    assert "hinge_power" in patterns
+
+
+def test_three_and_four_day_splits_are_supported():
+    for sessions in (3, 4):
+        plan = generate_program({**BASE, "sessions_per_week": sessions})
+        assert len(plan["sessions"]) == sessions
