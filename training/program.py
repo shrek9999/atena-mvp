@@ -121,7 +121,7 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
     if goal == "endurance":
         return ["locomotion", "conditioning", "carry"] if session_index % 2 == 0 else ["locomotion", "lunge", "conditioning"]
     if goal == "mobility":
-        return ["mobility", "squat", "lunge", "hinge", "horizontal_push", "accessory"]
+        return ["mobility", "mobility", "mobility", "squat", "lunge", "hinge", "horizontal_push", "accessory"]
     base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
     if sessions == 2:
         extras = [["lunge", "vertical_push"], ["lunge", "vertical_pull"]]
@@ -342,7 +342,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
         selected = []
         seen_patterns = set()
         for pattern in patterns:
-            if pattern in seen_patterns:
+            if pattern in seen_patterns and p["goal"] != "mobility":
                 continue
             seen_patterns.add(pattern)
             candidates = by_pattern.get(pattern, [])
@@ -538,8 +538,11 @@ def generate_program(profile: object, feedback: object = None) -> dict:
     pattern_session_frequency: Counter[str] = Counter()
     pattern_work_sets: Counter[str] = Counter()
     for session in plans:
+        session_patterns_seen: set[str] = set()
         for item in session["exercises"]:
-            pattern_session_frequency[item["pattern"]] += 1
+            if item["pattern"] not in session_patterns_seen:
+                pattern_session_frequency[item["pattern"]] += 1
+                session_patterns_seen.add(item["pattern"])
             pattern_work_sets[item["pattern"]] += item["prescription"]["sets"]
     return {
         "program_version": "2.6.0",
