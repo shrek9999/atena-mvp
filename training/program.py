@@ -409,10 +409,22 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                     if prescription.get("rir_range") == "2–3":
                         prescription["rir_range"] = "3–4"
                 prescription["rest_seconds"] += 30
+            def equipment_priority(item: str) -> tuple[int, str]:
+                if item in {"dumbbell", "kettlebell", "barbell", "resistance_band"}:
+                    return (0, item)
+                if item in {"backpack", "jump_rope", "bicycle", "rowing_machine", "ski_erg", "air_bike"}:
+                    return (1, item)
+                if item == "bodyweight":
+                    return (2, item)
+                if item in {"household_support", "household_load"}:
+                    return (3, item)
+                return (1, item)
             optional_equipment = sorted(
                 set(candidate["equipment_any"]) & set(p["equipment"]),
-                key=lambda item: (item == "bodyweight", item),
+                key=equipment_priority,
             )
+            if candidate["equipment"]:
+                optional_equipment = [item for item in optional_equipment if item != "bodyweight"]
             selected_equipment = candidate["equipment"] + optional_equipment[:1]
             regressions = safe_references(candidate["regressions"], candidate["id"], effective_pattern)
             progressions = safe_references(candidate["progressions"], candidate["id"], effective_pattern)
