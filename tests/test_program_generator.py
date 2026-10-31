@@ -14,7 +14,7 @@ BASE = {
 
 def test_generates_two_day_hypertrophy_program_from_catalogue_only():
     plan = generate_program(BASE)
-    assert plan["program_version"] == "2.3.0"
+    assert plan["program_version"] == "2.3.1"
     assert len(plan["sessions"]) == 2
     assert all(len(session["exercises"]) >= 3 for session in plan["sessions"])
     assert all(ex["joint_type"] == "multi_joint" for session in plan["sessions"] for ex in session["exercises"])
@@ -290,3 +290,33 @@ def test_45_minute_hypertrophy_program_keeps_a_three_minute_time_buffer():
     second = {ex["pattern"] for ex in plan["sessions"][1]["exercises"]}
     assert "trunk_stability" in first
     assert "anti_rotation" in second
+
+
+
+def test_stability_exercises_use_quality_target_instead_of_rir():
+    plan = generate_program(BASE)
+    core = [
+        exercise
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+        if exercise["pattern"] in {"trunk_stability", "anti_rotation"}
+    ]
+    assert core
+    assert all("rir" not in exercise["prescription"] for exercise in core)
+    assert all("izgubiš stabilen položaj" in exercise["prescription"]["effort_target"] for exercise in core)
+
+
+def test_hard_feedback_does_not_break_stability_prescriptions():
+    plan = generate_program(
+        BASE,
+        feedback={"difficulty": "hard", "completed": False, "discomfort": "no"},
+    )
+    core = [
+        exercise
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+        if exercise["pattern"] in {"trunk_stability", "anti_rotation"}
+    ]
+    assert core
+    assert all("rir" not in exercise["prescription"] for exercise in core)
+    assert all(exercise["prescription"]["sets"] >= 2 for exercise in core)
