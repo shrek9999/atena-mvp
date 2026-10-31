@@ -311,8 +311,16 @@ def generate_program(profile: object, feedback: object = None) -> dict:
         planning_budget = max(20, p["session_minutes"] - 3)
         # Preserve the main compound patterns; trim optional work first when needed.
         while selected and _estimated_minutes(selected) > planning_budget:
-            removable = next((i for i in range(len(selected) - 1, -1, -1)
-                              if selected[i]["pattern"] in {"accessory", "hip_extension", "carry", "vertical_push", "vertical_pull", "lunge", "anti_rotation", "trunk_stability"}), None)
+            removal_priority = (
+                "accessory", "hip_extension", "lunge", "carry",
+                "vertical_push", "vertical_pull", "anti_rotation", "trunk_stability",
+            )
+            removable = next(
+                (next((i for i, item in enumerate(selected) if item["pattern"] == pattern), None)
+                 for pattern in removal_priority
+                 if any(item["pattern"] == pattern for item in selected)),
+                None,
+            )
             if removable is None:
                 break
             removed = selected.pop(removable)
