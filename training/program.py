@@ -131,6 +131,8 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
     else:
         extras = [["lunge", "vertical_push"], ["vertical_pull", "lunge"], ["lunge", "vertical_push"], ["vertical_pull", "lunge"]]
     patterns = base + (extras[session_index][:1] if include_stability else extras[session_index])
+    if session_index == 0 and goal in {"strength", "general_fitness", "functional"}:
+        patterns.append("carry")
     if include_stability:
         patterns.insert(0, "trunk_stability")
     if goal == "power":
@@ -397,6 +399,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                         return 0 if {"dumbbell", "bench"}.issubset(set(p["equipment"])) else 5
                     if item["id"] == "push_up":
                         return 0
+                if pattern == "conditioning" and p["goal"] == "endurance" and item["id"] == "box_jump_intervals":
+                    return 100
                 if pattern == "hinge":
                     if item["id"] in {"romanian_deadlift", "dumbbell_deadlift", "deadlift"}:
                         return -10 if set(item["equipment"]).issubset(set(p["equipment"])) else 5
@@ -493,7 +497,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
         volume_adjustments = []
         while selected and _estimated_minutes(selected, warm_up_minutes) > planning_budget:
             # Remove truly optional work first; preserve the weekly movement-pattern map.
-            removal_priority = ("accessory", "hip_extension", "carry")
+            removal_priority = ("accessory", "carry")
             removable = next(
                 (next((i for i, item in enumerate(selected) if item["pattern"] == pattern), None)
                  for pattern in removal_priority
@@ -512,7 +516,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             # from three to two sets before dropping a foundational movement pattern.
             reducible = next(
                 (item for item in selected
-                 if item["pattern"] in {"squat", "hinge", "horizontal_push", "horizontal_pull"}
+                 if item["pattern"] in {"squat", "hinge", "hip_extension", "knee_flexion", "horizontal_push", "horizontal_pull"}
                  and item["prescription"]["sets"] > 2),
                 None,
             )
