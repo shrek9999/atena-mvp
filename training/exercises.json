@@ -4758,7 +4758,9 @@
       "push_up",
       "push_up_incline"
     ],
-    "progressions": [],
+    "progressions": [
+      "Počasnejša skleca z nadzorovanim premorom v spodnjem položaju"
+    ],
     "alternatives": [],
     "warnings": [
       "Oporo preveri pred vsako serijo."
