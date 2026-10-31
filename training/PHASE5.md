@@ -32,3 +32,7 @@ Generator ne izbira več le vaj po osnovnem gibalnem vzorcu. Upošteva tudi tip 
 - Most za zadnjico nima več Romunskega mrtvega dviga kot alternative.
 - Ocena časa uporablja 45-sekundni povprečni prehod med vajami in pri 45-minutnem profilu cilja na najmanj 3 minute rezerve. Regresijski test hkrati preverja, da ostanejo ključni gibalni vzorci in stabilizacija trupa vključeni.
 - Različica generatorja: 2.3.0.
+
+- Stabilizacijske vaje in vaje za preprečevanje rotacije ne uporabljajo klasičnega RIR; predpisano je merilo kakovosti izvedbe in nadzora.
+- Pri konservativni prilagoditvi po zahtevnem treningu se RIR poveča samo pri vajah, kjer je RIR smiseln; stabilizacijske vaje ostanejo vezane na kakovost izvedbe.
+- Različica generatorja: 2.3.1.
