@@ -131,7 +131,7 @@ def test_program_does_not_invent_exercises():
 
 
 def test_advanced_accessory_option_adds_single_joint_exercise():
-    profile = {**BASE, "experience": "advanced", "include_accessories": True}
+    profile = {**BASE, "experience": "advanced", "include_accessories": True, "session_minutes": 75}
     plan = generate_program(profile)
     assert any(ex["joint_type"] == "single_joint" for s in plan["sessions"] for ex in s["exercises"])
 
