@@ -470,8 +470,9 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 "Tudi pri cilju moč začni večinoma z 8–12 ponovitvami in približno 2–3 ponovitvami v rezervi; "
                 "šele z napredovanjem postopno preidi na nižje razpone in večje obremenitve."
                 if p["experience"] == "beginner" else
-                "Izkušenost določa zahtevnost vaj, obseg dela, intenzivnost in napredovanje. "
-                "Intermediate in advanced vadeči lahko uporabljajo bolj specifične razpone ponovitev glede na cilj."
+                "Intermediate: uporablja bolj specifične razpone glede na cilj; pri glavnih vajah za moč je običajen razpon 5–8 ponovitev, "
+                "pri hipertrofiji večinoma 6–12. Advanced: pri glavnih vajah za moč lahko uporablja 3–6 ponovitev, "
+                "ob večji obremenitvi pa zahteva ustrezno tehniko, regeneracijo in daljše odmore."
             ),
             "tempo": "Tempo je predpisan pri vsaki vaji. Pri glavnih vajah je privzeto 3–0–1–0: 3 s spuščanje in 1 s dvig; brez odboja. "
                      "Pri stabilizaciji in eksplozivnih vajah je tempo prilagojen njihovi funkciji.",
