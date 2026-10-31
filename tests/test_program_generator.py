@@ -14,7 +14,7 @@ BASE = {
 
 def test_generates_two_day_hypertrophy_program_from_catalogue_only():
     plan = generate_program(BASE)
-    assert plan["program_version"] == "2.3.1"
+    assert plan["program_version"] == "2.4.0"
     assert len(plan["sessions"]) == 2
     assert all(len(session["exercises"]) >= 3 for session in plan["sessions"])
     assert all(ex["joint_type"] == "multi_joint" for session in plan["sessions"] for ex in session["exercises"])
@@ -167,7 +167,7 @@ def test_two_day_hypertrophy_program_covers_horizontal_pull_when_band_available(
 def test_two_day_program_rotates_available_exercise_variants():
     profile = {**BASE, "equipment": ["dumbbell", "resistance_band"]}
     plan = generate_program(profile)
-    for pattern in ("squat", "horizontal_push", "horizontal_pull"):
+    for pattern in ("squat", "horizontal_pull"):
         variants = {
             exercise["exercise_id"]
             for session in plan["sessions"]
@@ -175,6 +175,14 @@ def test_two_day_program_rotates_available_exercise_variants():
             if exercise["pattern"] == pattern
         }
         assert len(variants) >= 2, f"Expected variation for {pattern}, got {variants}"
+    horizontal_push = [
+        exercise["exercise_id"]
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+        if exercise["pattern"] == "horizontal_push"
+    ]
+    assert horizontal_push
+    assert set(horizontal_push) == {"push_up"}
 
 
 def test_weekly_summary_reports_actual_pattern_exposure():
