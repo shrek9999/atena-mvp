@@ -403,6 +403,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             )
             selected_equipment = candidate["equipment"] + optional_equipment[:1]
             regressions = safe_references(candidate["regressions"], candidate["id"], effective_pattern)
+            progressions = safe_references(candidate["progressions"], candidate["id"], effective_pattern)
             alternatives = [
                 value for value in safe_references(candidate["alternatives"], candidate["id"], effective_pattern)
                 if value not in regressions
@@ -437,6 +438,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 ),
                 "warnings": candidate["warnings"],
                 "regressions": regressions,
+                "progressions": progressions,
                 "alternatives": alternatives,
                 "prescription": prescription,
                 **({
