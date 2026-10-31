@@ -2250,7 +2250,9 @@
       "hypertrophy",
       "strength"
     ],
-    "equipment": [],
+    "equipment": [
+      "kettlebell"
+    ],
     "level": "beginner",
     "primary_muscles": [
       "latissimus_dorsi",
@@ -2280,10 +2282,7 @@
       "Oporna površina mora biti stabilna."
     ],
     "single_joint": false,
-    "equipment_any": [
-      "kettlebell",
-      "household_support"
-    ],
+    "equipment_any": [],
     "unilateral": true,
     "loading_potential": "high",
     "training_role": "main",
@@ -2735,9 +2734,7 @@
       "functional",
       "general_fitness"
     ],
-    "equipment": [
-      "household_load"
-    ],
+    "equipment": [],
     "level": "beginner",
     "primary_muscles": [
       "trunk",
@@ -3716,7 +3713,7 @@
       "general_fitness"
     ],
     "equipment": [
-      "bench"
+      "household_support"
     ],
     "level": "advanced",
     "primary_muscles": [
@@ -3747,7 +3744,8 @@
     ],
     "single_joint": false,
     "equipment_any": [
-      "bodyweight"
+      "bench",
+      "chair"
     ],
     "loading_potential": "moderate",
     "training_role": "stability",
@@ -4527,8 +4525,7 @@
     ],
     "single_joint": true,
     "equipment_any": [
-      "bodyweight",
-      "towel"
+      "bodyweight"
     ],
     "loading_potential": "low",
     "training_role": "mobility",
