@@ -1,0 +1,7 @@
+# Local databases and runtime data must never be committed.
+data/
+*.sqlite
+*.sqlite3
+*.db
+*.sqlite3-wal
+*.sqlite3-shm
