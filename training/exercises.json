@@ -5439,5 +5439,101 @@
       "forearm",
       "upper_back"
     ]
+  },
+  {
+    "id": "squat_jump",
+    "name": "Počepni skok",
+    "name_en": "Squat jump",
+    "pattern": "jump",
+    "joint_type": "multi_joint",
+    "goals": [
+      "power",
+      "functional",
+      "general_fitness"
+    ],
+    "equipment": [],
+    "equipment_any": [
+      "bodyweight"
+    ],
+    "level": "intermediate",
+    "primary_muscles": [
+      "quadriceps",
+      "gluteus_maximus",
+      "calves"
+    ],
+    "secondary_muscles": [
+      "trunk"
+    ],
+    "cues": [
+      "Izvedi kratek, nadzorovan počep in nato eksploziven odriv.",
+      "Pristani tiho z nadzorom kolen in trupa.",
+      "Med ponovitvami se po potrebi ponastavi."
+    ],
+    "common_errors": [
+      "Previsok skok na račun pristanka.",
+      "Izguba poravnave pri pristanku."
+    ],
+    "regressions": [
+      "Hiter počep na prste brez odriva"
+    ],
+    "progressions": [
+      "Višji skok samo ob ohranjeni kakovosti"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Začni z nizkim volumnom; prekini, ko se kakovost pristanka poslabša."
+    ],
+    "single_joint": false,
+    "loading_potential": "moderate",
+    "training_role": "power",
+    "time_based": false
+  },
+  {
+    "id": "standing_broad_jump",
+    "name": "Skok v daljino z mesta",
+    "name_en": "Standing broad jump",
+    "pattern": "jump",
+    "joint_type": "multi_joint",
+    "goals": [
+      "power",
+      "functional",
+      "general_fitness"
+    ],
+    "equipment": [],
+    "equipment_any": [
+      "bodyweight"
+    ],
+    "level": "intermediate",
+    "primary_muscles": [
+      "quadriceps",
+      "gluteus_maximus",
+      "calves"
+    ],
+    "secondary_muscles": [
+      "trunk"
+    ],
+    "cues": [
+      "Odrini z obema nogama in uporabi zamah rok.",
+      "Pristani na obeh nogah z upognjenimi koleni in nadzorom.",
+      "Med skoki se popolnoma ponastavi."
+    ],
+    "common_errors": [
+      "Pristanek s togimi koleni.",
+      "Prevelika razdalja glede na nadzor pristanka."
+    ],
+    "regressions": [
+      "Skok na mestu z majhno amplitudo"
+    ],
+    "progressions": [
+      "Daljša razdalja ob enaki kakovosti pristanka"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Zagotoviti je treba nedrsečo površino in dovolj prostora. Ne tekmuj z razdaljo na račun pristanka."
+    ],
+    "single_joint": false,
+    "loading_potential": "moderate",
+    "training_role": "power",
+    "time_based": false
   }
 ]
