@@ -320,7 +320,18 @@ def test_alternatives_preserve_movement_pattern_and_do_not_duplicate_regressions
         for ex in session["exercises"]:
             assert not set(ex["alternatives"]).intersection(ex["regressions"])
     bridge = next(ex for session in plan["sessions"] for ex in session["exercises"] if ex["exercise_id"] == "glute_bridge")
+    assert bridge["pattern"] == "hip_extension"
     assert "Romunski mrtvi dvig" not in bridge["alternatives"]
+
+
+def test_two_day_hypertrophy_includes_hip_extension_once_when_time_allows():
+    plan = generate_program({**BASE, "session_minutes": 60})
+    hip_extension = [
+        ex for session in plan["sessions"] for ex in session["exercises"]
+        if ex["pattern"] == "hip_extension"
+    ]
+    assert len(hip_extension) == 1
+    assert hip_extension[0]["joint_type"] == "multi_joint"
 
 
 def test_45_minute_hypertrophy_program_uses_flexible_time_and_no_default_stability():
