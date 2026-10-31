@@ -169,7 +169,19 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
             sets, reps, rir, rest = 2, "10–15", 3, 75
         else:
             sets, reps, rir, rest = (3, "6–12", 3, 90) if level != "beginner" else (2, "8–12", 3, 75)
-    return {"sets": sets, "reps": reps, "rir": rir, "rest_seconds": rest, "rep_unit": "per_side" if (unilateral or exercise.get("reps_per_side")) else "total"}
+    prescription = {
+        "sets": sets,
+        "reps": reps,
+        "rest_seconds": rest,
+        "rep_unit": "per_side" if (unilateral or exercise.get("reps_per_side")) else "total",
+    }
+    if pattern in {"trunk_stability", "anti_rotation"}:
+        prescription["effort_target"] = (
+            "Serijo zaključi, preden izgubiš stabilen položaj ali nadzor nad gibanjem."
+        )
+    else:
+        prescription["rir"] = rir
+    return prescription
 
 
 def _estimated_minutes(exercises: list[dict]) -> int:
@@ -270,7 +282,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             prescription = _prescription(p["goal"], p["experience"], pattern, candidate)
             if reduce_load:
                 prescription["sets"] = max(2, prescription["sets"] - 1)
-                prescription["rir"] = min(4, prescription["rir"] + 1)
+                if prescription.get("rir") is not None:
+                    prescription["rir"] = min(4, prescription["rir"] + 1)
                 prescription["rest_seconds"] += 30
             optional_equipment = sorted(
                 set(candidate["equipment_any"]) & set(p["equipment"]),
@@ -355,7 +368,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             pattern_session_frequency[item["pattern"]] += 1
             pattern_work_sets[item["pattern"]] += item["prescription"]["sets"]
     return {
-        "program_version": "2.3.0",
+        "program_version": "2.3.1",
         "goal": p["goal"],
         "experience": p["experience"],
         "sessions_per_week": p["sessions_per_week"],
