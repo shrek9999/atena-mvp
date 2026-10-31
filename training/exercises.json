@@ -4387,5 +4387,58 @@
     "single_joint": false,
     "loading_potential": "moderate",
     "training_role": "main"
+  },
+  {
+    "id": "box_jump_intervals",
+    "name": "Kratki intervali skokov na zaboj",
+    "name_en": "Box jump intervals",
+    "pattern": "conditioning",
+    "joint_type": "multi_joint",
+    "goals": [
+      "endurance",
+      "general_fitness",
+      "power"
+    ],
+    "equipment": [
+      "box"
+    ],
+    "equipment_any": [],
+    "level": "advanced",
+    "primary_muscles": [
+      "quadriceps",
+      "gluteus_maximus",
+      "calves"
+    ],
+    "secondary_muscles": [
+      "trunk"
+    ],
+    "target_systems": [
+      "cardiorespiratory"
+    ],
+    "cues": [
+      "Izberi nizek zaboj, na katerega pristaneš zanesljivo in tiho.",
+      "Ohrani kratke intervale in dovolj odmora za kakovosten pristanek.",
+      "Stopi dol; ne skači z zaboja."
+    ],
+    "common_errors": [
+      "Padec kakovosti pristanka.",
+      "Previsok zaboj ali prevelika gostota skokov."
+    ],
+    "regressions": [
+      "box_jump",
+      "Hiter počep v atletski položaj"
+    ],
+    "progressions": [
+      "Več kakovostnih ponovitev v intervalu, ne višji zaboj za vsako ceno."
+    ],
+    "alternatives": [],
+    "warnings": [
+      "To je napredna, udarno zahtevna intervalna možnost; ne uporabljaj kot privzeto aerobno vadbo. Prekini, ko se poslabša kakovost pristanka."
+    ],
+    "single_joint": false,
+    "loading_potential": "moderate",
+    "training_role": "conditioning",
+    "endurance_type": "anaerobic",
+    "time_based": true
   }
 ]
