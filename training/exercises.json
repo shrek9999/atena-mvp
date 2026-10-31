@@ -4623,5 +4623,53 @@
     "training_role": "mobility",
     "time_based": true,
     "unilateral": true
+  },
+  {
+    "id": "push_up_incline",
+    "name": "Skleca z rokami na povišani opori",
+    "name_en": "Incline push-up",
+    "pattern": "horizontal_push",
+    "joint_type": "multi_joint",
+    "goals": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "equipment": [
+      "household_support"
+    ],
+    "equipment_any": [],
+    "level": "beginner",
+    "primary_muscles": [
+      "pectorals",
+      "triceps"
+    ],
+    "secondary_muscles": [
+      "anterior_deltoids",
+      "trunk"
+    ],
+    "cues": [
+      "Dlani postavi na stabilno, nedrsečo oporo.",
+      "Višja opora zmanjša zahtevnost.",
+      "Telo ohrani v ravni liniji."
+    ],
+    "common_errors": [
+      "Ugrezanje bokov.",
+      "Izguba nadzora v spodnjem položaju."
+    ],
+    "regressions": [
+      "Skleca ob steni"
+    ],
+    "progressions": [
+      "push_up"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Oporo preveri pred vsako serijo."
+    ],
+    "single_joint": false,
+    "training_role": "main",
+    "loading_potential": "moderate",
+    "time_based": false
   }
 ]
