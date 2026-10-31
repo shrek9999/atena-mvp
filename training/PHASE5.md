@@ -36,3 +36,13 @@ Generator ne izbira več le vaj po osnovnem gibalnem vzorcu. Upošteva tudi tip 
 - Stabilizacijske vaje in vaje za preprečevanje rotacije ne uporabljajo klasičnega RIR; predpisano je merilo kakovosti izvedbe in nadzora.
 - Pri konservativni prilagoditvi po zahtevnem treningu se RIR poveča samo pri vajah, kjer je RIR smiseln; stabilizacijske vaje ostanejo vezane na kakovost izvedbe.
 - Različica generatorja: 2.3.1.
+
+
+## Phase 5.2 – izkušenost, tempo in amplituda
+- Izkušenost je samostojno programsko merilo. Začetnik tudi pri cilju moč začne večinoma z 8–12 ponovitvami, približno 2–3 ponovitvami v rezervi ter poudarkom na učenju osnovnih gibalnih vzorcev in ponovljivi tehniki. Nižji razponi in večje obremenitve se uvajajo postopno z napredovanjem.
+- Intermediate in advanced ohranita bolj specifične razpone ponovitev glede na cilj; pri moči intermediate uporablja 5–8, advanced pa 3–6 pri glavnih vzorcih počepa in predklona z ravnim hrbtom.
+- Vsaka vaja ima predpisan tempo in razlago. Glavne večsklepne vaje uporabljajo privzeti tempo 3–0–1–0; stabilizacijske in eksplozivne vaje imajo tempo, prilagojen funkciji.
+- Vsaka vaja ima navodilo za amplitudo: čim večja neboleča amplituda, ki jo omogočata gibljivost in nadzor, brez izgube položaja.
+- Pri horizontalnem potisku imata prednost skleca (z višino opore, prilagojeno sposobnostim) in potisk ročk na klopi. Potisk ročk na tleh ostane rezervna možnost zaradi omejene amplitude.
+- Ocena trajanja upošteva predpisani tempo, ne več samo generične tri sekunde na ponovitev.
+- Različica generatorja: 2.4.0.
