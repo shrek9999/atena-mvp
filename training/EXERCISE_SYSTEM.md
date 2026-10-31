@@ -4,7 +4,7 @@
 
 The catalogue is the source of truth for exercise selection. The generator must select an exercise because its movement pattern, training role, loading potential, available equipment and intended stimulus match the user's goal—not merely because the exercise name contains a familiar movement.
 
-The catalogue currently contains 93 curated entries. It is a controlled pilot library, not an exhaustive encyclopaedia. New exercises should be added only with a defined purpose, equipment contract, coaching cues, common errors, regression, progression and safety notes.
+The catalogue currently contains 96 curated entries. It is a controlled pilot library, not an exhaustive encyclopaedia. New exercises should be added only with a defined purpose, equipment contract, coaching cues, common errors, regression, progression and safety notes.
 
 ## Movement architecture
 
@@ -15,7 +15,7 @@ The catalogue currently contains 93 curated entries. It is a controlled pilot li
 | Hinge | Deadlift, Romanian deadlift, dumbbell deadlift, single-leg RDL; unloaded hip hinge is a skill drill |
 | Hip extension | Glute bridge, long-lever bridge, elevated heel hip lift, hip thrust |
 | Knee flexion | Sliding leg curl, Nordic curl |
-| Horizontal push | Push-up progressions, dumbbell press, dips |
+| Horizontal push | Wall/incline/standard/decline push-up ladder, dumbbell press, parallel-bar dips and band-assisted dips |
 | Vertical push | Pike push-up, dumbbell/barbell overhead press, band press |
 | Horizontal pull | One-arm dumbbell/kettlebell row, barbell row, TRX/ring/table row, band row |
 | Vertical pull | Pull-up, chin-up, band-assisted and foot-assisted variants |
@@ -29,7 +29,7 @@ The main movement patterns remain squat, lunge, hinge, push, pull, carry and loc
 
 - **Strength:** build force production. Use appropriately challenging external resistance or scalable unilateral/bodyweight variants, lower rep ranges where suitable, sufficient rest and technically sound execution.
 - **Hypertrophy:** accumulate sufficient hard, repeatable work for the target musculature. Compound movements are prioritised. Single-joint accessories are opt-in for advanced trainees and longer sessions. A low-load skill drill must not be used as the main stimulus when a more scalable option exists.
-- **Endurance:** a distinct goal with aerobic locomotion and interval/mixed-modal conditioning. Aerobic work is primarily prescribed by duration and talk-test effort; intervals by work/rest and repeatability. Muscular endurance can be supported by carries, lunges and circuits. “Kondicija” is a broad everyday term; endurance is a more specific training quality.
+- **Endurance:** a distinct goal with aerobic locomotion and interval/mixed-modal conditioning. Aerobic work is primarily prescribed by duration and talk-test effort; intervals by work/rest, exercise type and repeatability. Box-jump intervals are an advanced optional modality, not the default conditioning choice. Muscular endurance can be supported by carries, lunges and circuits. “Kondicija” is a broad everyday term, not a precise physiological category. Endurance is a specific training quality; distinguish cardiorespiratory, local muscular and repeated high-intensity effort.
 - **Mobility:** combines active range exploration, controlled articular movement, transitions, end-range strength, loaded exercises through the individual's available range and selected static stretches. Static stretches complement—but do not replace—active mobility and strength through range. It is not synonymous with passive stretching.
 - **Power:** prioritises intent and movement quality. Stop sets when speed or landing quality materially deteriorates.
 - **Functional / general fitness:** combine foundational movement patterns and physical qualities according to the person's context. “Functional” is not a separate anatomical movement pattern.
@@ -44,7 +44,7 @@ Each exercise has a `loading_potential` value:
 
 This is a selection aid, not a universal ranking. The same push-up or split squat can be too easy for one person and challenging for another. The coach must consider training age, actual performance, target RIR, range, leverage and feedback.
 
-For hypertrophy without weights, ATENA should prefer challenging, controlled variants. For the posterior chain it can use long-lever/elevated hip extension or sliding/Nordic knee flexion when appropriate. The unloaded hip hinge remains available to teach the pattern, but is not selected as the primary hypertrophy hinge.
+For hypertrophy without weights, ATENA should prefer challenging, controlled variants. Preserve the hip-extension/knee-flexion posterior-chain substitute when the available time is short; do not drop it as optional accessory work. For the posterior chain it can use long-lever/elevated hip extension or sliding/Nordic knee flexion when appropriate. The unloaded hip hinge remains available to teach the pattern, but is not selected as the primary hypertrophy hinge.
 
 ## Equipment semantics
 
@@ -79,3 +79,12 @@ Carries are valuable loaded tasks for grip, trunk control, gait and postural end
 - Pain, instability, unsafe equipment or loss of control override the planned progression.
 - A missing movement pattern or equipment option should be reported honestly; the generator must not invent a safe anchor or substitute an unrelated exercise.
 - Exercise selection still needs professional review and live testing with representative profiles before production use.
+
+
+## Push-up scaling
+
+The horizontal-push ladder is explicit: wall push-up → incline push-up (higher support is easier; lower support is harder) → floor push-up → decline push-up. The selected support must be stable and non-slip. Progress by lowering the hand support gradually while preserving trunk position and range.
+
+## Carries and stability
+
+Loaded carries are included in strength, general-fitness and functional plans when time and equipment permit. They train grip, trunk control and gait under load. Carries complement—not replace—direct trunk-control exercises. Specific trunk-control drills remain feedback-led when a movement-control issue is identified.
