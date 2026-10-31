@@ -12,7 +12,7 @@ SUPPORTED_SESSIONS = {2, 3, 4}
 PATTERN_LABELS = {
     "squat": "počep",
     "lunge": "izpadni korak",
-    "hinge": "predklon z ravnim hrbtom",
+    "hinge": "kolčni upogib in izteg (hip hinge)",
     "hip_extension": "izteg kolkov",
     "horizontal_push": "horizontalni potisk",
     "horizontal_pull": "horizontalni poteg",
@@ -22,7 +22,7 @@ PATTERN_LABELS = {
     "anti_rotation": "preprečevanje rotacije",
     "trunk_stability": "stabilizacija trupa",
     "jump": "skok",
-    "hinge_power": "eksplozivni predklon z ravnim hrbtom",
+    "hinge_power": "eksplozivni izteg kolkov",
     "accessory": "dopolnilna vaja",
     "conditioning": "kondicijska vadba",
     "locomotion": "lokomocija",
@@ -153,7 +153,13 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     elif goal == "endurance" and pattern == "locomotion":
         sets, reps, rir, rest = 1, "20–30 min", None, 0
     elif goal == "endurance" and pattern == "conditioning":
-        sets, reps, rir, rest = 6, "30 s", None, 30
+        kind = exercise.get("endurance_type")
+        if kind == "aerobic":
+            sets, reps, rir, rest = 4, "2–3 min", None, 90
+        elif kind == "anaerobic":
+            sets, reps, rir, rest = 4, "15–20 s", None, 90
+        else:
+            sets, reps, rir, rest = 4, "20–30 s", None, 60
     elif goal == "endurance" and pattern in {"carry", "lunge"}:
         sets, reps, rir, rest = 2, "12–20", None, 45
     elif is_power:
@@ -225,7 +231,16 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     if goal == "endurance" and pattern == "locomotion":
         prescription.update({"work_seconds": 1200, "time_label": "neprekinjene aerobne aktivnosti", "effort_target": "Zmeren pogovorni tempo; lahko govoriš v stavkih, vendar čutiš pospešeno dihanje."})
     elif goal == "endurance" and pattern == "conditioning":
-        prescription.update({"work_seconds": 30, "time_label": "dela", "effort_target": "Intervali naj bodo zahtevni, vendar tehnično ponovljivi; ne začni z maksimalnim naporom."})
+        kind = exercise.get("endurance_type")
+        duration = 180 if kind == "aerobic" else 20 if kind == "anaerobic" else 30
+        target = (
+            "Zmeren, enakomeren napor; ohrani pogovorni tempo in tehniko."
+            if kind == "aerobic" else
+            "Kratek intenzivnejši interval; kakovost izvedbe ostane pred hitrostjo."
+            if kind == "anaerobic" else
+            "Ponavljaj delo z enakomerno tehniko; končaj interval, ko se kakovost poslabša."
+        )
+        prescription.update({"work_seconds": duration, "time_label": "intervala", "effort_target": target})
     elif (goal == "mobility" or pattern in {"mobility", "mobility_stretch"}) and exercise.get("time_based"):
         duration = 30 if pattern == "mobility_stretch" else 20
         target = "Zadrži blag do zmeren razteg brez bolečine, mravljinčenja ali prisiljevanja." if pattern == "mobility_stretch" else "Deluj v kontrolirani neboleči amplitudi; brez siljenja v končni položaj."
