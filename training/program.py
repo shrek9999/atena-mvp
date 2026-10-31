@@ -357,6 +357,11 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 continue
             # Rotate variants across sessions and prefer the least-used exercise to distribute exposure.
             def selection_priority(item: dict) -> int:
+                if p["goal"] == "mobility" and pattern == "squat":
+                    if item["id"] == "loaded_deep_squat" and {"dumbbell", "kettlebell"} & set(p["equipment"]):
+                        return -10
+                    if item["id"] == "reaching_squat":
+                        return -5
                 if pattern == "horizontal_push":
                     if item["id"] == "bench_dip":
                         return 10
