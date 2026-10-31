@@ -288,20 +288,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 else "accessory" if candidate["single_joint"]
                 else "compound"
             )
-            regressions = safe_references(candidate["regressions"], candidate["id"], pattern)
-            alternatives = [
-                value for value in safe_references(candidate["alternatives"], candidate["id"], pattern)
-                if value not in regressions
-            ]
-            exercise_category = (
-                "stability" if pattern in {"trunk_stability", "anti_rotation"}
-                else "hip_extension" if pattern == "hip_extension"
-                else "accessory" if candidate["single_joint"]
-                else "compound"
-            )
             selected.append({
                 "exercise_id": candidate["id"],
-                "exercise_category": exercise_category,
                 "exercise_category": exercise_category,
                 "name": candidate["name"],
                 "pattern": pattern,
@@ -319,8 +307,10 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             for muscle in candidate["primary_muscles"]:
                 exposure[muscle] += prescription["sets"]
 
-        # Keep the most important four-to-six items and reduce accessory load to fit the clock.
-        while selected and _estimated_minutes(selected) > p["session_minutes"]:
+        # Reserve up to three minutes for real-world variation in pace and equipment changes.
+        planning_budget = max(20, p["session_minutes"] - 3)
+        # Preserve the main compound patterns; trim optional work first when needed.
+        while selected and _estimated_minutes(selected) > planning_budget:
             removable = next((i for i in range(len(selected) - 1, -1, -1)
                               if selected[i]["pattern"] in {"accessory", "hip_extension", "carry", "vertical_push", "vertical_pull", "lunge", "anti_rotation", "trunk_stability"}), None)
             if removable is None:
