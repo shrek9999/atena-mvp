@@ -125,6 +125,11 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
     if include_stability:
         patterns.insert(0, "trunk_stability")
     if include_hip_extension:
+        # Keep the session exercise count stable: trade one unilateral slot
+        # for targeted hip extension, while the weekly plan retains lunges
+        # in the complementary session.
+        if "lunge" in patterns:
+            patterns.remove("lunge")
         patterns.append("hip_extension")
     if goal == "power":
         patterns += ["jump", "hinge_power"]
