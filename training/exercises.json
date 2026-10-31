@@ -565,7 +565,8 @@
     "cues": [
       "Telo ohrani v enotni liniji.",
       "Komolce vodi pod nadzorovanim kotom.",
-      "Prsni koš približaj tlom brez izgube položaja trupa."
+      "Prsni koš približaj tlom oziroma opori skozi polno kontrolirano amplitudo.",
+      "Višino opore prilagodi tako, da ohraniš nadzor in postopno povečuješ zahtevnost."
     ],
     "common_errors": [
       "Ugrezanje bokov.",
@@ -585,11 +586,12 @@
       "Višino opore prilagodi sposobnosti."
     ],
     "single_joint": false,
-    "equipment_any": []
+    "equipment_any": [],
+    "range_of_motion": "Spusti prsni koš čim bližje tlom oziroma opori skozi polno kontrolirano amplitudo. Višino opore izberi glede na moč in nadzor; z napredovanjem jo postopno znižuj."
   },
   {
     "id": "dumbbell_bench_press",
-    "name": "Potisk ročk leže",
+    "name": "Potisk ročk na klopi",
     "name_en": "Dumbbell bench press",
     "pattern": "horizontal_push",
     "joint_type": "multi_joint",
@@ -611,7 +613,7 @@
     ],
     "cues": [
       "Lopatice stabilno nasloni na klop.",
-      "Spuščaj ročki nadzorovano.",
+      "Spuščaj ročki nadzorovano do največjega obsega, ki ga lahko ohraniš brez izgube položaja ramen.",
       "Ohrani zapestji nad komolci."
     ],
     "common_errors": [
@@ -631,7 +633,8 @@
       "Uporabi obremenitev, ki jo lahko varno odložiš."
     ],
     "single_joint": false,
-    "equipment_any": []
+    "equipment_any": [],
+    "range_of_motion": "Ročki spuščaj do globine, pri kateri ohraniš nadzor lopatic in ramen. Uporabi polno nebolečo amplitudo, ne omejuj je po nepotrebnem."
   },
   {
     "id": "overhead_press",
@@ -1285,7 +1288,8 @@
       "Ročki odloži nadzorovano; izberi breme, ki ga lahko varno obvladaš."
     ],
     "single_joint": false,
-    "equipment_any": []
+    "equipment_any": [],
+    "range_of_motion": "Amplituda je omejena s stikom nadlakti s tlemi. Kadar oprema in sposobnosti dopuščajo, daj prednost skleci s prilagojeno višino opore ali potisku ročk na stabilni klopi."
   },
   {
     "id": "band_row",
