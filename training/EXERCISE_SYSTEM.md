@@ -4,7 +4,7 @@
 
 The catalogue is the source of truth for exercise selection. The generator must select an exercise because its movement pattern, training role, loading potential, available equipment and intended stimulus match the user's goal—not merely because the exercise name contains a familiar movement.
 
-The catalogue currently contains 87 curated entries. It is a controlled pilot library, not an exhaustive encyclopaedia. New exercises should be added only with a defined purpose, equipment contract, coaching cues, common errors, regression, progression and safety notes.
+The catalogue currently contains 88 curated entries. It is a controlled pilot library, not an exhaustive encyclopaedia. New exercises should be added only with a defined purpose, equipment contract, coaching cues, common errors, regression, progression and safety notes.
 
 ## Movement architecture
 
@@ -63,7 +63,7 @@ Progression is goal-specific and is not synonymous with adding weight.
 
 - Strength / hypertrophy: meet the target rep range at the intended RIR and with consistent technique; then add a small load when available or use a harder variation, longer lever, unilateral version or greater controlled range.
 - Endurance: gradually increase duration or total work, then intensity or density; change one main variable at a time.
-- Mobility: improve active control, tolerable range and force production in that range. Do not force end positions.
+- Mobility: improve active control, tolerable range and force production in that range. Repetition-based drills stay rep-prescribed; sustained positions are time-prescribed. Do not force end positions.
 - Power: preserve speed, coordination and landing quality; do not chase fatigue.
 
 Tempo is chosen by purpose: controlled lowering for resistance work, fast intent for power, rhythmic pacing for endurance and slow active control for mobility.
