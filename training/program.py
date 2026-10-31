@@ -379,20 +379,49 @@ def generate_program(profile: object, feedback: object = None) -> dict:
         # Reserve up to three minutes for real-world variation in pace and equipment changes.
         planning_budget = max(20, p["session_minutes"] - 3)
         # Preserve the main compound patterns; trim optional work first when needed.
+        volume_adjustments = []
         while selected and _estimated_minutes(selected) > planning_budget:
-            removal_priority = (
-                "accessory", "hip_extension", "carry", "vertical_pull",
-                "vertical_push", "lunge", "anti_rotation", "trunk_stability",
-            )
+            # Remove truly optional work first; preserve the weekly movement-pattern map.
+            removal_priority = ("accessory", "hip_extension", "carry")
             removable = next(
                 (next((i for i, item in enumerate(selected) if item["pattern"] == pattern), None)
                  for pattern in removal_priority
                  if any(item["pattern"] == pattern for item in selected)),
                 None,
             )
-            if removable is None:
+            if removable is not None:
+                removed = selected.pop(removable)
+                missing_patterns.add(removed["pattern"])
+                used_counts[removed["exercise_id"]] -= 1
+                for muscle in removed["primary_muscles"]:
+                    exposure[muscle] -= removed["prescription"]["sets"]
+                continue
+
+            # If the time budget is still exceeded, reduce a main compound lift
+            # from three to two sets before dropping a foundational movement pattern.
+            reducible = next(
+                (item for item in selected
+                 if item["pattern"] in {"squat", "hinge", "horizontal_push", "horizontal_pull"}
+                 and item["prescription"]["sets"] > 2),
+                None,
+            )
+            if reducible is not None:
+                reducible["prescription"]["sets"] -= 1
+                for muscle in reducible["primary_muscles"]:
+                    exposure[muscle] -= 1
+                volume_adjustments.append(reducible["name"])
+                continue
+
+            # Only as a last resort trim non-core additions; keep trunk control work.
+            final_priority = ("vertical_push", "vertical_pull", "lunge", "anti_rotation")
+            final_index = next(
+                (i for pattern in final_priority
+                 for i, item in enumerate(selected) if item["pattern"] == pattern),
+                None,
+            )
+            if final_index is None:
                 break
-            removed = selected.pop(removable)
+            removed = selected.pop(final_index)
             missing_patterns.add(removed["pattern"])
             used_counts[removed["exercise_id"]] -= 1
             for muscle in removed["primary_muscles"]:
@@ -413,6 +442,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "warm_up_minutes": 6,
             "estimated_minutes": estimated,
             "available_minutes": p["session_minutes"],
+            "volume_adjustments": volume_adjustments,
             "exercises": selected,
         })
 
