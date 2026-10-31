@@ -4,7 +4,7 @@
 
 The catalogue is the source of truth for exercise selection. The generator must select an exercise because its movement pattern, training role, loading potential, available equipment and intended stimulus match the user's goal—not merely because the exercise name contains a familiar movement.
 
-The catalogue currently contains 96 curated entries. It is a controlled pilot library, not an exhaustive encyclopaedia. New exercises should be added only with a defined purpose, equipment contract, coaching cues, common errors, regression, progression and safety notes.
+The catalogue currently contains 107 curated entries. It is a controlled pilot library, not an exhaustive encyclopaedia. New exercises should be added only with a defined purpose, equipment contract, coaching cues, common errors, regression, progression and safety notes.
 
 ## Movement architecture
 
@@ -19,11 +19,11 @@ The catalogue currently contains 96 curated entries. It is a controlled pilot li
 | Vertical push | Pike push-up, dumbbell/barbell overhead press, band press |
 | Horizontal pull | One-arm dumbbell/kettlebell row, barbell row, TRX/ring/table row, band row |
 | Vertical pull | Pull-up, chin-up, band-assisted and foot-assisted variants |
-| Carry / trunk | Farmer carry, suitcase carry, Pallof press, dead bug, Copenhagen plank |
-| Locomotion / conditioning | Walk, run, cycle, row, SkiErg, air bike, jump rope, burpee, shuttle run, sled push, step-up intervals, bear crawl |
-| Mobility / loaded range / stretching | 90/90 transitions, shinbox get-up, Cossack squat, ankle rocks, shoulder CARs, wall slides, stick pass-through, couch and hamstring stretches, deep squat hold, loaded full-range squat |
+| Carry / trunk | Farmer carry, suitcase carry, front-rack carry, overhead carry, Pallof press, dead bug, Copenhagen plank |
+| Locomotion / conditioning | Walk, run, cycle, row, SkiErg, air bike, jump rope, burpee, shuttle run, sled push and backward sled drag, step-up intervals, box-jump intervals, bear crawl |
+| Mobility / loaded range / stretching | 90/90 transitions and hip IR isometrics, shinbox get-up, Cossack squat, ankle rocks, dead hang, crab reach, elevated pigeon hinge, straight-leg hip hinge, shoulder CARs, wall slides, wall butterfly, stick pass-through, couch and hamstring stretches, deep squat hold, loaded full-range squat |
 
-The main movement patterns remain squat, lunge, hinge, push, pull, carry and locomotion. Mobility, conditioning, power and stability describe training roles or qualities and complement—not replace—the movement-pattern map.
+The main movement patterns remain squat, lunge, hinge, push, pull, carry and locomotion. Mobility, conditioning, power and stability describe training roles or qualities and complement—not replace—the movement-pattern map. Joint targets (ankle, hip, shoulder, thoracic spine) and physiological targets (cardiorespiratory system) are stored separately from anatomical muscle groups.
 
 ## Goals are not interchangeable
 
@@ -88,3 +88,27 @@ The horizontal-push ladder is explicit: wall push-up → incline push-up (higher
 ## Carries and stability
 
 Loaded carries are included in strength, general-fitness and functional plans when time and equipment permit. They train grip, trunk control and gait under load. Carries complement—not replace—direct trunk-control exercises. Specific trunk-control drills remain feedback-led when a movement-control issue is identified.
+
+
+## Additional movement options
+
+The library includes optional mobility work inspired by Strength Side's published mobility programme: 90/90 transitions and internal-rotation isometrics, deep squat practice, couch stretch, dead hangs, elevated pigeon hinge, straight-leg hinge, crab reach and wall butterfly. These are examples to adapt—not a fixed routine to copy. Their published programme pairs strength and mobility sessions and uses holds, repetitions and isometrics in one plan.
+
+ATG-inspired additions include Patrick step, ATG split squat, tibialis and full-range calf work, reverse Nordic curl, loaded squat through an individual's controlled range, and backward sled drag. These are coaching choices and optional progressions, not universal requirements or claims of injury prevention. Backward sled work and knee-over-toes loading must be introduced at a tolerable level and only where equipment, surface and movement control are appropriate.
+
+## Evidence versus coaching philosophy
+
+The 2026 ACSM position stand summarizes 137 systematic reviews involving more than 30,000 participants. It supports progressive resistance training for strength, hypertrophy, power and physical function; highlights heavy loads and complete range of motion for strength, higher weekly volume for hypertrophy, and fast concentric intent for power. It also notes that momentary failure, equipment type and complex periodisation did not consistently change outcomes in the reviewed evidence. Evidence on the optimal ROM for hypertrophy was insufficient to establish a single universal answer. ATENA therefore uses individualised, controlled ROM rather than forcing a universal depth.
+
+WHO describes aerobic activity as rhythmic movement of large muscle groups over a sustained period and equates this with endurance activity; it distinguishes this from brief high-intensity anaerobic efforts and muscle-strengthening activity.
+
+Reference reading:
+- ACSM 2026 Position Stand: https://pubmed.ncbi.nlm.nih.gov/41843416/
+- ACSM official summary: https://acsm.org/resistance-training-guidelines-update-2026/
+- WHO glossary: https://www.ncbi.nlm.nih.gov/books/NBK566047/
+- Strength Side mobility programme: https://strengthside.com/pages/free-program
+- Strength Side 90/90 and hip mobility example: https://www.youtube.com/watch?v=RhbUw_hiR3U
+- ATG Knee Ability series: https://app.atgonlinecoaching.com/articles/article-knee-ability-series-2-of-10
+- ATG backward-walking and sled-work discussion: https://www.atgonlinecoaching.com/articles/does-walking-backward-on-a-treadmill-work-for-knee-ability
+
+The ATG and Strength Side materials are used as sources of exercise ideas and coaching philosophy, not as independent clinical proof. Their claims about pain relief or injury prevention are not adopted as ATENA guarantees.
