@@ -631,3 +631,35 @@ def test_endurance_conditioning_intervals_use_exercise_specific_work_rest_doses(
     assert intervals
     assert all(exercise["prescription"]["sets"] == 4 for exercise in intervals)
     assert all(exercise["prescription"]["rest_seconds"] >= 60 for exercise in intervals)
+
+
+
+def test_push_up_program_displays_available_height_regressions_and_progressions():
+    profile = {
+        **BASE,
+        "goal": "hypertrophy",
+        "experience": "beginner",
+        "equipment": ["bodyweight", "chair", "wall", "household_support", "household_load"],
+        "session_minutes": 60,
+    }
+    plan = generate_program(profile)
+    exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
+    push_up = next(exercise for exercise in exercises if exercise["exercise_id"] == "push_up")
+    assert "Skleca z rokami na povišani opori" in push_up["regressions"]
+    assert "Skleca ob steni" in push_up["regressions"]
+    assert "Skleca z nogami na povišani opori" in push_up["progressions"]
+
+
+def test_progression_text_hides_specific_equipment_that_is_not_available():
+    profile = {
+        **BASE,
+        "goal": "strength",
+        "experience": "intermediate",
+        "equipment": ["bodyweight", "pull_up_bar", "household_support"],
+        "session_minutes": 75,
+    }
+    plan = generate_program(profile)
+    exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
+    pull_up = next((exercise for exercise in exercises if exercise["exercise_id"] == "pull_up"), None)
+    if pull_up:
+        assert "Zgib z dodatno obremenitvijo" not in pull_up["progressions"]
