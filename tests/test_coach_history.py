@@ -193,3 +193,15 @@ def test_profile_rejects_unhashable_goal_value(client):
         json={"profile": dict(PROFILE, goal=[])},
     )
     assert response.status_code == 400
+
+
+def test_full_app_registers_history_routes_and_profile_cors():
+    import app as atena_app
+
+    response = atena_app.app.test_client().options(
+        "/coach/profile",
+        headers={"Origin": "https://gregajenko.si"},
+    )
+    assert response.status_code == 204
+    assert "X-Profile-Token" in response.headers["Access-Control-Allow-Headers"]
+    assert "PUT" in response.headers["Access-Control-Allow-Methods"]
