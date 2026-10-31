@@ -42,8 +42,8 @@ plan = generate_program({
 
 ## API in stanje integracije
 
-Zaščiten endpoint je na voljo kot `POST /coach/program`. Zahteva glavo `X-Pilot-Token` in profil v JSON telesu. Endpoint je del backend pilotne veje; spletni vmesnik ga v tej fazi še ne kliče samodejno.
+Osnovni zaščiten endpoint `POST /coach/program` ostaja stateless in združljiv z obstoječim klicem. Razširitev profila in zgodovine je opisana v [fazi 2.1 – profil, zgodovina programa in dnevnik treningov](PHASE2_PROFILE_HISTORY.md). Novi endpointi omogočajo shranjevanje profila, ustvarjenih programov, dnevnika serij in strukturiranih povratnih informacij.
 
 ## Omejitve
 
-To je deterministični MVP, ne klinični sistem in ne individualna presoja trenerja. V tej fazi še ni shranjevanja profila, dnevnika izvedenih treningov, samodejnega spremljanja odziva ali longitudinalne periodizacije. API je zaščiten z obstoječim pilotnim žetonom. Brez ključa za model ne nastajajo stroški modela.
+To je deterministični MVP, ne klinični sistem in ne individualna presoja trenerja. Backend hrani podatke v SQLite, vendar trenutna brezplačna Render storitev nima priključene trajne podatkovne baze ali potrjenega trajnega diska. Zato je trajna hramba na gostovanem pilotu še odprta infrastrukturna zahteva. Spletni vmesnik še ni povezan z novimi endpointi. Brez novega plačljivega modelnega API-ja ne nastajajo stroški modela.
