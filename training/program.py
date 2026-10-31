@@ -325,7 +325,9 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                         return 0 if "dumbbell" in p["equipment"] else 5
                 return 0
             candidate = min(candidates, key=lambda item: (
-                selection_priority(item), used_counts[item["id"]],
+                selection_priority(item),
+                0 if p["experience"] != "beginner" or item["level"] == "beginner" else 1,
+                used_counts[item["id"]],
                 item["level"] != p["experience"], item["id"]
             ))
             used_counts[candidate["id"]] += 1
