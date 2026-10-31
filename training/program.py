@@ -441,6 +441,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "session": session_index + 1,
             "title": f"Trening {session_index + 1} – celotno telo",
             "warm_up_minutes": warm_up_minutes,
+            "warm_up_range": "5–7 min" if p["session_minutes"] <= 30 else "5–10 min",
             "exercise_count": len(selected),
             "estimated_minutes": estimated,
             "available_minutes": p["session_minutes"],
