@@ -118,12 +118,12 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         extras = [["lunge", "vertical_push"], ["vertical_pull", "lunge"], ["lunge", "vertical_push"]]
     else:
         extras = [["lunge", "vertical_push"], ["vertical_pull", "lunge"], ["lunge", "vertical_push"], ["vertical_pull", "lunge"]]
-    patterns = base + extras[session_index]
+    patterns = base + (extras[session_index][:1] if include_stability else extras[session_index])
     if include_stability:
         patterns.insert(0, "trunk_stability")
     if goal == "power":
         patterns += ["jump", "hinge_power"]
-    if include_accessories and len(patterns) < 6:
+    if include_accessories and len(patterns) < 7:
         patterns += ["accessory"]
     return patterns
 
@@ -284,7 +284,10 @@ def generate_program(profile: object, feedback: object = None) -> dict:
     missing_patterns: set[str] = set()
 
     for session_index in range(p["sessions_per_week"]):
-        patterns = _session_patterns(session_index, p["sessions_per_week"], p["goal"], p["include_accessories"], include_stability)
+        patterns = _session_patterns(
+            session_index, p["sessions_per_week"], p["goal"],
+            p["include_accessories"] and p["session_minutes"] >= 75, include_stability
+        )
         warm_up_minutes = 5 if p["session_minutes"] <= 30 else (7 if p["session_minutes"] <= 60 else 10)
         selected = []
         seen_patterns = set()
