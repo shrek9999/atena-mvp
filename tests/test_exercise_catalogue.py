@@ -155,3 +155,25 @@ def test_push_up_has_a_catalogue_backed_height_progression_and_dumbbell_row_need
     assert "push_up_incline" in {item["id"] for item in get_exercises(equipment={"bodyweight", "household_support"})}
     assert "push_up_decline" in {item["id"] for item in get_exercises(equipment={"bodyweight", "household_support"})}
     assert "one_arm_row" in {item["id"] for item in get_exercises(goal="hypertrophy", equipment={"dumbbell"})}
+
+
+
+def test_joint_regions_and_cardiorespiratory_systems_are_not_mislabelled_as_muscles():
+    non_muscle_tags = {
+        "ankle_mobility", "hip_mobility", "shoulder_mobility", "thoracic_mobility",
+        "shoulders", "upper_back", "grip", "cardiorespiratory_system",
+    }
+    for item in load_catalogue():
+        assert not (set(item["primary_muscles"]) | set(item["secondary_muscles"])) & non_muscle_tags, item["id"]
+    assert get_exercise("ankle_knee_to_wall")["target_regions"] == ["ankle"]
+    assert get_exercise("hip_90_90_switch")["target_regions"] == ["hip"]
+
+
+def test_added_strength_side_and_atg_variants_are_available():
+    records = {item["id"] for item in load_catalogue()}
+    assert {
+        "dead_hang", "hip_90_90_ir_isometric", "crab_reach",
+        "elevated_pigeon_hinge", "straight_leg_hip_hinge", "wall_butterfly",
+        "patrick_step", "reverse_nordic_curl", "sled_backward_drag",
+        "front_rack_carry", "overhead_carry",
+    } <= records
