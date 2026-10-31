@@ -3898,5 +3898,139 @@
     "equipment_any": [],
     "loading_potential": "moderate",
     "training_role": "main"
+  },
+  {
+    "id": "barbell_bent_over_row",
+    "name": "Veslanje z drogom v predklonu",
+    "name_en": "Barbell bent-over row",
+    "pattern": "horizontal_pull",
+    "joint_type": "multi_joint",
+    "goals": [
+      "hypertrophy",
+      "strength"
+    ],
+    "equipment": [
+      "barbell"
+    ],
+    "level": "intermediate",
+    "primary_muscles": [
+      "latissimus_dorsi",
+      "rhomboids"
+    ],
+    "secondary_muscles": [
+      "biceps",
+      "rear_deltoids",
+      "spinal_erectors",
+      "trunk"
+    ],
+    "cues": [
+      "Predklon vzpostavi v kolkih in ohrani stabilen trup.",
+      "Drog vodi proti spodnjemu delu reber."
+    ],
+    "common_errors": [
+      "Izguba položaja trupa.",
+      "Zagon z ledvenim delom."
+    ],
+    "regressions": [
+      "Veslanje z ročko z oporo"
+    ],
+    "progressions": [
+      "Veslanje z večjo obremenitvijo ali premorom"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Obremenitev prilagodi sposobnosti ohranjanja položaja trupa."
+    ],
+    "single_joint": false,
+    "equipment_any": [],
+    "loading_potential": "high",
+    "training_role": "main"
+  },
+  {
+    "id": "shoulder_pass_through_stick",
+    "name": "Prehod palice nad glavo (shoulder pass-through)",
+    "name_en": "Shoulder pass-through with stick",
+    "pattern": "mobility",
+    "joint_type": "multi_joint",
+    "goals": [
+      "mobility",
+      "functional"
+    ],
+    "equipment": [
+      "stick"
+    ],
+    "level": "beginner",
+    "primary_muscles": [
+      "shoulder_mobility"
+    ],
+    "secondary_muscles": [
+      "upper_back"
+    ],
+    "cues": [
+      "Prijem prilagodi širini, ki omogoča neboleč prehod.",
+      "Rebra in medenico ohrani pod nadzorom."
+    ],
+    "common_errors": [
+      "Prisiljevanje obsega.",
+      "Pretiran izteg ledvenega dela."
+    ],
+    "regressions": [
+      "Širši prijem in manjši obseg"
+    ],
+    "progressions": [
+      "Postopno ožji prijem ob ohranjeni kontroli"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Ne izvajaj skozi bolečino; palica mora biti lahka in nepoškodovana."
+    ],
+    "single_joint": false,
+    "equipment_any": [],
+    "loading_potential": "low",
+    "training_role": "mobility"
+  },
+  {
+    "id": "wall_slide",
+    "name": "Drsenje rok ob steni",
+    "name_en": "Wall slide",
+    "pattern": "mobility",
+    "joint_type": "multi_joint",
+    "goals": [
+      "mobility",
+      "functional"
+    ],
+    "equipment": [
+      "wall"
+    ],
+    "level": "beginner",
+    "primary_muscles": [
+      "shoulder_mobility"
+    ],
+    "secondary_muscles": [
+      "serratus_anterior",
+      "trunk"
+    ],
+    "cues": [
+      "Podlakti drsi ob steni navzgor.",
+      "Ohrani nadzor reber in medenice."
+    ],
+    "common_errors": [
+      "Pretirano usločenje ledvenega dela.",
+      "Dvig ramen brez nadzora."
+    ],
+    "regressions": [
+      "Manjši obseg gibanja"
+    ],
+    "progressions": [
+      "Večji obseg ali odmik od stene"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Obseg prilagodi toleranci ramen."
+    ],
+    "single_joint": false,
+    "equipment_any": [],
+    "loading_potential": "low",
+    "training_role": "mobility"
   }
 ]
