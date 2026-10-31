@@ -4706,7 +4706,9 @@
       "Upogibanje v kolkih namesto nagiba telesa kot celote.",
       "Prehiter spust."
     ],
-    "regressions": [],
+    "regressions": [
+      "Skleca ob steni z manjšo nagnjenostjo telesa"
+    ],
     "progressions": [
       "push_up_incline"
     ],
