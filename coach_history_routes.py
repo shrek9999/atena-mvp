@@ -101,6 +101,34 @@ def _validate_feedback(value: object) -> dict:
     }
 
 
+def _merge_check_in(value: object, previous: dict | None) -> dict:
+    """A check-in updates current status without pretending a workout was completed."""
+    if not isinstance(value, dict):
+        raise ValueError("feedback mora biti JSON objekt.")
+    discomfort = value.get("discomfort")
+    if not isinstance(discomfort, str) or discomfort not in {"yes", "no"}:
+        raise ValueError("discomfort mora biti yes ali no.")
+    merged = dict(previous or {
+        "difficulty": "right",
+        "completed": True,
+        "discomfort": "no",
+        "movement_control": "none",
+        "recovery": "normal",
+    })
+    merged["discomfort"] = discomfort
+    if "recovery" in value:
+        recovery = value["recovery"]
+        if not isinstance(recovery, str) or recovery not in {"good", "normal", "poor"}:
+            raise ValueError("recovery mora biti good, normal ali poor.")
+        merged["recovery"] = recovery
+    if "movement_control" in value:
+        movement_control = value["movement_control"]
+        if not isinstance(movement_control, str) or movement_control not in {"none", "spinal_flexion", "bracing", "both"}:
+            raise ValueError("movement_control ni veljavna vrednost.")
+        merged["movement_control"] = movement_control
+    return merged
+
+
 def _storage_error():
     logger.exception("ATENA profile/history storage operation failed")
     return jsonify({"error": "Podatkov trenutno ni mogoče varno shraniti ali prebrati."}), 503
@@ -294,7 +322,8 @@ def coach_check_in():
     if payload is None:
         return jsonify({"error": "Pričakovan je JSON objekt."}), 400
     try:
-        feedback = _validate_feedback(payload.get("feedback"))
+        previous = latest_feedback(profile["profile_id"])
+        feedback = _merge_check_in(payload.get("feedback"), previous)
         saved = save_check_in(profile["profile_id"], feedback)
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
