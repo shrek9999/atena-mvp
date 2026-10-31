@@ -126,7 +126,7 @@ def test_endurance_and_mobility_pools_are_distinct_and_present():
     endurance = {item["id"] for item in get_exercises(goal="endurance")}
     mobility = {item["id"] for item in get_exercises(goal="mobility")}
     assert {"running_easy", "brisk_walking", "burpee", "jump_rope", "box_jump_intervals"} <= endurance
-    assert {"hip_90_90_switch", "ankle_knee_to_wall", "deep_squat_hold", "cossack_squat", "calf_raise_full_rom", "tibialis_raise"} <= mobility
+    assert {"hip_90_90_switch", "ankle_knee_to_wall", "deep_squat_hold", "cossack_squat", "calf_raise_full_rom", "tibialis_raise", "couch_stretch", "supine_hamstring_stretch", "doorway_pec_stretch"} <= mobility
 
 
 
@@ -141,5 +141,6 @@ def test_cardiorespiratory_targets_are_not_mislabelled_as_muscles():
 
 def test_mobility_holds_and_active_repetitions_have_different_dose_types():
     assert get_exercise("deep_squat_hold")["time_based"] is True
+    assert get_exercise("couch_stretch")["time_based"] is True
     assert get_exercise("hip_90_90_switch")["time_based"] is False
     assert get_exercise("cossack_squat")["time_based"] is False
