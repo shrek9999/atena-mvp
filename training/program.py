@@ -425,6 +425,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 "loading_potential": candidate["loading_potential"],
                 "training_role": candidate["training_role"],
                 "endurance_type": candidate.get("endurance_type"),
+                "target_systems": candidate.get("target_systems", []),
                 "time_based": bool(candidate.get("time_based")),
                 "reps_per_side": bool(candidate.get("unilateral") or candidate.get("reps_per_side")),
                 "primary_muscles": candidate["primary_muscles"],
@@ -517,7 +518,16 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "exercises": selected,
         })
 
-    total_sets = sum(item["prescription"]["sets"] for session in plans for item in session["exercises"])
+    all_selected = [item for session in plans for item in session["exercises"]]
+    total_sets = sum(item["prescription"]["sets"] for item in all_selected)
+    timed_work_seconds = sum(
+        item["prescription"].get("work_seconds", 0) * item["prescription"]["sets"]
+        for item in all_selected
+    )
+    endurance_work_seconds: Counter[str] = Counter()
+    for item in all_selected:
+        if item.get("endurance_type") and item["prescription"].get("work_seconds") is not None:
+            endurance_work_seconds[item["endurance_type"]] += item["prescription"]["work_seconds"] * item["prescription"]["sets"]
     pattern_session_frequency: Counter[str] = Counter()
     pattern_work_sets: Counter[str] = Counter()
     for session in plans:
@@ -563,7 +573,12 @@ def generate_program(profile: object, feedback: object = None) -> dict:
         "weekly_summary": {
             "total_work_sets": total_sets,
             "exercise_frequency": dict(used_counts),
-            "primary_muscle_set_exposure": {key: value for key, value in exposure.items() if value > 0},
+            "primary_muscle_set_exposure": (
+                {key: value for key, value in exposure.items() if value > 0}
+                if p["goal"] in {"hypertrophy", "strength"} else {}
+            ),
+            "time_based_work_seconds": timed_work_seconds,
+            "endurance_type_work_seconds": dict(endurance_work_seconds),
             "pattern_session_frequency": dict(pattern_session_frequency),
             "pattern_work_sets": dict(pattern_work_sets),
             "unfilled_patterns": sorted(missing_patterns),
