@@ -2837,7 +2837,10 @@
     "equipment": [],
     "level": "beginner",
     "primary_muscles": [
-      "cardiorespiratory_system"
+      "quadriceps",
+      "gluteus_maximus",
+      "hamstrings",
+      "calves"
     ],
     "secondary_muscles": [
       "calves",
@@ -2869,7 +2872,10 @@
     "loading_potential": "moderate",
     "training_role": "conditioning",
     "endurance_type": "aerobic",
-    "time_based": true
+    "time_based": true,
+    "target_systems": [
+      "cardiorespiratory"
+    ]
   },
   {
     "id": "brisk_walking",
@@ -2886,7 +2892,9 @@
     "equipment": [],
     "level": "beginner",
     "primary_muscles": [
-      "cardiorespiratory_system"
+      "gluteus_maximus",
+      "quadriceps",
+      "calves"
     ],
     "secondary_muscles": [
       "calves",
@@ -2916,7 +2924,10 @@
     "loading_potential": "moderate",
     "training_role": "conditioning",
     "endurance_type": "aerobic",
-    "time_based": true
+    "time_based": true,
+    "target_systems": [
+      "cardiorespiratory"
+    ]
   },
   {
     "id": "cycling",
@@ -2933,7 +2944,9 @@
     ],
     "level": "beginner",
     "primary_muscles": [
-      "cardiorespiratory_system"
+      "quadriceps",
+      "gluteus_maximus",
+      "hamstrings"
     ],
     "secondary_muscles": [
       "quadriceps",
@@ -2961,7 +2974,10 @@
     "loading_potential": "moderate",
     "training_role": "conditioning",
     "endurance_type": "aerobic",
-    "time_based": true
+    "time_based": true,
+    "target_systems": [
+      "cardiorespiratory"
+    ]
   },
   {
     "id": "jump_rope",
@@ -2979,8 +2995,9 @@
     ],
     "level": "intermediate",
     "primary_muscles": [
-      "calves",
-      "cardiorespiratory_system"
+      "gastrocnemius",
+      "soleus",
+      "quadriceps"
     ],
     "secondary_muscles": [
       "quadriceps",
@@ -3010,7 +3027,10 @@
     "loading_potential": "moderate",
     "training_role": "conditioning",
     "endurance_type": "aerobic",
-    "time_based": true
+    "time_based": true,
+    "target_systems": [
+      "cardiorespiratory"
+    ]
   },
   {
     "id": "burpee",
@@ -3026,9 +3046,10 @@
     "equipment": [],
     "level": "intermediate",
     "primary_muscles": [
-      "cardiorespiratory_system",
       "quadriceps",
-      "pectorals"
+      "gluteus_maximus",
+      "pectorals",
+      "triceps"
     ],
     "secondary_muscles": [
       "triceps",
@@ -3060,7 +3081,10 @@
     "loading_potential": "moderate",
     "training_role": "conditioning",
     "endurance_type": "anaerobic",
-    "time_based": true
+    "time_based": true,
+    "target_systems": [
+      "cardiorespiratory"
+    ]
   },
   {
     "id": "sled_push",
@@ -3110,7 +3134,10 @@
     "loading_potential": "high",
     "training_role": "conditioning",
     "endurance_type": "muscular",
-    "time_based": true
+    "time_based": true,
+    "target_systems": [
+      "cardiorespiratory"
+    ]
   },
   {
     "id": "rower_intervals",
@@ -3127,7 +3154,10 @@
     ],
     "level": "beginner",
     "primary_muscles": [
-      "cardiorespiratory_system"
+      "quadriceps",
+      "gluteus_maximus",
+      "latissimus_dorsi",
+      "trunk"
     ],
     "secondary_muscles": [
       "quadriceps",
@@ -3156,7 +3186,10 @@
     "loading_potential": "moderate",
     "training_role": "conditioning",
     "endurance_type": "aerobic",
-    "time_based": true
+    "time_based": true,
+    "target_systems": [
+      "cardiorespiratory"
+    ]
   },
   {
     "id": "mountain_climber",
@@ -3172,8 +3205,9 @@
     "equipment": [],
     "level": "beginner",
     "primary_muscles": [
-      "cardiorespiratory_system",
-      "trunk"
+      "trunk",
+      "hip_flexors",
+      "shoulders"
     ],
     "secondary_muscles": [
       "hip_flexors",
@@ -3204,7 +3238,10 @@
     "loading_potential": "moderate",
     "training_role": "conditioning",
     "endurance_type": "anaerobic",
-    "time_based": true
+    "time_based": true,
+    "target_systems": [
+      "cardiorespiratory"
+    ]
   },
   {
     "id": "deep_squat_hold",
