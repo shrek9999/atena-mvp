@@ -324,7 +324,7 @@
       "strength"
     ],
     "equipment": [
-      "bench"
+      "household_support"
     ],
     "level": "intermediate",
     "primary_muscles": [
@@ -354,10 +354,12 @@
       "reverse_lunge"
     ],
     "warnings": [
-      "Višino opore in globino prilagodi posamezniku."
+      "Zadnjo nogo podpri na stabilni, nepremični in primerno nizki opori (npr. klopi ali stabilnem stolu). Višino prilagodi posamezniku."
     ],
     "single_joint": false,
     "equipment_any": [
+      "bench",
+      "chair",
       "bodyweight",
       "dumbbell"
     ],
