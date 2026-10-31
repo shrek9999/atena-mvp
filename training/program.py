@@ -221,8 +221,8 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         prescription.update({"work_seconds": 1200, "time_label": "neprekinjene aerobne aktivnosti", "effort_target": "Zmeren pogovorni tempo; lahko govoriš v stavkih, vendar čutiš pospešeno dihanje."})
     elif goal == "endurance" and pattern == "conditioning":
         prescription.update({"work_seconds": 30, "time_label": "dela", "effort_target": "Intervali naj bodo zahtevni, vendar tehnično ponovljivi; ne začni z maksimalnim naporom."})
-    elif goal == "mobility" or pattern == "mobility":
-        prescription.update({"work_seconds": 20, "time_label": "aktivnega zadržanja oziroma dela", "effort_target": "Deluj v kontrolirani neboleči amplitudi; brez siljenja v končni položaj."})
+    elif (goal == "mobility" or pattern == "mobility") and exercise.get("time_based"):
+        prescription.update({"work_seconds": 20, "time_label": "aktivnega zadržanja", "effort_target": "Deluj v kontrolirani neboleči amplitudi; brez siljenja v končni položaj."})
     if is_stability:
         prescription["effort_target"] = (
             "Serijo zaključi, preden izgubiš stabilen položaj ali nadzor nad gibanjem."
