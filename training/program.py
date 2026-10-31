@@ -26,13 +26,14 @@ PATTERN_LABELS = {
     "accessory": "dopolnilna vaja",
     "conditioning": "kondicijska vadba",
     "locomotion": "lokomocija",
-    "mobility": "mobilnost",
+    "mobility": "aktivna mobilnost",
+    "mobility_stretch": "raztezanje",
     "knee_flexion": "upogib kolena",
 }
 PATTERN_ORDER = [
     "squat", "lunge", "hinge", "hip_extension", "horizontal_push", "horizontal_pull",
     "vertical_push", "vertical_pull", "carry", "anti_rotation",
-    "trunk_stability", "jump", "hinge_power", "conditioning", "locomotion", "mobility", "knee_flexion",
+    "trunk_stability", "jump", "hinge_power", "conditioning", "locomotion", "mobility", "mobility_stretch", "knee_flexion",
 ]
 
 
@@ -121,7 +122,7 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
     if goal == "endurance":
         return ["locomotion", "conditioning", "carry"] if session_index % 2 == 0 else ["locomotion", "lunge", "conditioning"]
     if goal == "mobility":
-        return ["mobility", "mobility", "mobility", "squat", "lunge", "hinge", "horizontal_push", "accessory"]
+        return ["mobility", "mobility", "mobility", "mobility_stretch", "squat", "lunge", "hinge", "horizontal_push", "accessory"]
     base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
     if sessions == 2:
         extras = [["lunge", "vertical_push"], ["lunge", "vertical_pull"]]
@@ -145,7 +146,9 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     is_stability = pattern in {"trunk_stability", "anti_rotation"}
     is_power = pattern in {"jump", "hinge_power"}
     rir_range = None
-    if goal == "mobility" or pattern == "mobility":
+    if goal == "mobility" and pattern == "mobility_stretch":
+        sets, reps, rir, rest = 2, "20–30 s", None, 30
+    elif goal == "mobility" or pattern in {"mobility", "mobility_stretch"}:
         sets, reps, rir, rest = 2, "5–8", None, 30
     elif goal == "endurance" and pattern == "locomotion":
         sets, reps, rir, rest = 1, "20–30 min", None, 0
@@ -221,8 +224,9 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         prescription.update({"work_seconds": 1200, "time_label": "neprekinjene aerobne aktivnosti", "effort_target": "Zmeren pogovorni tempo; lahko govoriš v stavkih, vendar čutiš pospešeno dihanje."})
     elif goal == "endurance" and pattern == "conditioning":
         prescription.update({"work_seconds": 30, "time_label": "dela", "effort_target": "Intervali naj bodo zahtevni, vendar tehnično ponovljivi; ne začni z maksimalnim naporom."})
-    elif (goal == "mobility" or pattern == "mobility") and exercise.get("time_based"):
-        prescription.update({"work_seconds": 20, "time_label": "aktivnega zadržanja", "effort_target": "Deluj v kontrolirani neboleči amplitudi; brez siljenja v končni položaj."})
+    elif (goal == "mobility" or pattern in {"mobility", "mobility_stretch"}) and exercise.get("time_based"):
+        duration = 30 if pattern == "mobility_stretch" else 20
+        prescription.update({"work_seconds": duration, "time_label": "zadržanja" if pattern == "mobility_stretch" else "aktivnega zadržanja", "effort_target": "Deluj v kontrolirani neboleči amplitudi; brez siljenja v končni položaj."})
     if is_stability:
         prescription["effort_target"] = (
             "Serijo zaključi, preden izgubiš stabilen položaj ali nadzor nad gibanjem."
