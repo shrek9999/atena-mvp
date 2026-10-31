@@ -121,7 +121,7 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
     if goal == "endurance":
         return ["locomotion", "conditioning", "carry"] if session_index % 2 == 0 else ["locomotion", "lunge", "conditioning"]
     if goal == "mobility":
-        return ["mobility", "squat", "lunge", "hinge", "horizontal_push"]
+        return ["mobility", "squat", "lunge", "hinge", "horizontal_push", "accessory"]
     base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
     if sessions == 2:
         extras = [["lunge", "vertical_push"], ["lunge", "vertical_pull"]]
