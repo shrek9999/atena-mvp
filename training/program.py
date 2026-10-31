@@ -467,7 +467,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             candidate = min(candidates, key=lambda item: (
                 selection_priority(item),
                 0 if item.get("training_role") == "main" or p["goal"] != "hypertrophy" else 1,
-                level_rank[item["level"]] if p["goal"] == "hypertrophy" else abs(level_rank[item["level"]] - target_level),
+                abs(level_rank[item["level"]] - target_level),
                 {"high": 0, "moderate": 1, "low": 2}[effective_loading(item)] if p["goal"] in {"hypertrophy", "strength"} else 0,
                 used_counts[item["id"]],
                 item["id"],
