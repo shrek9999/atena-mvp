@@ -790,8 +790,7 @@
       "strength"
     ],
     "equipment": [
-      "dumbbell",
-      "bench"
+      "dumbbell"
     ],
     "level": "beginner",
     "primary_muscles": [
@@ -804,7 +803,7 @@
       "trunk"
     ],
     "cues": [
-      "Trup stabiliziraj z oporo.",
+      "Trup stabiliziraj z oporo proste roke na stegnu ali na varni stabilni opori.",
       "Komolec vodi proti kolku.",
       "Izogibaj se rotaciji trupa."
     ],
@@ -822,7 +821,7 @@
       "Veslanje z lastno težo"
     ],
     "warnings": [
-      "Izberi oporo, ki omogoča stabilen položaj."
+      "Če uporabiš stol ali klop za oporo, preveri stabilnost in nedrsečo podlago."
     ],
     "single_joint": false,
     "equipment_any": [],
