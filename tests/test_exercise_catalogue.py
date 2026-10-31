@@ -145,3 +145,13 @@ def test_mobility_holds_and_active_repetitions_have_different_dose_types():
     assert get_exercise("couch_stretch")["time_based"] is True
     assert get_exercise("hip_90_90_switch")["time_based"] is False
     assert get_exercise("cossack_squat")["time_based"] is False
+
+
+
+def test_push_up_has_a_catalogue_backed_height_progression_and_dumbbell_row_needs_no_bench():
+    push_up = get_exercise("push_up")
+    assert {"push_up_incline", "wall_push_up"} <= set(push_up["regressions"])
+    assert "push_up_decline" in push_up["progressions"]
+    assert "push_up_incline" in {item["id"] for item in get_exercises(equipment={"bodyweight", "household_support"})}
+    assert "push_up_decline" in {item["id"] for item in get_exercises(equipment={"bodyweight", "household_support"})}
+    assert "one_arm_row" in {item["id"] for item in get_exercises(goal="hypertrophy", equipment={"dumbbell"})}
