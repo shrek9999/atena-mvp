@@ -66,6 +66,10 @@ def validate_catalogue(exercises: object) -> None:
             raise CatalogueValidationError(f"{exercise_id}: endurance_type ni veljaven.")
         if "time_based" in exercise and not isinstance(exercise["time_based"], bool):
             raise CatalogueValidationError(f"{exercise_id}: time_based mora biti true ali false.")
+        if "target_systems" in exercise and not isinstance(exercise["target_systems"], list):
+            raise CatalogueValidationError(f"{exercise_id}: target_systems mora biti seznam.")
+        if any(not isinstance(item, str) or not item.strip() for item in exercise.get("target_systems", [])):
+            raise CatalogueValidationError(f"{exercise_id}: target_systems mora vsebovati nize.")
         for field in ("goals", "equipment", "equipment_any", "primary_muscles", "secondary_muscles",
                       "cues", "common_errors", "regressions", "progressions",
                       "alternatives", "warnings"):
