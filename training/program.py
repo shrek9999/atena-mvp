@@ -60,7 +60,10 @@ def _validate_feedback(feedback: object) -> dict | None:
             "Prekini oziroma prilagodi vadbo; če so simptomi novi, izraziti ali vztrajajo, " 
             "se posvetuj z ustreznim zdravstvenim strokovnjakom."
         )
-    return {"difficulty": difficulty, "completed": completed}
+    movement_control = feedback.get("movement_control", "none")
+    if not isinstance(movement_control, str) or movement_control not in {"none", "spinal_flexion", "bracing", "both"}:
+        raise ProgramValidationError("movement_control mora biti none, spinal_flexion, bracing ali both.")
+    return {"difficulty": difficulty, "completed": completed, "movement_control": movement_control}
 
 
 def _positive_int(value: Any, field: str, minimum: int, maximum: int) -> int:
@@ -106,33 +109,21 @@ def validate_profile(profile: object) -> dict:
     }
 
 
-def _session_patterns(session_index: int, sessions: int, goal: str, include_accessories: bool = False) -> list[str]:
-    """Balanced full-body templates; rotate emphasis without omitting key patterns."""
+def _session_patterns(session_index: int, sessions: int, goal: str, include_accessories: bool = False, include_stability: bool = False) -> list[str]:
+    """Compact full-body templates; trunk-control work is added only when feedback supports it."""
     base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
     if sessions == 2:
-        extras = [
-            ["lunge", "vertical_push", "trunk_stability"],
-            ["lunge", "vertical_pull", "anti_rotation"],
-        ]
+        extras = [["lunge", "vertical_push"], ["lunge", "vertical_pull"]]
     elif sessions == 3:
-        extras = [
-            ["lunge", "vertical_push", "trunk_stability"],
-            ["vertical_pull", "carry", "anti_rotation"],
-            ["lunge", "vertical_push", "trunk_stability"],
-        ]
+        extras = [["lunge", "vertical_push"], ["vertical_pull", "lunge"], ["lunge", "vertical_push"]]
     else:
-        extras = [
-            ["lunge", "vertical_push", "trunk_stability"],
-            ["vertical_pull", "carry", "anti_rotation"],
-            ["lunge", "vertical_push", "trunk_stability"],
-            ["vertical_pull", "carry", "anti_rotation"],
-        ]
+        extras = [["lunge", "vertical_push"], ["vertical_pull", "lunge"], ["lunge", "vertical_push"], ["vertical_pull", "lunge"]]
     patterns = base + extras[session_index]
-    if goal == "hypertrophy" and session_index == sessions - 1:
-        patterns += ["hip_extension"]
+    if include_stability:
+        patterns.insert(0, "trunk_stability")
     if goal == "power":
         patterns += ["jump", "hinge_power"]
-    if include_accessories:
+    if include_accessories and len(patterns) < 6:
         patterns += ["accessory"]
     return patterns
 
@@ -214,9 +205,9 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     return prescription
 
 
-def _estimated_minutes(exercises: list[dict]) -> int:
-    # Approximation includes execution, inter-set rests, and 45 s average transitions.
-    total_seconds = 6 * 60
+def _estimated_minutes(exercises: list[dict], warm_up_minutes: int = 7) -> int:
+    # Approximation includes flexible 5–10 min warm-up, execution, rests and transitions.
+    total_seconds = warm_up_minutes * 60
     for item in exercises:
         prescription = item["prescription"]
         rep_bounds = [int(value) for value in prescription["reps"].split("–")]
@@ -238,6 +229,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
     p = validate_profile(profile)
     response = _validate_feedback(feedback)
     reduce_load = bool(response and (response["difficulty"] == "hard" or not response["completed"]))
+    include_stability = bool(response and response.get("movement_control", "none") != "none")
     goal_sources = {
         "functional": ["functional", "general_fitness", "strength"],
         "general_fitness": ["general_fitness", "functional", "strength"],
@@ -292,7 +284,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
     missing_patterns: set[str] = set()
 
     for session_index in range(p["sessions_per_week"]):
-        patterns = _session_patterns(session_index, p["sessions_per_week"], p["goal"], p["include_accessories"])
+        patterns = _session_patterns(session_index, p["sessions_per_week"], p["goal"], p["include_accessories"], include_stability)
+        warm_up_minutes = 5 if p["session_minutes"] <= 30 else (7 if p["session_minutes"] <= 60 else 10)
         selected = []
         seen_patterns = set()
         for pattern in patterns:
@@ -374,15 +367,18 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 "regressions": regressions,
                 "alternatives": alternatives,
                 "prescription": prescription,
+                **({
+                    "coaching_note": "Ciljno pripravljalno delo za nadzor trupa, vključeno na podlagi tvoje povratne informacije. Izvedi po splošnem ogrevanju in pred glavnimi vajami."
+                } if pattern == "trunk_stability" and include_stability else {}),
             })
             for muscle in candidate["primary_muscles"]:
                 exposure[muscle] += prescription["sets"]
 
-        # Reserve up to three minutes for real-world variation in pace and equipment changes.
-        planning_budget = max(20, p["session_minutes"] - 3)
+        # The session duration is an approximate envelope, not a rigid work/rest split.
+        planning_budget = p["session_minutes"]
         # Preserve the main compound patterns; trim optional work first when needed.
         volume_adjustments = []
-        while selected and _estimated_minutes(selected) > planning_budget:
+        while selected and _estimated_minutes(selected, warm_up_minutes) > planning_budget:
             # Remove truly optional work first; preserve the weekly movement-pattern map.
             removal_priority = ("accessory", "hip_extension", "carry")
             removable = next(
@@ -429,7 +425,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             for muscle in removed["primary_muscles"]:
                 exposure[muscle] -= removed["prescription"]["sets"]
 
-        estimated = _estimated_minutes(selected)
+        estimated = _estimated_minutes(selected, warm_up_minutes)
         if estimated > p["session_minutes"]:
             raise ProgramValidationError(
                 f"Z razpoložljivim časom {p['session_minutes']} min ni mogoče sestaviti uravnoteženega treninga. Povečaj čas ali zmanjša zahtevnost cilja."
@@ -441,7 +437,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
         plans.append({
             "session": session_index + 1,
             "title": f"Trening {session_index + 1} – celotno telo",
-            "warm_up_minutes": 6,
+            "warm_up_minutes": warm_up_minutes,
+            "exercise_count": len(selected),
             "estimated_minutes": estimated,
             "available_minutes": p["session_minutes"],
             "volume_adjustments": volume_adjustments,
@@ -456,7 +453,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             pattern_session_frequency[item["pattern"]] += 1
             pattern_work_sets[item["pattern"]] += item["prescription"]["sets"]
     return {
-        "program_version": "2.4.0",
+        "program_version": "2.5.0",
         "goal": p["goal"],
         "experience": p["experience"],
         "sessions_per_week": p["sessions_per_week"],
@@ -474,8 +471,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 "pri hipertrofiji večinoma 6–12. Advanced: pri glavnih vajah za moč lahko uporablja 3–6 ponovitev, "
                 "ob večji obremenitvi pa zahteva ustrezno tehniko, regeneracijo in daljše odmore."
             ),
-            "tempo": "Tempo je predpisan pri vsaki vaji. Pri glavnih vajah je privzeto 3–0–1–0: 3 s spuščanje in 1 s dvig; brez odboja. "
-                     "Pri stabilizaciji in eksplozivnih vajah je tempo prilagojen njihovi funkciji.",
+            "tempo": "Tempo je predpisan pri vsaki vaji. Pri glavnih vajah je privzeto 3–0–1–0: 3 s spuščanje in 1 s dvig; brez odboja. Ciljno delo za stabilizacijo se doda samo ob konkretni povratni informaciji in je umeščeno takoj za splošno ogrevanje.",
             "range_of_motion": "Pri vsaki vaji uporabi največjo amplitudo, ki jo omogočata gibljivost in nadzor. "
                                "Amplitudo postopno razvijaj; ne žrtvuj položaja, stabilnosti ali neboleče izvedbe.",
             "progression": "Ko pri vseh serijah dosežeš zgornjo mejo ponovitev in ohraniš predpisano rezervo ter tempo, pri naslednjem treningu rahlo zvišaj obremenitev. Če tehnika ali regeneracija odstopata, obdrži ali znižaj obremenitev.",
@@ -493,6 +489,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "unfilled_patterns": sorted(missing_patterns),
         },
         "limitations": [
+            "Čas treninga je okviren; ogrevanje traja približno 5–10 minut, preostanek pa se prilagodi tempu, odmorom in zahtevnosti vaj.",
+            "Stabilizacijske vaje niso privzeti dodatek k hipertrofiji; vključijo se ciljno, kadar povratna informacija pokaže težavo z nadzorom trupa.",
             "Ocena trajanja je približek; dejanski čas je odvisen od hitrosti izvedbe, menjave opreme in individualnih odmorov.",
             "Katalog ne ocenjuje zdravstvenih stanj. Omejitve in simptome mora pred izbiro vaj pregledati trener oziroma ustrezen zdravstveni strokovnjak.",
             "Tedenska izpostavljenost mišičnih skupin pri večsklepnih vajah ni enaka številu neposrednih delovnih serij za posamezno mišico.",
