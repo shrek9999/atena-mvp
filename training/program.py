@@ -351,6 +351,10 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             # Rotate variants across sessions and prefer the least-used exercise to distribute exposure.
             def selection_priority(item: dict) -> int:
                 if pattern == "horizontal_push":
+                    if item["id"] == "bench_dip":
+                        return 10
+                    if item["id"] == "parallel_bar_dip":
+                        return -5 if p["experience"] == "advanced" else 5
                     if item["id"] == "dumbbell_floor_press" and any(
                         candidate["id"] in {"push_up", "dumbbell_bench_press"} for candidate in candidates
                     ):
