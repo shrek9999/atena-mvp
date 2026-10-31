@@ -58,7 +58,10 @@ def _pilot_authorized():
 
 def _profile():
     token = request.headers.get("X-Profile-Token", "").strip()
-    profile = get_profile_by_token(token)
+    try:
+        profile = get_profile_by_token(token)
+    except (OSError, sqlite3.Error):
+        return None, _storage_error()
     if profile is None:
         return None, (jsonify({"error": "Profil ni dostopen. Preveri osebni dostopni ključ."}), 403)
     return profile, None
