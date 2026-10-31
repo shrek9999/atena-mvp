@@ -219,7 +219,8 @@ def _estimated_minutes(exercises: list[dict]) -> int:
     total_seconds = 6 * 60
     for item in exercises:
         prescription = item["prescription"]
-        reps = int(prescription["reps"].split("–")[-1])
+        rep_bounds = [int(value) for value in prescription["reps"].split("–")]
+        reps = round(sum(rep_bounds) / len(rep_bounds))
         sets = prescription["sets"]
         execution = reps * prescription.get("tempo_seconds_per_rep", 4) * sets * (2 if prescription.get("rep_unit") == "per_side" else 1)
         rests = max(0, sets - 1) * prescription["rest_seconds"]
@@ -317,6 +318,11 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                         return 0 if {"dumbbell", "bench"}.issubset(set(p["equipment"])) else 5
                     if item["id"] == "push_up":
                         return 0
+                if pattern == "hinge":
+                    if item["id"] == "bodyweight_hip_hinge" and "dumbbell" in p["equipment"]:
+                        return 5
+                    if item["id"] == "dumbbell_deadlift":
+                        return 0 if "dumbbell" in p["equipment"] else 5
                 return 0
             candidate = min(candidates, key=lambda item: (
                 selection_priority(item), used_counts[item["id"]],
