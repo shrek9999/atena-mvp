@@ -473,3 +473,65 @@ def test_recovery_feedback_is_validated():
     from training.program import ProgramValidationError
     with pytest.raises(ProgramValidationError, match="recovery"):
         generate_program(BASE, feedback={"difficulty": "right", "completed": True, "discomfort": "no", "recovery": "unknown"})
+
+
+
+def test_hypertrophy_without_weights_uses_scalable_posterior_chain_options():
+    profile = {
+        **BASE,
+        "goal": "hypertrophy",
+        "experience": "intermediate",
+        "equipment": ["bodyweight", "chair", "towel", "wall", "household_support", "household_load"],
+        "session_minutes": 60,
+    }
+    plan = generate_program(profile)
+    exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
+    posterior = [exercise for exercise in exercises if exercise["pattern"] in {"hip_extension", "knee_flexion"}]
+    assert posterior
+    assert all(exercise["exercise_id"] != "bodyweight_hip_hinge" for exercise in posterior)
+    assert all(exercise["loading_potential"] in {"moderate", "high"} for exercise in posterior)
+    assert any(exercise["exercise_id"] == "inverted_row_table" for exercise in exercises)
+    assert any(exercise["exercise_id"] == "single_leg_box_squat" for exercise in exercises)
+
+
+def test_endurance_goal_generates_timed_aerobic_and_interval_work():
+    profile = {
+        **BASE,
+        "goal": "endurance",
+        "experience": "beginner",
+        "equipment": ["bodyweight", "chair", "household_support", "household_load"],
+        "session_minutes": 45,
+    }
+    plan = generate_program(profile)
+    exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
+    timed = [exercise for exercise in exercises if exercise["prescription"].get("work_seconds")]
+    assert any(exercise["pattern"] == "locomotion" for exercise in timed)
+    assert any(exercise["pattern"] == "conditioning" for exercise in timed)
+    assert all(session["estimated_minutes"] <= 45 for session in plan["sessions"])
+    assert all(exercise["prescription"]["rir"] is None for exercise in timed)
+
+
+def test_mobility_goal_includes_active_mobility_and_loaded_range_options():
+    profile = {
+        **BASE,
+        "goal": "mobility",
+        "experience": "beginner",
+        "equipment": ["bodyweight", "chair", "wall", "household_support"],
+        "session_minutes": 60,
+    }
+    plan = generate_program(profile)
+    exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
+    assert any(exercise["training_role"] == "mobility" for exercise in exercises)
+    assert any(exercise["pattern"] in {"squat", "lunge", "hinge"} for exercise in exercises)
+    assert all(session["estimated_minutes"] <= 60 for session in plan["sessions"])
+
+
+def test_timed_work_is_included_in_session_duration_estimate():
+    from training.program import _estimated_minutes
+    items = [{
+        "prescription": {
+            "sets": 6, "reps": "30 s", "work_seconds": 30,
+            "rest_seconds": 30, "rep_unit": "total",
+        }
+    }]
+    assert _estimated_minutes(items, warm_up_minutes=0) == 8
