@@ -46,3 +46,8 @@ Generator ne izbira več le vaj po osnovnem gibalnem vzorcu. Upošteva tudi tip 
 - Pri horizontalnem potisku imata prednost skleca (z višino opore, prilagojeno sposobnostim) in potisk ročk na klopi. Potisk ročk na tleh ostane rezervna možnost zaradi omejene amplitude.
 - Ocena trajanja upošteva predpisani tempo, ne več samo generične tri sekunde na ponovitev.
 - Različica generatorja: 2.4.0.
+
+- Pri časovno omejenih treningih se najprej odstranijo dopolnilne vaje za izteg kolkov/nošenje; če je potrebno, se serije glavnih večsklepnih vaj začasno zmanjšajo s treh na dve, preden se izpuščajo osnovni gibalni vzorci.
+- Ocena trajanja uporablja srednjo vrednost razpona ponovitev in upošteva predpisani tempo. Uporabniku se prikaže, če je bil obseg serij prilagojen zaradi časovne omejitve.
+- V katalog sta dodani začetniški različici predklona z lastno težo in mrtvega dviga z ročkama; pri začetniku imata prednost pred zahtevnejšo različico romunskega mrtvega dviga.
+- Potisk nad glavo je na voljo tudi začetnikom z ustrezno lahkim bremenom in predpisanim nadzorom.
