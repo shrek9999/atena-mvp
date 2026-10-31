@@ -408,3 +408,16 @@ def test_hard_feedback_updates_beginner_rir_range_consistently():
     ]
     assert loaded
     assert all(ex["prescription"]["rir_range"] == "3–4" for ex in loaded)
+
+
+
+def test_time_budget_preserves_key_patterns_before_reducing_main_lift_sets():
+    plan = generate_program({**BASE, "session_minutes": 45})
+    for session in plan["sessions"]:
+        assert session["estimated_minutes"] <= 42
+        assert isinstance(session["volume_adjustments"], list)
+        assert all(
+            ex["pattern"] in {"squat", "hinge", "horizontal_push", "horizontal_pull"}
+            for ex in session["exercises"]
+            if ex["name"] in session["volume_adjustments"]
+        )
