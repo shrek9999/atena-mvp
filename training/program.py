@@ -6,7 +6,7 @@ from typing import Any
 
 from training.catalogue import get_exercises
 
-SUPPORTED_GOALS = {"hypertrophy", "strength", "general_fitness", "functional", "power"}
+SUPPORTED_GOALS = {"hypertrophy", "strength", "general_fitness", "functional", "power", "endurance", "mobility"}
 SUPPORTED_LEVELS = {"beginner", "intermediate", "advanced"}
 SUPPORTED_SESSIONS = {2, 3, 4}
 PATTERN_LABELS = {
@@ -24,11 +24,15 @@ PATTERN_LABELS = {
     "jump": "skok",
     "hinge_power": "eksplozivni predklon z ravnim hrbtom",
     "accessory": "dopolnilna vaja",
+    "conditioning": "kondicijska vadba",
+    "locomotion": "lokomocija",
+    "mobility": "mobilnost",
+    "knee_flexion": "upogib kolena",
 }
 PATTERN_ORDER = [
     "squat", "lunge", "hinge", "hip_extension", "horizontal_push", "horizontal_pull",
     "vertical_push", "vertical_pull", "carry", "anti_rotation",
-    "trunk_stability", "jump", "hinge_power",
+    "trunk_stability", "jump", "hinge_power", "conditioning", "locomotion", "mobility", "knee_flexion",
 ]
 
 
@@ -114,6 +118,10 @@ def validate_profile(profile: object) -> dict:
 
 def _session_patterns(session_index: int, sessions: int, goal: str, include_accessories: bool = False, include_stability: bool = False) -> list[str]:
     """Compact full-body templates; trunk-control work is added only when feedback supports it."""
+    if goal == "endurance":
+        return ["locomotion", "conditioning", "carry"] if session_index % 2 == 0 else ["locomotion", "lunge", "conditioning"]
+    if goal == "mobility":
+        return ["mobility", "squat", "lunge", "hinge", "horizontal_push"]
     base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
     if sessions == 2:
         extras = [["lunge", "vertical_push"], ["lunge", "vertical_pull"]]
@@ -137,7 +145,15 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     is_stability = pattern in {"trunk_stability", "anti_rotation"}
     is_power = pattern in {"jump", "hinge_power"}
     rir_range = None
-    if is_power:
+    if goal == "mobility" or pattern == "mobility":
+        sets, reps, rir, rest = 2, "5–8", None, 30
+    elif goal == "endurance" and pattern == "locomotion":
+        sets, reps, rir, rest = 1, "20–30 min", None, 0
+    elif goal == "endurance" and pattern == "conditioning":
+        sets, reps, rir, rest = 6, "30 s", None, 30
+    elif goal == "endurance" and pattern in {"carry", "lunge"}:
+        sets, reps, rir, rest = 2, "12–20", None, 45
+    elif is_power:
         sets, reps, rir, rest = 3, "3–5", 4, 150
     elif level == "beginner":
         # For novices, movement skill and repeatable technique outrank maximal loading,
@@ -182,7 +198,11 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
             sets, reps, rir, rest = 2, "10–15", 3, 75
         else:
             sets, reps, rir, rest = (3, "6–12", 3, 90) if level != "beginner" else (2, "8–12", 3, 75)
-    if is_power:
+    if goal == "mobility" or pattern == "mobility":
+        tempo, tempo_description, tempo_seconds = "kontrolirano", "Aktivno raziskuj razpoložljivo amplitudo brez sunkov in prisiljevanja.", 4
+    elif goal == "endurance":
+        tempo, tempo_description, tempo_seconds = "ritmično", "Ohrani enakomeren ritem in intenzivnost, ki ustreza predpisanemu cilju.", 0
+    elif is_power:
         tempo, tempo_description, tempo_seconds = "1–0–X–0", "Nadzorovan začetni položaj; dvig oziroma odriv izvedi hitro in tehnično čisto; med ponovitvami se ponastavi.", 3
     elif is_stability:
         tempo, tempo_description, tempo_seconds = "2–1–2–1", "2 s izteg oziroma odmik · 1 s nadzor · 2 s vrnitev · 1 s ponastavitev.", 6
@@ -197,6 +217,12 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         "tempo_description": tempo_description,
         "tempo_seconds_per_rep": tempo_seconds,
     }
+    if goal == "endurance" and pattern == "locomotion":
+        prescription.update({"work_seconds": 1200, "time_label": "neprekinjene aerobne aktivnosti", "effort_target": "Zmeren pogovorni tempo; lahko govoriš v stavkih, vendar čutiš pospešeno dihanje."})
+    elif goal == "endurance" and pattern == "conditioning":
+        prescription.update({"work_seconds": 30, "time_label": "dela", "effort_target": "Intervali naj bodo zahtevni, vendar tehnično ponovljivi; ne začni z maksimalnim naporom."})
+    elif goal == "mobility" or pattern == "mobility":
+        prescription.update({"work_seconds": 20, "time_label": "aktivnega zadržanja oziroma dela", "effort_target": "Deluj v kontrolirani neboleči amplitudi; brez siljenja v končni položaj."})
     if is_stability:
         prescription["effort_target"] = (
             "Serijo zaključi, preden izgubiš stabilen položaj ali nadzor nad gibanjem."
@@ -213,10 +239,14 @@ def _estimated_minutes(exercises: list[dict], warm_up_minutes: int = 7) -> int:
     total_seconds = warm_up_minutes * 60
     for item in exercises:
         prescription = item["prescription"]
-        rep_bounds = [int(value) for value in prescription["reps"].split("–")]
-        reps = round(sum(rep_bounds) / len(rep_bounds))
         sets = prescription["sets"]
-        execution = reps * prescription.get("tempo_seconds_per_rep", 4) * sets * (2 if prescription.get("rep_unit") == "per_side" else 1)
+        sides = 2 if prescription.get("rep_unit") == "per_side" else 1
+        if prescription.get("work_seconds") is not None:
+            execution = prescription["work_seconds"] * sets * sides
+        else:
+            rep_bounds = [int(value) for value in prescription["reps"].split("–")]
+            reps = round(sum(rep_bounds) / len(rep_bounds))
+            execution = reps * prescription.get("tempo_seconds_per_rep", 4) * sets * sides
         rests = max(0, sets - 1) * prescription["rest_seconds"]
         total_seconds += execution + rests + 45
     return round(total_seconds / 60)
@@ -236,9 +266,11 @@ def generate_program(profile: object, feedback: object = None) -> dict:
     ))
     include_stability = bool(response and response.get("movement_control", "none") != "none")
     goal_sources = {
-        "functional": ["functional", "general_fitness", "strength"],
-        "general_fitness": ["general_fitness", "functional", "strength"],
+        "functional": ["functional", "general_fitness", "strength", "mobility"],
+        "general_fitness": ["general_fitness", "functional", "strength", "endurance"],
         "power": ["power", "strength", "general_fitness"],
+        "endurance": ["endurance", "general_fitness"],
+        "mobility": ["mobility", "functional", "general_fitness"],
     }.get(p["goal"], [p["goal"]])
     catalogue_by_id = {}
     for source_goal in goal_sources:
@@ -282,6 +314,14 @@ def generate_program(profile: object, feedback: object = None) -> dict:
     by_pattern: dict[str, list[dict]] = {}
     for exercise in catalogue:
         by_pattern.setdefault(exercise["pattern"], []).append(exercise)
+
+    # Never prescribe an unloaded hinge drill as the main hypertrophy stimulus.
+    if p["goal"] == "hypertrophy":
+        hinge_candidates = [item for item in by_pattern.get("hinge", []) if item.get("loading_potential") in {"moderate", "high"}]
+        if not hinge_candidates:
+            hinge_candidates = by_pattern.get("hip_extension", []) + by_pattern.get("knee_flexion", [])
+        if hinge_candidates:
+            by_pattern["hinge"] = hinge_candidates
 
     plans = []
     used_counts: Counter[str] = Counter()
@@ -327,12 +367,16 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 return 0
             candidate = min(candidates, key=lambda item: (
                 selection_priority(item),
+                0 if p["goal"] != "hypertrophy" or item.get("loading_potential") != "low" else 1,
                 0 if p["experience"] != "beginner" or item["level"] == "beginner" else 1,
                 used_counts[item["id"]],
                 item["level"] != p["experience"], item["id"]
             ))
+            effective_pattern = candidate["pattern"]
             used_counts[candidate["id"]] += 1
-            prescription = _prescription(p["goal"], p["experience"], pattern, candidate)
+            prescription = _prescription(p["goal"], p["experience"], effective_pattern, candidate)
+            if p["goal"] == "endurance" and effective_pattern == "locomotion":
+                prescription["work_seconds"] = max(600, int(p["session_minutes"] * 30))
             if reduce_load and not candidate["single_joint"] and pattern not in {"trunk_stability", "anti_rotation"}:
                 prescription["sets"] = max(2, prescription["sets"] - 1)
                 if prescription.get("rir") is not None:
@@ -345,14 +389,16 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 key=lambda item: (item == "bodyweight", item),
             )
             selected_equipment = candidate["equipment"] + optional_equipment[:1]
-            regressions = safe_references(candidate["regressions"], candidate["id"], pattern)
+            regressions = safe_references(candidate["regressions"], candidate["id"], effective_pattern)
             alternatives = [
-                value for value in safe_references(candidate["alternatives"], candidate["id"], pattern)
+                value for value in safe_references(candidate["alternatives"], candidate["id"], effective_pattern)
                 if value not in regressions
             ]
             exercise_category = (
-                "stability" if pattern in {"trunk_stability", "anti_rotation"}
-                else "hip_extension" if pattern == "hip_extension"
+                "stability" if effective_pattern in {"trunk_stability", "anti_rotation"}
+                else "mobility" if candidate.get("training_role") == "mobility"
+                else "conditioning" if candidate.get("training_role") == "conditioning"
+                else "hip_extension" if effective_pattern == "hip_extension"
                 else "accessory" if candidate["single_joint"]
                 else "compound"
             )
@@ -360,8 +406,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 "exercise_id": candidate["id"],
                 "exercise_category": exercise_category,
                 "name": candidate["name"],
-                "pattern": pattern,
-                "pattern_label": PATTERN_LABELS.get(pattern, pattern),
+                "pattern": effective_pattern,
+                "pattern_label": PATTERN_LABELS.get(effective_pattern, effective_pattern),
                 "joint_type": candidate["joint_type"],
                 "reps_per_side": bool(candidate.get("unilateral") or candidate.get("reps_per_side")),
                 "primary_muscles": candidate["primary_muscles"],
@@ -471,6 +517,10 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "exercise_source": "verified_catalogue_only",
             "compound_first": True,
             "single_joint_accessories": p["include_accessories"],
+            "exercise_scaling": "Vsaka vaja ima označen potencial obremenitve, vlogo, zahteve glede opreme in stopnjevanje. Nizko obremenljive učne vaje niso privzeta glavna izbira za hipertrofijo.",
+            "equipment_policy": "Brez uteži ne pomeni brez običajnih stabilnih gospodinjskih opor. Stol, kavč, miza, stopnica, brisača ali palica so dovoljeni le, kadar jih profil izrecno vključuje in so varni za uporabo.",
+            "endurance_policy": "Vzdržljivost je ločen cilj; aerobne aktivnosti, intervali in mišična vzdržljivost so označeni ločeno.",
+            "mobility_policy": "Mobilnost vključuje aktivne gibalne vaje, kontrolirano gibanje v končnih amplitudah in moč skozi razpoložljiv obseg, ne samo pasivnega raztezanja.",
             "experience_adaptation": (
                 "Začetnik: prednost imajo učenje osnovnih gibalnih vzorcev, nadzorovana amplituda in ponovljiva tehnika. "
                 "Tudi pri cilju moč začni večinoma z 8–12 ponovitvami in približno 2–3 ponovitvami v rezervi; "
