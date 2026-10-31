@@ -663,3 +663,40 @@ def test_progression_text_hides_specific_equipment_that_is_not_available():
     pull_up = next((exercise for exercise in exercises if exercise["exercise_id"] == "pull_up"), None)
     if pull_up:
         assert "Zgib z dodatno obremenitvijo" not in pull_up["progressions"]
+
+
+
+def test_power_goal_with_bodyweight_has_explosive_jump_options_without_a_box():
+    profile = {
+        **BASE,
+        "goal": "power",
+        "experience": "beginner",
+        "equipment": ["bodyweight", "chair", "wall", "household_support"],
+        "session_minutes": 60,
+    }
+    plan = generate_program(profile)
+    exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
+    jumps = [exercise for exercise in exercises if exercise["pattern"] == "jump"]
+    assert jumps
+    assert all(exercise["exercise_id"] in {"squat_jump", "standing_broad_jump"} for exercise in jumps)
+    assert all(exercise["prescription"]["rir"] == 4 for exercise in jumps)
+
+
+def test_carry_is_selected_only_when_a_real_household_load_is_available():
+    no_load = {
+        **BASE,
+        "goal": "strength",
+        "experience": "intermediate",
+        "equipment": ["bodyweight", "chair", "wall", "household_support"],
+        "session_minutes": 75,
+    }
+    with_load = {
+        **no_load,
+        "equipment": ["bodyweight", "chair", "wall", "household_support", "household_load", "backpack"],
+    }
+    no_load_plan = generate_program(no_load)
+    load_plan = generate_program(with_load)
+    no_load_exercises = [exercise for session in no_load_plan["sessions"] for exercise in session["exercises"]]
+    load_exercises = [exercise for session in load_plan["sessions"] for exercise in session["exercises"]]
+    assert not any(exercise["pattern"] == "carry" for exercise in no_load_exercises)
+    assert any(exercise["pattern"] == "carry" for exercise in load_exercises)
