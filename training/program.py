@@ -535,13 +535,13 @@ def generate_program(profile: object, feedback: object = None) -> dict:
     all_selected = [item for session in plans for item in session["exercises"]]
     total_sets = sum(item["prescription"]["sets"] for item in all_selected)
     timed_work_seconds = sum(
-        item["prescription"].get("work_seconds", 0) * item["prescription"]["sets"]
+        item["prescription"].get("work_seconds", 0) * item["prescription"]["sets"] * (2 if item["prescription"].get("rep_unit") == "per_side" else 1)
         for item in all_selected
     )
     endurance_work_seconds: Counter[str] = Counter()
     for item in all_selected:
         if item.get("endurance_type") and item["prescription"].get("work_seconds") is not None:
-            endurance_work_seconds[item["endurance_type"]] += item["prescription"]["work_seconds"] * item["prescription"]["sets"]
+            endurance_work_seconds[item["endurance_type"]] += item["prescription"]["work_seconds"] * item["prescription"]["sets"] * (2 if item["prescription"].get("rep_unit") == "per_side" else 1)
     pattern_session_frequency: Counter[str] = Counter()
     pattern_work_sets: Counter[str] = Counter()
     for session in plans:
