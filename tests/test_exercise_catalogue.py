@@ -127,3 +127,12 @@ def test_endurance_and_mobility_pools_are_distinct_and_present():
     mobility = {item["id"] for item in get_exercises(goal="mobility")}
     assert {"running_easy", "brisk_walking", "burpee", "jump_rope"} <= endurance
     assert {"hip_90_90_switch", "ankle_knee_to_wall", "deep_squat_hold", "cossack_squat"} <= mobility
+
+
+
+def test_cardiorespiratory_targets_are_not_mislabelled_as_muscles():
+    cardio_ids = {"running_easy", "brisk_walking", "cycling", "burpee", "sled_push", "rower_intervals"}
+    for item in load_catalogue():
+        if item["id"] in cardio_ids:
+            assert "cardiorespiratory" in item["target_systems"]
+            assert "cardiorespiratory_system" not in item["primary_muscles"]
