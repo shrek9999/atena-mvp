@@ -447,3 +447,29 @@ def test_warmup_duration_is_flexible_and_included_in_total_estimate():
     plans = [generate_program({**BASE, "session_minutes": n}) for n in (30, 45, 75)]
     assert [p["sessions"][0]["warm_up_minutes"] for p in plans] == [5, 7, 10]
     assert all(s["estimated_minutes"] <= s["available_minutes"] for p in plans for s in p["sessions"])
+
+
+def test_poor_recovery_reduces_only_main_compound_sets():
+    profile = {**BASE, "experience": "advanced", "session_minutes": 75, "include_accessories": True}
+    normal = generate_program(profile, feedback={"difficulty": "right", "completed": True, "discomfort": "no"})
+    adjusted = generate_program(profile, feedback={"difficulty": "right", "completed": True, "discomfort": "no", "recovery": "poor"})
+    normal_by_id = {ex["exercise_id"]: ex for s in normal["sessions"] for ex in s["exercises"]}
+    adjusted_by_id = {ex["exercise_id"]: ex for s in adjusted["sessions"] for ex in s["exercises"]}
+    for exercise_id, exercise in normal_by_id.items():
+        revised = adjusted_by_id[exercise_id]
+        if exercise["exercise_category"] == "compound" and exercise["prescription"]["sets"] > 2:
+            assert revised["prescription"]["sets"] == exercise["prescription"]["sets"] - 1
+        else:
+            assert revised["prescription"]["sets"] == exercise["prescription"]["sets"]
+
+
+def test_movement_control_feedback_is_validated():
+    from training.program import ProgramValidationError
+    with pytest.raises(ProgramValidationError, match="movement_control"):
+        generate_program(BASE, feedback={"difficulty": "right", "completed": True, "discomfort": "no", "movement_control": "diagnosis"})
+
+
+def test_recovery_feedback_is_validated():
+    from training.program import ProgramValidationError
+    with pytest.raises(ProgramValidationError, match="recovery"):
+        generate_program(BASE, feedback={"difficulty": "right", "completed": True, "discomfort": "no", "recovery": "unknown"})
