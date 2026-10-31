@@ -360,10 +360,12 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                     if item["id"] == "push_up":
                         return 0
                 if pattern == "hinge":
-                    if item["id"] == "bodyweight_hip_hinge" and "dumbbell" in p["equipment"]:
-                        return 5
-                    if item["id"] == "dumbbell_deadlift":
-                        return 0 if "dumbbell" in p["equipment"] else 5
+                    if item["id"] in {"romanian_deadlift", "dumbbell_deadlift", "deadlift"}:
+                        return -10 if set(item["equipment"]).issubset(set(p["equipment"])) else 5
+                    if p["goal"] == "hypertrophy" and item["id"] in {"slider_leg_curl", "long_lever_glute_bridge", "elevated_heel_hip_lift"}:
+                        return -5
+                    if item["id"] == "bodyweight_hip_hinge":
+                        return 20 if p["goal"] == "hypertrophy" else 0
                 return 0
             candidate = min(candidates, key=lambda item: (
                 selection_priority(item),
@@ -377,7 +379,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             prescription = _prescription(p["goal"], p["experience"], effective_pattern, candidate)
             if p["goal"] == "endurance" and effective_pattern == "locomotion":
                 prescription["work_seconds"] = max(600, int(p["session_minutes"] * 30))
-            if reduce_load and not candidate["single_joint"] and pattern not in {"trunk_stability", "anti_rotation"}:
+            if reduce_load and p["goal"] not in {"endurance", "mobility"} and not candidate["single_joint"] and pattern not in {"trunk_stability", "anti_rotation"}:
                 prescription["sets"] = max(2, prescription["sets"] - 1)
                 if prescription.get("rir") is not None:
                     prescription["rir"] = min(4, prescription["rir"] + 1)
