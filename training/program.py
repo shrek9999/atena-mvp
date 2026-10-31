@@ -79,10 +79,10 @@ def validate_profile(profile: object) -> dict:
     if not isinstance(profile, dict):
         raise ProgramValidationError("Profil mora biti JSON objekt.")
     goal = profile.get("goal")
-    if goal not in SUPPORTED_GOALS:
+    if not isinstance(goal, str) or goal not in SUPPORTED_GOALS:
         raise ProgramValidationError(f"Cilj mora biti eden od: {', '.join(sorted(SUPPORTED_GOALS))}.")
     level = profile.get("experience")
-    if level not in SUPPORTED_LEVELS:
+    if not isinstance(level, str) or level not in SUPPORTED_LEVELS:
         raise ProgramValidationError("Izkušnje morajo biti beginner, intermediate ali advanced.")
     sessions = _positive_int(profile.get("sessions_per_week"), "sessions_per_week", 2, 4)
     if sessions not in SUPPORTED_SESSIONS:
