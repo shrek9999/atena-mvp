@@ -44,11 +44,43 @@ def test_beginner_receives_lower_effort_and_volume():
                 assert exercise["prescription"]["rir"] >= 3
 
 
-def test_strength_program_uses_lower_rep_ranges_and_longer_rests():
-    profile = {**BASE, "goal": "strength"}
+def test_intermediate_strength_program_uses_specific_moderate_rep_ranges():
+    profile = {**BASE, "goal": "strength", "experience": "intermediate"}
     plan = generate_program(profile)
-    assert all(int(ex["prescription"]["reps"].split("–")[0]) <= 6 for s in plan["sessions"] for ex in s["exercises"] if ex["pattern"] in {"squat", "hinge", "horizontal_push", "horizontal_pull"})
-    assert all(ex["prescription"]["rest_seconds"] >= 150 for s in plan["sessions"] for ex in s["exercises"] if ex["pattern"] in {"squat", "hinge", "horizontal_push", "horizontal_pull"})
+    main = [ex for s in plan["sessions"] for ex in s["exercises"] if ex["pattern"] in {"squat", "hinge"}]
+    assert main
+    assert all(ex["prescription"]["reps"] == "5–8" for ex in main)
+    assert all(ex["prescription"]["rest_seconds"] >= 150 for ex in main)
+
+
+def test_beginner_strength_prioritizes_skill_and_8_to_12_reps():
+    profile = {**BASE, "goal": "strength", "experience": "beginner", "equipment": ["dumbbell", "bench"], "session_minutes": 75}
+    plan = generate_program(profile)
+    squat = next(ex for s in plan["sessions"] for ex in s["exercises"] if ex["pattern"] == "squat")
+    assert squat["prescription"]["reps"] == "8–12"
+    assert squat["prescription"]["rir"] == 3
+    assert squat["prescription"]["rir_range"] == "2–3"
+    assert "učenje osnovnih gibalnih vzorcev" in plan["methodology"]["experience_adaptation"]
+
+
+def test_tempo_and_full_controlled_range_are_explicit_for_every_exercise():
+    plan = generate_program({**BASE, "session_minutes": 75})
+    exercises = [ex for s in plan["sessions"] for ex in s["exercises"]]
+    assert all(ex["prescription"]["tempo"] for ex in exercises)
+    assert all(ex["prescription"]["tempo_description"] for ex in exercises)
+    assert all(ex["range_of_motion"] for ex in exercises)
+    assert all(ex["prescription"]["tempo_seconds_per_rep"] > 0 for ex in exercises)
+
+
+def test_horizontal_push_prefers_full_range_options_over_floor_press():
+    with_bench = generate_program({**BASE, "equipment": ["dumbbell", "bench"], "session_minutes": 75})
+    push_ids = {ex["exercise_id"] for s in with_bench["sessions"] for ex in s["exercises"] if ex["pattern"] == "horizontal_push"}
+    assert "dumbbell_bench_press" in push_ids or "push_up" in push_ids
+    assert "dumbbell_floor_press" not in push_ids
+    without_bench = generate_program({**BASE, "equipment": ["dumbbell"], "session_minutes": 75})
+    push_ids = {ex["exercise_id"] for s in without_bench["sessions"] for ex in s["exercises"] if ex["pattern"] == "horizontal_push"}
+    assert "push_up" in push_ids
+    assert "dumbbell_floor_press" not in push_ids
 
 
 def test_equipment_filter_respected_for_every_exercise():
@@ -326,3 +358,11 @@ def test_hard_feedback_does_not_break_stability_prescriptions():
     assert core
     assert all("rir" not in exercise["prescription"] for exercise in core)
     assert all(exercise["prescription"]["sets"] >= 2 for exercise in core)
+
+
+
+def test_beginner_hypertrophy_uses_foundational_repetition_range():
+    plan = generate_program({**BASE, "goal": "hypertrophy", "experience": "beginner", "equipment": ["dumbbell", "bench"], "session_minutes": 75})
+    squat = next(ex for s in plan["sessions"] for ex in s["exercises"] if ex["pattern"] == "squat")
+    assert squat["prescription"]["reps"] == "8–12"
+    assert squat["prescription"]["rir_range"] == "2–3"
