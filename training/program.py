@@ -120,7 +120,9 @@ def validate_profile(profile: object) -> dict:
 def _session_patterns(session_index: int, sessions: int, goal: str, include_accessories: bool = False, include_stability: bool = False) -> list[str]:
     """Compact full-body templates; trunk-control work is added only when feedback supports it."""
     if goal == "endurance":
-        return ["locomotion", "conditioning", "carry"] if session_index % 2 == 0 else ["locomotion", "lunge", "conditioning"]
+        # Keep a minimum viable session even when no loaded carry equipment exists.
+        # Carry is an optional fourth pattern and is omitted when no safe load is available.
+        return ["locomotion", "lunge", "conditioning", "carry"]
     if goal == "mobility":
         return ["mobility", "mobility", "mobility", "mobility_stretch", "squat", "lunge", "hinge", "horizontal_push", "accessory"]
     base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
