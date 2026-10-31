@@ -9,7 +9,7 @@ Generator ne izbira več le vaj po osnovnem gibalnem vzorcu. Upošteva tudi tip 
 - Dead bug uporablja izmenično izvedbo; predpisano število ponovitev pomeni skupno število, ne števila na vsako stran.
 - Ocena trajanja pri vajah, predpisanih na vsako stran, upošteva obe strani.
 - Predpis serij, ponovitev, RIR in odmora se razlikuje med glavnimi večsklepnimi vajami, enostranskimi vajami in stabilizacijo trupa.
-- Stabilizacija trupa in preprečevanje rotacije sta vključena v nabor vaj za hipertrofijo, kadar je ustrezna vaja in oprema na voljo.
+- Zgodovinska odločitev Phase 5: stabilizacija trupa in preprečevanje rotacije sta bili dodani v nabor za hipertrofijo. Trenutna logika je spremenjena v Phase 8: stabilizacija se ne predpisuje avtomatično, temveč samo ob konkretni povratni informaciji o nadzoru trupa.
 - Dodana je vleka elastike od zgoraj, vendar zahteva elastiko in varno sidrišče.
 - Alternative in lažje različice se prikažejo samo, če obstajajo v katalogu, so različne od izbrane vaje in ustrezajo razpoložljivi opremi.
 - Program ostaja determinističen in uporablja izključno preverjen katalog; ni dodan zunanji LLM ali plačljiva storitev.
@@ -30,7 +30,7 @@ Generator ne izbira več le vaj po osnovnem gibalnem vzorcu. Upošteva tudi tip 
 - Alternative morajo ohraniti isti gibalni vzorec; pri stabilizaciji trupa je dovoljena zamenjava med sorodnima vzorcema stabilizacije in preprečevanja rotacije.
 - Ista vaja se ne prikazuje hkrati kot lažja različica in alternativa.
 - Most za zadnjico nima več Romunskega mrtvega dviga kot alternative.
-- Ocena časa uporablja 45-sekundni povprečni prehod med vajami in pri 45-minutnem profilu cilja na najmanj 3 minute rezerve. Regresijski test hkrati preverja, da ostanejo ključni gibalni vzorci in stabilizacija trupa vključeni.
+- Zgodovinska opomba Phase 5.1: ocena časa je takrat uporabljala najmanj 3 minute rezerve. Trenutna logika Phase 8 uporablja približen skupni čas z ogrevanjem 5–10 minut in brez fiksne 3-minutne rezerve.
 - Različica generatorja: 2.3.0.
 
 - Stabilizacijske vaje in vaje za preprečevanje rotacije ne uporabljajo klasičnega RIR; predpisano je merilo kakovosti izvedbe in nadzora.
