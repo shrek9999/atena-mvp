@@ -582,3 +582,52 @@ def test_bodyweight_squat_does_not_claim_an_unused_household_support():
     exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
     air_squat = next(exercise for exercise in exercises if exercise["exercise_id"] == "air_squat")
     assert air_squat["equipment"] == ["bodyweight"]
+
+
+
+def test_strength_and_general_fitness_programmes_include_carries_when_available():
+    for goal in ("strength", "general_fitness", "functional"):
+        profile = {
+            **BASE,
+            "goal": goal,
+            "experience": "intermediate",
+            "equipment": ["bodyweight", "household_load", "household_support"],
+            "session_minutes": 75,
+        }
+        plan = generate_program(profile)
+        exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
+        assert any(exercise["pattern"] == "carry" for exercise in exercises)
+
+
+def test_advanced_box_jump_intervals_are_not_the_default_when_other_conditioning_is_available():
+    profile = {
+        **BASE,
+        "goal": "endurance",
+        "experience": "advanced",
+        "equipment": ["bodyweight", "box", "rowing_machine", "ski_erg", "air_bike", "sled", "jump_rope"],
+        "session_minutes": 75,
+    }
+    plan = generate_program(profile)
+    exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
+    conditioning = [exercise for exercise in exercises if exercise["pattern"] == "conditioning"]
+    assert conditioning
+    assert all(exercise["exercise_id"] != "box_jump_intervals" for exercise in conditioning)
+    assert any(exercise["exercise_id"] in {"rower_intervals", "ski_erg_intervals", "air_bike_intervals", "sled_push"} for exercise in conditioning)
+
+
+def test_endurance_conditioning_intervals_use_exercise_specific_work_rest_doses():
+    profile = {
+        **BASE,
+        "goal": "endurance",
+        "experience": "beginner",
+        "equipment": ["bodyweight", "chair", "household_support", "household_load"],
+        "session_minutes": 45,
+    }
+    plan = generate_program(profile)
+    intervals = [
+        exercise for session in plan["sessions"] for exercise in session["exercises"]
+        if exercise["pattern"] == "conditioning"
+    ]
+    assert intervals
+    assert all(exercise["prescription"]["sets"] == 4 for exercise in intervals)
+    assert all(exercise["prescription"]["rest_seconds"] >= 60 for exercise in intervals)
