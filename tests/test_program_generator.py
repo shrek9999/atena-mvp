@@ -533,6 +533,9 @@ def test_mobility_goal_includes_active_mobility_and_loaded_range_options():
     assert any(exercise["exercise_id"] in {"calf_raise_full_rom", "tibialis_raise"} for exercise in exercises)
     assert plan["weekly_summary"]["pattern_session_frequency"]["mobility"] == 2
     assert plan["weekly_summary"]["pattern_session_frequency"]["mobility_stretch"] == 2
+    timed_stretches = [exercise for exercise in exercises if exercise["pattern"] == "mobility_stretch"]
+    assert timed_stretches
+    assert all(exercise["reps_per_side"] for exercise in timed_stretches)
     assert any(exercise["pattern"] in {"squat", "lunge", "hinge"} for exercise in exercises)
     assert all(session["estimated_minutes"] <= 60 for session in plan["sessions"])
     assert plan["weekly_summary"]["time_based_work_seconds"] > 0
