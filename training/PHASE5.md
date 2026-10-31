@@ -30,5 +30,5 @@ Generator ne izbira več le vaj po osnovnem gibalnem vzorcu. Upošteva tudi tip 
 - Alternative morajo ohraniti isti gibalni vzorec; pri stabilizaciji trupa je dovoljena zamenjava med sorodnima vzorcema stabilizacije in preprečevanja rotacije.
 - Ista vaja se ne prikazuje hkrati kot lažja različica in alternativa.
 - Most za zadnjico nima več Romunskega mrtvega dviga kot alternative.
-- Ocena časa uporablja 60-sekundni prehod med vajami in pri načrtovanju ohranja do 3 minute rezerve za menjavo opreme in odstopanja v tempu. Pri 45-minutnem profilu regresijski test zahteva oceno največ 42 minut.
+- Ocena časa uporablja 45-sekundni povprečni prehod med vajami in pri 45-minutnem profilu cilja na najmanj 3 minute rezerve. Regresijski test hkrati preverja, da ostanejo ključni gibalni vzorci in stabilizacija trupa vključeni.
 - Različica generatorja: 2.3.0.
