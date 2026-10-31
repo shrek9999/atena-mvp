@@ -4440,5 +4440,188 @@
     "training_role": "conditioning",
     "endurance_type": "anaerobic",
     "time_based": true
+  },
+  {
+    "id": "couch_stretch",
+    "name": "Razteg upogibalk kolka ob kavču (couch stretch)",
+    "name_en": "Couch stretch",
+    "pattern": "mobility_stretch",
+    "joint_type": "single_joint",
+    "goals": [
+      "mobility",
+      "functional"
+    ],
+    "equipment": [
+      "couch"
+    ],
+    "level": "beginner",
+    "primary_muscles": [
+      "rectus_femoris",
+      "iliopsoas"
+    ],
+    "secondary_muscles": [
+      "trunk"
+    ],
+    "cues": [
+      "Zadnje koleno podloži na mehko površino.",
+      "Medenico rahlo podvij in ohrani rebra nad medenico.",
+      "Obseg povečuj brez usločenja ledvenega dela."
+    ],
+    "common_errors": [
+      "Pretiran izteg ledvenega dela.",
+      "Prisiljevanje kolena ali kolka v položaj."
+    ],
+    "regressions": [
+      "Krajši neboleč obseg"
+    ],
+    "progressions": [
+      "Daljše zadržanje ob ohranjeni sproščenosti in dihanju"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Kavč ali opora mora biti stabilna; uporabi mehko podlogo za koleno. Če je položaj preintenziven, izberi lažjo različico."
+    ],
+    "single_joint": true,
+    "equipment_any": [],
+    "loading_potential": "low",
+    "training_role": "mobility",
+    "time_based": true
+  },
+  {
+    "id": "supine_hamstring_stretch",
+    "name": "Razteg zadnje stegenske mišice leže",
+    "name_en": "Supine hamstring stretch",
+    "pattern": "mobility_stretch",
+    "joint_type": "single_joint",
+    "goals": [
+      "mobility",
+      "functional"
+    ],
+    "equipment": [],
+    "level": "beginner",
+    "primary_muscles": [
+      "hamstrings"
+    ],
+    "secondary_muscles": [
+      "trunk"
+    ],
+    "cues": [
+      "Leže na hrbtu dvigni nogo z rahlo pokrčenim kolenom.",
+      "Medenica ostane stabilna.",
+      "Zadržuj blag do zmeren razteg."
+    ],
+    "common_errors": [
+      "Zaklepanje kolena za vsako ceno.",
+      "Dvig medenice ali zadrževanje diha."
+    ],
+    "regressions": [
+      "Krajši neboleč obseg"
+    ],
+    "progressions": [
+      "Daljše zadržanje ob ohranjeni sproščenosti in dihanju"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Ne vleci v bolečino ali mravljinčenje; ob živčnih simptomih prekini."
+    ],
+    "single_joint": true,
+    "equipment_any": [
+      "bodyweight",
+      "towel"
+    ],
+    "loading_potential": "low",
+    "training_role": "mobility",
+    "time_based": true
+  },
+  {
+    "id": "doorway_pec_stretch",
+    "name": "Razteg prsnih mišic ob podboju",
+    "name_en": "Doorway pec stretch",
+    "pattern": "mobility_stretch",
+    "joint_type": "single_joint",
+    "goals": [
+      "mobility",
+      "functional"
+    ],
+    "equipment": [
+      "doorway"
+    ],
+    "level": "beginner",
+    "primary_muscles": [
+      "pectorals"
+    ],
+    "secondary_muscles": [
+      "trunk"
+    ],
+    "cues": [
+      "Podlaket nasloni na podboj v udobni višini.",
+      "Trup obrni le toliko, da začutiš blag razteg.",
+      "Ohrani sproščeno dihanje."
+    ],
+    "common_errors": [
+      "Pretirano zasukanje trupa.",
+      "Bolečina spredaj v rami."
+    ],
+    "regressions": [
+      "Krajši neboleč obseg"
+    ],
+    "progressions": [
+      "Daljše zadržanje ob ohranjeni sproščenosti in dihanju"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Ne izvajaj skozi bolečino ali občutek nestabilnosti v rami."
+    ],
+    "single_joint": true,
+    "equipment_any": [],
+    "loading_potential": "low",
+    "training_role": "mobility",
+    "time_based": true
+  },
+  {
+    "id": "calf_wall_stretch",
+    "name": "Razteg meč ob steni",
+    "name_en": "Wall calf stretch",
+    "pattern": "mobility_stretch",
+    "joint_type": "single_joint",
+    "goals": [
+      "mobility",
+      "functional"
+    ],
+    "equipment": [
+      "wall"
+    ],
+    "level": "beginner",
+    "primary_muscles": [
+      "gastrocnemius",
+      "soleus"
+    ],
+    "secondary_muscles": [
+      "trunk"
+    ],
+    "cues": [
+      "Peto ohrani na tleh.",
+      "Koleno iztegnjeno ali rahlo pokrčeno glede na ciljno mišico.",
+      "Breme prenesi postopno."
+    ],
+    "common_errors": [
+      "Dvig pete.",
+      "Prisiljevanje gležnja v končni položaj."
+    ],
+    "regressions": [
+      "Krajši neboleč obseg"
+    ],
+    "progressions": [
+      "Daljše zadržanje ob ohranjeni sproščenosti in dihanju"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Gib naj ostane neboleč; pri težavah z Ahilovo tetivo zmanjšaj obseg."
+    ],
+    "single_joint": true,
+    "equipment_any": [],
+    "loading_potential": "low",
+    "training_role": "mobility",
+    "time_based": true
   }
 ]
