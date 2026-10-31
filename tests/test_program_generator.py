@@ -35,7 +35,13 @@ def test_advanced_user_can_opt_into_single_joint_accessories():
 def test_beginner_receives_lower_effort_and_volume():
     profile = {**BASE, "experience": "beginner", "equipment": ["dumbbell", "bench"]}
     plan = generate_program(profile)
-    assert all(ex["prescription"]["rir"] >= 3 for s in plan["sessions"] for ex in s["exercises"])
+    for session in plan["sessions"]:
+        for exercise in session["exercises"]:
+            if exercise["pattern"] in {"trunk_stability", "anti_rotation"}:
+                assert "rir" not in exercise["prescription"]
+                assert exercise["prescription"]["effort_target"]
+            else:
+                assert exercise["prescription"]["rir"] >= 3
 
 
 def test_strength_program_uses_lower_rep_ranges_and_longer_rests():
