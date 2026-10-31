@@ -4485,7 +4485,8 @@
     "equipment_any": [],
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": true
+    "time_based": true,
+    "unilateral": true
   },
   {
     "id": "supine_hamstring_stretch",
@@ -4531,7 +4532,8 @@
     ],
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": true
+    "time_based": true,
+    "unilateral": true
   },
   {
     "id": "doorway_pec_stretch",
@@ -4576,7 +4578,8 @@
     "equipment_any": [],
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": true
+    "time_based": true,
+    "unilateral": true
   },
   {
     "id": "calf_wall_stretch",
@@ -4622,6 +4625,7 @@
     "equipment_any": [],
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": true
+    "time_based": true,
+    "unilateral": true
   }
 ]
