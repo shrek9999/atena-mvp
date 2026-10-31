@@ -19,6 +19,7 @@ def test_generates_two_day_hypertrophy_program_from_catalogue_only():
     assert all(len(session["exercises"]) >= 3 for session in plan["sessions"])
     assert all(ex["joint_type"] == "multi_joint" for session in plan["sessions"] for ex in session["exercises"])
     assert all(session["estimated_minutes"] <= 60 for session in plan["sessions"])
+    assert plan["weekly_summary"]["time_based_work_seconds"] > 0
 
 
 def test_hypertrophy_excludes_single_joint_accessories_by_default():
@@ -511,6 +512,9 @@ def test_endurance_goal_generates_timed_aerobic_and_interval_work():
     assert any(exercise["pattern"] == "conditioning" for exercise in timed)
     assert all(session["estimated_minutes"] <= 45 for session in plan["sessions"])
     assert all(exercise["prescription"]["rir"] is None for exercise in timed)
+    assert plan["weekly_summary"]["endurance_type_work_seconds"]["aerobic"] > 0
+    assert plan["weekly_summary"]["endurance_type_work_seconds"]["anaerobic"] > 0
+    assert plan["weekly_summary"]["primary_muscle_set_exposure"] == {}
 
 
 def test_mobility_goal_includes_active_mobility_and_loaded_range_options():
