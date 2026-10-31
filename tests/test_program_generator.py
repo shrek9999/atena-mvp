@@ -14,7 +14,7 @@ BASE = {
 
 def test_generates_two_day_hypertrophy_program_from_catalogue_only():
     plan = generate_program(BASE)
-    assert plan["program_version"] == "2.4.0"
+    assert plan["program_version"] == "2.5.0"
     assert len(plan["sessions"]) == 2
     assert all(len(session["exercises"]) >= 3 for session in plan["sessions"])
     assert all(ex["joint_type"] == "multi_joint" for session in plan["sessions"] for ex in session["exercises"])
@@ -233,19 +233,17 @@ def test_vertical_pull_band_option_requires_a_safe_anchor_point():
     assert "band_lat_pulldown" in with_anchor
 
 
-def test_exercise_prescriptions_are_not_uniform_for_hypertrophy():
+def test_hypertrophy_defaults_to_compound_work_without_stability_exercises():
     plan = generate_program({**BASE, "session_minutes": 75})
-    prescriptions = {
-        (ex["pattern"], ex["prescription"]["reps"], ex["prescription"]["rest_seconds"])
-        for s in plan["sessions"] for ex in s["exercises"]
-    }
-    assert any(pattern == "trunk_stability" and reps == "10–15" and rest == 60 for pattern, reps, rest in prescriptions)
-    assert any(pattern == "squat" and reps == "6–10" and rest >= 120 for pattern, reps, rest in prescriptions)
+    exercises = [ex for session in plan["sessions"] for ex in session["exercises"]]
+    assert all(ex["pattern"] not in {"trunk_stability", "anti_rotation"} for ex in exercises)
+    assert any(ex["pattern"] == "squat" and ex["prescription"]["reps"] == "6–10" for ex in exercises)
+    assert all(session["exercise_count"] <= 6 for session in plan["sessions"])
 
 
 
 def test_core_stability_reps_are_explicitly_per_side():
-    plan = generate_program({**BASE, "session_minutes": 60})
+    plan = generate_program({**BASE, "session_minutes": 60}, feedback={"difficulty": "right", "completed": True, "discomfort": "no", "movement_control": "both"})
     core = [
         ex for session in plan["sessions"] for ex in session["exercises"]
         if ex["exercise_id"] in {"dead_bug", "pallof_press"}
@@ -276,17 +274,16 @@ def test_alternatives_are_distinct_and_equipment_compatible():
             assert all(isinstance(value, str) and value for value in exercise["alternatives"])
 
 
-def test_45_minute_two_day_hypertrophy_keeps_core_and_vertical_patterns():
+def test_45_minute_two_day_hypertrophy_is_compact_without_forced_stability():
     plan = generate_program({**BASE, "session_minutes": 45})
     first = {ex["pattern"] for ex in plan["sessions"][0]["exercises"]}
     second = {ex["pattern"] for ex in plan["sessions"][1]["exercises"]}
-    assert "trunk_stability" in first
-    assert "vertical_push" in first
-    assert "lunge" in first
-    assert "anti_rotation" in second
-    assert "vertical_pull" in second
-    assert "lunge" in second
+    assert "trunk_stability" not in first | second
+    assert "anti_rotation" not in first | second
+    assert "vertical_push" in first and "vertical_pull" in second
+    assert "lunge" in first and "lunge" in second
     assert all(session["estimated_minutes"] <= 45 for session in plan["sessions"])
+    assert all(session["exercise_count"] <= 6 for session in plan["sessions"])
 
 
 def test_band_vertical_pull_is_selected_only_with_explicit_anchor_equipment():
@@ -311,7 +308,7 @@ def test_hip_thrust_and_glute_bridge_are_classified_as_hip_extension():
 
 
 def test_core_stability_exercises_are_not_labelled_as_compound_lifts():
-    plan = generate_program({**BASE, "session_minutes": 60})
+    plan = generate_program({**BASE, "session_minutes": 60}, feedback={"difficulty": "right", "completed": True, "discomfort": "no", "movement_control": "spinal_flexion"})
     core = [
         ex for session in plan["sessions"] for ex in session["exercises"]
         if ex["pattern"] in {"trunk_stability", "anti_rotation"}
@@ -340,7 +337,7 @@ def test_45_minute_hypertrophy_program_keeps_a_three_minute_time_buffer():
 
 
 def test_stability_exercises_use_quality_target_instead_of_rir():
-    plan = generate_program(BASE)
+    plan = generate_program(BASE, feedback={"difficulty": "right", "completed": True, "discomfort": "no", "movement_control": "bracing"})
     core = [
         exercise
         for session in plan["sessions"]
@@ -355,7 +352,7 @@ def test_stability_exercises_use_quality_target_instead_of_rir():
 def test_hard_feedback_does_not_break_stability_prescriptions():
     plan = generate_program(
         BASE,
-        feedback={"difficulty": "hard", "completed": False, "discomfort": "no"},
+        feedback={"difficulty": "hard", "completed": False, "discomfort": "no", "movement_control": "both"},
     )
     core = [
         exercise
@@ -421,3 +418,22 @@ def test_time_budget_preserves_key_patterns_before_reducing_main_lift_sets():
             for ex in session["exercises"]
             if ex["name"] in session["volume_adjustments"]
         )
+
+
+def test_stability_work_is_first_after_warmup_when_feedback_supports_it():
+    plan = generate_program(BASE, feedback={"difficulty": "right", "completed": True, "discomfort": "no", "movement_control": "bracing"})
+    for session in plan["sessions"]:
+        assert session["exercises"][0]["pattern"] == "trunk_stability"
+        assert "po splošnem ogrevanju" in session["exercises"][0]["coaching_note"]
+
+
+def test_hypertrophy_without_stability_feedback_has_five_or_six_exercises():
+    plan = generate_program({**BASE, "session_minutes": 60})
+    assert all(5 <= len(session["exercises"]) <= 6 for session in plan["sessions"])
+    assert all(ex["pattern"] not in {"trunk_stability", "anti_rotation"} for s in plan["sessions"] for ex in s["exercises"])
+
+
+def test_warmup_is_flexible_and_included_in_session_estimate():
+    plans = [generate_program({**BASE, "session_minutes": n}) for n in (30, 45, 75)]
+    assert [p["sessions"][0]["warm_up_minutes"] for p in plans] == [5, 7, 10]
+    assert all(s["estimated_minutes"] <= s["available_minutes"] for p in plans for s in p["sessions"])
