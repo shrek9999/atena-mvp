@@ -173,7 +173,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
 
 
 def _estimated_minutes(exercises: list[dict]) -> int:
-    # Approximation includes execution, inter-set rests, and 60 s transitions.
+    # Approximation includes execution, inter-set rests, and 45 s average transitions.
     total_seconds = 6 * 60
     for item in exercises:
         prescription = item["prescription"]
@@ -181,7 +181,7 @@ def _estimated_minutes(exercises: list[dict]) -> int:
         sets = prescription["sets"]
         execution = reps * 3 * sets * (2 if prescription.get("rep_unit") == "per_side" else 1)
         rests = max(0, sets - 1) * prescription["rest_seconds"]
-        total_seconds += execution + rests + 60
+        total_seconds += execution + rests + 45
     return round(total_seconds / 60)
 
 
