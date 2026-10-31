@@ -567,3 +567,18 @@ def test_generated_exercises_include_catalogue_backed_regressions_and_progressio
         if exercise["exercise_id"] == "reaching_squat"
     )
     assert "Počep z lastno težo (air squat)" in reaching["progressions"]
+
+
+
+def test_bodyweight_squat_does_not_claim_an_unused_household_support():
+    profile = {
+        **BASE,
+        "goal": "general_fitness",
+        "experience": "beginner",
+        "equipment": ["bodyweight", "chair", "couch", "step", "towel", "wall", "household_support", "household_load"],
+        "session_minutes": 60,
+    }
+    plan = generate_program(profile)
+    exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
+    air_squat = next(exercise for exercise in exercises if exercise["exercise_id"] == "air_squat")
+    assert air_squat["equipment"] == ["bodyweight"]
