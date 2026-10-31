@@ -458,6 +458,18 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                         return -5
                     if item["id"] == "jump_rope":
                         return -3
+                if pattern == "hinge" and p["experience"] == "beginner":
+                    has_dumbbell = "dumbbell" in available_equipment
+                    has_loaded_hinge = bool({"dumbbell", "kettlebell", "barbell"} & available_equipment)
+                    if not has_loaded_hinge and item["id"] == "bodyweight_hip_hinge":
+                        return -20
+                    if has_dumbbell and item["id"] == "dumbbell_deadlift":
+                        return -20
+                if pattern == "horizontal_pull" and p["goal"] in {"hypertrophy", "strength"}:
+                    if session_index % 2 == 0 and item["id"] in {"dumbbell_bent_over_row", "one_arm_row", "kettlebell_one_arm_row"}:
+                        return -5
+                    if session_index % 2 == 1 and item["id"] in {"band_row", "trx_row", "ring_row"}:
+                        return -5
                 if pattern == "hinge":
                     if item["id"] in {"romanian_deadlift", "dumbbell_deadlift", "deadlift"}:
                         return -10 if set(item["equipment"]).issubset(available_equipment) else 5
