@@ -4,7 +4,7 @@
 
 The catalogue is the source of truth for exercise selection. The generator must select an exercise because its movement pattern, training role, loading potential, available equipment and intended stimulus match the user's goal—not merely because the exercise name contains a familiar movement.
 
-The catalogue currently contains 107 curated entries. It is a controlled pilot library, not an exhaustive encyclopaedia. New exercises should be added only with a defined purpose, equipment contract, coaching cues, common errors, regression, progression and safety notes.
+The catalogue currently contains 109 curated entries. It is a controlled pilot library, not an exhaustive encyclopaedia. New exercises should be added only with a defined purpose, equipment contract, coaching cues, common errors, regression, progression and safety notes.
 
 ## Movement architecture
 
@@ -52,7 +52,7 @@ For hypertrophy without weights, ATENA should prefer challenging, controlled var
 
 - Universal: bodyweight, floor and wall.
 - Common household support: a stable chair, couch, step, table, towel or light stick/broom handle.
-- Household load: a securely closed backpack or another safely gripped object.
+- Household load: a securely closed backpack or another safely gripped object. This is an explicit optional profile choice; it is not assumed in the normal no-weights setting.
 - Dedicated equipment: dumbbells, kettlebells, barbells, racks, pull-up bars, resistance bands, suspension trainers/TRX, gymnastic rings, dip bars, sleds and cardio machines.
 
 Household items are not assumed to be safe anchors. Table rows, elevated heel bridges, Bulgarian split squats and dips are allowed only when the support is stable, non-slip and suitable for the direction of force. Do not improvise a pull-up or Nordic anchor. If the safety of a support cannot be established, select another exercise.
@@ -92,7 +92,7 @@ Loaded carries are included in strength, general-fitness and functional plans wh
 
 ## Additional movement options
 
-The library includes optional mobility work inspired by Strength Side's published mobility programme: 90/90 transitions and internal-rotation isometrics, deep squat practice, couch stretch, dead hangs, elevated pigeon hinge, straight-leg hinge, crab reach and wall butterfly. These are examples to adapt—not a fixed routine to copy. Their published programme pairs strength and mobility sessions and uses holds, repetitions and isometrics in one plan.
+The library includes optional mobility work inspired by Strength Side's published mobility programme: 90/90 transitions and internal-rotation isometrics, deep squat practice, couch stretch, dead hangs, elevated pigeon hinge, straight-leg hinge, crab reach and wall butterfly. These are examples to adapt—not a fixed routine to copy. The new power options include bodyweight squat jumps and standing broad jumps, so power does not depend on a plyometric box. Their published programme pairs strength and mobility sessions and uses holds, repetitions and isometrics in one plan.
 
 ATG-inspired additions include Patrick step, ATG split squat, tibialis and full-range calf work, reverse Nordic curl, loaded squat through an individual's controlled range, and backward sled drag. These are coaching choices and optional progressions, not universal requirements or claims of injury prevention. Backward sled work and knee-over-toes loading must be introduced at a tolerable level and only where equipment, surface and movement control are appropriate.
 
@@ -112,3 +112,6 @@ Reference reading:
 - ATG backward-walking and sled-work discussion: https://www.atgonlinecoaching.com/articles/does-walking-backward-on-a-treadmill-work-for-knee-ability
 
 The ATG and Strength Side materials are used as sources of exercise ideas and coaching philosophy, not as independent clinical proof. Their claims about pain relief or injury prevention are not adopted as ATENA guarantees.
+
+
+The website profile exposes power as a separate goal. Household carries are only selected when the user explicitly indicates access to a backpack or another safe load; ordinary household supports alone do not imply a load-bearing object.
