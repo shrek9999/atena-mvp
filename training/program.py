@@ -340,12 +340,17 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                     (("škrip",), {"cable"}),
                     (("trap",), {"trap_bar"}),
                     (("medicink",), {"medicine_ball"}),
+                    (("dodatno obremenitvijo", "dodatno obtežitvijo"), {"dumbbell", "kettlebell", "barbell", "household_load", "backpack"}),
                     (("nahrbtnik",), {"household_load", "backpack"}),
                     (("stol", "klop", "opora"), {"household_support", "chair", "bench", "wall"}),
                     (("lastno težo",), {"suspension_trainer", "gymnastic_rings", "household_support"}),
                     (("drog",), {"barbell", "pull_up_bar"}),
                 ]
                 text_value = value.casefold()
+                if "drog" in text_value:
+                    bar_requirement = {"pull_up_bar"} if "zgib" in text_value else {"barbell"}
+                    if not (bar_requirement & available):
+                        continue
                 if any(
                     any(term in text_value for term in terms) and not (required & available)
                     for terms, required in equipment_requirements
