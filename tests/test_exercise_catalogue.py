@@ -119,7 +119,8 @@ def test_bodyweight_hip_hinge_is_marked_as_a_low_load_skill_drill():
 def test_household_supports_enable_safe_home_variants_in_catalogue():
     available = {"bodyweight", "chair", "towel", "wall", "household_support", "household_load"}
     ids = {item["id"] for item in get_exercises(equipment=available, include_accessories=True)}
-    assert {"single_leg_box_squat", "inverted_row_table", "slider_leg_curl", "elevated_heel_hip_lift"} <= ids
+    assert {"single_leg_box_squat", "inverted_row_table", "slider_leg_curl", "elevated_heel_hip_lift", "farmer_carry_bodyweight"} <= ids
+    assert "kettlebell_one_arm_row" not in ids
 
 
 def test_endurance_and_mobility_pools_are_distinct_and_present():
