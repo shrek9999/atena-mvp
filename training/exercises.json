@@ -647,7 +647,7 @@
       "strength"
     ],
     "equipment": [],
-    "level": "intermediate",
+    "level": "beginner",
     "primary_muscles": [
       "deltoids"
     ],
@@ -1435,6 +1435,105 @@
     ],
     "warnings": [
       "Pred začetkom preveri pritrditev in stanje elastike."
+    ],
+    "single_joint": false
+  },
+  {
+    "id": "dumbbell_deadlift",
+    "name": "Mrtvi dvig z ročkama",
+    "name_en": "Dumbbell deadlift",
+    "pattern": "hinge",
+    "joint_type": "multi_joint",
+    "goals": [
+      "hypertrophy",
+      "strength",
+      "general_fitness",
+      "functional"
+    ],
+    "equipment": [
+      "dumbbell"
+    ],
+    "equipment_any": [],
+    "level": "beginner",
+    "primary_muscles": [
+      "gluteus_maximus",
+      "hamstrings"
+    ],
+    "secondary_muscles": [
+      "quadriceps",
+      "spinal_erectors",
+      "trunk"
+    ],
+    "cues": [
+      "Ročki postavi ob zunanjo stran stopal in ohrani stabilen oprijem.",
+      "Kolke pomakni nazaj, kolena pokrči toliko, da lahko ohraniš stabilen položaj hrbtenice.",
+      "Od tal se odrini z nogami in zaključi z iztegom kolkov, brez usločenja ledvenega dela."
+    ],
+    "common_errors": [
+      "Zaokroževanje hrbta pri začetku dviga.",
+      "Prehiter dvig brez predhodne napetosti trupa."
+    ],
+    "regressions": [
+      "Predklon z ravnim hrbtom z lastno težo"
+    ],
+    "progressions": [
+      "Romunski mrtvi dvig"
+    ],
+    "alternatives": [
+      "romanian_deadlift"
+    ],
+    "warnings": [
+      "Začni z obremenitvijo, ki omogoča učenje začetnega položaja in nadzorovan dvig."
+    ],
+    "single_joint": false,
+    "unilateral": false
+  },
+  {
+    "id": "bodyweight_hip_hinge",
+    "name": "Predklon z ravnim hrbtom z lastno težo",
+    "name_en": "Bodyweight hip hinge",
+    "pattern": "hinge",
+    "joint_type": "multi_joint",
+    "goals": [
+      "hypertrophy",
+      "strength",
+      "general_fitness",
+      "functional"
+    ],
+    "equipment": [
+      "bodyweight"
+    ],
+    "equipment_any": [],
+    "level": "beginner",
+    "primary_muscles": [
+      "gluteus_maximus",
+      "hamstrings"
+    ],
+    "secondary_muscles": [
+      "spinal_erectors",
+      "trunk"
+    ],
+    "cues": [
+      "Stopala postavi v širino kolkov in kolena rahlo pokrči.",
+      "Kolke pomikaj nazaj, trup se nagiba naprej kot celota.",
+      "Ustavi se, ko začutiš mejo gibljivosti ali bi izgubil stabilen položaj hrbtenice; nato se vrni z iztegom kolkov."
+    ],
+    "common_errors": [
+      "Gibanje predvsem s počepanjem kolen.",
+      "Zaokroževanje ledvenega dela pri spuščanju."
+    ],
+    "regressions": [
+      "Predklon z ravnim hrbtom ob steni"
+    ],
+    "progressions": [
+      "Mrtvi dvig z ročkama",
+      "Romunski mrtvi dvig"
+    ],
+    "alternatives": [
+      "dumbbell_deadlift"
+    ],
+    "warnings": [
+      "Vaja je namenjena učenju vzorca; ob razpoložljivi opremi napreduj postopno na zunanjo obremenitev."
     ],
     "single_joint": false
   }
