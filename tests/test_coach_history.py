@@ -172,11 +172,24 @@ def test_workout_log_rejects_exercises_not_in_the_selected_session(client):
     assert response.status_code == 400
 
 
-def test_invalid_feedback_types_return_client_error_not_server_error(client):
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("difficulty", []), ("discomfort", {}), ("movement_control", []), ("recovery", {})],
+)
+def test_invalid_feedback_types_return_client_error_not_server_error(client, field, value):
     created = create_profile(client)
     response = client.post(
         "/coach/check-ins",
         headers=profile_headers(created),
-        json={"feedback": feedback(difficulty=[])},
+        json={"feedback": feedback(**{field: value})},
+    )
+    assert response.status_code == 400
+
+
+def test_profile_rejects_unhashable_goal_value(client):
+    response = client.post(
+        "/coach/profile",
+        headers={"X-Pilot-Token": PILOT_TOKEN},
+        json={"profile": dict(PROFILE, goal=[])},
     )
     assert response.status_code == 400
