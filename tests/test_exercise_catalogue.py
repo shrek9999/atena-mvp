@@ -126,7 +126,7 @@ def test_endurance_and_mobility_pools_are_distinct_and_present():
     endurance = {item["id"] for item in get_exercises(goal="endurance")}
     mobility = {item["id"] for item in get_exercises(goal="mobility")}
     assert {"running_easy", "brisk_walking", "burpee", "jump_rope"} <= endurance
-    assert {"hip_90_90_switch", "ankle_knee_to_wall", "deep_squat_hold", "cossack_squat"} <= mobility
+    assert {"hip_90_90_switch", "ankle_knee_to_wall", "deep_squat_hold", "cossack_squat", "calf_raise_full_rom", "tibialis_raise"} <= mobility
 
 
 
