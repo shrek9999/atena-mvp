@@ -326,13 +326,12 @@ def test_alternatives_preserve_movement_pattern_and_do_not_duplicate_regressions
     assert "Romunski mrtvi dvig" not in bridge["alternatives"]
 
 
-def test_45_minute_hypertrophy_program_keeps_a_three_minute_time_buffer():
+def test_45_minute_hypertrophy_program_uses_flexible_time_and_no_default_stability():
     plan = generate_program({**BASE, "session_minutes": 45})
-    assert all(session["estimated_minutes"] <= 42 for session in plan["sessions"])
-    first = {ex["pattern"] for ex in plan["sessions"][0]["exercises"]}
-    second = {ex["pattern"] for ex in plan["sessions"][1]["exercises"]}
-    assert "trunk_stability" in first
-    assert "anti_rotation" in second
+    assert all(session["estimated_minutes"] <= 45 for session in plan["sessions"])
+    assert all(session["warm_up_minutes"] == 7 for session in plan["sessions"])
+    assert all(session["exercise_count"] <= 6 for session in plan["sessions"])
+    assert all(ex["pattern"] not in {"trunk_stability", "anti_rotation"} for s in plan["sessions"] for ex in s["exercises"])
 
 
 
@@ -411,7 +410,7 @@ def test_hard_feedback_updates_beginner_rir_range_consistently():
 def test_time_budget_preserves_key_patterns_before_reducing_main_lift_sets():
     plan = generate_program({**BASE, "session_minutes": 45})
     for session in plan["sessions"]:
-        assert session["estimated_minutes"] <= 42
+        assert session["estimated_minutes"] <= 45
         assert isinstance(session["volume_adjustments"], list)
         assert all(
             ex["pattern"] in {"squat", "hinge", "horizontal_push", "horizontal_pull"}
@@ -434,6 +433,20 @@ def test_hypertrophy_without_stability_feedback_has_five_or_six_exercises():
 
 
 def test_warmup_is_flexible_and_included_in_session_estimate():
+    plans = [generate_program({**BASE, "session_minutes": n}) for n in (30, 45, 75)]
+    assert [p["sessions"][0]["warm_up_minutes"] for p in plans] == [5, 7, 10]
+    assert all(s["estimated_minutes"] <= s["available_minutes"] for p in plans for s in p["sessions"])
+
+
+def test_hypertrophy_default_program_has_no_automatic_stability_exercises():
+    plan = generate_program({**BASE, "goal": "hypertrophy"})
+    assert all(
+        exercise["pattern"] not in {"trunk_stability", "anti_rotation"}
+        for session in plan["sessions"] for exercise in session["exercises"]
+    )
+
+
+def test_warmup_duration_is_flexible_and_included_in_total_estimate():
     plans = [generate_program({**BASE, "session_minutes": n}) for n in (30, 45, 75)]
     assert [p["sessions"][0]["warm_up_minutes"] for p in plans] == [5, 7, 10]
     assert all(s["estimated_minutes"] <= s["available_minutes"] for p in plans for s in p["sessions"])
