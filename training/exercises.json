@@ -2612,7 +2612,11 @@
     ],
     "loading_potential": "moderate",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "hip",
+      "posterior_chain"
+    ]
   },
   {
     "id": "elevated_heel_hip_lift",
@@ -2661,7 +2665,11 @@
     ],
     "loading_potential": "moderate",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "hip",
+      "posterior_chain"
+    ]
   },
   {
     "id": "slider_leg_curl",
@@ -2708,7 +2716,11 @@
     ],
     "loading_potential": "high",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "knee",
+      "posterior_chain"
+    ]
   },
   {
     "id": "nordic_hamstring_curl",
@@ -3730,7 +3742,10 @@
     ],
     "loading_potential": "moderate",
     "training_role": "mobility",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "ankle"
+    ]
   },
   {
     "id": "tibialis_raise",
@@ -3774,7 +3789,10 @@
     ],
     "loading_potential": "moderate",
     "training_role": "mobility",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "ankle"
+    ]
   },
   {
     "id": "copenhagen_plank",
@@ -4921,8 +4939,8 @@
     "training_role": "mobility",
     "time_based": true,
     "target_regions": [
-      "forearm",
-      "shoulder"
+      "shoulder",
+      "upper_back"
     ]
   },
   {
@@ -4969,7 +4987,10 @@
     "single_joint": false,
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "hip"
+    ]
   },
   {
     "id": "crab_reach",
@@ -5020,7 +5041,8 @@
     "training_role": "mobility",
     "time_based": false,
     "target_regions": [
-      "thoracic_spine"
+      "thoracic_spine",
+      "shoulder"
     ]
   },
   {
@@ -5070,7 +5092,10 @@
     "single_joint": false,
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "hip"
+    ]
   },
   {
     "id": "straight_leg_hip_hinge",
@@ -5117,7 +5142,11 @@
     "single_joint": false,
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "hip",
+      "posterior_chain"
+    ]
   },
   {
     "id": "wall_butterfly",
@@ -5166,7 +5195,8 @@
     "training_role": "mobility",
     "time_based": false,
     "target_regions": [
-      "shoulder"
+      "shoulder",
+      "thoracic_spine"
     ]
   },
   {
@@ -5221,7 +5251,11 @@
     "unilateral": true,
     "loading_potential": "moderate",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "knee",
+      "ankle"
+    ]
   },
   {
     "id": "reverse_nordic_curl",
@@ -5267,7 +5301,10 @@
     "single_joint": true,
     "loading_potential": "moderate",
     "training_role": "accessory",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "knee"
+    ]
   },
   {
     "id": "sled_backward_drag",
@@ -5320,7 +5357,11 @@
     "loading_potential": "high",
     "training_role": "conditioning",
     "endurance_type": "muscular",
-    "time_based": true
+    "time_based": true,
+    "target_regions": [
+      "knee",
+      "ankle"
+    ]
   },
   {
     "id": "front_rack_carry",
@@ -5376,8 +5417,8 @@
     "training_role": "stability",
     "time_based": false,
     "target_regions": [
-      "forearm",
-      "upper_back"
+      "trunk",
+      "shoulder"
     ]
   },
   {
@@ -5436,8 +5477,7 @@
     "time_based": false,
     "target_regions": [
       "shoulder",
-      "forearm",
-      "upper_back"
+      "trunk"
     ]
   },
   {
@@ -5486,7 +5526,10 @@
     "single_joint": false,
     "loading_potential": "moderate",
     "training_role": "power",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "lower_body"
+    ]
   },
   {
     "id": "standing_broad_jump",
@@ -5534,6 +5577,9 @@
     "single_joint": false,
     "loading_potential": "moderate",
     "training_role": "power",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "lower_body"
+    ]
   }
 ]
