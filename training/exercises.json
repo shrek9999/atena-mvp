@@ -608,11 +608,11 @@
       "Skrajšan obseg zaradi izgube kontrole."
     ],
     "regressions": [
-      "Skleca z rokami na višji opori"
+      "push_up_incline",
+      "wall_push_up"
     ],
     "progressions": [
-      "Skleca z nogami na višji opori",
-      "Skleca z dodatno obremenitvijo"
+      "push_up_decline"
     ],
     "alternatives": [
       "dumbbell_bench_press"
@@ -4658,10 +4658,11 @@
       "Izguba nadzora v spodnjem položaju."
     ],
     "regressions": [
-      "Skleca ob steni"
+      "wall_push_up"
     ],
     "progressions": [
-      "push_up"
+      "push_up",
+      "push_up_decline"
     ],
     "alternatives": [],
     "warnings": [
@@ -4716,6 +4717,53 @@
     "single_joint": false,
     "training_role": "main",
     "loading_potential": "low",
+    "time_based": false
+  },
+  {
+    "id": "push_up_decline",
+    "name": "Skleca z nogami na povišani opori",
+    "name_en": "Decline push-up",
+    "pattern": "horizontal_push",
+    "joint_type": "multi_joint",
+    "goals": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "equipment": [
+      "household_support"
+    ],
+    "equipment_any": [],
+    "level": "intermediate",
+    "primary_muscles": [
+      "pectorals",
+      "triceps"
+    ],
+    "secondary_muscles": [
+      "anterior_deltoids",
+      "trunk"
+    ],
+    "cues": [
+      "Stopala postavi na stabilno, nedrsečo oporo.",
+      "Ohrani napetost trupa in nadzorovan spust.",
+      "Višino povečuj le, če ohraniš poln nadzor."
+    ],
+    "common_errors": [
+      "Ugrezanje bokov.",
+      "Prevelika višina glede na sposobnost."
+    ],
+    "regressions": [
+      "push_up",
+      "push_up_incline"
+    ],
+    "progressions": [],
+    "alternatives": [],
+    "warnings": [
+      "Oporo preveri pred vsako serijo."
+    ],
+    "single_joint": false,
+    "training_role": "main",
+    "loading_potential": "moderate",
     "time_based": false
   }
 ]
