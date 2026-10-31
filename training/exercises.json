@@ -1630,7 +1630,7 @@
     ],
     "single_joint": false,
     "training_role": "main",
-    "loading_potential": "moderate",
+    "loading_potential": "low",
     "time_based": false
   },
   {
@@ -2762,6 +2762,7 @@
     ],
     "single_joint": false,
     "equipment_any": [
+      "household_load",
       "backpack",
       "dumbbell",
       "kettlebell"
@@ -3754,5 +3755,148 @@
     "loading_potential": "moderate",
     "training_role": "stability",
     "time_based": false
+  },
+  {
+    "id": "single_leg_box_squat",
+    "name": "Enonožni počep do stola ali klopi",
+    "name_en": "Single-leg box squat",
+    "pattern": "squat",
+    "joint_type": "multi_joint",
+    "goals": [
+      "hypertrophy",
+      "strength",
+      "functional"
+    ],
+    "equipment": [
+      "chair"
+    ],
+    "level": "intermediate",
+    "primary_muscles": [
+      "quadriceps",
+      "gluteus_maximus"
+    ],
+    "secondary_muscles": [
+      "adductors",
+      "trunk"
+    ],
+    "cues": [
+      "Spuščaj se proti stabilni opori na eni nogi.",
+      "Višino opore prilagodi moči in nadzoru."
+    ],
+    "common_errors": [
+      "Padec na oporo.",
+      "Koleno izgubi smer nad stopalom."
+    ],
+    "regressions": [
+      "Počep na eni nogi z višjo oporo"
+    ],
+    "progressions": [
+      "Nižja opora ali dodatna obremenitev"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Stol mora biti stabilen in se ne sme premikati."
+    ],
+    "single_joint": false,
+    "equipment_any": [
+      "bodyweight",
+      "dumbbell"
+    ],
+    "loading_potential": "moderate",
+    "training_role": "main",
+    "unilateral": true
+  },
+  {
+    "id": "pike_push_up",
+    "name": "Pike skleca",
+    "name_en": "Pike push-up",
+    "pattern": "vertical_push",
+    "joint_type": "multi_joint",
+    "goals": [
+      "hypertrophy",
+      "strength",
+      "functional"
+    ],
+    "equipment": [],
+    "level": "intermediate",
+    "primary_muscles": [
+      "deltoids",
+      "triceps"
+    ],
+    "secondary_muscles": [
+      "upper_back",
+      "trunk"
+    ],
+    "cues": [
+      "Boke dvigni v položaj obrnjene črke V.",
+      "Glavo spuščaj med dlani z nadzorom."
+    ],
+    "common_errors": [
+      "Prevelik prenos teže na glavo.",
+      "Izguba položaja trupa."
+    ],
+    "regressions": [
+      "Pike skleca z rokami na povišani opori"
+    ],
+    "progressions": [
+      "Pike skleca z nogami na povišani opori"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Zahtevnost za ramena je velika; prilagodi kot in amplitudo."
+    ],
+    "single_joint": false,
+    "equipment_any": [
+      "bodyweight"
+    ],
+    "loading_potential": "moderate",
+    "training_role": "main"
+  },
+  {
+    "id": "band_assisted_pull_up",
+    "name": "Zgib z asistenco elastike",
+    "name_en": "Band-assisted pull-up",
+    "pattern": "vertical_pull",
+    "joint_type": "multi_joint",
+    "goals": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "equipment": [
+      "pull_up_bar",
+      "resistance_band"
+    ],
+    "level": "beginner",
+    "primary_muscles": [
+      "latissimus_dorsi",
+      "biceps"
+    ],
+    "secondary_muscles": [
+      "forearms",
+      "trunk"
+    ],
+    "cues": [
+      "Elastiko varno namesti na drog in stopalo ali koleno.",
+      "Spuščaj se nadzorovano."
+    ],
+    "common_errors": [
+      "Nepravilno nameščena elastika.",
+      "Prevelik odriv."
+    ],
+    "regressions": [
+      "Zgib z večjo asistenco"
+    ],
+    "progressions": [
+      "Zgib z manjšo asistenco"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Preveri stanje elastike in stabilnost droga."
+    ],
+    "single_joint": false,
+    "equipment_any": [],
+    "loading_potential": "moderate",
+    "training_role": "main"
   }
 ]
