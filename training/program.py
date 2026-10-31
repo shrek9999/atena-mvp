@@ -323,11 +323,39 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             reference = next((item for item in reference_catalogue if item["id"] == value), None)
             if reference is None:
                 reference = reference_by_name.get(value)
-            if reference is None or reference["id"] == current_id:
-                continue
-            if reference["pattern"] not in compatible_patterns:
-                continue
             available = set(p["equipment"]) | {"bodyweight"}
+            if reference is None:
+                # Curated descriptive variants may not need a separate catalogue record.
+                # Keep them only when any explicitly named equipment is available.
+                equipment_requirements = [
+                    (("kettlebell",), {"kettlebell"}),
+                    (("ročk",), {"dumbbell"}),
+                    (("elastik",), {"resistance_band"}),
+                    (("bradl",), {"dip_bars"}),
+                    (("zaboj",), {"box"}),
+                    (("sani",), {"sled"}),
+                    (("kolebn",), {"jump_rope"}),
+                    (("vesla",), {"rowing_machine"}),
+                    (("skierg",), {"ski_erg"}),
+                    (("škrip",), {"cable"}),
+                    (("trap",), {"trap_bar"}),
+                    (("medicink",), {"medicine_ball"}),
+                    (("nahrbtnik",), {"household_load", "backpack"}),
+                    (("stol", "klop", "opora"), {"household_support", "chair", "bench", "wall"}),
+                    (("lastno težo",), {"suspension_trainer", "gymnastic_rings", "household_support"}),
+                    (("drog",), {"barbell", "pull_up_bar"}),
+                ]
+                text_value = value.casefold()
+                if any(
+                    any(term in text_value for term in terms) and not (required & available)
+                    for terms, required in equipment_requirements
+                ):
+                    continue
+                if value not in resolved:
+                    resolved.append(value)
+                continue
+            if reference["id"] == current_id or reference["pattern"] not in compatible_patterns:
+                continue
             if not set(reference["equipment"]).issubset(available):
                 continue
             if reference["equipment_any"] and not set(reference["equipment_any"]).intersection(available):
