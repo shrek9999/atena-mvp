@@ -285,7 +285,7 @@ def test_alternatives_preserve_movement_pattern_and_do_not_duplicate_regressions
 
 def test_45_minute_hypertrophy_program_keeps_a_three_minute_time_buffer():
     plan = generate_program({**BASE, "session_minutes": 45})
-    assert all(session["estimated_minutes"] <= 44 for session in plan["sessions"])
+    assert all(session["estimated_minutes"] <= 42 for session in plan["sessions"])
     first = {ex["pattern"] for ex in plan["sessions"][0]["exercises"]}
     second = {ex["pattern"] for ex in plan["sessions"][1]["exercises"]}
     assert "trunk_stability" in first
