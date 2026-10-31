@@ -5,8 +5,9 @@ Generator ne izbira več le vaj po osnovnem gibalnem vzorcu. Upošteva tudi tip 
 
 ## Spremembe
 - Most za zadnjico je razvrščen kot **izteg kolkov**, ločeno od predklona z ravnim hrbtom.
-- Enostranske vaje nosijo izrecen podatek, da so ponovitve predpisane na vsako stran.
-- Ocena trajanja pri enostranskih vajah upošteva obe strani.
+- Enostranske vaje in Pallof potisk nosijo izrecen podatek, da so ponovitve predpisane na vsako stran.
+- Dead bug uporablja izmenično izvedbo; predpisano število ponovitev pomeni skupno število, ne števila na vsako stran.
+- Ocena trajanja pri vajah, predpisanih na vsako stran, upošteva obe strani.
 - Predpis serij, ponovitev, RIR in odmora se razlikuje med glavnimi večsklepnimi vajami, enostranskimi vajami in stabilizacijo trupa.
 - Stabilizacija trupa in preprečevanje rotacije sta vključena v nabor vaj za hipertrofijo, kadar je ustrezna vaja in oprema na voljo.
 - Dodana je vleka elastike od zgoraj, vendar zahteva elastiko in varno sidrišče.
@@ -29,5 +30,5 @@ Generator ne izbira več le vaj po osnovnem gibalnem vzorcu. Upošteva tudi tip 
 - Alternative morajo ohraniti isti gibalni vzorec; pri stabilizaciji trupa je dovoljena zamenjava med sorodnima vzorcema stabilizacije in preprečevanja rotacije.
 - Ista vaja se ne prikazuje hkrati kot lažja različica in alternativa.
 - Most za zadnjico nima več Romunskega mrtvega dviga kot alternative.
-- Ocena časa uporablja 60-sekundni prehod med vajami; pri 45-minutnem treningu je preverjena najmanj 3-minutna časovna rezerva.
+- Ocena časa uporablja 60-sekundni prehod med vajami in pri načrtovanju ohranja do 3 minute rezerve za menjavo opreme in odstopanja v tempu. Pri 45-minutnem profilu regresijski test zahteva oceno največ 42 minut.
 - Različica generatorja: 2.3.0.
