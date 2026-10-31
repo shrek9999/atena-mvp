@@ -105,7 +105,8 @@ def get_exercises(
         if level and exercise["level"] != level:
             continue
         if exercise["single_joint"] and not include_accessories:
-            continue
+            if not (goal == "mobility" and exercise.get("training_role") == "mobility"):
+                continue
         required = set(exercise["equipment"])
         optional_match = set(exercise["equipment_any"])
         if available:
