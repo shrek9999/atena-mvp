@@ -3652,7 +3652,7 @@
       "dumbbell"
     ],
     "loading_potential": "moderate",
-    "training_role": "accessory",
+    "training_role": "mobility",
     "time_based": false
   },
   {
@@ -3696,7 +3696,7 @@
       "bodyweight"
     ],
     "loading_potential": "moderate",
-    "training_role": "accessory",
+    "training_role": "mobility",
     "time_based": false
   },
   {
