@@ -4,7 +4,7 @@
 
 The catalogue is the source of truth for exercise selection. The generator must select an exercise because its movement pattern, training role, loading potential, available equipment and intended stimulus match the user's goal—not merely because the exercise name contains a familiar movement.
 
-The catalogue currently contains 89 curated entries. It is a controlled pilot library, not an exhaustive encyclopaedia. New exercises should be added only with a defined purpose, equipment contract, coaching cues, common errors, regression, progression and safety notes.
+The catalogue currently contains 93 curated entries. It is a controlled pilot library, not an exhaustive encyclopaedia. New exercises should be added only with a defined purpose, equipment contract, coaching cues, common errors, regression, progression and safety notes.
 
 ## Movement architecture
 
@@ -21,7 +21,7 @@ The catalogue currently contains 89 curated entries. It is a controlled pilot li
 | Vertical pull | Pull-up, chin-up, band-assisted and foot-assisted variants |
 | Carry / trunk | Farmer carry, suitcase carry, Pallof press, dead bug, Copenhagen plank |
 | Locomotion / conditioning | Walk, run, cycle, row, SkiErg, air bike, jump rope, burpee, shuttle run, sled push, step-up intervals, bear crawl |
-| Mobility / loaded range | 90/90 transitions, shinbox get-up, Cossack squat, ankle rocks, shoulder CARs, wall slides, stick pass-through, deep squat hold, loaded full-range squat |
+| Mobility / loaded range / stretching | 90/90 transitions, shinbox get-up, Cossack squat, ankle rocks, shoulder CARs, wall slides, stick pass-through, couch and hamstring stretches, deep squat hold, loaded full-range squat |
 
 The main movement patterns remain squat, lunge, hinge, push, pull, carry and locomotion. Mobility, conditioning, power and stability describe training roles or qualities and complement—not replace—the movement-pattern map.
 
@@ -30,7 +30,7 @@ The main movement patterns remain squat, lunge, hinge, push, pull, carry and loc
 - **Strength:** build force production. Use appropriately challenging external resistance or scalable unilateral/bodyweight variants, lower rep ranges where suitable, sufficient rest and technically sound execution.
 - **Hypertrophy:** accumulate sufficient hard, repeatable work for the target musculature. Compound movements are prioritised. Single-joint accessories are opt-in for advanced trainees and longer sessions. A low-load skill drill must not be used as the main stimulus when a more scalable option exists.
 - **Endurance:** a distinct goal with aerobic locomotion and interval/mixed-modal conditioning. Aerobic work is primarily prescribed by duration and talk-test effort; intervals by work/rest and repeatability. Muscular endurance can be supported by carries, lunges and circuits. “Kondicija” is a broad everyday term; endurance is a more specific training quality.
-- **Mobility:** combines active range exploration, controlled articular movement, transitions, end-range strength and loaded exercises through the individual's available range. It is not synonymous with passive stretching.
+- **Mobility:** combines active range exploration, controlled articular movement, transitions, end-range strength, loaded exercises through the individual's available range and selected static stretches. Static stretches complement—but do not replace—active mobility and strength through range. It is not synonymous with passive stretching.
 - **Power:** prioritises intent and movement quality. Stop sets when speed or landing quality materially deteriorates.
 - **Functional / general fitness:** combine foundational movement patterns and physical qualities according to the person's context. “Functional” is not a separate anatomical movement pattern.
 
