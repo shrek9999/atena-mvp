@@ -526,6 +526,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 "training_role": candidate["training_role"],
                 "endurance_type": candidate.get("endurance_type"),
                 "target_systems": candidate.get("target_systems", []),
+                "target_regions": candidate.get("target_regions", []),
                 "time_based": bool(candidate.get("time_based")),
                 "reps_per_side": bool(candidate.get("unilateral") or candidate.get("reps_per_side")),
                 "primary_muscles": candidate["primary_muscles"],
