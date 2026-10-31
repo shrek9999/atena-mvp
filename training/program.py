@@ -328,6 +328,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 prescription["sets"] = max(2, prescription["sets"] - 1)
                 if prescription.get("rir") is not None:
                     prescription["rir"] = min(4, prescription["rir"] + 1)
+                    if prescription.get("rir_range") == "2–3":
+                        prescription["rir_range"] = "3–4"
                 prescription["rest_seconds"] += 30
             optional_equipment = sorted(
                 set(candidate["equipment_any"]) & set(p["equipment"]),
@@ -373,8 +375,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
         # Preserve the main compound patterns; trim optional work first when needed.
         while selected and _estimated_minutes(selected) > planning_budget:
             removal_priority = (
-                "accessory", "hip_extension", "lunge", "carry",
-                "vertical_push", "vertical_pull", "anti_rotation", "trunk_stability",
+                "accessory", "hip_extension", "carry", "vertical_pull",
+                "vertical_push", "lunge", "anti_rotation", "trunk_stability",
             )
             removable = next(
                 (next((i for i, item in enumerate(selected) if item["pattern"] == pattern), None)
