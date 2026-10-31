@@ -286,7 +286,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
     for session_index in range(p["sessions_per_week"]):
         patterns = _session_patterns(
             session_index, p["sessions_per_week"], p["goal"],
-            p["include_accessories"] and p["session_minutes"] >= 75, include_stability
+            p["include_accessories"] and p["session_minutes"] >= 75 and not include_stability, include_stability
         )
         warm_up_minutes = 5 if p["session_minutes"] <= 30 else (7 if p["session_minutes"] <= 60 else 10)
         selected = []
