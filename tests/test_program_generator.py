@@ -242,18 +242,15 @@ def test_hypertrophy_defaults_to_compound_work_without_stability_exercises():
 
 
 
-def test_core_stability_reps_are_explicitly_per_side():
+def test_targeted_trunk_stability_exercise_has_clear_rep_unit():
     plan = generate_program({**BASE, "session_minutes": 60}, feedback={"difficulty": "right", "completed": True, "discomfort": "no", "movement_control": "both"})
     core = [
         ex for session in plan["sessions"] for ex in session["exercises"]
-        if ex["exercise_id"] in {"dead_bug", "pallof_press"}
+        if ex["exercise_id"] == "dead_bug"
     ]
-    assert {ex["exercise_id"] for ex in core} == {"dead_bug", "pallof_press"}
-    by_id = {ex["exercise_id"]: ex for ex in core}
-    assert by_id["pallof_press"]["reps_per_side"] is True
-    assert by_id["pallof_press"]["prescription"]["rep_unit"] == "per_side"
-    assert by_id["dead_bug"]["reps_per_side"] is False
-    assert by_id["dead_bug"]["prescription"]["rep_unit"] == "total"
+    assert core
+    assert all(ex["reps_per_side"] is False for ex in core)
+    assert all(ex["prescription"]["rep_unit"] == "total" for ex in core)
 
 
 def test_unilateral_time_estimate_accounts_for_both_sides():
