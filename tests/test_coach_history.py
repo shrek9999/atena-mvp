@@ -146,7 +146,7 @@ def test_discomfort_blocks_next_program_until_new_check_in(client):
     check_in = client.post(
         "/coach/check-ins",
         headers=headers,
-        json={"feedback": feedback(difficulty="right", completed=False, discomfort="no")},
+        json={"feedback": {"discomfort": "no", "recovery": "normal"}},
     )
     assert check_in.status_code == 201
     resumed = client.post("/coach/programs", headers=headers, json={})
@@ -174,14 +174,14 @@ def test_workout_log_rejects_exercises_not_in_the_selected_session(client):
 
 @pytest.mark.parametrize(
     ("field", "value"),
-    [("difficulty", []), ("discomfort", {}), ("movement_control", []), ("recovery", {})],
+    [("discomfort", {}), ("movement_control", []), ("recovery", {})],
 )
 def test_invalid_feedback_types_return_client_error_not_server_error(client, field, value):
     created = create_profile(client)
     response = client.post(
         "/coach/check-ins",
         headers=profile_headers(created),
-        json={"feedback": feedback(**{field: value})},
+        json={"feedback": {"discomfort": "no", field: value}},
     )
     assert response.status_code == 400
 
