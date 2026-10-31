@@ -1996,7 +1996,6 @@
     "pattern": "horizontal_push",
     "joint_type": "multi_joint",
     "goals": [
-      "hypertrophy",
       "strength",
       "general_fitness"
     ],
@@ -2034,7 +2033,7 @@
       "bodyweight"
     ],
     "loading_potential": "low",
-    "training_role": "main",
+    "training_role": "accessory",
     "time_based": false
   },
   {
