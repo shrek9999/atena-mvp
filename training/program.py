@@ -63,7 +63,10 @@ def _validate_feedback(feedback: object) -> dict | None:
     movement_control = feedback.get("movement_control", "none")
     if not isinstance(movement_control, str) or movement_control not in {"none", "spinal_flexion", "bracing", "both"}:
         raise ProgramValidationError("movement_control mora biti none, spinal_flexion, bracing ali both.")
-    return {"difficulty": difficulty, "completed": completed, "movement_control": movement_control}
+    recovery = feedback.get("recovery", "normal")
+    if not isinstance(recovery, str) or recovery not in {"good", "normal", "poor"}:
+        raise ProgramValidationError("recovery mora biti good, normal ali poor.")
+    return {"difficulty": difficulty, "completed": completed, "movement_control": movement_control, "recovery": recovery}
 
 
 def _positive_int(value: Any, field: str, minimum: int, maximum: int) -> int:
@@ -228,7 +231,9 @@ def generate_program(profile: object, feedback: object = None) -> dict:
     """Generate a repeatable catalogue plan, conservatively adapting to the last session."""
     p = validate_profile(profile)
     response = _validate_feedback(feedback)
-    reduce_load = bool(response and (response["difficulty"] == "hard" or not response["completed"]))
+    reduce_load = bool(response and (
+        response["difficulty"] == "hard" or not response["completed"] or response["recovery"] == "poor"
+    ))
     include_stability = bool(response and response.get("movement_control", "none") != "none")
     goal_sources = {
         "functional": ["functional", "general_fitness", "strength"],
@@ -328,7 +333,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             ))
             used_counts[candidate["id"]] += 1
             prescription = _prescription(p["goal"], p["experience"], pattern, candidate)
-            if reduce_load:
+            if reduce_load and not candidate["single_joint"] and pattern not in {"trunk_stability", "anti_rotation"}:
                 prescription["sets"] = max(2, prescription["sets"] - 1)
                 if prescription.get("rir") is not None:
                     prescription["rir"] = min(4, prescription["rir"] + 1)
