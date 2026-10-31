@@ -3337,7 +3337,7 @@
     ],
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": true
+    "time_based": false
   },
   {
     "id": "cossack_squat",
@@ -3388,7 +3388,7 @@
     "unilateral": true,
     "loading_potential": "moderate",
     "training_role": "mobility",
-    "time_based": true
+    "time_based": false
   },
   {
     "id": "hip_90_90_switch",
@@ -3432,7 +3432,7 @@
     ],
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": true
+    "time_based": false
   },
   {
     "id": "shinbox_getup",
@@ -3477,7 +3477,7 @@
     ],
     "loading_potential": "moderate",
     "training_role": "mobility",
-    "time_based": true
+    "time_based": false
   },
   {
     "id": "thoracic_rotation_quadruped",
@@ -3521,7 +3521,7 @@
     ],
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": true
+    "time_based": false
   },
   {
     "id": "shoulder_car",
@@ -3564,7 +3564,7 @@
     ],
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": true
+    "time_based": false
   },
   {
     "id": "loaded_deep_squat",
@@ -4033,7 +4033,8 @@
     "single_joint": false,
     "equipment_any": [],
     "loading_potential": "low",
-    "training_role": "mobility"
+    "training_role": "mobility",
+    "time_based": false
   },
   {
     "id": "wall_slide",
@@ -4077,7 +4078,8 @@
     "single_joint": false,
     "equipment_any": [],
     "loading_potential": "low",
-    "training_role": "mobility"
+    "training_role": "mobility",
+    "time_based": false
   },
   {
     "id": "ski_erg_intervals",
