@@ -136,3 +136,10 @@ def test_cardiorespiratory_targets_are_not_mislabelled_as_muscles():
         if item["id"] in cardio_ids:
             assert "cardiorespiratory" in item["target_systems"]
             assert "cardiorespiratory_system" not in item["primary_muscles"]
+
+
+
+def test_mobility_holds_and_active_repetitions_have_different_dose_types():
+    assert get_exercise("deep_squat_hold")["time_based"] is True
+    assert get_exercise("hip_90_90_switch")["time_based"] is False
+    assert get_exercise("cossack_squat")["time_based"] is False
