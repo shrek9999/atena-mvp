@@ -14,7 +14,7 @@ BASE = {
 
 def test_generates_two_day_hypertrophy_program_from_catalogue_only():
     plan = generate_program(BASE)
-    assert plan["program_version"] == "2.5.0"
+    assert plan["program_version"] == "2.6.0"
     assert len(plan["sessions"]) == 2
     assert all(len(session["exercises"]) >= 3 for session in plan["sessions"])
     assert all(ex["joint_type"] == "multi_joint" for session in plan["sessions"] for ex in session["exercises"])
@@ -319,8 +319,10 @@ def test_alternatives_preserve_movement_pattern_and_do_not_duplicate_regressions
     for session in plan["sessions"]:
         for ex in session["exercises"]:
             assert not set(ex["alternatives"]).intersection(ex["regressions"])
-    bridge = next(ex for session in plan["sessions"] for ex in session["exercises"] if ex["exercise_id"] == "glute_bridge")
-    assert "Romunski mrtvi dvig" not in bridge["alternatives"]
+    hinges = [ex for session in plan["sessions"] for ex in session["exercises"] if ex["pattern"] == "hinge"]
+    assert hinges
+    assert all(ex["loading_potential"] in {"moderate", "high"} for ex in hinges)
+    assert all(ex["exercise_id"] != "bodyweight_hip_hinge" for ex in hinges)
 
 
 def test_45_minute_hypertrophy_program_uses_flexible_time_and_no_default_stability():
