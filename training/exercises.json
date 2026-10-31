@@ -2070,8 +2070,8 @@
       "Zibanje in izguba položaja ramen."
     ],
     "regressions": [
-      "Skleca z ozkim položajem rok",
-      "Dips z močno asistenco elastike"
+      "band_assisted_parallel_bar_dip",
+      "push_up"
     ],
     "progressions": [
       "Dips z dodatno obremenitvijo"
