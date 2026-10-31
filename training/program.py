@@ -414,12 +414,29 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                     continue
                 missing_patterns.add(pattern)
                 continue
-            # Rotate variants across sessions and prefer the least-used exercise to distribute exposure.
+            # Rank variants by goal, experience and actual available loading.
+            available_equipment = set(p["equipment"]) | {"bodyweight"}
+            external_load_items = {"dumbbell", "kettlebell", "barbell", "resistance_band", "household_load", "backpack", "cable"}
+            def effective_loading(item: dict) -> str:
+                potential = item.get("loading_potential", "low")
+                selected_options = set(item["equipment_any"]) & available_equipment
+                has_external_load = bool((set(item["equipment"]) | selected_options) & external_load_items)
+                if potential == "high" and not has_external_load and selected_options == {"bodyweight"}:
+                    return "moderate"
+                return potential
+
             def selection_priority(item: dict) -> int:
                 if p["goal"] == "mobility" and pattern == "squat":
-                    if item["id"] == "loaded_deep_squat" and {"dumbbell", "kettlebell"} & set(p["equipment"]):
+                    if item["id"] == "loaded_deep_squat" and {"dumbbell", "kettlebell"} & available_equipment:
                         return -10
                     if item["id"] == "reaching_squat":
+                        return -5
+                if pattern == "squat" and p["goal"] in {"hypertrophy", "strength"}:
+                    if item["id"] in {"back_squat", "front_squat"} and {"barbell", "rack"}.issubset(available_equipment):
+                        return -10 if p["goal"] == "strength" else -5
+                    if item["id"] in {"dumbbell_squat_side", "dumbbell_squat_front_rack", "two_dumbbell_squat", "squat_goblet"} and {"dumbbell", "kettlebell"} & available_equipment:
+                        return -10
+                    if item["id"] == "single_leg_box_squat" and not (external_load_items & available_equipment):
                         return -5
                 if pattern == "horizontal_push":
                     if item["id"] == "bench_dip":
@@ -431,25 +448,29 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                     ):
                         return 10
                     if item["id"] == "dumbbell_bench_press":
-                        return 0 if {"dumbbell", "bench"}.issubset(set(p["equipment"])) else 5
+                        return 0 if {"dumbbell", "bench"}.issubset(available_equipment) else 5
                     if item["id"] == "push_up":
                         return 0
                 if pattern == "conditioning" and p["goal"] == "endurance" and item["id"] == "box_jump_intervals":
                     return 100
                 if pattern == "hinge":
                     if item["id"] in {"romanian_deadlift", "dumbbell_deadlift", "deadlift"}:
-                        return -10 if set(item["equipment"]).issubset(set(p["equipment"])) else 5
+                        return -10 if set(item["equipment"]).issubset(available_equipment) else 5
                     if p["goal"] == "hypertrophy" and item["id"] in {"slider_leg_curl", "long_lever_glute_bridge", "elevated_heel_hip_lift"}:
                         return -5
                     if item["id"] == "bodyweight_hip_hinge":
                         return 20 if p["goal"] == "hypertrophy" else 0
                 return 0
+
+            level_rank = {"beginner": 0, "intermediate": 1, "advanced": 2}
+            target_level = level_rank[p["experience"]]
             candidate = min(candidates, key=lambda item: (
                 selection_priority(item),
-                0 if p["experience"] != "beginner" or item["level"] == "beginner" else 1,
-                0 if p["goal"] != "hypertrophy" or item.get("loading_potential") != "low" else 1,
+                0 if item.get("training_role") == "main" or p["goal"] != "hypertrophy" else 1,
+                level_rank[item["level"]] if p["goal"] == "hypertrophy" else abs(level_rank[item["level"]] - target_level),
+                {"high": 0, "moderate": 1, "low": 2}[effective_loading(item)] if p["goal"] in {"hypertrophy", "strength"} else 0,
                 used_counts[item["id"]],
-                item["level"] != p["experience"], item["id"]
+                item["id"],
             ))
             effective_pattern = candidate["pattern"]
             used_counts[candidate["id"]] += 1
@@ -501,7 +522,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 "pattern": effective_pattern,
                 "pattern_label": PATTERN_LABELS.get(effective_pattern, effective_pattern),
                 "joint_type": candidate["joint_type"],
-                "loading_potential": candidate["loading_potential"],
+                "loading_potential": effective_loading(candidate),
                 "training_role": candidate["training_role"],
                 "endurance_type": candidate.get("endurance_type"),
                 "target_systems": candidate.get("target_systems", []),
