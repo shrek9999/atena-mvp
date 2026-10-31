@@ -378,8 +378,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 return 0
             candidate = min(candidates, key=lambda item: (
                 selection_priority(item),
-                0 if p["goal"] != "hypertrophy" or item.get("loading_potential") != "low" else 1,
                 0 if p["experience"] != "beginner" or item["level"] == "beginner" else 1,
+                0 if p["goal"] != "hypertrophy" or item.get("loading_potential") != "low" else 1,
                 used_counts[item["id"]],
                 item["level"] != p["experience"], item["id"]
             ))
