@@ -138,17 +138,36 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
 
 
 def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
-    """Exercise-class prescriptions; avoid one generic dose for every movement."""
+    """Prescribe by goal, training age and movement class; beginners build skill first."""
     unilateral = bool(exercise.get("unilateral"))
-    if goal == "power" or pattern in {"jump", "hinge_power"}:
+    is_stability = pattern in {"trunk_stability", "anti_rotation"}
+    is_power = pattern in {"jump", "hinge_power"}
+    rir_range = None
+    if is_power:
         sets, reps, rir, rest = 3, "3–5", 4, 150
+    elif level == "beginner":
+        # For novices, movement skill and repeatable technique outrank maximal loading,
+        # even when the selected long-term goal is strength.
+        if is_stability:
+            sets, reps, rir, rest = 2, "10–15", 3, 60
+        elif pattern in {"lunge"} or unilateral:
+            sets, reps, rir, rest = 2, "8–10", 3, 90
+        elif pattern in {"vertical_push", "vertical_pull"}:
+            sets, reps, rir, rest = 2, "8–12", 3, 90
+        elif pattern in {"hip_extension", "carry"}:
+            sets, reps, rir, rest = 2, "10–15", 3, 75
+        else:
+            sets, reps, rir, rest = 3, "8–12", 3, 90
+        rir_range = "2–3"
     elif goal == "strength":
         if pattern in {"squat", "hinge"}:
-            sets, reps, rir, rest = (4, "3–6", 2, 180) if level == "advanced" else (3, "4–6", 2, 150)
-        elif pattern in {"trunk_stability", "anti_rotation", "carry", "hip_extension"}:
+            sets, reps, rir, rest = (4, "3–6", 2, 180) if level == "advanced" else (3, "5–8", 2, 150)
+        elif is_stability:
+            sets, reps, rir, rest = 2, "10–15", 3, 60
+        elif pattern in {"carry", "hip_extension"}:
             sets, reps, rir, rest = 2, "8–12", 3, 75
         else:
-            sets, reps, rir, rest = 3, ("6–8" if unilateral else "5–8"), 2, (120 if unilateral else 150)
+            sets, reps, rir, rest = 3, ("6–8" if unilateral else "6–8"), 2, (120 if unilateral else 120)
     elif goal == "hypertrophy":
         if pattern in {"squat", "hinge"}:
             sets, reps, rir, rest = 3, "6–10", (2 if level != "beginner" else 3), 150 if level == "advanced" else 120
@@ -169,18 +188,29 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
             sets, reps, rir, rest = 2, "10–15", 3, 75
         else:
             sets, reps, rir, rest = (3, "6–12", 3, 90) if level != "beginner" else (2, "8–12", 3, 75)
+    if is_power:
+        tempo, tempo_description, tempo_seconds = "1–0–X–0", "Nadzorovan začetni položaj; dvig oziroma odriv izvedi hitro in tehnično čisto; med ponovitvami se ponastavi.", 3
+    elif is_stability:
+        tempo, tempo_description, tempo_seconds = "2–1–2–1", "2 s izteg oziroma odmik · 1 s nadzor · 2 s vrnitev · 1 s ponastavitev.", 6
+    else:
+        tempo, tempo_description, tempo_seconds = "3–0–1–0", "3 s spuščanje · brez odboja · 1 s dvig · brez zadrževanja v vrhu.", 4
     prescription = {
         "sets": sets,
         "reps": reps,
         "rest_seconds": rest,
         "rep_unit": "per_side" if (unilateral or exercise.get("reps_per_side")) else "total",
+        "tempo": tempo,
+        "tempo_description": tempo_description,
+        "tempo_seconds_per_rep": tempo_seconds,
     }
-    if pattern in {"trunk_stability", "anti_rotation"}:
+    if is_stability:
         prescription["effort_target"] = (
             "Serijo zaključi, preden izgubiš stabilen položaj ali nadzor nad gibanjem."
         )
     else:
         prescription["rir"] = rir
+        if rir_range:
+            prescription["rir_range"] = rir_range
     return prescription
 
 
@@ -191,7 +221,7 @@ def _estimated_minutes(exercises: list[dict]) -> int:
         prescription = item["prescription"]
         reps = int(prescription["reps"].split("–")[-1])
         sets = prescription["sets"]
-        execution = reps * 3 * sets * (2 if prescription.get("rep_unit") == "per_side" else 1)
+        execution = reps * prescription.get("tempo_seconds_per_rep", 4) * sets * (2 if prescription.get("rep_unit") == "per_side" else 1)
         rests = max(0, sets - 1) * prescription["rest_seconds"]
         total_seconds += execution + rests + 45
     return round(total_seconds / 60)
@@ -277,7 +307,21 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 missing_patterns.add(pattern)
                 continue
             # Rotate variants across sessions and prefer the least-used exercise to distribute exposure.
-            candidate = min(candidates, key=lambda item: (used_counts[item["id"]], item["level"] != p["experience"], item["id"]))
+            def selection_priority(item: dict) -> int:
+                if pattern == "horizontal_push":
+                    if item["id"] == "dumbbell_floor_press" and any(
+                        candidate["id"] in {"push_up", "dumbbell_bench_press"} for candidate in candidates
+                    ):
+                        return 10
+                    if item["id"] == "dumbbell_bench_press":
+                        return 0 if {"dumbbell", "bench"}.issubset(set(p["equipment"])) else 5
+                    if item["id"] == "push_up":
+                        return 0
+                return 0
+            candidate = min(candidates, key=lambda item: (
+                selection_priority(item), used_counts[item["id"]],
+                item["level"] != p["experience"], item["id"]
+            ))
             used_counts[candidate["id"]] += 1
             prescription = _prescription(p["goal"], p["experience"], pattern, candidate)
             if reduce_load:
@@ -312,6 +356,10 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 "primary_muscles": candidate["primary_muscles"],
                 "equipment": selected_equipment,
                 "cues": candidate["cues"],
+                "range_of_motion": candidate.get("range_of_motion") or (
+                    "Uporabi največjo nebolečo amplitudo, ki jo dopuščata tvoja gibljivost in nadzor. "
+                    "Ne krajšaj giba po nepotrebnem; amplitudo povečuj postopno, brez izgube položaja."
+                ),
                 "warnings": candidate["warnings"],
                 "regressions": regressions,
                 "alternatives": alternatives,
@@ -368,7 +416,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             pattern_session_frequency[item["pattern"]] += 1
             pattern_work_sets[item["pattern"]] += item["prescription"]["sets"]
     return {
-        "program_version": "2.3.1",
+        "program_version": "2.4.0",
         "goal": p["goal"],
         "experience": p["experience"],
         "sessions_per_week": p["sessions_per_week"],
@@ -377,7 +425,19 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "exercise_source": "verified_catalogue_only",
             "compound_first": True,
             "single_joint_accessories": p["include_accessories"],
-            "progression": "Ko pri vseh serijah dosežeš zgornjo mejo ponovitev in ohraniš predpisani RIR, pri naslednjem treningu rahlo zvišaj obremenitev. Če tehnika ali regeneracija odstopata, obdrži ali znižaj obremenitev.",
+            "experience_adaptation": (
+                "Začetnik: prednost imajo učenje osnovnih gibalnih vzorcev, nadzorovana amplituda in ponovljiva tehnika. "
+                "Tudi pri cilju moč začni večinoma z 8–12 ponovitvami in približno 2–3 ponovitvami v rezervi; "
+                "šele z napredovanjem postopno preidi na nižje razpone in večje obremenitve."
+                if p["experience"] == "beginner" else
+                "Izkušenost določa zahtevnost vaj, obseg dela, intenzivnost in napredovanje. "
+                "Intermediate in advanced vadeči lahko uporabljajo bolj specifične razpone ponovitev glede na cilj."
+            ),
+            "tempo": "Tempo je predpisan pri vsaki vaji. Pri glavnih vajah je privzeto 3–0–1–0: 3 s spuščanje in 1 s dvig; brez odboja. "
+                     "Pri stabilizaciji in eksplozivnih vajah je tempo prilagojen njihovi funkciji.",
+            "range_of_motion": "Pri vsaki vaji uporabi največjo amplitudo, ki jo omogočata gibljivost in nadzor. "
+                               "Amplitudo postopno razvijaj; ne žrtvuj položaja, stabilnosti ali neboleče izvedbe.",
+            "progression": "Ko pri vseh serijah dosežeš zgornjo mejo ponovitev in ohraniš predpisano rezervo ter tempo, pri naslednjem treningu rahlo zvišaj obremenitev. Če tehnika ali regeneracija odstopata, obdrži ali znižaj obremenitev.",
             "deload": "Razbremenitev se ne določa avtomatično po koledarju; uporabi jo ob vztrajnem slabšanju zmogljivosti, regeneracije ali kakovosti izvedbe.",
             "last_session_adjustment": "reduce_sets_increase_reserve" if reduce_load else ("hold_and_progress_by_rule" if response and response["difficulty"] == "easy" else "maintain"),
         },
