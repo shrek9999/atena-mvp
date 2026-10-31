@@ -12,7 +12,9 @@ app = Flask(__name__)
 
 # Optional conversational pilot. The model key is read server-side only.
 from coach_routes import coach_bp
+from coach_history_routes import coach_history_bp
 app.register_blueprint(coach_bp)
+app.register_blueprint(coach_history_bp)
 
 # Apply CORS to top-level endpoints such as /health as well as blueprint routes.
 # The isolated Netlify preview is allowed only for this closed pilot.
@@ -27,8 +29,8 @@ def add_app_cors_headers(response):
     if origin in allowed_origins:
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Vary"] = "Origin"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Pilot-Token"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Pilot-Token, X-Profile-Token"
         response.headers["Access-Control-Max-Age"] = "600"
     return response
 
