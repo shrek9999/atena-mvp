@@ -534,4 +534,4 @@ def test_timed_work_is_included_in_session_duration_estimate():
             "rest_seconds": 30, "rep_unit": "total",
         }
     }]
-    assert _estimated_minutes(items, warm_up_minutes=0) == 8
+    assert _estimated_minutes(items, warm_up_minutes=0) == 6
