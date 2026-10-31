@@ -82,15 +82,15 @@ def _validate_feedback(value: object) -> dict:
     discomfort = value.get("discomfort")
     movement_control = value.get("movement_control", "none")
     recovery = value.get("recovery", "normal")
-    if difficulty not in {"easy", "right", "hard"}:
+    if not isinstance(difficulty, str) or difficulty not in {"easy", "right", "hard"}:
         raise ValueError("difficulty mora biti easy, right ali hard.")
     if not isinstance(completed, bool):
         raise ValueError("completed mora biti true ali false.")
-    if discomfort not in {"yes", "no"}:
+    if not isinstance(discomfort, str) or discomfort not in {"yes", "no"}:
         raise ValueError("discomfort mora biti yes ali no.")
-    if movement_control not in {"none", "spinal_flexion", "bracing", "both"}:
+    if not isinstance(movement_control, str) or movement_control not in {"none", "spinal_flexion", "bracing", "both"}:
         raise ValueError("movement_control ni veljavna vrednost.")
-    if recovery not in {"good", "normal", "poor"}:
+    if not isinstance(recovery, str) or recovery not in {"good", "normal", "poor"}:
         raise ValueError("recovery mora biti good, normal ali poor.")
     return {
         "difficulty": difficulty,
