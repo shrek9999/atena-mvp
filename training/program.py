@@ -317,7 +317,12 @@ def generate_program(profile: object, feedback: object = None) -> dict:
 
     # Never prescribe an unloaded hinge drill as the main hypertrophy stimulus.
     if p["goal"] == "hypertrophy":
-        hinge_candidates = [item for item in by_pattern.get("hinge", []) if item.get("loading_potential") in {"moderate", "high"}]
+        has_external_load = bool({"barbell", "dumbbell", "kettlebell"} & set(p["equipment"]))
+        hinge_candidates = [
+            item for item in by_pattern.get("hinge", [])
+            if item.get("loading_potential") in {"moderate", "high"}
+            and (has_external_load or item["id"] != "single_leg_rdl")
+        ]
         if not hinge_candidates:
             hinge_candidates = by_pattern.get("hip_extension", []) + by_pattern.get("knee_flexion", [])
         if hinge_candidates:
