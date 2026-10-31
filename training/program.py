@@ -451,8 +451,13 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                         return 0 if {"dumbbell", "bench"}.issubset(available_equipment) else 5
                     if item["id"] == "push_up":
                         return 0
-                if pattern == "conditioning" and p["goal"] == "endurance" and item["id"] == "box_jump_intervals":
-                    return 100
+                if pattern == "conditioning" and p["goal"] == "endurance":
+                    if item["id"] == "box_jump_intervals":
+                        return 100
+                    if item["id"] in {"rower_intervals", "ski_erg_intervals", "air_bike_intervals", "sled_push", "sled_backward_drag"}:
+                        return -5
+                    if item["id"] == "jump_rope":
+                        return -3
                 if pattern == "hinge":
                     if item["id"] in {"romanian_deadlift", "dumbbell_deadlift", "deadlift"}:
                         return -10 if set(item["equipment"]).issubset(available_equipment) else 5
@@ -467,9 +472,9 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             candidate = min(candidates, key=lambda item: (
                 selection_priority(item),
                 0 if item.get("training_role") == "main" or p["goal"] != "hypertrophy" else 1,
+                used_counts[item["id"]],
                 abs(level_rank[item["level"]] - target_level),
                 {"high": 0, "moderate": 1, "low": 2}[effective_loading(item)] if p["goal"] in {"hypertrophy", "strength"} else 0,
-                used_counts[item["id"]],
                 item["id"],
             ))
             effective_pattern = candidate["pattern"]
