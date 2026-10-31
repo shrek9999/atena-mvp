@@ -505,7 +505,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             )
         plans.append({
             "session": session_index + 1,
-            "title": f"Trening {session_index + 1} – celotno telo",
+            "title": (f"Trening {session_index + 1} – vzdržljivost" if p["goal"] == "endurance" else f"Trening {session_index + 1} – mobilnost in gibljivost" if p["goal"] == "mobility" else f"Trening {session_index + 1} – celotno telo"),
             "warm_up_minutes": warm_up_minutes,
             "warm_up_range": "5–7 min" if p["session_minutes"] <= 30 else "5–10 min",
             "exercise_count": len(selected),
@@ -523,7 +523,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             pattern_session_frequency[item["pattern"]] += 1
             pattern_work_sets[item["pattern"]] += item["prescription"]["sets"]
     return {
-        "program_version": "2.5.0",
+        "program_version": "2.6.0",
         "goal": p["goal"],
         "experience": p["experience"],
         "sessions_per_week": p["sessions_per_week"],
@@ -537,18 +537,22 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "endurance_policy": "Vzdržljivost je ločen cilj; aerobne aktivnosti, intervali in mišična vzdržljivost so označeni ločeno.",
             "mobility_policy": "Mobilnost vključuje aktivne gibalne vaje, kontrolirano gibanje v končnih amplitudah in moč skozi razpoložljiv obseg, ne samo pasivnega raztezanja.",
             "experience_adaptation": (
-                "Začetnik: prednost imajo učenje osnovnih gibalnih vzorcev, nadzorovana amplituda in ponovljiva tehnika. "
-                "Tudi pri cilju moč začni večinoma z 8–12 ponovitvami in približno 2–3 ponovitvami v rezervi; "
-                "šele z napredovanjem postopno preidi na nižje razpone in večje obremenitve."
+                "Vzdržljivost: začetnik gradi predvsem enakomeren aerobni obseg v pogovornem tempu; intervale uvajaj postopno. Naprednejši lahko kombinira daljše aerobne enote, intervale in mišično vzdržljivost, vendar ne vsega maksimalno v isti vadbi."
+                if p["goal"] == "endurance" else
+                "Mobilnost: začetnik začne z aktivnimi, podprtimi in kontroliranimi gibi. Napredovanje temelji na kakovosti, postopnem povečevanju neboleče amplitude in sposobnosti ustvarjanja sile v novih položajih; ne na siljenju v končni obseg."
+                if p["goal"] == "mobility" else
+                "Začetnik: prednost imajo učenje osnovnih gibalnih vzorcev, nadzorovana amplituda in ponovljiva tehnika. Tudi pri cilju moč začni večinoma z 8–12 ponovitvami in približno 2–3 ponovitvami v rezervi; šele z napredovanjem postopno preidi na nižje razpone in večje obremenitve."
                 if p["experience"] == "beginner" else
-                "Intermediate: uporablja bolj specifične razpone glede na cilj; pri glavnih vajah za moč je običajen razpon 5–8 ponovitev, "
-                "pri hipertrofiji večinoma 6–12. Advanced: pri glavnih vajah za moč lahko uporablja 3–6 ponovitev, "
-                "ob večji obremenitvi pa zahteva ustrezno tehniko, regeneracijo in daljše odmore."
+                "Intermediate: uporablja bolj specifične razpone glede na cilj; pri glavnih vajah za moč je običajen razpon 5–8 ponovitev, pri hipertrofiji večinoma 6–12. Advanced: pri glavnih vajah za moč lahko uporablja 3–6 ponovitev, ob večji obremenitvi pa zahteva ustrezno tehniko, regeneracijo in daljše odmore."
             ),
-            "tempo": "Tempo je predpisan pri vsaki vaji. Pri glavnih vajah je privzeto 3–0–1–0: 3 s spuščanje in 1 s dvig; brez odboja. Ciljno delo za stabilizacijo se doda samo ob konkretni povratni informaciji in je umeščeno takoj za splošno ogrevanje.",
-            "range_of_motion": "Pri vsaki vaji uporabi največjo amplitudo, ki jo omogočata gibljivost in nadzor. "
-                               "Amplitudo postopno razvijaj; ne žrtvuj položaja, stabilnosti ali neboleče izvedbe.",
-            "progression": "Ko pri vseh serijah dosežeš zgornjo mejo ponovitev in ohraniš predpisano rezervo ter tempo, pri naslednjem treningu rahlo zvišaj obremenitev. Če tehnika ali regeneracija odstopata, obdrži ali znižaj obremenitev.",
+            "tempo": "Tempo je določen glede na namen vaje: pri glavnih vajah za moč in hipertrofijo praviloma nadzorovan spust in dvig; pri eksplozivnih vajah hiter koncentrični del; pri vzdržljivosti ritmično delo; pri mobilnosti počasno aktivno raziskovanje obsega. Stabilizacijsko delo se doda ciljno, ne avtomatično.",
+            "range_of_motion": "Pri vsaki vaji uporabi največjo amplitudo, ki jo omogočata gibljivost in nadzor. Amplitudo postopno razvijaj; ne žrtvuj položaja, stabilnosti ali neboleče izvedbe. Pri mobilnosti kombiniraj aktivno gibanje in moč skozi razpoložljivo amplitudo.",
+            "progression": ("Pri aerobni vzdržljivosti postopno povečuj trajanje ali obseg, nato po potrebi intenzivnost; pri intervalih spreminjaj le eno spremenljivko naenkrat. Ohraniti moraš ponovljivo tehniko in regeneracijo."
+                if p["goal"] == "endurance" else
+                "Pri mobilnosti postopno povečuj nadzorovan obseg, kakovost končnega položaja in sposobnost ustvarjanja sile v njem. Ne sili v globino in ne napreduj skozi bolečino."
+                if p["goal"] == "mobility" else
+                "Ko pri vseh serijah dosežeš zgornjo mejo ponovitev in ohraniš predpisano rezervo ter tehniko, povečaj dražljaj: najprej obremenitev, če je na voljo; sicer težjo različico, daljši vzvod, večjo nadzorovano amplitudo ali enostransko izvedbo. Če tehnika ali regeneracija odstopata, obdrži ali zmanjša zahtevnost."
+            ),
             "deload": "Razbremenitev se ne določa avtomatično po koledarju; uporabi jo ob vztrajnem slabšanju zmogljivosti, regeneracije ali kakovosti izvedbe.",
             "last_session_adjustment": "reduce_sets_increase_reserve" if reduce_load else ("hold_and_progress_by_rule" if response and response["difficulty"] == "easy" else "maintain"),
         },
