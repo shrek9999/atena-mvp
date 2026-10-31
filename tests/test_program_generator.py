@@ -374,3 +374,37 @@ def test_beginner_hypertrophy_uses_foundational_repetition_range():
     squat = next(ex for s in plan["sessions"] for ex in s["exercises"] if ex["pattern"] == "squat")
     assert squat["prescription"]["reps"] == "8–12"
     assert squat["prescription"]["rir_range"] == "2–3"
+
+
+
+def test_beginner_without_weights_still_practises_the_hinge_pattern():
+    plan = generate_program({
+        **BASE, "goal": "strength", "experience": "beginner",
+        "equipment": [], "session_minutes": 60,
+    })
+    hinge = [ex for session in plan["sessions"] for ex in session["exercises"] if ex["pattern"] == "hinge"]
+    assert hinge
+    assert all(ex["exercise_id"] == "bodyweight_hip_hinge" for ex in hinge)
+
+
+def test_beginner_with_dumbbells_uses_a_loaded_beginner_hinge():
+    plan = generate_program({
+        **BASE, "goal": "strength", "experience": "beginner",
+        "equipment": ["dumbbell", "bench"], "session_minutes": 75,
+    })
+    hinge = [ex for session in plan["sessions"] for ex in session["exercises"] if ex["pattern"] == "hinge"]
+    assert hinge
+    assert all(ex["exercise_id"] == "dumbbell_deadlift" for ex in hinge)
+
+
+def test_hard_feedback_updates_beginner_rir_range_consistently():
+    plan = generate_program(
+        {**BASE, "goal": "strength", "experience": "beginner", "equipment": ["dumbbell", "bench"]},
+        feedback={"difficulty": "hard", "completed": False, "discomfort": "no"},
+    )
+    loaded = [
+        ex for session in plan["sessions"] for ex in session["exercises"]
+        if ex["prescription"].get("rir_range")
+    ]
+    assert loaded
+    assert all(ex["prescription"]["rir_range"] == "3–4" for ex in loaded)
