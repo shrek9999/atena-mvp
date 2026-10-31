@@ -707,7 +707,8 @@
       "Breme potuje daleč pred telo."
     ],
     "regressions": [
-      "Potisk ročke kleče na enem kolenu"
+      "band_overhead_press",
+      "pike_push_up"
     ],
     "progressions": [
       "Potisk nad glavo z odrivom nog"
@@ -759,10 +760,11 @@
       "Nenadzorovan spust."
     ],
     "regressions": [
-      "Zgib z elastiko",
-      "Vleka na prsi na škripcu"
+      "band_assisted_pull_up",
+      "foot_assisted_pull_up"
     ],
     "progressions": [
+      "chin_up",
       "Zgib z dodatno obremenitvijo"
     ],
     "alternatives": [
@@ -1670,8 +1672,8 @@
       "Reaching squat"
     ],
     "progressions": [
-      "Počep s premorom",
-      "Počep z nahrbtnikom"
+      "single_leg_box_squat",
+      "squat_goblet"
     ],
     "alternatives": [],
     "warnings": [
@@ -1722,8 +1724,8 @@
       "Počep do stola"
     ],
     "progressions": [
-      "Air squat",
-      "Goblet squat"
+      "air_squat",
+      "squat_goblet"
     ],
     "alternatives": [],
     "warnings": [
@@ -1867,7 +1869,7 @@
       "Izguba ravnotežja med prehodom."
     ],
     "regressions": [
-      "Reverse lunge"
+      "reverse_lunge"
     ],
     "progressions": [
       "Walking lunge z ročkama"
@@ -2121,7 +2123,7 @@
       "Dvig ramen proti ušesom."
     ],
     "regressions": [
-      "Bolj pokončno veslanje"
+      "inverted_row_table"
     ],
     "progressions": [
       "Bolj vodoraven položaj telesa",
@@ -2172,7 +2174,8 @@
       "Nenadzorovan povratek."
     ],
     "regressions": [
-      "TRX veslanje v bolj pokončnem položaju"
+      "trx_row",
+      "inverted_row_table"
     ],
     "progressions": [
       "Veslanje z nogami na povišani podlagi"
@@ -2267,7 +2270,7 @@
       "Sunkovito vlečenje."
     ],
     "regressions": [
-      "Veslanje z elastiko"
+      "one_arm_row"
     ],
     "progressions": [
       "Večja obremenitev kettlebella"
@@ -2317,8 +2320,8 @@
       "Nenadzorovan spust."
     ],
     "regressions": [
-      "Zgib z elastiko",
-      "Zgib z oporo stopal"
+      "band_assisted_pull_up",
+      "foot_assisted_pull_up"
     ],
     "progressions": [
       "Zgib z dodatno obremenitvijo"
@@ -2368,7 +2371,7 @@
       "Nenadzorovan spust."
     ],
     "regressions": [
-      "Vleka elastike od zgoraj"
+      "band_assisted_pull_up"
     ],
     "progressions": [
       "Zgib z manj pomoči stopal"
@@ -2414,7 +2417,8 @@
       "Drog potuje predaleč naprej."
     ],
     "regressions": [
-      "Potisk ročk sede"
+      "band_overhead_press",
+      "pike_push_up"
     ],
     "progressions": [
       "Potisk z večjo obremenitvijo"
@@ -2460,7 +2464,7 @@
       "Elastika drsi ali je poškodovana."
     ],
     "regressions": [
-      "Lažja elastika ali enoročna izvedba"
+      "pike_push_up"
     ],
     "progressions": [
       "Močnejša elastika ali večji razteg"
@@ -2508,10 +2512,11 @@
       "Rotacija trupa za večji obseg."
     ],
     "regressions": [
-      "Enonožni predklon z oporo"
+      "bodyweight_hip_hinge"
     ],
     "progressions": [
-      "Enonožni RDL z ročko ali kettlebellom"
+      "romanian_deadlift",
+      "dumbbell_deadlift"
     ],
     "alternatives": [],
     "warnings": [
@@ -2557,10 +2562,10 @@
       "Odriv skozi ledveni del."
     ],
     "regressions": [
-      "Klasičen most"
+      "glute_bridge"
     ],
     "progressions": [
-      "Most s petami na povišani podlagi"
+      "elevated_heel_hip_lift"
     ],
     "alternatives": [],
     "warnings": [
@@ -2606,7 +2611,7 @@
       "Nestabilna podlaga."
     ],
     "regressions": [
-      "Most z dolgim vzvodom"
+      "long_lever_glute_bridge"
     ],
     "progressions": [
       "Enonožna izvedba ali drsni upogib kolen"
@@ -2700,7 +2705,7 @@
       "Prehiter nekontroliran padec."
     ],
     "regressions": [
-      "Drsni upogib kolen"
+      "slider_leg_curl"
     ],
     "progressions": [
       "Manj pomoči elastike in večji nadzor ekscentrične faze"
@@ -3826,7 +3831,7 @@
       "Koleno izgubi smer nad stopalom."
     ],
     "regressions": [
-      "Počep na eni nogi z višjo oporo"
+      "air_squat"
     ],
     "progressions": [
       "Nižja opora ali dodatna obremenitev"
@@ -3923,10 +3928,11 @@
       "Prevelik odriv."
     ],
     "regressions": [
-      "Zgib z večjo asistenco"
+      "foot_assisted_pull_up"
     ],
     "progressions": [
-      "Zgib z manjšo asistenco"
+      "pull_up",
+      "chin_up"
     ],
     "alternatives": [],
     "warnings": [
@@ -3970,7 +3976,9 @@
       "Zagon z ledvenim delom."
     ],
     "regressions": [
-      "Veslanje z ročko z oporo"
+      "trx_row",
+      "ring_row",
+      "inverted_row_table"
     ],
     "progressions": [
       "Veslanje z večjo obremenitvijo ali premorom"
@@ -4329,5 +4337,53 @@
     "target_systems": [
       "cardiorespiratory"
     ]
+  },
+  {
+    "id": "band_assisted_parallel_bar_dip",
+    "name": "Dips na bradlji z močno asistenco elastike",
+    "name_en": "Band-assisted parallel bar dip",
+    "pattern": "horizontal_push",
+    "joint_type": "multi_joint",
+    "goals": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "equipment": [
+      "dip_bars",
+      "resistance_band"
+    ],
+    "equipment_any": [],
+    "level": "intermediate",
+    "primary_muscles": [
+      "triceps",
+      "pectorals"
+    ],
+    "secondary_muscles": [
+      "anterior_deltoids",
+      "trunk"
+    ],
+    "cues": [
+      "Elastiko varno namesti na bradljo in koleno ali stopalo.",
+      "Pomoč elastike naj omogoča nadzorovan celoten gib.",
+      "Spuščaj se samo do neboleče globine."
+    ],
+    "common_errors": [
+      "Prevelika pomoč in izguba nadzora.",
+      "Nenadzorovan globok spust."
+    ],
+    "regressions": [
+      "push_up"
+    ],
+    "progressions": [
+      "parallel_bar_dip"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Uporabi namensko, nepoškodovano elastiko in stabilno bradljo. Ob bolečini v rami prekini."
+    ],
+    "single_joint": false,
+    "loading_potential": "moderate",
+    "training_role": "main"
   }
 ]
