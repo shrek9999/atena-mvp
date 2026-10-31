@@ -101,3 +101,29 @@ def test_unilateral_metadata_must_be_boolean():
     item["unilateral"] = "yes"
     with pytest.raises(CatalogueValidationError, match="unilateral"):
         validate_catalogue([item])
+
+
+
+def test_every_catalogue_entry_has_scaling_and_role_metadata():
+    for item in load_catalogue():
+        assert item["loading_potential"] in {"low", "moderate", "high"}, item["id"]
+        assert item["training_role"] in {"main", "accessory", "mobility", "conditioning", "stability", "power"}, item["id"]
+        assert isinstance(item.get("time_based", False), bool), item["id"]
+
+
+def test_bodyweight_hip_hinge_is_marked_as_a_low_load_skill_drill():
+    item = get_exercise("bodyweight_hip_hinge")
+    assert item["loading_potential"] == "low"
+
+
+def test_household_supports_enable_safe_home_variants_in_catalogue():
+    available = {"bodyweight", "chair", "towel", "wall", "household_support", "household_load"}
+    ids = {item["id"] for item in get_exercises(equipment=available, include_accessories=True)}
+    assert {"single_leg_box_squat", "inverted_row_table", "slider_leg_curl", "elevated_heel_hip_lift"} <= ids
+
+
+def test_endurance_and_mobility_pools_are_distinct_and_present():
+    endurance = {item["id"] for item in get_exercises(goal="endurance")}
+    mobility = {item["id"] for item in get_exercises(goal="mobility")}
+    assert {"running_easy", "brisk_walking", "burpee", "jump_rope"} <= endurance
+    assert {"hip_90_90_switch", "ankle_knee_to_wall", "deep_squat_hold", "cossack_squat"} <= mobility
