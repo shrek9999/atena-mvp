@@ -346,6 +346,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 continue
             seen_patterns.add(pattern)
             candidates = by_pattern.get(pattern, [])
+            if p["goal"] == "endurance" and pattern == "locomotion":
+                candidates = [item for item in candidates if item.get("endurance_type") == "aerobic"]
             if not candidates:
                 # A vertical pull is not mandatory when the available catalogue/equipment cannot support it.
                 if pattern in {"vertical_pull", "vertical_push", "carry", "anti_rotation", "trunk_stability"}:
