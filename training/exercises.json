@@ -4070,5 +4070,264 @@
     "equipment_any": [],
     "loading_potential": "low",
     "training_role": "mobility"
+  },
+  {
+    "id": "ski_erg_intervals",
+    "name": "Intervali na SkiErg napravi",
+    "name_en": "SkiErg intervals",
+    "pattern": "conditioning",
+    "joint_type": "multi_joint",
+    "goals": [
+      "endurance",
+      "general_fitness",
+      "functional"
+    ],
+    "equipment": [
+      "ski_erg"
+    ],
+    "level": "beginner",
+    "primary_muscles": [
+      "latissimus_dorsi",
+      "triceps",
+      "trunk"
+    ],
+    "secondary_muscles": [
+      "shoulders",
+      "quadriceps"
+    ],
+    "cues": [
+      "Začni z močjo trupa in bokov, nato uporabi roke.",
+      "Ritem prilagodi ciljnemu intervalu."
+    ],
+    "common_errors": [
+      "Prehiter začetek.",
+      "Pretirano vlečenje samo z rokami."
+    ],
+    "regressions": [
+      "Enakomerno delo z nizkim uporom"
+    ],
+    "progressions": [
+      "Daljši intervali ali večja intenzivnost"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Tehniko in intenzivnost stopnjuj postopno."
+    ],
+    "single_joint": false,
+    "equipment_any": [],
+    "loading_potential": "moderate",
+    "training_role": "conditioning",
+    "endurance_type": "aerobic",
+    "time_based": true,
+    "target_systems": [
+      "cardiorespiratory"
+    ]
+  },
+  {
+    "id": "air_bike_intervals",
+    "name": "Intervali na zračnem kolesu",
+    "name_en": "Air bike intervals",
+    "pattern": "conditioning",
+    "joint_type": "multi_joint",
+    "goals": [
+      "endurance",
+      "general_fitness",
+      "functional"
+    ],
+    "equipment": [
+      "air_bike"
+    ],
+    "level": "beginner",
+    "primary_muscles": [
+      "quadriceps",
+      "gluteus_maximus",
+      "shoulders"
+    ],
+    "secondary_muscles": [
+      "trunk",
+      "calves"
+    ],
+    "cues": [
+      "Roke in noge delujejo usklajeno.",
+      "Intenzivnost določi glede na trajanje intervala."
+    ],
+    "common_errors": [
+      "Maksimalen začetek pri dolgih intervalih."
+    ],
+    "regressions": [
+      "Enakomerno delo z nizko intenzivnostjo"
+    ],
+    "progressions": [
+      "Krajši ali intenzivnejši intervali"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Pri intervalih ohrani ponovljivo izvedbo."
+    ],
+    "single_joint": false,
+    "equipment_any": [],
+    "loading_potential": "moderate",
+    "training_role": "conditioning",
+    "endurance_type": "anaerobic",
+    "time_based": true,
+    "target_systems": [
+      "cardiorespiratory"
+    ]
+  },
+  {
+    "id": "shuttle_run",
+    "name": "Tek s spremembami smeri (shuttle run)",
+    "name_en": "Shuttle run",
+    "pattern": "conditioning",
+    "joint_type": "multi_joint",
+    "goals": [
+      "endurance",
+      "general_fitness",
+      "functional"
+    ],
+    "equipment": [],
+    "level": "intermediate",
+    "primary_muscles": [
+      "quadriceps",
+      "gluteus_maximus",
+      "calves"
+    ],
+    "secondary_muscles": [
+      "trunk"
+    ],
+    "cues": [
+      "Upočasni pred spremembo smeri.",
+      "Kolena in stopala nadzoruj pri zaviranju."
+    ],
+    "common_errors": [
+      "Nenadzorovano zaviranje.",
+      "Prevelika hitrost glede na podlago."
+    ],
+    "regressions": [
+      "Hitra hoja s spremembami smeri"
+    ],
+    "progressions": [
+      "Več ponovitev ali krajši odmori"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Potrebuje ravno, nedrsečo in dovolj veliko površino."
+    ],
+    "single_joint": false,
+    "equipment_any": [
+      "bodyweight"
+    ],
+    "loading_potential": "moderate",
+    "training_role": "conditioning",
+    "endurance_type": "anaerobic",
+    "time_based": true,
+    "target_systems": [
+      "cardiorespiratory"
+    ]
+  },
+  {
+    "id": "bear_crawl",
+    "name": "Medvedja hoja",
+    "name_en": "Bear crawl",
+    "pattern": "locomotion",
+    "joint_type": "multi_joint",
+    "goals": [
+      "endurance",
+      "general_fitness",
+      "functional"
+    ],
+    "equipment": [],
+    "level": "intermediate",
+    "primary_muscles": [
+      "trunk",
+      "shoulders",
+      "quadriceps"
+    ],
+    "secondary_muscles": [
+      "hip_flexors",
+      "calves"
+    ],
+    "cues": [
+      "Kolena drži nizko nad tlemi.",
+      "Premikaj nasprotno roko in nogo."
+    ],
+    "common_errors": [
+      "Rotacija medenice.",
+      "Prevelik dvig bokov."
+    ],
+    "regressions": [
+      "Počasno premikanje iz položaja na vseh štirih"
+    ],
+    "progressions": [
+      "Daljše razdalje ali kontroliran tempo"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Izberi čisto, nedrsečo površino."
+    ],
+    "single_joint": false,
+    "equipment_any": [
+      "bodyweight"
+    ],
+    "loading_potential": "moderate",
+    "training_role": "conditioning",
+    "endurance_type": "muscular",
+    "time_based": true,
+    "target_systems": [
+      "cardiorespiratory"
+    ]
+  },
+  {
+    "id": "step_up_intervals",
+    "name": "Intervalno stopanje na stabilno stopnico",
+    "name_en": "Step-up intervals",
+    "pattern": "conditioning",
+    "joint_type": "multi_joint",
+    "goals": [
+      "endurance",
+      "general_fitness",
+      "functional"
+    ],
+    "equipment": [
+      "step"
+    ],
+    "level": "beginner",
+    "primary_muscles": [
+      "quadriceps",
+      "gluteus_maximus",
+      "calves"
+    ],
+    "secondary_muscles": [
+      "trunk"
+    ],
+    "cues": [
+      "Stopaj ritmično na stabilno stopnico.",
+      "Menjaj vodilno nogo."
+    ],
+    "common_errors": [
+      "Previsoka stopnica.",
+      "Odriv predvsem z zadnjo nogo."
+    ],
+    "regressions": [
+      "Nižja stopnica in počasnejši tempo"
+    ],
+    "progressions": [
+      "Daljši intervali ali višja frekvenca"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Stopnica mora biti stabilna in nedrseča."
+    ],
+    "single_joint": false,
+    "equipment_any": [
+      "bodyweight"
+    ],
+    "loading_potential": "moderate",
+    "training_role": "conditioning",
+    "endurance_type": "aerobic",
+    "time_based": true,
+    "target_systems": [
+      "cardiorespiratory"
+    ]
   }
 ]
