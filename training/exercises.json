@@ -125,7 +125,8 @@
     ],
     "secondary_muscles": [
       "trunk",
-      "upper_back"
+      "trapezius",
+      "rhomboids"
     ],
     "cues": [
       "Komolce usmeri naprej in navzgor.",
@@ -151,7 +152,10 @@
     "equipment_any": [],
     "training_role": "main",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "upper_back"
+    ]
   },
   {
     "id": "split_squat",
@@ -441,7 +445,7 @@
     "secondary_muscles": [
       "spinal_erectors",
       "trunk",
-      "grip"
+      "forearms"
     ],
     "cues": [
       "Gib začni s pomikom kolkov nazaj.",
@@ -469,7 +473,10 @@
     ],
     "training_role": "main",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "forearm"
+    ]
   },
   {
     "id": "deadlift",
@@ -493,7 +500,7 @@
       "quadriceps",
       "spinal_erectors",
       "trunk",
-      "grip"
+      "forearms"
     ],
     "cues": [
       "Breme postavi nad sredino stopala.",
@@ -522,7 +529,10 @@
     "equipment_any": [],
     "training_role": "main",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "forearm"
+    ]
   },
   {
     "id": "hip_thrust",
@@ -695,7 +705,8 @@
     "secondary_muscles": [
       "triceps",
       "trunk",
-      "upper_back"
+      "trapezius",
+      "rhomboids"
     ],
     "cues": [
       "Pred potiskom stabiliziraj trup.",
@@ -726,7 +737,10 @@
     ],
     "training_role": "main",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "upper_back"
+    ]
   },
   {
     "id": "pull_up",
@@ -844,7 +858,7 @@
     "equipment": [],
     "level": "beginner",
     "primary_muscles": [
-      "grip",
+      "forearms",
       "trunk"
     ],
     "secondary_muscles": [
@@ -880,7 +894,10 @@
     ],
     "training_role": "stability",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "forearm"
+    ]
   },
   {
     "id": "pallof_press",
@@ -902,7 +919,7 @@
     ],
     "secondary_muscles": [
       "gluteus_maximus",
-      "shoulders"
+      "deltoids"
     ],
     "cues": [
       "Medenico in prsni koš usmeri naprej.",
@@ -933,7 +950,10 @@
     "reps_per_side": true,
     "training_role": "stability",
     "loading_potential": "moderate",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "shoulder"
+    ]
   },
   {
     "id": "dead_bug",
@@ -1194,7 +1214,7 @@
     ],
     "secondary_muscles": [
       "trunk",
-      "grip",
+      "forearms",
       "latissimus_dorsi"
     ],
     "cues": [
@@ -1223,7 +1243,10 @@
     "equipment_any": [],
     "training_role": "power",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "forearm"
+    ]
   },
   {
     "id": "two_dumbbell_squat",
@@ -1708,7 +1731,7 @@
     "secondary_muscles": [
       "adductors",
       "trunk",
-      "shoulders"
+      "deltoids"
     ],
     "cues": [
       "Roke iztegni naprej ali nad glavo glede na gibljivost.",
@@ -1737,7 +1760,10 @@
     ],
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "shoulder"
+    ]
   },
   {
     "id": "dumbbell_squat_side",
@@ -1760,7 +1786,7 @@
     "secondary_muscles": [
       "adductors",
       "trunk",
-      "grip"
+      "forearms"
     ],
     "cues": [
       "Ročki drži ob telesu.",
@@ -1786,7 +1812,10 @@
     ],
     "loading_potential": "high",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "forearm"
+    ]
   },
   {
     "id": "dumbbell_squat_front_rack",
@@ -1807,7 +1836,8 @@
     ],
     "secondary_muscles": [
       "trunk",
-      "upper_back"
+      "trapezius",
+      "rhomboids"
     ],
     "cues": [
       "Ročki stabilno nasloni ob ramena.",
@@ -1833,7 +1863,10 @@
     ],
     "loading_potential": "high",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "upper_back"
+    ]
   },
   {
     "id": "walking_lunge",
@@ -2404,7 +2437,8 @@
     "secondary_muscles": [
       "triceps",
       "trunk",
-      "upper_back"
+      "trapezius",
+      "rhomboids"
     ],
     "cues": [
       "Ustvari napetost trupa.",
@@ -2429,7 +2463,10 @@
     "equipment_any": [],
     "loading_potential": "high",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "upper_back"
+    ]
   },
   {
     "id": "band_overhead_press",
@@ -2737,7 +2774,7 @@
     "level": "beginner",
     "primary_muscles": [
       "trunk",
-      "grip"
+      "forearms"
     ],
     "secondary_muscles": [
       "trapezius",
@@ -2771,7 +2808,10 @@
     ],
     "loading_potential": "moderate",
     "training_role": "stability",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "forearm"
+    ]
   },
   {
     "id": "suitcase_carry",
@@ -2789,7 +2829,7 @@
     "primary_muscles": [
       "obliques",
       "trunk",
-      "grip"
+      "forearms"
     ],
     "secondary_muscles": [
       "quadratus_lumborum",
@@ -2821,7 +2861,10 @@
     ],
     "loading_potential": "high",
     "training_role": "stability",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "forearm"
+    ]
   },
   {
     "id": "running_easy",
@@ -3053,7 +3096,7 @@
     ],
     "secondary_muscles": [
       "triceps",
-      "shoulders",
+      "deltoids",
       "trunk"
     ],
     "cues": [
@@ -3084,6 +3127,9 @@
     "time_based": true,
     "target_systems": [
       "cardiorespiratory"
+    ],
+    "target_regions": [
+      "shoulder"
     ]
   },
   {
@@ -3206,11 +3252,11 @@
     "primary_muscles": [
       "trunk",
       "hip_flexors",
-      "shoulders"
+      "deltoids"
     ],
     "secondary_muscles": [
       "hip_flexors",
-      "shoulders"
+      "deltoids"
     ],
     "cues": [
       "Ohrani stabilen položaj opore.",
@@ -3240,6 +3286,9 @@
     "time_based": true,
     "target_systems": [
       "cardiorespiratory"
+    ],
+    "target_regions": [
+      "shoulder"
     ]
   },
   {
@@ -3256,8 +3305,10 @@
     "equipment": [],
     "level": "beginner",
     "primary_muscles": [
-      "ankle_mobility",
-      "hip_mobility"
+      "soleus",
+      "gastrocnemius",
+      "gluteus_medius",
+      "gluteus_minimus"
     ],
     "secondary_muscles": [
       "trunk",
@@ -3288,7 +3339,11 @@
     ],
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": true
+    "time_based": true,
+    "target_regions": [
+      "ankle",
+      "hip"
+    ]
   },
   {
     "id": "ankle_knee_to_wall",
@@ -3303,7 +3358,8 @@
     "equipment": [],
     "level": "beginner",
     "primary_muscles": [
-      "ankle_mobility"
+      "soleus",
+      "gastrocnemius"
     ],
     "secondary_muscles": [
       "calves"
@@ -3332,7 +3388,10 @@
     ],
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "ankle"
+    ]
   },
   {
     "id": "cossack_squat",
@@ -3398,7 +3457,8 @@
     "equipment": [],
     "level": "beginner",
     "primary_muscles": [
-      "hip_mobility"
+      "gluteus_medius",
+      "gluteus_minimus"
     ],
     "secondary_muscles": [
       "trunk"
@@ -3427,7 +3487,10 @@
     ],
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "hip"
+    ]
   },
   {
     "id": "shinbox_getup",
@@ -3442,12 +3505,13 @@
     "equipment": [],
     "level": "intermediate",
     "primary_muscles": [
-      "hip_mobility",
+      "gluteus_medius",
+      "gluteus_minimus",
       "gluteus_maximus"
     ],
     "secondary_muscles": [
       "trunk",
-      "shoulders"
+      "deltoids"
     ],
     "cues": [
       "Prehod izvedi počasi.",
@@ -3472,7 +3536,11 @@
     ],
     "loading_potential": "moderate",
     "training_role": "mobility",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "hip",
+      "shoulder"
+    ]
   },
   {
     "id": "thoracic_rotation_quadruped",
@@ -3487,10 +3555,11 @@
     "equipment": [],
     "level": "beginner",
     "primary_muscles": [
-      "thoracic_mobility"
+      "obliques",
+      "spinal_erectors"
     ],
     "secondary_muscles": [
-      "shoulders",
+      "deltoids",
       "trunk"
     ],
     "cues": [
@@ -3516,7 +3585,11 @@
     ],
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "thoracic_spine",
+      "shoulder"
+    ]
   },
   {
     "id": "shoulder_car",
@@ -3531,7 +3604,8 @@
     "equipment": [],
     "level": "beginner",
     "primary_muscles": [
-      "shoulder_mobility"
+      "deltoids",
+      "serratus_anterior"
     ],
     "secondary_muscles": [
       "trunk"
@@ -3559,7 +3633,10 @@
     ],
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "shoulder"
+    ]
   },
   {
     "id": "loaded_deep_squat",
@@ -3720,7 +3797,7 @@
     ],
     "secondary_muscles": [
       "trunk",
-      "shoulders"
+      "deltoids"
     ],
     "cues": [
       "Medenico dvigni in ohrani poravnano.",
@@ -3747,7 +3824,10 @@
     ],
     "loading_potential": "moderate",
     "training_role": "stability",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "shoulder"
+    ]
   },
   {
     "id": "dead_bug_band",
@@ -3770,7 +3850,7 @@
     ],
     "secondary_muscles": [
       "hip_flexors",
-      "shoulders"
+      "deltoids"
     ],
     "cues": [
       "Rebra ohrani povezane z medenico.",
@@ -3793,7 +3873,10 @@
     "equipment_any": [],
     "loading_potential": "moderate",
     "training_role": "stability",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "shoulder"
+    ]
   },
   {
     "id": "single_leg_box_squat",
@@ -3863,7 +3946,8 @@
       "triceps"
     ],
     "secondary_muscles": [
-      "upper_back",
+      "trapezius",
+      "rhomboids",
       "trunk"
     ],
     "cues": [
@@ -3889,7 +3973,10 @@
       "bodyweight"
     ],
     "loading_potential": "moderate",
-    "training_role": "main"
+    "training_role": "main",
+    "target_regions": [
+      "upper_back"
+    ]
   },
   {
     "id": "band_assisted_pull_up",
@@ -4003,10 +4090,12 @@
     ],
     "level": "beginner",
     "primary_muscles": [
-      "shoulder_mobility"
+      "deltoids",
+      "serratus_anterior"
     ],
     "secondary_muscles": [
-      "upper_back"
+      "trapezius",
+      "rhomboids"
     ],
     "cues": [
       "Prijem prilagodi širini, ki omogoča neboleč prehod.",
@@ -4030,7 +4119,11 @@
     "equipment_any": [],
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "shoulder",
+      "upper_back"
+    ]
   },
   {
     "id": "wall_slide",
@@ -4047,7 +4140,8 @@
     ],
     "level": "beginner",
     "primary_muscles": [
-      "shoulder_mobility"
+      "deltoids",
+      "serratus_anterior"
     ],
     "secondary_muscles": [
       "serratus_anterior",
@@ -4075,7 +4169,10 @@
     "equipment_any": [],
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "shoulder"
+    ]
   },
   {
     "id": "ski_erg_intervals",
@@ -4098,7 +4195,7 @@
       "trunk"
     ],
     "secondary_muscles": [
-      "shoulders",
+      "deltoids",
       "quadriceps"
     ],
     "cues": [
@@ -4127,6 +4224,9 @@
     "time_based": true,
     "target_systems": [
       "cardiorespiratory"
+    ],
+    "target_regions": [
+      "shoulder"
     ]
   },
   {
@@ -4147,7 +4247,7 @@
     "primary_muscles": [
       "quadriceps",
       "gluteus_maximus",
-      "shoulders"
+      "deltoids"
     ],
     "secondary_muscles": [
       "trunk",
@@ -4178,6 +4278,9 @@
     "time_based": true,
     "target_systems": [
       "cardiorespiratory"
+    ],
+    "target_regions": [
+      "shoulder"
     ]
   },
   {
@@ -4246,7 +4349,7 @@
     "level": "intermediate",
     "primary_muscles": [
       "trunk",
-      "shoulders",
+      "deltoids",
       "quadriceps"
     ],
     "secondary_muscles": [
@@ -4281,6 +4384,9 @@
     "time_based": true,
     "target_systems": [
       "cardiorespiratory"
+    ],
+    "target_regions": [
+      "shoulder"
     ]
   },
   {
@@ -4785,12 +4891,11 @@
     "equipment_any": [],
     "level": "intermediate",
     "primary_muscles": [
-      "grip",
       "forearms"
     ],
     "secondary_muscles": [
       "latissimus_dorsi",
-      "shoulders"
+      "deltoids"
     ],
     "cues": [
       "Drog primi v širini, ki omogoča udoben položaj ramen.",
@@ -4814,7 +4919,11 @@
     "single_joint": false,
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": true
+    "time_based": true,
+    "target_regions": [
+      "forearm",
+      "shoulder"
+    ]
   },
   {
     "id": "hip_90_90_ir_isometric",
@@ -4884,7 +4993,8 @@
     ],
     "secondary_muscles": [
       "trunk",
-      "thoracic_mobility"
+      "obliques",
+      "spinal_erectors"
     ],
     "cues": [
       "Dlani in stopala postavi stabilno na tla.",
@@ -4908,7 +5018,10 @@
     "single_joint": false,
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "thoracic_spine"
+    ]
   },
   {
     "id": "elevated_pigeon_hinge",
@@ -5022,7 +5135,8 @@
     "equipment_any": [],
     "level": "beginner",
     "primary_muscles": [
-      "shoulder_mobility"
+      "deltoids",
+      "serratus_anterior"
     ],
     "secondary_muscles": [
       "pectorals",
@@ -5050,7 +5164,10 @@
     "single_joint": false,
     "loading_potential": "low",
     "training_role": "mobility",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "shoulder"
+    ]
   },
   {
     "id": "patrick_step",
@@ -5224,12 +5341,13 @@
     "level": "intermediate",
     "primary_muscles": [
       "trunk",
-      "grip"
+      "forearms"
     ],
     "secondary_muscles": [
       "quadriceps",
       "gluteus_maximus",
-      "upper_back"
+      "trapezius",
+      "rhomboids"
     ],
     "cues": [
       "Breme nasloni stabilno ob ramo v front-rack položaju.",
@@ -5256,7 +5374,11 @@
     "single_joint": false,
     "loading_potential": "high",
     "training_role": "stability",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "forearm",
+      "upper_back"
+    ]
   },
   {
     "id": "overhead_carry",
@@ -5277,13 +5399,14 @@
     "level": "advanced",
     "primary_muscles": [
       "trunk",
-      "shoulders",
-      "grip"
+      "deltoids",
+      "forearms"
     ],
     "secondary_muscles": [
       "quadriceps",
       "gluteus_maximus",
-      "upper_back"
+      "trapezius",
+      "rhomboids"
     ],
     "cues": [
       "Breme stabilno zakleni nad glavo in ohrani aktiven položaj rame.",
@@ -5310,6 +5433,11 @@
     "single_joint": false,
     "loading_potential": "high",
     "training_role": "stability",
-    "time_based": false
+    "time_based": false,
+    "target_regions": [
+      "shoulder",
+      "forearm",
+      "upper_back"
+    ]
   }
 ]
