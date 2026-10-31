@@ -13,6 +13,9 @@ REQUIRED_FIELDS = {
 }
 VALID_JOINT_TYPES = {"multi_joint", "single_joint"}
 VALID_LEVELS = {"beginner", "intermediate", "advanced"}
+VALID_LOADING_POTENTIALS = {"low", "moderate", "high"}
+VALID_TRAINING_ROLES = {"main", "accessory", "mobility", "conditioning", "stability", "power"}
+VALID_ENDURANCE_TYPES = {"aerobic", "anaerobic", "muscular"}
 
 
 class CatalogueValidationError(ValueError):
@@ -55,13 +58,27 @@ def validate_catalogue(exercises: object) -> None:
             raise CatalogueValidationError(f"{exercise_id}: single_joint in joint_type nista usklajena.")
         if "unilateral" in exercise and not isinstance(exercise["unilateral"], bool):
             raise CatalogueValidationError(f"{exercise_id}: unilateral mora biti true ali false.")
+        if exercise.get("loading_potential") not in VALID_LOADING_POTENTIALS:
+            raise CatalogueValidationError(f"{exercise_id}: loading_potential mora biti low, moderate ali high.")
+        if exercise.get("training_role") not in VALID_TRAINING_ROLES:
+            raise CatalogueValidationError(f"{exercise_id}: training_role ni veljaven.")
+        if exercise.get("endurance_type") is not None and exercise["endurance_type"] not in VALID_ENDURANCE_TYPES:
+            raise CatalogueValidationError(f"{exercise_id}: endurance_type ni veljaven.")
+        if "time_based" in exercise and not isinstance(exercise["time_based"], bool):
+            raise CatalogueValidationError(f"{exercise_id}: time_based mora biti true ali false.")
+        for field in ("target_systems", "target_regions"):
+            if field in exercise and (
+                not isinstance(exercise[field], list)
+                or any(not isinstance(item, str) or not item.strip() for item in exercise[field])
+            ):
+                raise CatalogueValidationError(f"{exercise_id}: {field} mora biti seznam nepraznih nizov.")
         for field in ("goals", "equipment", "equipment_any", "primary_muscles", "secondary_muscles",
                       "cues", "common_errors", "regressions", "progressions",
                       "alternatives", "warnings"):
             value = exercise[field]
             if not isinstance(value, list) or any(not isinstance(item, str) or not item.strip() for item in value):
                 raise CatalogueValidationError(f"{exercise_id}: polje {field} mora biti seznam nepraznih nizov.")
-        if not exercise["goals"] or not (exercise["equipment"] or exercise["equipment_any"]) or not exercise["primary_muscles"]:
+        if not exercise["goals"] or not (exercise["equipment"] or exercise["equipment_any"]) or not exercise["primary_muscles"] or not exercise.get("loading_potential") or not exercise.get("training_role"):
             raise CatalogueValidationError(f"{exercise_id}: goals, vsaj ena zahteva glede opreme in primary_muscles ne smejo biti prazni.")
 
 
@@ -90,7 +107,8 @@ def get_exercises(
         if level and exercise["level"] != level:
             continue
         if exercise["single_joint"] and not include_accessories:
-            continue
+            if not (goal == "mobility" and exercise.get("training_role") == "mobility"):
+                continue
         required = set(exercise["equipment"])
         optional_match = set(exercise["equipment_any"])
         if available:
