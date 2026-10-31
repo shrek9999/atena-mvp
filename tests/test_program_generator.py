@@ -542,3 +542,20 @@ def test_timed_work_is_included_in_session_duration_estimate():
         }
     }]
     assert _estimated_minutes(items, warm_up_minutes=0) == 6
+
+
+
+def test_generated_exercises_include_catalogue_backed_regressions_and_progressions():
+    profile = {
+        **BASE,
+        "goal": "mobility",
+        "experience": "beginner",
+        "equipment": ["bodyweight", "chair", "wall", "household_support"],
+        "session_minutes": 60,
+    }
+    plan = generate_program(profile)
+    reaching = next(
+        exercise for session in plan["sessions"] for exercise in session["exercises"]
+        if exercise["exercise_id"] == "reaching_squat"
+    )
+    assert "Počep z lastno težo (air squat)" in reaching["progressions"]
