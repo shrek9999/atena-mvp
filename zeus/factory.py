@@ -9,9 +9,10 @@ from zeus.hermes_research import HermesResearchAdapter
 def build_coordinator(
     atena_transport: MCPTransport | None = None,
     atena_url: str = ATENA_MCP_URL,
+    ledger=None,
 ) -> Coordinator:
     """Create ZEUS with ATENA and the read-only HERMES evidence collector."""
     return Coordinator(adapters={
         "ATENA": AtenaMCPAdapter(transport=atena_transport, url=atena_url),
         "HERMES": HermesResearchAdapter(),
-    })
+    }, ledger=ledger)
