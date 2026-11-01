@@ -537,3 +537,59 @@ def test_profile_program_stops_after_logged_discomfort(monkeypatch, tmp_path):
     )
     assert response.status_code == 409
     assert response.get_json()["blocked"] is True
+
+
+
+def test_time_based_exercise_history_stores_seconds_without_faking_repetitions(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    exercise_id = load_catalogue()[0]["id"]
+    response = client.post(
+        f"/coach/profile/{profile_id}/sessions",
+        headers={"X-Profile-Token": token},
+        json={
+            "session_date": "2026-11-01",
+            "duration_minutes": 45,
+            "difficulty": "moderate",
+            "recovery": "good",
+            "completed": True,
+            "exercises": [{
+                "exercise_id": exercise_id,
+                "sets_completed": 2,
+                "work_seconds_completed": 30,
+            }],
+        },
+    )
+    assert response.status_code == 201
+    saved = client.get(
+        f"/coach/profile/{profile_id}/sessions",
+        headers={"X-Profile-Token": token},
+    ).get_json()["sessions"][0]["session"]["exercises"][0]
+    assert saved["work_seconds_completed"] == 30
+    assert "reps_completed" not in saved
+
+
+def test_time_based_progress_uses_work_duration_trend():
+    from training.progress import summarize_progress
+
+    profile = {"profile": {"goal": "mobility"}}
+    sessions = [
+        {
+            "session_date": "2026-10-27",
+            "session": {
+                "completed": True,
+                "exercises": [{"exercise_id": "timed-exercise", "sets_completed": 2, "work_seconds_completed": 20}],
+            },
+        },
+        {
+            "session_date": "2026-10-30",
+            "session": {
+                "completed": True,
+                "exercises": [{"exercise_id": "timed-exercise", "sets_completed": 2, "work_seconds_completed": 30}],
+            },
+        },
+    ]
+    result = summarize_progress(profile, sessions)
+    assert result["exercise_trends"][0]["status"] == "work_duration_increased"
