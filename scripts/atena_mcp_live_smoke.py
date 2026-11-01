@@ -126,11 +126,62 @@ def main() -> None:
     if capabilities.get("service") != "ATENA" or not expected.issubset(actual):
         raise RuntimeError("ATENA MCP capabilities did not match the expected contract")
 
+    # One synthetic, non-personal decision call proves the complete MCP tool
+    # contract end to end. This uses the free /decision route, never /paid/decision.
+    synthetic_payload = {
+        "goal": {"primary": "strength", "secondary": "aerobic_fitness"},
+        "person": {},
+        "constraints": {"available_time": "two sessions per week"},
+        "state": {
+            "performance": "stable",
+            "strength": "stable",
+            "rpe": 7,
+            "recovery": "stable",
+            "symptoms": "none",
+            "sleep": "normal",
+            "wellness": "normal",
+        },
+        "response": {"performance_response": "stable", "recovery_response": "stable"},
+        "question": "Should the current training stimulus be maintained?",
+        "history": {},
+    }
+    status, _, raw = post_with_retry({
+        "jsonrpc": "2.0",
+        "id": 3,
+        "method": "tools/call",
+        "params": {"name": "atena_decide", "arguments": {"payload": synthetic_payload}},
+    }, session_id, negotiated)
+    if status != 200:
+        raise RuntimeError(f"atena_decide returned HTTP {status}")
+    decision_response = parse_rpc(raw)
+    if "error" in decision_response or not isinstance(decision_response.get("result"), dict):
+        raise RuntimeError("MCP decision call failed")
+    decision_result = decision_response["result"]
+    if decision_result.get("isError"):
+        raise RuntimeError("ATENA decision tool reported an error")
+
+    decision = decision_result.get("structuredContent")
+    if not isinstance(decision, dict):
+        for item in decision_result.get("content", []):
+            if item.get("type") == "text":
+                try:
+                    candidate = json.loads(item.get("text", ""))
+                except ValueError:
+                    continue
+                if isinstance(candidate, dict):
+                    decision = candidate
+                    break
+    if not isinstance(decision, dict) or decision.get("decision") not in expected:
+        raise RuntimeError("ATENA returned an invalid synthetic decision")
+    if not isinstance(decision.get("action"), str) or not decision["action"]:
+        raise RuntimeError("ATENA decision response is missing an action")
+
     print("LIVE MCP CHECK: PASS")
     print(f"Service: {capabilities.get('service')} {capabilities.get('version')}")
-    print("Tool: atena_capabilities")
+    print("Tools: atena_capabilities, atena_decide")
     print("Decision types: " + ", ".join(sorted(actual)))
-    print("No user data sent; no decision or paid endpoint called.")
+    print(f"Synthetic decision: {decision.get('decision')}")
+    print("No user data sent; no paid endpoint called.")
 
 
 if __name__ == "__main__":
