@@ -4,6 +4,8 @@ This package is deliberately isolated from the ATENA Flask application.
 It has no network, model, database, or deployment side effects.
 """
 
+from .hermes_research import HermesResearchAdapter
+
 from .coordinator import (
     Coordinator,
     SpecialistUnavailable,
@@ -16,4 +18,5 @@ __all__ = [
     "SpecialistUnavailable",
     "TaskRequest",
     "TaskStatus",
+    "HermesResearchAdapter",
 ]
