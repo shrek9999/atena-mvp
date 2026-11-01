@@ -252,6 +252,21 @@ class Coordinator:
         queued = self.enqueue(request)
         return self.run(queued.task_id)
 
+    def approve(self, task_id: str) -> TaskRecord:
+        """Record explicit approval for a queued task that requires it."""
+        with self._lock:
+            self._purge_expired_locked()
+            record = self._tasks.get(task_id)
+            request = self._requests.get(task_id)
+            if record is None or request is None:
+                raise KeyError("task not found or expired")
+            if record.status is not TaskStatus.QUEUED:
+                raise ValueError("only queued tasks can be approved")
+            if not request.requires_approval:
+                raise ValueError("task does not require approval")
+            self._requests[task_id] = replace(request, approved=True)
+            return self._snapshot(record)
+
     def cancel(self, task_id: str) -> bool:
         """Cancel only queued/assigned tasks; never pretend to stop running work."""
         with self._lock:
