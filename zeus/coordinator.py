@@ -1,14 +1,14 @@
 """Deterministic, bounded task coordination for the ZEUS prototype.
 
-The first prototype intentionally uses injected specialist adapters and an
-in-memory ledger. It does not call external services or make model decisions.
+The prototype uses injected specialist adapters and an in-memory ledger.
+It supports explicit enqueue/run/cancel semantics but is not a durable queue.
 """
-
 from __future__ import annotations
 
 import json
+import threading
 from dataclasses import asdict, dataclass, field, replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Callable
 from uuid import uuid4
@@ -26,13 +26,11 @@ class TaskStatus(str, Enum):
 
 MAX_REQUEST_BYTES = 64_000
 MAX_RESULT_BYTES = 64_000
-
+DEFAULT_RETENTION_SECONDS = 30 * 24 * 60 * 60
 
 TERMINAL_STATUSES = {
-    TaskStatus.COMPLETED,
-    TaskStatus.FAILED,
-    TaskStatus.BLOCKED,
-    TaskStatus.CANCELLED,
+    TaskStatus.COMPLETED, TaskStatus.FAILED,
+    TaskStatus.BLOCKED, TaskStatus.CANCELLED,
 }
 
 SPECIALIST_BY_DOMAIN = {
@@ -44,7 +42,7 @@ SPECIALIST_BY_DOMAIN = {
 
 
 class SpecialistUnavailable(RuntimeError):
-    """Raised when a specialist adapter is not registered."""
+    """Raised when a specialist adapter is not registered or reachable."""
 
 
 @dataclass(frozen=True)
@@ -74,12 +72,11 @@ class TaskRequest:
         if not isinstance(self.payload, dict):
             raise ValueError("payload must be an object")
         try:
-            encoded_payload = json.dumps(
-                self.payload, ensure_ascii=False, allow_nan=False, separators=(",", ":")
-            ).encode("utf-8")
+            encoded = json.dumps(self.payload, ensure_ascii=False, allow_nan=False,
+                                 separators=(",", ":")).encode("utf-8")
         except (TypeError, ValueError):
             raise ValueError("payload must contain JSON-compatible values") from None
-        if len(encoded_payload) > MAX_REQUEST_BYTES:
+        if len(encoded) > MAX_REQUEST_BYTES:
             raise ValueError("payload exceeds the 64 KB safety limit")
         if not isinstance(self.requires_approval, bool) or not isinstance(self.approved, bool):
             raise ValueError("approval flags must be boolean")
@@ -98,73 +95,98 @@ class TaskRecord:
     status: TaskStatus
     created_at: str
     updated_at: str
+    started_at: str | None = None
+    completed_at: str | None = None
+    expires_at: str | None = None
+    attempt_count: int = 0
     result: dict[str, Any] | None = None
     error_code: str | None = None
 
 
-def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _iso(value: datetime) -> str:
+    return value.astimezone(timezone.utc).isoformat()
 
 
 class Coordinator:
-    """A synchronous coordinator with an in-memory, bounded task ledger.
+    """Synchronous coordinator with a bounded, process-local task ledger.
 
-    Adapters are callables receiving the validated TaskRequest and returning a
-    JSON-compatible dictionary. They must not recursively delegate tasks.
+    enqueue() creates a cancellable queued task. run() performs one dispatch.
+    submit() is the convenience enqueue+run operation. Running adapter calls
+    cannot be interrupted; cancellation is accepted only before execution.
     """
 
     def __init__(
         self,
         adapters: dict[str, Callable[[TaskRequest], dict[str, Any]]] | None = None,
         max_tasks: int = 1000,
+        retention_seconds: int = DEFAULT_RETENTION_SECONDS,
+        clock: Callable[[], datetime] = _now,
     ) -> None:
         if max_tasks < 1:
             raise ValueError("max_tasks must be at least 1")
+        if retention_seconds < 1:
+            raise ValueError("retention_seconds must be at least 1")
         self._adapters = dict(adapters or {})
         self._max_tasks = max_tasks
+        self._retention_seconds = retention_seconds
+        self._clock = clock
         self._tasks: dict[str, TaskRecord] = {}
+        self._requests: dict[str, TaskRequest] = {}
+        self._lock = threading.RLock()
 
-    def submit(self, request: TaskRequest) -> TaskRecord:
+    def enqueue(self, request: TaskRequest) -> TaskRecord:
         request.validate()
         request = replace(
             request,
             payload=json.loads(json.dumps(request.payload, ensure_ascii=False, allow_nan=False)),
             acceptance_criteria=tuple(request.acceptance_criteria),
         )
-        if request.task_id in self._tasks:
-            raise ValueError("task_id already exists")
-        if len(self._tasks) >= self._max_tasks:
-            raise RuntimeError("task ledger capacity reached")
-
-        now = _now()
-        record = TaskRecord(
-            task_id=request.task_id,
-            objective=request.objective.strip(),
-            domain=request.domain,
-            specialist=None,
-            status=TaskStatus.QUEUED,
-            created_at=now,
-            updated_at=now,
-        )
-        self._tasks[record.task_id] = record
-
-        specialist = SPECIALIST_BY_DOMAIN[request.domain]
-        record.specialist = specialist
-        self._transition(record, TaskStatus.ASSIGNED)
-
-        # Approval is a hard gate: no specialist adapter is called.
-        if request.requires_approval and not request.approved:
-            record.error_code = "approval_required"
-            self._transition(record, TaskStatus.BLOCKED)
+        with self._lock:
+            self._purge_expired_locked()
+            if request.task_id in self._tasks:
+                raise ValueError("task_id already exists")
+            if len(self._tasks) >= self._max_tasks:
+                raise RuntimeError("task ledger capacity reached")
+            now = _iso(self._clock())
+            record = TaskRecord(
+                task_id=request.task_id, objective=request.objective.strip(),
+                domain=request.domain, specialist=None, status=TaskStatus.QUEUED,
+                created_at=now, updated_at=now,
+            )
+            self._tasks[record.task_id] = record
+            self._requests[record.task_id] = request
             return self._snapshot(record)
 
-        adapter = self._adapters.get(specialist)
-        if adapter is None:
-            record.error_code = "specialist_unavailable"
-            self._transition(record, TaskStatus.BLOCKED)
-            return self._snapshot(record)
+    def run(self, task_id: str) -> TaskRecord:
+        with self._lock:
+            self._purge_expired_locked()
+            record = self._tasks.get(task_id)
+            request = self._requests.get(task_id)
+            if record is None or request is None:
+                raise KeyError("task not found or expired")
+            if record.status is not TaskStatus.QUEUED:
+                raise ValueError("only queued tasks can be run")
+            specialist = SPECIALIST_BY_DOMAIN[request.domain]
+            record.specialist = specialist
+            self._transition(record, TaskStatus.ASSIGNED)
+            if request.requires_approval and not request.approved:
+                record.error_code = "approval_required"
+                self._finish(record, TaskStatus.BLOCKED)
+                return self._snapshot(record)
+            adapter = self._adapters.get(specialist)
+            if adapter is None:
+                record.error_code = "specialist_unavailable"
+                self._finish(record, TaskStatus.BLOCKED)
+                return self._snapshot(record)
+            self._transition(record, TaskStatus.RUNNING)
+            record.started_at = _iso(self._clock())
+            record.attempt_count += 1
 
-        self._transition(record, TaskStatus.RUNNING)
+        # Do not hold the ledger lock while calling a specialist.
         try:
             result = adapter(request)
             if not isinstance(result, dict):
@@ -172,23 +194,73 @@ class Coordinator:
             serialized = json.dumps(result, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
             if len(serialized.encode("utf-8")) > MAX_RESULT_BYTES:
                 raise ValueError("specialist result exceeds the 64 KB limit")
-            record.result = json.loads(serialized)
-            self._transition(record, TaskStatus.COMPLETED)
+            safe_result = json.loads(serialized)
+            with self._lock:
+                current = self._tasks.get(task_id)
+                if current is None or current.status is not TaskStatus.RUNNING:
+                    raise RuntimeError("task state changed during specialist execution")
+                current.result = safe_result
+                self._finish(current, TaskStatus.COMPLETED)
+                return self._snapshot(current)
         except SpecialistUnavailable:
-            record.error_code = "specialist_unavailable"
-            self._transition(record, TaskStatus.BLOCKED)
+            with self._lock:
+                current = self._tasks[task_id]
+                if current.status is TaskStatus.RUNNING:
+                    current.error_code = "specialist_unavailable"
+                    self._finish(current, TaskStatus.BLOCKED)
+                return self._snapshot(current)
         except Exception:
-            # Do not expose exception text or payloads in the task ledger.
-            record.error_code = "specialist_execution_failed"
-            self._transition(record, TaskStatus.FAILED)
-        return self._snapshot(record)
+            with self._lock:
+                current = self._tasks[task_id]
+                if current.status is TaskStatus.RUNNING:
+                    current.error_code = "specialist_execution_failed"
+                    self._finish(current, TaskStatus.FAILED)
+                return self._snapshot(current)
+
+    def submit(self, request: TaskRequest) -> TaskRecord:
+        queued = self.enqueue(request)
+        return self.run(queued.task_id)
+
+    def cancel(self, task_id: str) -> bool:
+        """Cancel only queued/assigned tasks; never pretend to stop running work."""
+        with self._lock:
+            self._purge_expired_locked()
+            record = self._tasks.get(task_id)
+            if record is None or record.status not in {TaskStatus.QUEUED, TaskStatus.ASSIGNED}:
+                return False
+            record.error_code = "cancelled_by_request"
+            self._finish(record, TaskStatus.CANCELLED)
+            self._requests.pop(task_id, None)
+            return True
 
     def get(self, task_id: str) -> TaskRecord | None:
-        record = self._tasks.get(task_id)
-        return self._snapshot(record) if record is not None else None
+        with self._lock:
+            self._purge_expired_locked()
+            record = self._tasks.get(task_id)
+            return self._snapshot(record) if record is not None else None
 
     def list_tasks(self) -> list[TaskRecord]:
-        return [self._snapshot(record) for record in self._tasks.values()]
+        with self._lock:
+            self._purge_expired_locked()
+            return [self._snapshot(record) for record in self._tasks.values()]
+
+    def _finish(self, record: TaskRecord, status: TaskStatus) -> None:
+        self._transition(record, status)
+        now = self._clock()
+        record.completed_at = _iso(now)
+        record.expires_at = _iso(now + timedelta(seconds=self._retention_seconds))
+        self._requests.pop(record.task_id, None)
+
+    def _purge_expired_locked(self) -> None:
+        now = self._clock()
+        expired = [
+            task_id for task_id, record in self._tasks.items()
+            if record.expires_at is not None
+            and datetime.fromisoformat(record.expires_at) <= now
+        ]
+        for task_id in expired:
+            self._tasks.pop(task_id, None)
+            self._requests.pop(task_id, None)
 
     @staticmethod
     def _snapshot(record: TaskRecord) -> TaskRecord:
@@ -207,7 +279,7 @@ class Coordinator:
         if status not in allowed.get(record.status, set()):
             raise ValueError(f"invalid task transition: {record.status.value} -> {status.value}")
         record.status = status
-        record.updated_at = _now()
+        record.updated_at = _iso(_now())
 
     @staticmethod
     def as_dict(record: TaskRecord) -> dict[str, Any]:
