@@ -18,6 +18,7 @@ from coach_store import (
 )
 from training.catalogue import get_exercise, load_catalogue
 from flask import Blueprint, jsonify, request
+from urllib.parse import urlsplit
 from training.program import ProgramSafetyBlock, ProgramValidationError, generate_program
 from training.progress import summarize_progress
 from training.adaptation import assess_next_step
@@ -194,12 +195,28 @@ def coach_storage_diagnostic():
     except StorageUnavailable as exc:
         logger.warning("ATENA public dependency probe failed: %s", type(exc).__name__)
         cause = exc.__cause__
+        raw_url = os.getenv("ATENA_DATABASE_URL", "").strip()
+        try:
+            from coach_store import _normalize_supabase_pooler_username
+            parsed = urlsplit(_normalize_supabase_pooler_username(raw_url))
+            config_shape = {
+                "url_present": bool(raw_url),
+                "postgres_scheme": parsed.scheme in {"postgres", "postgresql"},
+                "supabase_pooler_host": (parsed.hostname or "").lower().endswith(".pooler.supabase.com"),
+                "project_scoped_username": (parsed.username or "") == "postgres.gxgmxvtfkhjfpbtfmmcs",
+                "session_pooler_port": parsed.port == 5432,
+                "database_path_present": bool(parsed.path.strip("/")),
+                "sslmode_parameter_present": "sslmode=" in parsed.query.lower(),
+            }
+        except (TypeError, ValueError):
+            config_shape = {"url_present": bool(raw_url), "url_parseable": False}
         return jsonify({
             "service": "ATENA AI Coach",
             "database": "unavailable",
             "reason": exc.reason,
             "driver_error_type": type(cause).__name__ if cause else "unknown",
             "sqlstate": getattr(cause, "sqlstate", None) if cause else None,
+            "connection_shape": config_shape,
         }), 200
 
 
