@@ -65,6 +65,7 @@ def _init(conn, dialect):
             privacy_notice_version TEXT NOT NULL,
             privacy_acknowledged INTEGER NOT NULL,
             health_data_consent INTEGER NOT NULL,
+            health_data_consent_at TEXT,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
         )""",
@@ -90,10 +91,10 @@ def create_profile(profile_id: str, token: str, profile: dict, health_data_conse
         now = _now()
         _execute(conn, dialect, """INSERT INTO atena_profiles
             (profile_id, token_hash, profile_json, privacy_notice_version,
-             privacy_acknowledged, health_data_consent, created_at, updated_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+             privacy_acknowledged, health_data_consent, health_data_consent_at, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
             (profile_id, hash_access_token(token), json.dumps(profile, ensure_ascii=False),
-             notice_version, 1, int(health_data_consent), now, now))
+             notice_version, 1, int(health_data_consent), now if health_data_consent else None, now, now))
         conn.commit()
         return {"profile_id": profile_id, "profile": profile, "created_at": now, "updated_at": now,
                 "health_data_consent": bool(health_data_consent), "privacy_notice_version": notice_version}
@@ -102,15 +103,15 @@ def create_profile(profile_id: str, token: str, profile: dict, health_data_conse
 
 def _authorized_profile(conn, dialect, profile_id: str, token: str):
     row = _execute(conn, dialect,
-        "SELECT token_hash, profile_json, privacy_notice_version, health_data_consent, created_at, updated_at FROM atena_profiles WHERE profile_id = %s",
+        "SELECT token_hash, profile_json, privacy_notice_version, health_data_consent, health_data_consent_at, created_at, updated_at FROM atena_profiles WHERE profile_id = %s",
         (profile_id,)).fetchone()
     if not row:
         raise ProfileNotFound()
-    stored_hash, profile_json, notice_version, health_consent, created_at, updated_at = row
+    stored_hash, profile_json, notice_version, health_consent, health_consent_at, created_at, updated_at = row
     if not token or not __import__("hmac").compare_digest(stored_hash, hash_access_token(token)):
         raise ProfileNotFound()
     return {"profile_id": profile_id, "profile": json.loads(profile_json), "created_at": created_at,
-            "updated_at": updated_at, "health_data_consent": bool(health_consent),
+            "updated_at": updated_at, "health_data_consent": bool(health_consent), "health_data_consent_at": health_consent_at,
             "privacy_notice_version": notice_version}
 
 def get_profile(profile_id: str, token: str):
@@ -181,8 +182,8 @@ def set_health_data_consent(profile_id: str, token: str, consent: bool):
         _init(conn, dialect)
         _authorized_profile(conn, dialect, profile_id, token)
         _execute(conn, dialect,
-                 "UPDATE atena_profiles SET health_data_consent = %s, updated_at = %s WHERE profile_id = %s",
-                 (int(consent), _now(), profile_id))
+                 "UPDATE atena_profiles SET health_data_consent = %s, health_data_consent_at = %s, updated_at = %s WHERE profile_id = %s",
+                 (int(consent), _now() if consent else None, _now(), profile_id))
         if not consent:
             rows = _execute(conn, dialect,
                             "SELECT session_id, session_json FROM atena_training_sessions WHERE profile_id = %s",
