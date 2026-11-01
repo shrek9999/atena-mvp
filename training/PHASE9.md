@@ -20,6 +20,7 @@ A training record contains:
 
 - Storage is disabled unless both `ATENA_DATA_STORAGE_ENABLED=true` and `ATENA_PRIVACY_NOTICE_APPROVED=true` are configured.
 - The API requires acknowledgement of the configured `ATENA_PRIVACY_NOTICE_VERSION`.
+- The current health-data consent state and its timestamp are stored separately; withdrawing consent clears the timestamp and removes historical discomfort flags.
 - Profile creation requires the private pilot token.
 - Every profile receives a random access token returned only once. Only its SHA-256 hash is stored.
 - Profile reads, updates, session writes, history reads and deletion require the profile-specific token.
