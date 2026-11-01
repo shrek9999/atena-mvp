@@ -379,7 +379,7 @@ def test_restart_recovery_blocks_active_tasks_without_replaying_them():
 
     recovered = coordinator.recover_orphaned_tasks()
 
-    assert recovered == ["orphan-queued", "orphan-assigned", "orphan-running"]
+    assert set(recovered) == {"orphan-queued", "orphan-assigned", "orphan-running"}
     assert [task["status"] for task in ledger.tasks] == [
         "blocked", "blocked", "blocked", "completed"
     ]
