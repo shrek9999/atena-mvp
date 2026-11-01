@@ -107,7 +107,7 @@ async function handle(request, env) {
     const taskId = parts[2];
     if (!validTaskId(taskId)) return json({ error: "invalid_task_id" }, 400);
     const task = await env.ZEUS_DB.prepare(
-      "SELECT task_id, domain, specialist, status, created_at, updated_at, started_at, completed_at, expires_at, attempt_count, error_code FROM zeus_tasks WHERE task_id = ?"
+      "SELECT task_id, domain, specialist, status, created_at, updated_at, started_at, completed_at, expires_at, attempt_count, error_code, recovery_code FROM zeus_tasks WHERE task_id = ?"
     ).bind(taskId).first();
     return task ? json({ task }) : json({ error: "not_found" }, 404);
   }
