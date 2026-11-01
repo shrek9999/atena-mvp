@@ -148,3 +148,10 @@ ZEUS is considered ready for a limited internal pilot only after the security ro
 - Tasks are submitted through the authenticated HTTP API. Durable D1 records hold lifecycle metadata and events only; private objectives and specialist payloads are not persisted.
 - A restart blocks active orphan tasks rather than replaying them. The caller must explicitly submit a new task to retry.
 - No paid plans or new paid services were enabled.
+
+### Final live-source fallback verification (CI run #351, 2026-11-01)
+- ATENA MCP synthetic decision-path check: **PASS**.
+- HERMES read-only public-source check: **PASS**, retrieved one official Federal Reserve public document.
+- FRED and BLS endpoints were unavailable from the GitHub runner in that attempt; the smoke check now tries multiple allowlisted official sources and succeeds when at least one can be retrieved.
+- ZEUS validation run #60: Python suite and Worker syntax/tests passed.
+- ATENA Decision Engine Tests run #351: offline suite, Worker checks, ATENA MCP and HERMES fallback smoke check all completed successfully.
