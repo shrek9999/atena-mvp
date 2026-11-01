@@ -163,8 +163,25 @@ class _LazyWSGIApp:
         self._app = None
 
     def __call__(self, environ, start_response):
+        if self._app is None and environ.get("PATH_INFO") == "/health":
+            body = b'{"status":"ok","service":"ZEUS"}'
+            start_response("200 OK", [
+                ("Content-Type", "application/json"),
+                ("Content-Length", str(len(body))),
+                ("Cache-Control", "no-store"),
+            ])
+            return [body]
         if self._app is None:
-            self._app = create_app()
+            try:
+                self._app = create_app()
+            except (RuntimeError, ValueError):
+                body = b'{"error":"service_not_configured"}'
+                start_response("503 Service Unavailable", [
+                    ("Content-Type", "application/json"),
+                    ("Content-Length", str(len(body))),
+                    ("Cache-Control", "no-store"),
+                ])
+                return [body]
         return self._app(environ, start_response)
 
 
