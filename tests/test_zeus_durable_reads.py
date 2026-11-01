@@ -98,3 +98,37 @@ def test_urllib_transport_returns_http_error_status_without_losing_it(monkeypatc
     )
     assert status == 404
     assert body == ""
+
+
+
+def test_runtime_startup_reconciles_orphaned_tasks_before_serving_api(monkeypatch):
+    from zeus.coordinator import Coordinator
+
+    class StartupLedger:
+        def __init__(self):
+            self.tasks = [{"task_id": "restart-queued", "status": "queued"}]
+            self.transitions = []
+
+        def list_tasks(self, limit=50):
+            return {"tasks": [dict(task) for task in self.tasks]}
+
+        def transition_task(self, task_id, from_status, to_status, error_code=None, recovery_code=None):
+            task = self.tasks[0]
+            assert task["task_id"] == task_id
+            assert task["status"] == from_status
+            task["status"] = to_status
+            task["recovery_code"] = recovery_code
+            self.transitions.append((task_id, from_status, to_status, recovery_code))
+            return {"task": dict(task)}
+
+    ledger = StartupLedger()
+    monkeypatch.setattr("zeus_service.LedgerWorkerClient.from_environment", lambda: ledger)
+    monkeypatch.setattr("zeus_service.build_coordinator", lambda ledger: Coordinator(ledger=ledger))
+
+    app = create_app(api_token=TOKEN)
+
+    assert ledger.tasks[0]["status"] == "blocked"
+    assert ledger.tasks[0]["recovery_code"] == "runtime_restarted"
+    response = app.test_client().get("/v1/tasks/restart-queued", headers=AUTH)
+    assert response.status_code == 200
+    assert response.get_json()["task"]["status"] == "blocked"
