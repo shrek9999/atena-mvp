@@ -172,3 +172,28 @@ def delete_profile(profile_id: str, token: str):
         conn.commit()
     finally:
         conn.close()
+
+
+def set_health_data_consent(profile_id: str, token: str, consent: bool):
+    """Update separate health-data consent; withdrawal also erases stored symptom flags."""
+    conn, dialect = _connect()
+    try:
+        _init(conn, dialect)
+        _authorized_profile(conn, dialect, profile_id, token)
+        _execute(conn, dialect,
+                 "UPDATE atena_profiles SET health_data_consent = %s, updated_at = %s WHERE profile_id = %s",
+                 (int(consent), _now(), profile_id))
+        if not consent:
+            rows = _execute(conn, dialect,
+                            "SELECT session_id, session_json FROM atena_training_sessions WHERE profile_id = %s",
+                            (profile_id,)).fetchall()
+            for session_id, session_json in rows:
+                record = json.loads(session_json)
+                record.pop("discomfort_reported", None)
+                _execute(conn, dialect,
+                         "UPDATE atena_training_sessions SET session_json = %s WHERE session_id = %s",
+                         (json.dumps(record, ensure_ascii=False), session_id))
+        conn.commit()
+        return _authorized_profile(conn, dialect, profile_id, token)
+    finally:
+        conn.close()
