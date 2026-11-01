@@ -193,7 +193,14 @@ def coach_storage_diagnostic():
         return jsonify({"service": "ATENA AI Coach", "database": "reachable"}), 200
     except StorageUnavailable as exc:
         logger.warning("ATENA public dependency probe failed: %s", type(exc).__name__)
-        return jsonify({"service": "ATENA AI Coach", "database": "unavailable", "reason": exc.reason}), 200
+        cause = exc.__cause__
+        return jsonify({
+            "service": "ATENA AI Coach",
+            "database": "unavailable",
+            "reason": exc.reason,
+            "driver_error_type": type(cause).__name__ if cause else "unknown",
+            "sqlstate": getattr(cause, "sqlstate", None) if cause else None,
+        }), 200
 
 
 @coach_bp.route("/coach/storage/status", methods=["GET", "OPTIONS"])
