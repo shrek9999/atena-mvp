@@ -303,42 +303,50 @@ class Coordinator:
         record = self.get(task_id)
         return self.as_dict(record) if record is not None else None
 
-    def list_task_metadata(self, limit: int = 50) -> list[dict[str, Any]]:
+    def list_task_metadata(self, limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
         """List durable task metadata; never return objectives or specialist results."""
         if self._ledger is not None:
-            response = self._ledger.list_tasks(limit=limit)
+            response = self._ledger.list_tasks(limit=limit, offset=offset)
             tasks = response.get("tasks")
             if not isinstance(tasks, list) or any(not isinstance(item, dict) for item in tasks):
                 raise SpecialistUnavailable("ZEUS ledger returned malformed task data")
             return [dict(item) for item in tasks]
-        return [self.as_dict(item) for item in self.list_tasks()]
+        return [self.as_dict(item) for item in self.list_tasks()][offset:offset + limit]
 
     def recover_orphaned_tasks(self, limit: int = 100) -> list[str]:
-        """Block active durable tasks left behind by a prior process.
+        """Block every active durable task left behind by a prior process.
 
-        Request bodies are intentionally not persisted, so these tasks cannot
-        be resumed safely. Recovery records an explicit reason and requires
-        the caller to submit a fresh task if work should be retried.
+        Pages use an immutable created_at/task_id ordering. Recovery changes
+        status and updated_at but not that ordering, so offset pagination does
+        not skip records while tasks are reconciled. Request bodies are not
+        persisted and are never reconstructed or replayed.
         """
         if self._ledger is None:
             return []
+        if not isinstance(limit, int) or limit < 1 or limit > 100:
+            raise ValueError("recovery page size must be between 1 and 100")
         try:
-            tasks = self.list_task_metadata(limit=limit)
             recovered = []
-            for task in tasks:
-                status = task.get("status")
-                if status not in {"queued", "assigned", "running"}:
-                    continue
-                task_id = task.get("task_id")
-                if not isinstance(task_id, str) or not task_id:
-                    raise SpecialistUnavailable("ZEUS ledger returned malformed task data")
-                self._ledger.transition_task(
-                    task_id,
-                    status,
-                    "blocked",
-                    recovery_code="runtime_restarted",
-                )
-                recovered.append(task_id)
+            offset = 0
+            while True:
+                tasks = self.list_task_metadata(limit=limit, offset=offset)
+                for task in tasks:
+                    status = task.get("status")
+                    if status not in {"queued", "assigned", "running"}:
+                        continue
+                    task_id = task.get("task_id")
+                    if not isinstance(task_id, str) or not task_id:
+                        raise SpecialistUnavailable("ZEUS ledger returned malformed task data")
+                    self._ledger.transition_task(
+                        task_id,
+                        status,
+                        "blocked",
+                        recovery_code="runtime_restarted",
+                    )
+                    recovered.append(task_id)
+                if len(tasks) < limit:
+                    break
+                offset += len(tasks)
             return recovered
         except SpecialistUnavailable as exc:
             raise LedgerPersistenceUnavailable(
