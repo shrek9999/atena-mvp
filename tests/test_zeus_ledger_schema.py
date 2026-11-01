@@ -68,3 +68,17 @@ def test_zeus_restart_recovery_migration_adds_constrained_marker():
         pass
     else:
         raise AssertionError("unknown recovery markers should be rejected")
+
+
+
+def test_worker_ledger_listing_uses_stable_pagination_and_returns_recovery_marker():
+    worker = (
+        Path(__file__).parents[1]
+        / "cloudflare"
+        / "zeus-ledger-worker"
+        / "src"
+        / "index.js"
+    ).read_text(encoding="utf-8")
+    assert "ORDER BY created_at DESC, task_id DESC LIMIT ? OFFSET ?" in worker
+    assert 'url.searchParams.get("offset")' in worker
+    assert "error_code, recovery_code FROM zeus_tasks WHERE task_id = ?" in worker
