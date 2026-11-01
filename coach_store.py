@@ -88,11 +88,63 @@ def _connect():
     except ImportError as exc:
         raise StorageUnavailable("PostgreSQL driver is not installed.") from exc
     url = _normalize_supabase_pooler_username(url)
-    return psycopg.connect(url, connect_timeout=8), "postgres"
+    try:
+        return psycopg.connect(url, connect_timeout=8), "postgres"
+    except Exception as exc:
+        raise _classify_database_error(exc) from exc
+
+def _classify_database_error(exc):
+    """Map driver failures to safe categories; never expose connection details."""
+    sqlstate = getattr(exc, "sqlstate", None)
+    message = str(exc).lower()
+    if sqlstate in ("28P01", "28000"):
+        reason = "database_authentication_failed"
+    elif sqlstate == "57P03":
+        reason = "database_temporarily_unavailable"
+    elif sqlstate and sqlstate.startswith("08"):
+        reason = "database_network_connection_failed"
+    elif sqlstate in {"42P01", "42703", "42804", "42883"}:
+        reason = "database_schema_mismatch"
+    elif sqlstate == "23505":
+        reason = "database_record_conflict"
+    elif "could not translate host name" in message or "name or service not known" in message or "temporary failure in name resolution" in message:
+        reason = "database_dns_resolution_failed"
+    elif "timeout" in message or "timed out" in message:
+        reason = "database_connection_timeout"
+    elif "connection refused" in message:
+        reason = "database_connection_refused"
+    elif "ssl" in message or "tls" in message or "certificate" in message:
+        reason = "database_tls_configuration_failed"
+    else:
+        reason = "database_operation_failed"
+    return StorageUnavailable("Database operation failed.", reason)
+
 
 def _execute(conn, dialect, sql, params=()):
     statement = sql.replace("%s", "?") if dialect == "sqlite" else sql
-    return conn.execute(statement, params)
+    try:
+        return conn.execute(statement, params)
+    except StorageUnavailable:
+        raise
+    except Exception as exc:
+        if dialect == "postgres":
+            raise _classify_database_error(exc) from exc
+        raise
+
+
+def _encode_json(value, dialect):
+    """Use psycopg's native JSONB adapter for hosted PostgreSQL."""
+    if dialect == "postgres":
+        from psycopg.types.json import Jsonb
+        return Jsonb(value)
+    return json.dumps(value, ensure_ascii=False)
+
+
+def _decode_json(value):
+    """psycopg returns decoded JSONB values; SQLite returns serialized text."""
+    if isinstance(value, (str, bytes, bytearray)):
+        return json.loads(value)
+    return value
 
 def _now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -186,8 +238,8 @@ def create_profile(profile_id: str, token: str, profile: dict, health_data_conse
             (profile_id, token_hash, profile_json, privacy_notice_version,
              privacy_acknowledged, health_data_consent, health_data_consent_at, created_at, updated_at)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-            (profile_id, hash_access_token(token), json.dumps(profile, ensure_ascii=False),
-             notice_version, 1, int(health_data_consent), now if health_data_consent else None, now, now))
+            (profile_id, hash_access_token(token), _encode_json(profile, dialect),
+             notice_version, True, bool(health_data_consent), now if health_data_consent else None, now, now))
         conn.commit()
         return {"profile_id": profile_id, "profile": profile, "created_at": now, "updated_at": now,
                 "health_data_consent": bool(health_data_consent),
@@ -205,7 +257,7 @@ def _authorized_profile(conn, dialect, profile_id: str, token: str):
     stored_hash, profile_json, notice_version, health_consent, health_consent_at, created_at, updated_at = row
     if not token or not __import__("hmac").compare_digest(stored_hash, hash_access_token(token)):
         raise ProfileNotFound()
-    return {"profile_id": profile_id, "profile": json.loads(profile_json), "created_at": created_at,
+    return {"profile_id": profile_id, "profile": _decode_json(profile_json), "created_at": created_at,
             "updated_at": updated_at, "health_data_consent": bool(health_consent), "health_data_consent_at": health_consent_at,
             "privacy_notice_version": notice_version}
 
@@ -224,7 +276,7 @@ def update_profile(profile_id: str, token: str, profile: dict):
         _authorized_profile(conn, dialect, profile_id, token)
         now = _now()
         _execute(conn, dialect, "UPDATE atena_profiles SET profile_json = %s, updated_at = %s WHERE profile_id = %s",
-                 (json.dumps(profile, ensure_ascii=False), now, profile_id))
+                 (_encode_json(profile, dialect), now, profile_id))
         conn.commit()
         return _authorized_profile(conn, dialect, profile_id, token)
     finally:
@@ -239,7 +291,7 @@ def add_session(profile_id: str, token: str, session_id: str, session_date: str,
         _execute(conn, dialect, """INSERT INTO atena_training_sessions
             (session_id, profile_id, session_date, session_json, created_at)
             VALUES (%s, %s, %s, %s, %s)""",
-            (session_id, profile_id, session_date, json.dumps(session, ensure_ascii=False), now))
+            (session_id, profile_id, session_date, _encode_json(session, dialect), now))
         conn.commit()
         return {"session_id": session_id, "session_date": session_date, "session": session, "created_at": now}
     finally:
@@ -255,7 +307,7 @@ def list_sessions(profile_id: str, token: str, limit: int = 50):
             ORDER BY session_date DESC, created_at DESC LIMIT %s""",
             (profile_id, limit)).fetchall()
         return [{"session_id": row[0], "session_date": row[1],
-                 "session": json.loads(row[2]), "created_at": row[3]} for row in rows]
+                 "session": _decode_json(row[2]), "created_at": row[3]} for row in rows]
     finally:
         conn.close()
 
@@ -278,7 +330,7 @@ def set_health_data_consent(profile_id: str, token: str, consent: bool):
         _authorized_profile(conn, dialect, profile_id, token)
         _execute(conn, dialect,
                  "UPDATE atena_profiles SET health_data_consent = %s, health_data_consent_at = %s, updated_at = %s WHERE profile_id = %s",
-                 (int(consent), _now() if consent else None, _now(), profile_id))
+                 (bool(consent), _now() if consent else None, _now(), profile_id))
         if not consent:
             rows = _execute(conn, dialect,
                             "SELECT session_id, session_json FROM atena_training_sessions WHERE profile_id = %s",
@@ -288,7 +340,7 @@ def set_health_data_consent(profile_id: str, token: str, consent: bool):
                 record.pop("discomfort_reported", None)
                 _execute(conn, dialect,
                          "UPDATE atena_training_sessions SET session_json = %s WHERE session_id = %s",
-                         (json.dumps(record, ensure_ascii=False), session_id))
+                         (_encode_json(record, dialect), session_id))
         conn.commit()
         return _authorized_profile(conn, dialect, profile_id, token)
     finally:
