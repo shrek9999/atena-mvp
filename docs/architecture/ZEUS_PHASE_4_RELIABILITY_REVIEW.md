@@ -72,9 +72,9 @@ ZEUS is considered ready for a limited internal pilot only after the security ro
 - No Render deployment, Cloudflare Worker deployment, D1 migration or production API test was performed as part of these changes.
 
 ### Still open
-- Safe restart reconciliation is not yet implemented. Durable reads now make existing metadata visible after a process restart, but they do not restore private request bodies. A queued/running task whose process-local request was lost must not be replayed automatically. A controlled blocked/retry workflow remains a separate change.
+- Restart reconciliation is now implemented on the development branch: active orphan tasks are marked `blocked` with `recovery_code=runtime_restarted`. Their private request bodies are not restored or replayed; a caller must submit a new task to retry.
 - Credential rotation remains a pre-pilot security task. The previously disclosed credentials are not to be used for further live tests.
-- The PR remains on its development branch and must not be merged or deployed until the remaining recovery behavior and pre-pilot security steps are reviewed.
+- The D1 migration and Worker/Render deployment sequence remains outstanding. The PR remains on its development branch and must not be merged or deployed until the migration is applied and the new Worker and Render code are deployed in order.
 
 
 ### Restart recovery implementation — development branch only
@@ -85,3 +85,10 @@ ZEUS is considered ready for a limited internal pilot only after the security ro
 - The caller must submit a new task to retry; no specialist is automatically re-run after restart.
 
 **Deployment prerequisite:** the D1 migration must be applied before deploying the updated Worker, and the Worker must be deployed before deploying the updated Render service. Neither migration nor deployment has been performed. The currently live services are unchanged.
+
+
+### Final verification after restart recovery changes
+- ZEUS validation run: https://github.com/shrek9999/atena-mvp/actions/runs/41297884918 — **success**.
+- Python suite: **167 passed**.
+- Cloudflare Worker suite: **11 passed**; syntax check passed.
+- The separate ATENA workflow's offline regression and Worker checks passed, but its optional live ATENA MCP smoke test returned a tool error. This was not caused by a failing ZEUS unit test; live ATENA compatibility should be rechecked after the deployment/security prerequisites.
