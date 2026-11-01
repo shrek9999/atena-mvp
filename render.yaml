@@ -11,3 +11,22 @@ services:
     runtime: python
     buildCommand: pip install -r requirements-mcp.txt
     startCommand: python mcp_http_server.py
+  - type: web
+    name: zeus-coordinator
+    runtime: python
+    plan: free
+    region: frankfurt
+    branch: feature/zeus-coordinator-skeleton
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn zeus_service:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
+    healthCheckPath: /health
+    autoDeploy: false
+    envVars:
+      - key: ZEUS_API_TOKEN
+        sync: false
+      - key: ZEUS_LEDGER_TOKEN
+        sync: false
+      - key: ZEUS_LEDGER_URL
+        value: https://zeus-task-ledger.grega-jenko.workers.dev
+      - key: ATENA_MCP_URL
+        value: https://atena-mcp.onrender.com/mcp
