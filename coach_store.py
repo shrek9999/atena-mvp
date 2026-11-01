@@ -15,7 +15,9 @@ from datetime import datetime, timezone
 from urllib.parse import urlsplit
 
 class StorageUnavailable(RuntimeError):
-    pass
+    def __init__(self, message: str, reason: str = "storage_unavailable"):
+        super().__init__(message)
+        self.reason = reason
 
 class ProfileNotFound(RuntimeError):
     pass
@@ -86,13 +88,16 @@ def check_database_connection():
     """Verify hosted PostgreSQL reachability without enabling or creating user-data tables."""
     url = os.getenv("ATENA_DATABASE_URL", "").strip()
     if not url:
-        raise StorageUnavailable("Database connection string is not configured.")
+        raise StorageUnavailable("Database connection string is not configured.", "missing_url")
     if url.startswith("postgres://"):
         url = "postgresql://" + url[len("postgres://"):]
     if not url.startswith("postgresql://"):
-        raise StorageUnavailable("Hosted database must use PostgreSQL.")
+        raise StorageUnavailable("Hosted database must use PostgreSQL.", "unsupported_scheme")
     try:
         import psycopg
+    except ImportError as exc:
+        raise StorageUnavailable("PostgreSQL driver is not installed.", "driver_missing") from exc
+    try:
         with psycopg.connect(url, connect_timeout=8) as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT 1")
@@ -103,8 +108,9 @@ def check_database_connection():
     except StorageUnavailable:
         raise
     except Exception as exc:
-        # Do not propagate provider messages: they may contain host or connection details.
-        raise StorageUnavailable("Database connection check failed.") from exc
+        # Expose only a coarse category, never driver text, host, username, or connection URL.
+        reason = "connection_or_credentials_error"
+        raise StorageUnavailable("Database connection check failed.", reason) from exc
 
 
 def hash_access_token(token: str) -> str:
