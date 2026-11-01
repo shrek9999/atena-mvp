@@ -103,15 +103,25 @@ def main() -> None:
         "https://atena-mvp.onrender.com/capabilities",
         headers={"Accept": "application/json", "User-Agent": "zeus-live-smoke/0.2"},
     )
-    try:
-        with urllib.request.urlopen(capabilities_request, timeout=30) as response:
-            if response.status != 200:
-                raise RuntimeError(
-                    f"ATENA capabilities endpoint returned HTTP {response.status}"
-                )
-            capabilities = json.loads(response.read().decode("utf-8"))
-    except (urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
-        raise RuntimeError("ATENA capabilities endpoint was unavailable or invalid") from exc
+    capabilities = None
+    last_error = None
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(capabilities_request, timeout=90) as response:
+                if response.status != 200:
+                    raise RuntimeError(
+                        f"ATENA capabilities endpoint returned HTTP {response.status}"
+                    )
+                capabilities = json.loads(response.read().decode("utf-8"))
+            break
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
+            last_error = exc
+            if attempt < 2:
+                time.sleep(8)
+    if not isinstance(capabilities, dict):
+        raise RuntimeError(
+            "ATENA capabilities endpoint was unavailable or invalid after bounded retries"
+        ) from last_error
     if not isinstance(capabilities, dict):
         raise RuntimeError("ATENA returned no structured capabilities")
 
