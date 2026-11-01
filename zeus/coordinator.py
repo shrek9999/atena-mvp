@@ -45,6 +45,14 @@ class SpecialistUnavailable(RuntimeError):
     """Raised when a specialist adapter is not registered or reachable."""
 
 
+class LedgerPersistenceUnavailable(RuntimeError):
+    """Raised when durable lifecycle state cannot be confirmed.
+
+    The coordinator never silently falls back to process-local state when a
+    configured persistent ledger rejects or cannot confirm a write.
+    """
+
+
 @dataclass(frozen=True)
 class TaskRequest:
     objective: str
@@ -117,6 +125,11 @@ class Coordinator:
     enqueue() creates a cancellable queued task. run() performs one dispatch.
     submit() is the convenience enqueue+run operation. Running adapter calls
     cannot be interrupted; cancellation is accepted only before execution.
+
+    When a ledger client is supplied, lifecycle transitions are written to the
+    remote ledger before the matching local state is changed. A failed write
+    raises LedgerPersistenceUnavailable and leaves the last confirmed local
+    status intact. The ledger stores metadata only, not requests or results.
     """
 
     def __init__(
@@ -125,6 +138,7 @@ class Coordinator:
         max_tasks: int = 1000,
         retention_seconds: int = DEFAULT_RETENTION_SECONDS,
         clock: Callable[[], datetime] = _now,
+        ledger: Any | None = None,
     ) -> None:
         if max_tasks < 1:
             raise ValueError("max_tasks must be at least 1")
@@ -134,6 +148,7 @@ class Coordinator:
         self._max_tasks = max_tasks
         self._retention_seconds = retention_seconds
         self._clock = clock
+        self._ledger = ledger
         self._tasks: dict[str, TaskRecord] = {}
         self._requests: dict[str, TaskRequest] = {}
         self._lock = threading.RLock()
@@ -152,6 +167,13 @@ class Coordinator:
             if len(self._tasks) >= self._max_tasks:
                 raise RuntimeError("task ledger capacity reached")
             now = _iso(self._clock())
+            if self._ledger is not None:
+                try:
+                    self._ledger.create_task(request.task_id, request.domain)
+                except SpecialistUnavailable as exc:
+                    raise LedgerPersistenceUnavailable(
+                        "ZEUS could not confirm durable task creation"
+                    ) from exc
             record = TaskRecord(
                 task_id=request.task_id, objective=request.objective.strip(),
                 domain=request.domain, specialist=None, status=TaskStatus.QUEUED,
@@ -204,6 +226,10 @@ class Coordinator:
                 current.result = safe_result
                 self._finish(current, TaskStatus.COMPLETED)
                 return self._snapshot(current)
+        except LedgerPersistenceUnavailable:
+            # The specialist may already have returned. Keep the last confirmed
+            # lifecycle state and surface the persistence failure to the caller.
+            raise
         except SpecialistUnavailable:
             with self._lock:
                 current = self._tasks[task_id]
@@ -269,8 +295,7 @@ class Coordinator:
         copied_result = json.loads(json.dumps(record.result)) if record.result is not None else None
         return replace(record, result=copied_result)
 
-    @staticmethod
-    def _transition(record: TaskRecord, status: TaskStatus) -> None:
+    def _transition(self, record: TaskRecord, status: TaskStatus) -> None:
         if record.status in TERMINAL_STATUSES:
             raise ValueError("terminal task status cannot be changed")
         allowed = {
@@ -280,8 +305,20 @@ class Coordinator:
         }
         if status not in allowed.get(record.status, set()):
             raise ValueError(f"invalid task transition: {record.status.value} -> {status.value}")
+        if self._ledger is not None:
+            try:
+                self._ledger.transition_task(
+                    record.task_id,
+                    record.status,
+                    status,
+                    error_code=record.error_code,
+                )
+            except SpecialistUnavailable as exc:
+                raise LedgerPersistenceUnavailable(
+                    f"ZEUS could not confirm durable transition to {status.value}"
+                ) from exc
         record.status = status
-        record.updated_at = _iso(_now())
+        record.updated_at = _iso(self._clock())
 
     @staticmethod
     def as_dict(record: TaskRecord) -> dict[str, Any]:
