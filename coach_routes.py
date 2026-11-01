@@ -243,10 +243,10 @@ def _validate_profile(value):
         not isinstance(item, str) or not item.strip() or len(item) > 40 for item in equipment
     ) or len(set(equipment)) != len(equipment) or not set(equipment).issubset(VALID_EQUIPMENT):
         raise ValueError("Seznam opreme vsebuje podvojeno ali nepodprto opremo.")
-    if not isinstance(sessions, int) or isinstance(sessions, bool) or not 1 <= sessions <= 7:
-        raise ValueError("Tedenska pogostost mora biti med 1 in 7.")
-    if not isinstance(minutes, int) or isinstance(minutes, bool) or not 20 <= minutes <= 180:
-        raise ValueError("Trajanje treninga mora biti med 20 in 180 minutami.")
+    if not isinstance(sessions, int) or isinstance(sessions, bool) or not 2 <= sessions <= 4:
+        raise ValueError("Za zdaj so podprti 2, 3 ali 4 treningi na teden.")
+    if not isinstance(minutes, int) or isinstance(minutes, bool) or not 25 <= minutes <= 120:
+        raise ValueError("Trajanje treninga mora biti med 25 in 120 minutami.")
     days = value.get("available_days", [])
     if not isinstance(days, list) or len(days) > 7 or any(day not in PROFILE_DAYS for day in days):
         raise ValueError("Razpoložljivi dnevi niso veljavni.")
