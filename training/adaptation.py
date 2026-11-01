@@ -62,20 +62,7 @@ def assess_next_step(sessions):
             "message": "Zadnji trening je bil ocenjen kot težek ali regeneracija ni bila ustrezna. Naslednji program bo ob tvoji zahtevi zmanjšal število serij; obremenitve ne povečuj.",
         }
 
-    hard_count = sum(1 for _, s in completed[:2] if s.get("difficulty") == "hard")
-    if hard_count >= 2:
-        return {
-            "decision": "review_volume_reduction",
-            "progression_allowed": False,
-            "volume_change": "review_main_exercise_volume",
-            "reason_codes": ["two_recent_hard_sessions"],
-            "message": (
-                "Dva zadnja zaključena treninga sta bila ocenjena kot težka. Predlagan je pregled "
-                "obsega glavnih vaj in regeneracije; obremenitev se ne spremeni samodejno."
-            ),
-        }
-
-    if len(recent) >= 2 and all(s.get("completed") is True for _, s in recent[:2]) and all(s.get("difficulty") == "easy" for _, s in recent[:2]):
+    if len(recent) >= 2 and all(s.get("completed") is True for _, s in recent[:2]) and all(s.get("difficulty") == "easy" for _, s in recent[:2]) and all(s.get("recovery", "normal") != "poor" for _, s in recent[:2]):
         observations = [
             exercise
             for _, session in recent[:2]
