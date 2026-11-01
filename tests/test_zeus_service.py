@@ -17,6 +17,7 @@ def make_app(ledger=None):
 def test_health_is_public_but_task_api_requires_authentication():
     client = make_app().test_client()
     assert client.get("/health").status_code == 200
+    assert client.get("/").status_code == 200
     assert client.get("/v1/tasks").status_code == 401
 
 
