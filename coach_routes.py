@@ -5,6 +5,17 @@ import hmac
 import logging
 import urllib.error
 import urllib.request
+import secrets
+import uuid
+from datetime import date
+
+from coach_store import (
+    StorageUnavailable, ProfileNotFound, create_profile as store_create_profile,
+    get_profile as store_get_profile, update_profile as store_update_profile,
+    add_session as store_add_session, list_sessions as store_list_sessions,
+    delete_profile as store_delete_profile,
+)
+from training.catalogue import get_exercise
 from flask import Blueprint, jsonify, request
 from training.program import ProgramSafetyBlock, ProgramValidationError, generate_program
 
@@ -151,3 +162,204 @@ def coach_program():
         logger.exception("ATENA catalogue/program generation failed")
         return jsonify({"error": "Programa trenutno ni mogoče sestaviti iz kataloga."}), 500
     return jsonify({"program": result, "source": "curated_exercise_catalogue", "pilot": True}), 200
+
+
+# Longitudinal profile storage is opt-in and disabled by default. Hosted use
+# requires a persistent PostgreSQL database and an operator-approved notice.
+PROFILE_FIELDS = {"goal", "experience", "equipment", "sessions_per_week", "session_minutes", "available_days"}
+PROFILE_GOALS = {"strength", "hypertrophy", "general_fitness", "functional", "power", "endurance", "mobility"}
+PROFILE_EXPERIENCE = {"beginner", "intermediate", "advanced"}
+PROFILE_DAYS = {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}
+
+
+def _storage_error(exc):
+    logger.warning("ATENA profile storage unavailable: %s", type(exc).__name__)
+    return jsonify({"error": "Shranjevanje profila trenutno ni aktivirano."}), 503
+
+
+def _validate_profile(value):
+    if not isinstance(value, dict) or set(value) - PROFILE_FIELDS:
+        raise ValueError("Profil vsebuje neveljavna ali nepodprta polja.")
+    goal = value.get("goal")
+    experience = value.get("experience")
+    equipment = value.get("equipment")
+    sessions = value.get("sessions_per_week")
+    minutes = value.get("session_minutes")
+    if goal not in PROFILE_GOALS:
+        raise ValueError("Cilj vadbe ni veljaven.")
+    if experience not in PROFILE_EXPERIENCE:
+        raise ValueError("Raven izkušenj ni veljavna.")
+    if not isinstance(equipment, list) or len(equipment) > 25 or any(
+        not isinstance(item, str) or not item.strip() or len(item) > 40 for item in equipment
+    ):
+        raise ValueError("Seznam opreme ni veljaven.")
+    if not isinstance(sessions, int) or isinstance(sessions, bool) or not 1 <= sessions <= 7:
+        raise ValueError("Tedenska pogostost mora biti med 1 in 7.")
+    if not isinstance(minutes, int) or isinstance(minutes, bool) or not 20 <= minutes <= 180:
+        raise ValueError("Trajanje treninga mora biti med 20 in 180 minutami.")
+    days = value.get("available_days", [])
+    if not isinstance(days, list) or len(days) > 7 or any(day not in PROFILE_DAYS for day in days):
+        raise ValueError("Razpoložljivi dnevi niso veljavni.")
+    return {
+        "goal": goal, "experience": experience, "equipment": equipment,
+        "sessions_per_week": sessions, "session_minutes": minutes,
+        "available_days": days,
+    }
+
+
+def _profile_token():
+    return request.headers.get("X-Profile-Token", "").strip()
+
+
+def _profile_auth_error():
+    return jsonify({"error": "Profil ne obstaja ali dostopni ključ ni pravilen."}), 404
+
+
+@coach_bp.route("/coach/profile", methods=["POST", "OPTIONS"])
+def create_coach_profile():
+    if request.method == "OPTIONS":
+        return ("", 204)
+    expected = os.getenv("AI_COACH_TEST_TOKEN", "").strip()
+    supplied = request.headers.get("X-Pilot-Token", "").strip()
+    if not expected or not supplied or not hmac.compare_digest(supplied, expected):
+        return jsonify({"error": "Testni dostopni ključ ni pravilen."}), 403
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"error": "Pričakovan je JSON objekt."}), 400
+    if payload.get("privacy_notice_acknowledged") is not True:
+        return jsonify({"error": "Pred shranjevanjem je treba potrditi seznanitev z obvestilom o zasebnosti."}), 400
+    notice_version = os.getenv("ATENA_PRIVACY_NOTICE_VERSION", "pilot-draft-1").strip()
+    if payload.get("privacy_notice_version") != notice_version:
+        return jsonify({"error": "Različica obvestila o zasebnosti ni veljavna."}), 400
+    health_consent = payload.get("health_data_consent", False)
+    if not isinstance(health_consent, bool):
+        return jsonify({"error": "Privolitev za zdravstvene podatke mora biti true ali false."}), 400
+    try:
+        profile = _validate_profile(payload.get("profile"))
+        profile_id = str(uuid.uuid4())
+        access_token = secrets.token_urlsafe(32)
+        saved = store_create_profile(profile_id, access_token, profile, health_consent, notice_version)
+        # The access token is returned once. Only its SHA-256 hash is stored.
+        return jsonify({"profile": saved, "profile_access_token": access_token,
+                        "token_notice": "Ključ shrani varno; pozneje ga ni mogoče ponovno prikazati."}), 201
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
+
+
+@coach_bp.route("/coach/profile/<profile_id>", methods=["GET", "PUT", "DELETE", "OPTIONS"])
+def manage_coach_profile(profile_id):
+    if request.method == "OPTIONS":
+        return ("", 204)
+    token = _profile_token()
+    if request.method == "GET":
+        try:
+            return jsonify({"profile": store_get_profile(profile_id, token)}), 200
+        except ProfileNotFound:
+            return _profile_auth_error()
+        except StorageUnavailable as exc:
+            return _storage_error(exc)
+    if request.method == "PUT":
+        payload = request.get_json(silent=True)
+        if not isinstance(payload, dict):
+            return jsonify({"error": "Pričakovan je JSON objekt."}), 400
+        try:
+            profile = _validate_profile(payload.get("profile"))
+            updated = store_update_profile(profile_id, token, profile)
+            return jsonify({"profile": updated}), 200
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except ProfileNotFound:
+            return _profile_auth_error()
+        except StorageUnavailable as exc:
+            return _storage_error(exc)
+    try:
+        store_delete_profile(profile_id, token)
+        return jsonify({"deleted": True}), 200
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
+
+
+@coach_bp.route("/coach/profile/<profile_id>/sessions", methods=["GET", "POST", "OPTIONS"])
+def coach_training_sessions(profile_id):
+    if request.method == "OPTIONS":
+        return ("", 204)
+    token = _profile_token()
+    if request.method == "GET":
+        try:
+            return jsonify({"sessions": store_list_sessions(profile_id, token, limit=50)}), 200
+        except ProfileNotFound:
+            return _profile_auth_error()
+        except StorageUnavailable as exc:
+            return _storage_error(exc)
+
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"error": "Pričakovan je JSON objekt."}), 400
+    allowed = {"session_date", "duration_minutes", "difficulty", "completed", "exercises", "discomfort_reported"}
+    if set(payload) - allowed:
+        return jsonify({"error": "Vadbeni zapis vsebuje nepodprta polja; prosto besedilo ni dovoljeno."}), 400
+    session_date = payload.get("session_date")
+    try:
+        date.fromisoformat(session_date)
+    except (TypeError, ValueError):
+        return jsonify({"error": "Datum mora biti v obliki YYYY-MM-DD."}), 400
+    duration = payload.get("duration_minutes")
+    if not isinstance(duration, int) or isinstance(duration, bool) or not 1 <= duration <= 240:
+        return jsonify({"error": "Trajanje mora biti med 1 in 240 minutami."}), 400
+    difficulty = payload.get("difficulty")
+    if difficulty not in {"easy", "moderate", "hard"}:
+        return jsonify({"error": "Težavnost mora biti easy, moderate ali hard."}), 400
+    if not isinstance(payload.get("completed"), bool):
+        return jsonify({"error": "Polje completed mora biti true ali false."}), 400
+    exercises = payload.get("exercises")
+    if not isinstance(exercises, list) or len(exercises) > 20:
+        return jsonify({"error": "Vadbeni zapis lahko vsebuje največ 20 vaj."}), 400
+    clean_exercises = []
+    for item in exercises:
+        if not isinstance(item, dict) or set(item) - {"exercise_id", "sets_completed", "reps_completed", "load_kg", "rir"}:
+            return jsonify({"error": "Zapis vaje vsebuje neveljavna polja."}), 400
+        exercise_id = item.get("exercise_id")
+        if not isinstance(exercise_id, str) or get_exercise(exercise_id) is None:
+            return jsonify({"error": "Vaja ni v preverjenem katalogu ATENA."}), 400
+        sets = item.get("sets_completed")
+        reps = item.get("reps_completed")
+        if not isinstance(sets, int) or isinstance(sets, bool) or not 1 <= sets <= 20:
+            return jsonify({"error": "Število izvedenih serij ni veljavno."}), 400
+        if not isinstance(reps, int) or isinstance(reps, bool) or not 1 <= reps <= 100:
+            return jsonify({"error": "Število ponovitev ni veljavno."}), 400
+        entry = {"exercise_id": exercise_id, "sets_completed": sets, "reps_completed": reps}
+        load = item.get("load_kg")
+        if load is not None:
+            if not isinstance(load, (int, float)) or isinstance(load, bool) or not 0 <= load <= 1000:
+                return jsonify({"error": "Obremenitev ni veljavna."}), 400
+            entry["load_kg"] = float(load)
+        rir = item.get("rir")
+        if rir is not None:
+            if not isinstance(rir, int) or isinstance(rir, bool) or not 0 <= rir <= 10:
+                return jsonify({"error": "RIR mora biti med 0 in 10."}), 400
+            entry["rir"] = rir
+        clean_exercises.append(entry)
+
+    discomfort = payload.get("discomfort_reported")
+    if discomfort is not None and not isinstance(discomfort, bool):
+        return jsonify({"error": "discomfort_reported mora biti true ali false."}), 400
+    session = {
+        "duration_minutes": duration, "difficulty": difficulty,
+        "completed": payload["completed"], "exercises": clean_exercises,
+    }
+    try:
+        profile = store_get_profile(profile_id, token)
+        if discomfort is not None:
+            if not profile["health_data_consent"]:
+                return jsonify({"error": "Za shranjevanje podatka o nelagodju je potrebna ločena privolitev za zdravstvene podatke."}), 403
+            session["discomfort_reported"] = discomfort
+        saved = store_add_session(profile_id, token, str(uuid.uuid4()), session_date, session)
+        return jsonify({"session": saved}), 201
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
