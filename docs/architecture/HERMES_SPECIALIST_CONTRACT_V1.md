@@ -1,6 +1,6 @@
 # HERMES specialist contract — v1 proposal
 
-**Status:** contract proposal only; no HERMES runtime or adapter is currently verified.  
+**Status:** v0.1 read-only evidence collector implemented on the ZEUS feature branch; full analytical specialist remains a future phase.  
 **Owner:** ZEUS coordinator  
 **Default operating mode:** read-only research; zero new spend.
 
@@ -158,7 +158,7 @@ A blocked or failed response must name the concrete blocker and must not contain
 
 ## 9. Acceptance tests before integration
 
-HERMES may be registered in ZEUS only after all are true:
+The full analytical HERMES may be promoted beyond the v0.1 evidence collector only after all are true:
 1. Actual source code or a real deployed service is identified and inspected.
 2. Capability declaration matches the implementation and data sources.
 3. A read-only adapter passes schema, size, timeout and failure tests.
@@ -167,4 +167,4 @@ HERMES may be registered in ZEUS only after all are true:
 6. ZEUS routes only the two market domains to HERMES and blocks safely when it is unavailable.
 7. No production deployment or new paid service is required for the initial integration.
 
-**Current decision:** keep HERMES unregistered. This document defines the target contract; it does not claim that a HERMES agent exists.
+**Current implementation:** ZEUS registers a HERMES v0.1 evidence-collection adapter in the feature-branch composition root. It fetches at most five explicitly supplied HTTPS URLs from a fixed public-source allowlist, applies per-document size and timeout bounds, and returns excerpts with retrieval timestamps. It does not generate market conclusions, calculate metrics, forecast, or issue buy/sell recommendations. Its executive view remains `insufficient_evidence`. This is a real, limited implementation, not the complete analytical specialist described by the target contract.
