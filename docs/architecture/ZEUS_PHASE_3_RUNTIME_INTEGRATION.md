@@ -1,7 +1,7 @@
 # ZEUS phase 3 — coordinator integration and runtime
 
 **Date:** 2026-11-01  
-**Status:** coordinator integration implemented on the isolated feature branch; dedicated runtime deployment pending final automated verification.
+**Status:** coordinator integration implemented and verified; dedicated Render Free service deployed in restricted pre-configuration mode. Secure runtime secrets remain to be installed manually.
 
 ## 1. Durable ledger integration
 
@@ -42,17 +42,30 @@ The API returns HTTP 503 when durable creation or a lifecycle write cannot be co
 
 ATENA services and their environment variables are not modified by this configuration. The ZEUS service must not reuse the ATENA runtime.
 
-## 4. Verification scope and remaining boundary
+## 4. Current deployment
+
+- Render service: `zeus-coordinator`
+- URL: https://zeus-coordinator.onrender.com
+- Service ID: `srv-dbje8m67bikc73f6sjjg`
+- Region/plan: Frankfurt / Free
+- Runtime: Python 3.12.15; Gunicorn; one worker with four threads.
+- Auto-deploy is disabled. Code changes require an explicit deployment.
+- `ZEUS_LEDGER_URL` and `ATENA_MCP_URL` are configured. Secret values are intentionally not transferred through chat or committed.
+- Public root and `/health` both return the ZEUS liveness response. Task API calls return HTTP 503 until both secret variables are configured; no task execution is possible in this state.
+- The service is a separate Render resource; no ATENA service, environment variable, or deployment was changed.
+
+## 5. Verification scope and remaining boundary
 
 New tests cover durable create and transition mirroring, failure behavior at create/assignment/completion/cancellation, authenticated API access, metadata minimization, explicit approval and execution/cancellation routes.
 
-The deployed Cloudflare Worker has already passed an external unauthenticated-access check (HTTP 401) and its live D1 schema has been inspected. An authenticated end-to-end Worker operation still needs a matching runtime secret and dedicated ZEUS service.
+The deployed Cloudflare Worker has already passed an external unauthenticated-access check (HTTP 401) and its live D1 schema has been inspected. The Render ZEUS service is now deployed and its liveness endpoints have been checked externally. The authenticated end-to-end Worker operation still needs a matching secret configured in both Cloudflare and Render.
 
 The runtime must not be described as production-ready until:
-1. automated tests pass on the final branch head;
-2. a dedicated Render ZEUS service is created on the Free plan;
-3. a fresh Worker secret is synchronized only to that service;
-4. the live authenticated create → assign → run → complete lifecycle is verified;
-5. an unauthenticated API request is verified to return HTTP 401.
+1. automated tests pass on the final branch head (159 Python tests; 8 Node tests; live ATENA MCP compatibility PASS);
+2. a dedicated Render ZEUS service is created on the Free plan (completed);
+3. a fresh Worker secret is set directly in Cloudflare and the matching value is set only in the ZEUS Render service (manual secure configuration still required);
+4. a separate `ZEUS_API_TOKEN` is set in Render (manual secure configuration still required);
+5. the live authenticated create → assign → run → complete lifecycle is verified;
+6. an unauthenticated API request is verified to return HTTP 401 after configuration.
 
 No changes are made to ATENA's service configuration, database or deployment. The feature PR remains separate from `main`; no merge or production rollout is performed.
