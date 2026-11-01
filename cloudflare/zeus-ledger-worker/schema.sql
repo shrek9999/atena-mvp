@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS zeus_tasks (
   error_code TEXT CHECK (error_code IS NULL OR error_code IN (
     'approval_required', 'specialist_unavailable', 'specialist_execution_failed', 'cancelled_by_request'
   )),
+  recovery_code TEXT CHECK (recovery_code IS NULL OR recovery_code IN ('runtime_restarted')),
   CHECK (
     (domain IN ('fitness', 'human_performance') AND specialist = 'ATENA')
     OR
