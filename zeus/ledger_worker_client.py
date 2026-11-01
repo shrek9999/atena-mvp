@@ -130,10 +130,12 @@ class LedgerWorkerClient:
             method, self._base_url + path, self._token, body, self._timeout
         )
         if status not in expected:
-            # HTTP status helps distinguish token, route and schema failures.
-            # Never log or expose the untrusted response body.
+            # A short bounded hint is useful for edge-level 403/5xx diagnosis.
+            # The API never returns this exception detail to callers.
+            hint = " ".join(raw.split())[:120] if status in {403, 429, 500, 502, 503} else ""
+            detail = f"; response={hint}" if hint else ""
             raise SpecialistUnavailable(
-                f"ZEUS ledger Worker rejected the request (HTTP {status})"
+                f"ZEUS ledger Worker rejected the request (HTTP {status}{detail})"
             )
         try:
             decoded = json.loads(raw)
