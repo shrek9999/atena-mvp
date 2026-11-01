@@ -33,7 +33,7 @@ class UrllibLedgerTransport:
         request = urllib.request.Request(url, data=data, headers=headers, method=method)
         try:
             with urllib.request.urlopen(request, timeout=timeout) as response:
-                return response.status, response.read(16_384).decode("utf-8")
+                return response.status, response.read(65_536).decode("utf-8")
         except urllib.error.HTTPError as exc:
             raise SpecialistUnavailable("ZEUS ledger Worker returned an HTTP error") from None
         except (urllib.error.URLError, TimeoutError, OSError):
