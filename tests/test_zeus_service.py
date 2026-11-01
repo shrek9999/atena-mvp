@@ -107,6 +107,8 @@ def test_lazy_wsgi_health_is_available_before_secret_configuration():
     response = client.get("/health")
     assert response.status_code == 200
     assert response.get_json()["service"] == "ZEUS"
+    root_probe = client.head("/")
+    assert root_probe.status_code == 200
 
 
 def test_lazy_wsgi_fails_closed_when_runtime_secrets_are_missing(monkeypatch):
