@@ -49,3 +49,22 @@ def test_realistic_onboarding_profile_generates_safe_catalogue_backed_plan(scena
             if source["single_joint"] and profile["goal"] == "hypertrophy":
                 assert profile["experience"] == "advanced"
                 assert profile.get("include_accessories") is True
+
+
+def test_loaded_hypertrophy_profile_exposes_straight_back_hinge_label():
+    profile = {
+        "goal": "hypertrophy",
+        "experience": "intermediate",
+        "sessions_per_week": 2,
+        "session_minutes": 60,
+        "equipment": ["barbell", "rack", "dumbbell", "bench", "pull_up_bar"],
+    }
+    plan = generate_program(profile)
+    hinges = [
+        exercise
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+        if exercise["pattern"] == "hinge"
+    ]
+    assert hinges
+    assert all(exercise["pattern_label"] == "predklon z ravnim hrbtom" for exercise in hinges)
