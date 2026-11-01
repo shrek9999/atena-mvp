@@ -29,8 +29,8 @@ class ReadLedger:
             return {"error": "not_found"}
         return {"task": dict(self.task)}
 
-    def list_tasks(self, limit=50):
-        return {"tasks": [dict(self.task)]}
+    def list_tasks(self, limit=50, offset=0):
+        return {"tasks": [dict(self.task)][offset:offset + limit]}
 
 
 def test_task_get_reads_durable_ledger_even_when_process_memory_is_empty():
@@ -109,8 +109,8 @@ def test_runtime_startup_reconciles_orphaned_tasks_before_serving_api(monkeypatc
             self.tasks = [{"task_id": "restart-queued", "status": "queued"}]
             self.transitions = []
 
-        def list_tasks(self, limit=50):
-            return {"tasks": [dict(task) for task in self.tasks]}
+        def list_tasks(self, limit=50, offset=0):
+            return {"tasks": [dict(task) for task in self.tasks[offset:offset + limit]]}
 
         def get_task(self, task_id):
             task = next((item for item in self.tasks if item["task_id"] == task_id), None)
@@ -160,3 +160,21 @@ def test_ledger_client_sends_recovery_marker_only_when_requested():
         "to_status": "blocked",
         "recovery_code": "runtime_restarted",
     }
+
+
+
+def test_ledger_client_supports_stable_offset_pagination():
+    class CaptureTransport:
+        def __init__(self):
+            self.url = None
+
+        def request(self, method, url, token, body, timeout):
+            self.url = url
+            return 200, json.dumps({"tasks": []})
+
+    transport = CaptureTransport()
+    client = LedgerWorkerClient(
+        "https://ledger.example.workers.dev", "x" * 48, transport=transport
+    )
+    client.list_tasks(limit=75, offset=150)
+    assert transport.url.endswith("/v1/tasks?limit=75&offset=150")
