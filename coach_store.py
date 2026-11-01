@@ -60,16 +60,19 @@ class StorageUnavailable(RuntimeError):
 class ProfileNotFound(RuntimeError):
     pass
 
-def _config():
-    enabled = os.getenv("ATENA_DATA_STORAGE_ENABLED", "").strip().lower() == "true"
-    notice_approved = os.getenv("ATENA_PRIVACY_NOTICE_APPROVED", "").strip().lower() == "true"
+def _config(require_enabled=True):
     url = os.getenv("ATENA_DATABASE_URL", "").strip()
-    if not enabled or not notice_approved or not url:
-        raise StorageUnavailable("Profile storage is not enabled or configured.")
+    if not url:
+        raise StorageUnavailable("Profile database is not configured.")
+    if require_enabled:
+        enabled = os.getenv("ATENA_DATA_STORAGE_ENABLED", "").strip().lower() == "true"
+        notice_approved = os.getenv("ATENA_PRIVACY_NOTICE_APPROVED", "").strip().lower() == "true"
+        if not enabled or not notice_approved:
+            raise StorageUnavailable("Profile storage is not enabled or approved.")
     return url
 
-def _connect():
-    url = _config()
+def _connect(require_enabled=True):
+    url = _config(require_enabled=require_enabled)
     if url.startswith("sqlite:///"):
         if os.getenv("ATENA_ALLOW_SQLITE_STORAGE", "").strip().lower() != "true":
             raise StorageUnavailable("SQLite is restricted to explicit local/test use.")
@@ -274,7 +277,7 @@ def _authorized_profile(conn, dialect, profile_id: str, token: str):
             "privacy_notice_version": notice_version}
 
 def get_profile(profile_id: str, token: str):
-    conn, dialect = _connect()
+    conn, dialect = _connect(require_enabled=False)
     try:
         _init(conn, dialect)
         return _authorized_profile(conn, dialect, profile_id, token)
@@ -310,7 +313,7 @@ def add_session(profile_id: str, token: str, session_id: str, session_date: str,
         conn.close()
 
 def list_sessions(profile_id: str, token: str, limit: int = 50):
-    conn, dialect = _connect()
+    conn, dialect = _connect(require_enabled=False)
     try:
         _init(conn, dialect)
         _authorized_profile(conn, dialect, profile_id, token)
@@ -324,7 +327,7 @@ def list_sessions(profile_id: str, token: str, limit: int = 50):
         conn.close()
 
 def delete_profile(profile_id: str, token: str):
-    conn, dialect = _connect()
+    conn, dialect = _connect(require_enabled=False)
     try:
         _init(conn, dialect)
         _authorized_profile(conn, dialect, profile_id, token)
@@ -335,8 +338,8 @@ def delete_profile(profile_id: str, token: str):
 
 
 def set_health_data_consent(profile_id: str, token: str, consent: bool):
-    """Update separate health-data consent; withdrawal also erases stored symptom flags."""
-    conn, dialect = _connect()
+    """Allow withdrawal and erasure even while new profile storage is disabled."""
+    conn, dialect = _connect(require_enabled=bool(consent))
     try:
         _init(conn, dialect)
         _authorized_profile(conn, dialect, profile_id, token)
