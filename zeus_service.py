@@ -26,6 +26,7 @@ MAX_BODY_BYTES = 64_000
 SAFE_TASK_FIELDS = (
     "task_id", "domain", "specialist", "status", "created_at", "updated_at",
     "started_at", "completed_at", "expires_at", "attempt_count", "error_code",
+    "recovery_code",
 )
 
 
@@ -49,6 +50,7 @@ def create_app(
     if coordinator is None:
         ledger = LedgerWorkerClient.from_environment()
         coordinator = build_coordinator(ledger=ledger)
+        coordinator.recover_orphaned_tasks()
 
     app = Flask(__name__)
     app.config["MAX_CONTENT_LENGTH"] = MAX_BODY_BYTES
