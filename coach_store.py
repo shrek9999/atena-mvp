@@ -81,6 +81,32 @@ def _init(conn, dialect):
     for statement in statements:
         _execute(conn, dialect, statement)
 
+
+def check_database_connection():
+    """Verify hosted PostgreSQL reachability without enabling or creating user-data tables."""
+    url = os.getenv("ATENA_DATABASE_URL", "").strip()
+    if not url:
+        raise StorageUnavailable("Database connection string is not configured.")
+    if url.startswith("postgres://"):
+        url = "postgresql://" + url[len("postgres://"):]
+    if not url.startswith("postgresql://"):
+        raise StorageUnavailable("Hosted database must use PostgreSQL.")
+    try:
+        import psycopg
+        with psycopg.connect(url, connect_timeout=8) as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1")
+                row = cur.fetchone()
+        if not row or row[0] != 1:
+            raise StorageUnavailable("Database connectivity check returned an unexpected result.")
+        return True
+    except StorageUnavailable:
+        raise
+    except Exception as exc:
+        # Do not propagate provider messages: they may contain host or connection details.
+        raise StorageUnavailable("Database connection check failed.") from exc
+
+
 def hash_access_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
