@@ -55,3 +55,23 @@ Use synthetic, non-personal test objectives only:
 ## Acceptance gate
 
 ZEUS is considered ready for a limited internal pilot only after the security rotation, durable reads, safe restart behavior and authenticated end-to-end tests all pass. Until then, it should be described as a deployed prototype, not a production-ready autonomous coordinator.
+
+
+## Implementation progress — 2026-11-01
+
+### Completed on the development branch
+- Render task GET and list routes now use the durable ledger as the source of metadata when configured, rather than relying on the current process's in-memory task dictionary.
+- The public response remains restricted to the explicit metadata allowlist; objectives, payloads, results and any unrecognized ledger fields are excluded.
+- The Worker client's HTTP transport now preserves HTTP status codes from error responses. A confirmed Worker 404 is represented as a not-found result instead of being conflated with an unavailable ledger.
+- Added regression tests for durable GET/list behavior with an empty process-local coordinator, confirmed 404 handling, response-field allowlisting and HTTP error status preservation.
+
+### Verified CI
+- GitHub Actions run: https://github.com/shrek9999/atena-mvp/actions/runs/41297577176
+- Python tests: **164 passed**.
+- Cloudflare Worker tests: **8 passed**; Worker syntax check passed.
+- No Render deployment, Cloudflare Worker deployment, D1 migration or production API test was performed as part of these changes.
+
+### Still open
+- Safe restart reconciliation is not yet implemented. Durable reads now make existing metadata visible after a process restart, but they do not restore private request bodies. A queued/running task whose process-local request was lost must not be replayed automatically. A controlled blocked/retry workflow remains a separate change.
+- Credential rotation remains a pre-pilot security task. The previously disclosed credentials are not to be used for further live tests.
+- The PR remains on its development branch and must not be merged or deployed until the remaining recovery behavior and pre-pilot security steps are reviewed.
