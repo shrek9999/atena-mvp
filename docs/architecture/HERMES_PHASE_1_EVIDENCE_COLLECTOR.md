@@ -45,5 +45,6 @@ pack for a later analyst/research stage, not an investment decision.
 
 The automated tests use mocked fetchers. They validate URL restrictions,
 redirect/host policy, document extraction, size limits, failure sanitization,
-structured output and ZEUS routing. A live retrieval smoke test may be run
-against one selected official source after CI passes; it must remain read-only.
+structured output and ZEUS routing. A best-effort live retrieval probe runs in CI against a selected public source.
+The probe is non-gating because public hosts may rate-limit or block CI runners;
+mocked offline tests are the deterministic acceptance gate.
