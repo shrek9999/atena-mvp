@@ -1,5 +1,6 @@
 const MAX_BODY_BYTES = 8192;
 const MAX_LIST_LIMIT = 100;
+const MAX_LIST_OFFSET = 1000000;
 const TERMINAL = new Set(["completed", "failed", "blocked", "cancelled"]);
 const SPECIALIST_BY_DOMAIN = {
   fitness: "ATENA",
@@ -97,9 +98,13 @@ async function handle(request, env) {
   if (request.method === "GET" && url.pathname === "/v1/tasks") {
     const rawLimit = Number(url.searchParams.get("limit") || 50);
     const limit = Number.isInteger(rawLimit) ? Math.max(1, Math.min(MAX_LIST_LIMIT, rawLimit)) : 50;
+    const rawOffset = Number(url.searchParams.get("offset") || 0);
+    if (!Number.isInteger(rawOffset) || rawOffset < 0 || rawOffset > MAX_LIST_OFFSET) {
+      return json({ error: "invalid_offset" }, 400);
+    }
     const result = await env.ZEUS_DB.prepare(
-      "SELECT task_id, domain, specialist, status, created_at, updated_at, started_at, completed_at, expires_at, attempt_count, error_code, recovery_code FROM zeus_tasks ORDER BY created_at DESC LIMIT ?"
-    ).bind(limit).all();
+      "SELECT task_id, domain, specialist, status, created_at, updated_at, started_at, completed_at, expires_at, attempt_count, error_code, recovery_code FROM zeus_tasks ORDER BY created_at DESC, task_id DESC LIMIT ? OFFSET ?"
+    ).bind(limit, rawOffset).all();
     return json({ tasks: result.results || [] });
   }
 
@@ -146,7 +151,7 @@ async function handle(request, env) {
     ).bind(toStatus, now, startedAt, completedAt, expiresAt, attemptIncrement, errorCode, recoveryCode, taskId, fromStatus).run();
     if (!result.meta || result.meta.changes !== 1) return json({ error: "task_missing_or_state_conflict" }, 409);
     const task = await env.ZEUS_DB.prepare(
-      "SELECT task_id, domain, specialist, status, created_at, updated_at, started_at, completed_at, expires_at, attempt_count, error_code FROM zeus_tasks WHERE task_id = ?"
+      "SELECT task_id, domain, specialist, status, created_at, updated_at, started_at, completed_at, expires_at, attempt_count, error_code, recovery_code FROM zeus_tasks WHERE task_id = ?"
     ).bind(taskId).first();
     return json({ task });
   }
