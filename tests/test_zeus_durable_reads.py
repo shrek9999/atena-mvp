@@ -132,3 +132,27 @@ def test_runtime_startup_reconciles_orphaned_tasks_before_serving_api(monkeypatc
     response = app.test_client().get("/v1/tasks/restart-queued", headers=AUTH)
     assert response.status_code == 200
     assert response.get_json()["task"]["status"] == "blocked"
+
+
+
+def test_ledger_client_sends_recovery_marker_only_when_requested():
+    class CaptureTransport:
+        def __init__(self):
+            self.body = None
+
+        def request(self, method, url, token, body, timeout):
+            self.body = body
+            return 200, json.dumps({"task": {"status": "blocked"}})
+
+    transport = CaptureTransport()
+    client = LedgerWorkerClient(
+        "https://ledger.example.workers.dev", "x" * 48, transport=transport
+    )
+    client.transition_task(
+        "orphan-queued", "queued", "blocked", recovery_code="runtime_restarted"
+    )
+    assert transport.body == {
+        "from_status": "queued",
+        "to_status": "blocked",
+        "recovery_code": "runtime_restarted",
+    }
