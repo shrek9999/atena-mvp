@@ -10,6 +10,7 @@ on:
       - "training/catalogue.py"
       - "training/exercises.json"
       - "coach_routes.py"
+      - "coach_store.py"
   workflow_dispatch:
 
 permissions:
