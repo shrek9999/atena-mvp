@@ -430,3 +430,32 @@ def coach_training_progress(profile_id):
         return _profile_auth_error()
     except StorageUnavailable as exc:
         return _storage_error(exc)
+
+
+@coach_bp.route("/coach/profile/<profile_id>/export", methods=["GET", "OPTIONS"])
+def export_coach_profile(profile_id):
+    """Export the authenticated user's profile and complete structured training history."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    token = _profile_token()
+    try:
+        profile = store_get_profile(profile_id, token)
+        sessions = store_list_sessions(profile_id, token, limit=5000)
+        response = jsonify({
+            "export_version": "1.0",
+            "profile": profile,
+            "sessions": sessions,
+            "exported_at": __import__("datetime").datetime.now(
+                __import__("datetime").timezone.utc
+            ).isoformat(timespec="seconds"),
+        })
+        response.headers["Cache-Control"] = "no-store, private"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Content-Disposition"] = (
+            'attachment; filename="atena-profile-export.json"'
+        )
+        return response, 200
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
