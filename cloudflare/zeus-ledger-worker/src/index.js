@@ -75,6 +75,8 @@ async function handle(request, env) {
     catch (error) {
       return json({ error: error.message === "body_too_large" ? "body_too_large" : "invalid_json" }, 400);
     }
+    if (!body || typeof body !== "object" || Array.isArray(body)) return json({ error: "invalid_body" }, 400);
+    if (Object.keys(body).some((key) => !["task_id", "domain", "specialist"].includes(key))) return json({ error: "unknown_field" }, 400);
     if (!validTaskId(body.task_id)) return json({ error: "invalid_task_id" }, 400);
     if (typeof body.domain !== "string" || !SPECIALIST_BY_DOMAIN[body.domain]) {
       return json({ error: "invalid_domain" }, 400);
@@ -117,6 +119,8 @@ async function handle(request, env) {
     catch (error) {
       return json({ error: error.message === "body_too_large" ? "body_too_large" : "invalid_json" }, 400);
     }
+    if (!body || typeof body !== "object" || Array.isArray(body)) return json({ error: "invalid_body" }, 400);
+    if (Object.keys(body).some((key) => !["from_status", "to_status", "error_code"].includes(key))) return json({ error: "unknown_field" }, 400);
     const fromStatus = body.from_status;
     const toStatus = body.to_status;
     if (!TRANSITIONS[fromStatus] || !TRANSITIONS[fromStatus].has(toStatus)) {
@@ -124,12 +128,10 @@ async function handle(request, env) {
     }
     const errorCode = body.error_code || null;
     if (errorCode !== null && !ERROR_CODES.has(errorCode)) return json({ error: "invalid_error_code" }, 400);
-    if (TERMINAL.has(toStatus) && !TERMINAL.has(fromStatus) && !body.expires_at) {
-      body.expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-    }
+
     const startedAt = toStatus === "running" ? now : null;
     const completedAt = TERMINAL.has(toStatus) ? now : null;
-    const expiresAt = TERMINAL.has(toStatus) ? body.expires_at : null;
+    const expiresAt = TERMINAL.has(toStatus) ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : null;
     const attemptIncrement = toStatus === "running" ? 1 : 0;
     const result = await env.ZEUS_DB.prepare(
       "UPDATE zeus_tasks SET status = ?, updated_at = ?, started_at = COALESCE(?, started_at), completed_at = COALESCE(?, completed_at), expires_at = COALESCE(?, expires_at), attempt_count = attempt_count + ?, error_code = ? WHERE task_id = ? AND status = ?"
