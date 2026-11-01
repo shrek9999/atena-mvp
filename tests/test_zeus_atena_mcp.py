@@ -9,12 +9,14 @@ from zeus.coordinator import TaskRequest
 class FakeTransport:
     def __init__(self):
         self.calls = []
+        self.session_count = 0
 
     def post(self, url, body, headers, timeout):
         self.calls.append((url, body, headers, timeout))
         method = body.get("method")
         if method == "initialize":
-            return 200, {"Mcp-Session-Id": "synthetic-session"}, json.dumps({
+            self.session_count += 1
+            return 200, {"Mcp-Session-Id": f"synthetic-session-{self.session_count}"}, json.dumps({
                 "jsonrpc": "2.0", "id": body["id"],
                 "result": {"protocolVersion": "2025-03-26", "capabilities": {}},
             })
@@ -50,7 +52,7 @@ def test_adapter_initializes_and_calls_atena_tool():
     call = transport.calls[-1]
     assert call[1]["params"]["name"] == "atena_decide"
     assert call[1]["params"]["arguments"]["payload"]["goal"]["primary"] == "strength"
-    assert call[2]["Mcp-Session-Id"] == "synthetic-session"
+    assert call[2]["Mcp-Session-Id"] == "synthetic-session-1"
 
 
 def test_adapter_rejects_non_fitness_domain():
@@ -81,3 +83,18 @@ def test_adapter_parses_sse_response():
 def test_adapter_extracts_text_json_tool_result():
     result = {"content": [{"type": "text", "text": '{"decision":"progress"}'}]}
     assert AtenaMCPAdapter._extract_tool_result(result)["decision"] == "progress"
+
+
+
+def test_adapter_opens_fresh_session_for_each_decision():
+    transport = FakeTransport()
+    adapter = AtenaMCPAdapter(transport=transport)
+
+    assert adapter(request())["decision"] == "maintain"
+    assert adapter(request())["decision"] == "maintain"
+
+    initialize_calls = [call for call in transport.calls if call[1].get("method") == "initialize"]
+    tool_calls = [call for call in transport.calls if call[1].get("method") == "tools/call"]
+    assert len(initialize_calls) == 2
+    assert tool_calls[0][2]["Mcp-Session-Id"] == "synthetic-session-1"
+    assert tool_calls[1][2]["Mcp-Session-Id"] == "synthetic-session-2"
