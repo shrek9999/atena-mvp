@@ -4,6 +4,7 @@ on:
     paths:
       - "app.py"
       - "tests/**"
+      - "scripts/**"
       - "requirements.txt"
       - "README.md"
       - "AGENT_DISCOVERY_AND_VALUE.md"
