@@ -11,8 +11,8 @@ implementation is located.
 `atena_capabilities`, and called `atena_decide` with a fully synthetic
 fitness scenario. ATENA returned a valid `maintain` decision and action.
 
-The same run passed the complete offline regression suite: **118 tests passed**. The coordinator ledger now returns isolated snapshots, rejects non-JSON results and caps stored specialist results at 64 KB.
-Run: https://github.com/shrek9999/atena-mvp/actions/runs/41279900288
+The same run passed the complete offline regression suite: **120 tests passed**. The coordinator ledger now returns isolated snapshots, rejects non-JSON results and caps stored specialist results at 64 KB.
+Run: https://github.com/shrek9999/atena-mvp/actions/runs/41279949566
 
 ## Safety and scope
 - Network transport is injectable; unit tests use a synthetic in-memory transport.
@@ -20,7 +20,8 @@ Run: https://github.com/shrek9999/atena-mvp/actions/runs/41279900288
 - The live decision payload is synthetic and contains no user-specific or medical data.
 - The check uses the free `/decision` route through MCP, never `/paid/decision`.
 - Only `fitness` and `human_performance` tasks can route to ATENA.
-- Input is allowlisted to ATENA's documented decision fields and capped at 16 KB.
+- Coordinator task input must be JSON-compatible and is capped at 64 KB; ATENA input is allowlisted to documented decision fields and capped at 16 KB.
+- Specialist outputs must be JSON-compatible and are capped at 64 KB; returned task records are isolated snapshots.
 - No new Python dependencies were added.
 - No Render service, Cloudflare Worker, production deployment or user flow was changed.
 - The adapter does not persist session identifiers or task data.
