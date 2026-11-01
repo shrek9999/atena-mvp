@@ -1,4 +1,4 @@
-name: ATENA Decision Engine Tests
+name: ATENA Decision Engine Tests # Includes the one-off ZEUS live MCP gate
 on:
   pull_request:
     paths:
