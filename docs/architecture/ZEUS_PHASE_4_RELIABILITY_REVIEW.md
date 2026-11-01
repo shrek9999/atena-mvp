@@ -125,3 +125,26 @@ ZEUS is considered ready for a limited internal pilot only after the security ro
 - The optional live ATENA MCP compatibility smoke test failed because ATENA returned a tool error. This is separate from the offline ZEUS/Python and Worker checks and remains unresolved.
 - The dedicated ZEUS validation workflow was queued/pending at the time of this review; its separate completion result has not yet been confirmed.
 - An initial assertion failure in the existing restart test was due only to its expectation of insertion order; the test was corrected to assert the recovered task set, and the subsequent offline suite passed.
+
+## First usable version — operational activation (2026-11-01)
+
+### Production activation completed
+- Applied D1 migration 0002 to the EU database zeus-task-ledger; verified that recovery_code is present in zeus_tasks.
+- Rotated the exposed ZEUS_LEDGER_TOKEN in Cloudflare and the matching Render environment value. Rotated ZEUS_API_TOKEN in Render. Secret values are not stored in Git or printed in operational reports.
+- Deployed the updated Worker script with the D1 binding and retained secret binding.
+- Set ZEUS_LEDGER_URL explicitly on the Render service and deployed the current coordinator branch.
+- The Render service now starts the coordinator and completes its authenticated D1 recovery scan before the readiness endpoint responds. / remains a lightweight liveness probe; /health initializes the application and verifies the durable ledger path.
+- A live readiness request to https://zeus-coordinator.onrender.com/health returned HTTP 200 after authenticated Worker/D1 initialization.
+- The live ATENA MCP decision-path check and HERMES public-source probe both passed in CI.
+
+### Final CI evidence
+- ZEUS validation run #58: Python tests and Worker syntax/tests both passed.
+- ATENA Decision Engine Tests run #349: offline regression tests, Worker syntax/tests, live ATENA MCP decision check and HERMES public-source probe all passed.
+- Python regression suite: 174 passed.
+- Cloudflare Worker suite: 11 passed.
+
+### Remaining product boundary
+- This is the first operational internal coordinator version, not a customer-facing dashboard or autonomous long-running workflow engine.
+- Tasks are submitted through the authenticated HTTP API. Durable D1 records hold lifecycle metadata and events only; private objectives and specialist payloads are not persisted.
+- A restart blocks active orphan tasks rather than replaying them. The caller must explicitly submit a new task to retry.
+- No paid plans or new paid services were enabled.
