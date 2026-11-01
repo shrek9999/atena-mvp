@@ -35,7 +35,9 @@ class UrllibLedgerTransport:
             with urllib.request.urlopen(request, timeout=timeout) as response:
                 return response.status, response.read(65_536).decode("utf-8")
         except urllib.error.HTTPError as exc:
-            raise SpecialistUnavailable("ZEUS ledger Worker returned an HTTP error") from None
+            # Preserve HTTP status so callers can distinguish a missing task
+            # from an unavailable ledger without exposing response details.
+            return exc.code, exc.read(65_536).decode("utf-8", errors="replace")
         except (urllib.error.URLError, TimeoutError, OSError):
             raise SpecialistUnavailable("ZEUS ledger Worker is unreachable") from None
 
@@ -93,7 +95,9 @@ class LedgerWorkerClient:
                              body, expected=(200,))
 
     def get_task(self, task_id: str) -> dict[str, Any]:
-        return self._request("GET", "/v1/tasks/" + self._path_id(task_id), expected=(200,))
+        return self._request(
+            "GET", "/v1/tasks/" + self._path_id(task_id), expected=(200, 404)
+        )
 
     def list_tasks(self, limit: int = 50) -> dict[str, Any]:
         if not isinstance(limit, int) or limit < 1 or limit > 100:
