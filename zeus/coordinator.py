@@ -313,6 +313,24 @@ class Coordinator:
             return [dict(item) for item in tasks]
         return [self.as_dict(item) for item in self.list_tasks()][offset:offset + limit]
 
+    def get_task_events(self, task_id: str) -> list[dict[str, Any]] | None:
+        """Return append-only lifecycle events for a confirmed durable task."""
+        if self._ledger is None:
+            record = self.get(task_id)
+            if record is None:
+                return None
+            return []
+        task_response = self._ledger.get_task(task_id)
+        if task_response.get("error") == "not_found":
+            return None
+        if not isinstance(task_response.get("task"), dict):
+            raise SpecialistUnavailable("ZEUS ledger returned malformed task data")
+        response = self._ledger.get_events(task_id)
+        events = response.get("events")
+        if not isinstance(events, list) or any(not isinstance(item, dict) for item in events):
+            raise SpecialistUnavailable("ZEUS ledger returned malformed event data")
+        return [dict(item) for item in events]
+
     def recover_orphaned_tasks(self, limit: int = 100) -> list[str]:
         """Block every active durable task left behind by a prior process.
 
