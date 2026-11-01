@@ -6,6 +6,7 @@ adapter can be tested offline. No credentials or user-specific data are stored.
 from __future__ import annotations
 
 import json
+import threading
 import urllib.error
 import urllib.request
 from typing import Any, Protocol
@@ -57,19 +58,26 @@ class AtenaMCPAdapter:
         self._request_id = 0
         self._session_id: str | None = None
         self._protocol_version = "2025-03-26"
+        self._lock = threading.Lock()
 
     def __call__(self, request: TaskRequest) -> dict[str, Any]:
         if request.domain not in {"fitness", "human_performance"}:
             raise ValueError("ATENA accepts fitness and human_performance tasks only")
         payload = self._decision_payload(request)
-        self._initialize()
-        result = self._rpc("tools/call", {
-            "name": "atena_decide",
-            "arguments": {"payload": payload},
-        })
-        if result.get("isError"):
-            raise SpecialistUnavailable("ATENA decision tool returned an error")
-        return self._extract_tool_result(result)
+        # The hosted MCP server expires idle sessions. Open one session per
+        # decision and serialize calls so concurrent tasks cannot mix sessions.
+        with self._lock:
+            self._request_id = 0
+            self._session_id = None
+            self._protocol_version = "2025-03-26"
+            self._initialize()
+            result = self._rpc("tools/call", {
+                "name": "atena_decide",
+                "arguments": {"payload": payload},
+            })
+            if result.get("isError"):
+                raise SpecialistUnavailable("ATENA decision tool returned an error")
+            return self._extract_tool_result(result)
 
     @staticmethod
     def _decision_payload(request: TaskRequest) -> dict[str, Any]:
