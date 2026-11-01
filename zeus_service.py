@@ -44,6 +44,75 @@ def _public_metadata(data: dict[str, Any]) -> dict[str, Any]:
     return {key: data.get(key) for key in SAFE_TASK_FIELDS}
 
 
+def run_startup_smoke(ledger: LedgerWorkerClient, api_token: str) -> dict[str, Any]:
+    """Run one deterministic synthetic API lifecycle against the live D1 ledger.
+
+    This is opt-in via ZEUS_STARTUP_SMOKE=1. It uses a fixed, non-sensitive
+    task ID and a stub ATENA adapter; it never contacts a real specialist.
+    """
+    task_id = "zeus-internal-smoke-v1"
+    existing = ledger.get_task(task_id)
+    if isinstance(existing.get("task"), dict):
+        task = existing["task"]
+        if task.get("status") == "completed":
+            events = ledger.get_events(task_id).get("events", [])
+            expected = ["queued", "assigned", "running", "completed"]
+            if [event.get("to_status") for event in events] == expected:
+                return {"status": "already_completed", "task_id": task_id}
+        raise RuntimeError("ZEUS startup smoke task exists in an incomplete state")
+
+    coordinator = Coordinator(
+        adapters={"ATENA": lambda _task: {"smoke_test": "passed", "version": "v1"}},
+        ledger=ledger,
+    )
+    client = create_app(coordinator=coordinator, api_token=api_token).test_client()
+    auth = {"Authorization": "Bearer " + api_token}
+
+    unauthorized = client.get("/v1/tasks")
+    if unauthorized.status_code != 401:
+        raise RuntimeError("ZEUS startup smoke authentication check failed")
+
+    created = client.post("/v1/tasks", headers=auth, json={
+        "task_id": task_id,
+        "objective": "Synthetic ZEUS internal lifecycle validation",
+        "domain": "fitness",
+        "requires_approval": True,
+    })
+    if created.status_code != 201:
+        raise RuntimeError("ZEUS startup smoke task creation failed")
+
+    approved = client.post(f"/v1/tasks/{task_id}/approve", headers=auth)
+    if approved.status_code != 200:
+        raise RuntimeError("ZEUS startup smoke approval failed")
+
+    executed = client.post(f"/v1/tasks/{task_id}/run", headers=auth)
+    if executed.status_code != 200 or executed.get_json()["task"]["status"] != "completed":
+        raise RuntimeError("ZEUS startup smoke execution failed")
+
+    retrieved = client.get(f"/v1/tasks/{task_id}", headers=auth)
+    if retrieved.status_code != 200:
+        raise RuntimeError("ZEUS startup smoke durable read failed")
+    task = retrieved.get_json().get("task", {})
+    if task.get("status") != "completed" or "objective" in task or "payload" in task:
+        raise RuntimeError("ZEUS startup smoke metadata safety check failed")
+
+    event_response = client.get(f"/v1/tasks/{task_id}/events", headers=auth)
+    if event_response.status_code != 200:
+        raise RuntimeError("ZEUS startup smoke event read failed")
+    events = event_response.get_json().get("events", [])
+    if [event.get("to_status") for event in events] != [
+        "queued", "assigned", "running", "completed"
+    ]:
+        raise RuntimeError("ZEUS startup smoke event sequence was incomplete")
+
+    return {
+        "status": "passed",
+        "task_id": task_id,
+        "events": len(events),
+        "checks": ["authentication", "create", "approve", "run", "durable_read", "event_history"],
+    }
+
+
 def create_app(
     coordinator: Coordinator | None = None,
     api_token: str | None = None,
@@ -55,6 +124,18 @@ def create_app(
         ledger = LedgerWorkerClient.from_environment()
         coordinator = build_coordinator(ledger=ledger)
         coordinator.recover_orphaned_tasks()
+        if os.environ.get("ZEUS_STARTUP_SMOKE") == "1":
+            try:
+                result = run_startup_smoke(ledger, token)
+                logging.getLogger("zeus").info(
+                    "ZEUS startup smoke %s (task_id=%s, events=%s)",
+                    result["status"], result["task_id"], result.get("events", 0),
+                )
+            except Exception as exc:
+                logging.getLogger("zeus").error(
+                    "ZEUS startup smoke failed (%s): %s", type(exc).__name__, exc
+                )
+                raise RuntimeError("ZEUS startup smoke failed") from None
 
     app = Flask(__name__)
     app.config["MAX_CONTENT_LENGTH"] = MAX_BODY_BYTES
