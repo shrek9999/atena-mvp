@@ -227,3 +227,123 @@ def test_queued_task_dispatch_is_single_attempt_only():
     assert calls == ["single-dispatch"]
     with pytest.raises(ValueError, match="only queued"):
         coordinator.run(queued.task_id)
+
+
+class FakeDurableLedger:
+    def __init__(self, fail_on=None):
+        self.statuses = {}
+        self.transitions = []
+        self.fail_on = fail_on
+
+    def create_task(self, task_id, domain):
+        if self.fail_on == "create":
+            from zeus.coordinator import SpecialistUnavailable
+            raise SpecialistUnavailable("offline")
+        self.statuses[task_id] = "queued"
+        return {"status": "queued"}
+
+    def transition_task(self, task_id, from_status, to_status, error_code=None):
+        from zeus.coordinator import SpecialistUnavailable
+        source = from_status.value if isinstance(from_status, TaskStatus) else from_status
+        target = to_status.value if isinstance(to_status, TaskStatus) else to_status
+        if self.fail_on == target:
+            raise SpecialistUnavailable("offline")
+        assert self.statuses[task_id] == source
+        self.statuses[task_id] = target
+        self.transitions.append((task_id, source, target, error_code))
+        return {"task": {"status": target}}
+
+
+def test_durable_ledger_mirrors_confirmed_lifecycle_transitions():
+    ledger = FakeDurableLedger()
+    calls = []
+    coordinator = Coordinator(
+        adapters={"ATENA": lambda task: calls.append(task.task_id) or {"ok": True}},
+        ledger=ledger,
+    )
+    task = coordinator.submit(TaskRequest(
+        objective="Durable lifecycle", domain="fitness", task_id="durable-1"
+    ))
+
+    assert task.status is TaskStatus.COMPLETED
+    assert ledger.statuses["durable-1"] == "completed"
+    assert [entry[2] for entry in ledger.transitions] == [
+        "assigned", "running", "completed"
+    ]
+    assert calls == ["durable-1"]
+
+
+def test_durable_create_failure_does_not_create_local_task():
+    from zeus.coordinator import LedgerPersistenceUnavailable
+
+    coordinator = Coordinator(ledger=FakeDurableLedger(fail_on="create"))
+    with pytest.raises(LedgerPersistenceUnavailable):
+        coordinator.enqueue(TaskRequest(
+            objective="Do not accept without durable record",
+            domain="fitness",
+            task_id="durable-create-fail",
+        ))
+    assert coordinator.get("durable-create-fail") is None
+
+
+def test_durable_transition_failure_keeps_last_confirmed_local_status():
+    from zeus.coordinator import LedgerPersistenceUnavailable
+
+    ledger = FakeDurableLedger(fail_on="assigned")
+    calls = []
+    coordinator = Coordinator(
+        adapters={"ATENA": lambda task: calls.append(task.task_id) or {"ok": True}},
+        ledger=ledger,
+    )
+    queued = coordinator.enqueue(TaskRequest(
+        objective="Fail closed on assignment",
+        domain="fitness",
+        task_id="durable-assigned-fail",
+    ))
+
+    with pytest.raises(LedgerPersistenceUnavailable):
+        coordinator.run(queued.task_id)
+
+    assert coordinator.get(queued.task_id).status is TaskStatus.QUEUED
+    assert ledger.statuses[queued.task_id] == "queued"
+    assert calls == []
+
+
+def test_completion_write_failure_does_not_claim_task_completed():
+    from zeus.coordinator import LedgerPersistenceUnavailable
+
+    ledger = FakeDurableLedger(fail_on="completed")
+    coordinator = Coordinator(
+        adapters={"ATENA": lambda task: {"decision": "maintain"}},
+        ledger=ledger,
+    )
+    queued = coordinator.enqueue(TaskRequest(
+        objective="Completion persistence outage",
+        domain="fitness",
+        task_id="durable-complete-fail",
+    ))
+
+    with pytest.raises(LedgerPersistenceUnavailable):
+        coordinator.run(queued.task_id)
+
+    local = coordinator.get(queued.task_id)
+    assert local.status is TaskStatus.RUNNING
+    assert local.result == {"decision": "maintain"}
+    assert ledger.statuses[queued.task_id] == "running"
+
+
+def test_durable_cancel_write_failure_does_not_claim_cancellation():
+    from zeus.coordinator import LedgerPersistenceUnavailable
+
+    ledger = FakeDurableLedger()
+    coordinator = Coordinator(ledger=ledger)
+    queued = coordinator.enqueue(TaskRequest(
+        objective="Cancel safely", domain="fitness", task_id="durable-cancel"
+    ))
+    ledger.fail_on = "cancelled"
+
+    with pytest.raises(LedgerPersistenceUnavailable):
+        coordinator.cancel(queued.task_id)
+
+    assert coordinator.get(queued.task_id).status is TaskStatus.QUEUED
+    assert ledger.statuses[queued.task_id] == "queued"
