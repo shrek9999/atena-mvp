@@ -34,6 +34,11 @@ def _public_record(record) -> dict[str, Any]:
     return {key: data.get(key) for key in SAFE_TASK_FIELDS}
 
 
+def _public_metadata(data: dict[str, Any]) -> dict[str, Any]:
+    # Explicit allowlist protects the API if the ledger schema gains fields.
+    return {key: data.get(key) for key in SAFE_TASK_FIELDS}
+
+
 def create_app(
     coordinator: Coordinator | None = None,
     api_token: str | None = None,
@@ -112,15 +117,21 @@ def create_app(
 
     @app.get("/v1/tasks")
     def list_tasks():
-        tasks = [_public_record(item) for item in coordinator.list_tasks()]
+        try:
+            tasks = [_public_metadata(item) for item in coordinator.list_task_metadata()]
+        except Exception:
+            return jsonify({"error": "ledger_unavailable", "retryable": True}), 503
         return jsonify({"tasks": tasks})
 
     @app.get("/v1/tasks/<task_id>")
     def get_task(task_id: str):
-        record = coordinator.get(task_id)
+        try:
+            record = coordinator.get_task_metadata(task_id)
+        except Exception:
+            return jsonify({"error": "ledger_unavailable", "retryable": True}), 503
         if record is None:
             return jsonify({"error": "not_found"}), 404
-        return jsonify({"task": _public_record(record)})
+        return jsonify({"task": _public_metadata(record)})
 
     @app.post("/v1/tasks/<task_id>/approve")
     def approve_task(task_id: str):
