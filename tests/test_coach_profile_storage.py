@@ -300,3 +300,39 @@ def test_profile_preflight_allows_profile_token_and_rest_methods(monkeypatch, tm
     assert response.status_code == 204
     assert "PUT" in response.headers["Access-Control-Allow-Methods"]
     assert "X-Profile-Token" in response.headers["Access-Control-Allow-Headers"]
+
+
+def test_profile_rejects_equipment_not_supported_by_curated_catalogue(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    response = client.post(
+        "/coach/profile",
+        headers={"X-Pilot-Token": "pilot-test-secret"},
+        json={
+            "privacy_notice_acknowledged": True,
+            "privacy_notice_version": "test-v1",
+            "profile": {
+                "goal": "hypertrophy", "experience": "beginner",
+                "equipment": ["imaginary_machine"], "sessions_per_week": 2,
+                "session_minutes": 45,
+            },
+        },
+    )
+    assert response.status_code == 400
+
+
+def test_profile_storage_stays_disabled_without_privacy_approval(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    monkeypatch.setenv("ATENA_PRIVACY_NOTICE_APPROVED", "false")
+    response = client.post(
+        "/coach/profile",
+        headers={"X-Pilot-Token": "pilot-test-secret"},
+        json={
+            "privacy_notice_acknowledged": True,
+            "privacy_notice_version": "test-v1",
+            "profile": {
+                "goal": "hypertrophy", "experience": "beginner", "equipment": [],
+                "sessions_per_week": 2, "session_minutes": 45,
+            },
+        },
+    )
+    assert response.status_code == 503
