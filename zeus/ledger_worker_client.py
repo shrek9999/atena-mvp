@@ -85,12 +85,15 @@ class LedgerWorkerClient:
         from_status: TaskStatus | str,
         to_status: TaskStatus | str,
         error_code: str | None = None,
+        recovery_code: str | None = None,
     ) -> dict[str, Any]:
         source = from_status.value if isinstance(from_status, TaskStatus) else from_status
         target = to_status.value if isinstance(to_status, TaskStatus) else to_status
         body = {"from_status": source, "to_status": target}
         if error_code is not None:
             body["error_code"] = error_code
+        if recovery_code is not None:
+            body["recovery_code"] = recovery_code
         return self._request("POST", "/v1/tasks/" + self._path_id(task_id) + "/status",
                              body, expected=(200,))
 
