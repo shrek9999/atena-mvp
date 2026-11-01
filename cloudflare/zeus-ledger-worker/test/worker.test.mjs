@@ -11,13 +11,13 @@ class FakeStatement {
     if (this.sql.startsWith("INSERT INTO zeus_tasks")) {
       const [task_id, domain, specialist, created_at, updated_at] = this.params;
       if (this.db.tasks.has(task_id)) throw new Error("duplicate");
-      const row = { task_id, domain, specialist, status: "queued", created_at, updated_at, started_at: null, completed_at: null, expires_at: null, attempt_count: 0, error_code: null };
+      const row = { task_id, domain, specialist, status: "queued", created_at, updated_at, started_at: null, completed_at: null, expires_at: null, attempt_count: 0, error_code: null, recovery_code: null };
       this.db.tasks.set(task_id, row);
       this.db.events.push({ event_id: this.db.events.length + 1, task_id, event_type: "created", from_status: null, to_status: "queued", occurred_at: created_at });
       return { meta: { changes: 1 } };
     }
     if (this.sql.startsWith("UPDATE zeus_tasks SET status")) {
-      const [status, updated_at, started_at, completed_at, expires_at, increment, error_code, task_id, from_status] = this.params;
+      const [status, updated_at, started_at, completed_at, expires_at, increment, error_code, recovery_code, task_id, from_status] = this.params;
       const row = this.db.tasks.get(task_id);
       if (!row || row.status !== from_status) return { meta: { changes: 0 } };
       const previous = row.status;
@@ -25,7 +25,7 @@ class FakeStatement {
       row.started_at = started_at || row.started_at;
       row.completed_at = completed_at || row.completed_at;
       row.expires_at = expires_at || row.expires_at;
-      row.attempt_count += increment; row.error_code = error_code;
+      row.attempt_count += increment; row.error_code = error_code; row.recovery_code = recovery_code;
       this.db.events.push({ event_id: this.db.events.length + 1, task_id, event_type: "status_changed", from_status: previous, to_status: status, occurred_at: updated_at });
       return { meta: { changes: 1 } };
     }
@@ -132,5 +132,38 @@ test("rejects user content fields instead of persisting them", async () => {
     task_id: "private-1", domain: "fitness", specialist: "ATENA",
     objective: "private objective", payload: { health: "private" },
   }), env());
+  assert.equal(response.status, 400);
+});
+
+
+test("blocks queued orphan tasks only with the explicit runtime recovery marker", async () => {
+  const bindings = env();
+  await worker.fetch(request("/v1/tasks", "POST", {
+    task_id: "orphan-queued", domain: "fitness", specialist: "ATENA",
+  }), bindings);
+
+  const rejected = await worker.fetch(request("/v1/tasks/orphan-queued/status", "POST", {
+    from_status: "queued", to_status: "blocked",
+  }), bindings);
+  assert.equal(rejected.status, 400);
+
+  const recovered = await worker.fetch(request("/v1/tasks/orphan-queued/status", "POST", {
+    from_status: "queued", to_status: "blocked", recovery_code: "runtime_restarted",
+  }), bindings);
+  assert.equal(recovered.status, 200);
+  const data = await recovered.json();
+  assert.equal(data.task.status, "blocked");
+  assert.equal(data.task.recovery_code, "runtime_restarted");
+  assert.equal(bindings.ZEUS_DB.events.length, 2);
+});
+
+test("rejects unknown or misplaced recovery markers", async () => {
+  const bindings = env();
+  await worker.fetch(request("/v1/tasks", "POST", {
+    task_id: "orphan-invalid", domain: "fitness", specialist: "ATENA",
+  }), bindings);
+  const response = await worker.fetch(request("/v1/tasks/orphan-invalid/status", "POST", {
+    from_status: "queued", to_status: "blocked", recovery_code: "other",
+  }), bindings);
   assert.equal(response.status, 400);
 });
