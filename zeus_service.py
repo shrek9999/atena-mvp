@@ -115,6 +115,152 @@ def run_startup_smoke(ledger: LedgerWorkerClient, api_token: str) -> dict[str, A
     }
 
 
+
+def run_live_agent_smoke(
+    coordinator: Coordinator,
+    ledger: LedgerWorkerClient,
+    api_token: str,
+) -> dict[str, Any]:
+    """Exercise both real specialist adapters through ZEUS with synthetic inputs.
+
+    Results remain in coordinator memory only. The D1 ledger receives only
+    task metadata and lifecycle events. This check is opt-in and non-blocking
+    for service availability.
+    """
+    client = create_app(coordinator=coordinator, api_token=api_token).test_client()
+    auth = {"Authorization": "Bearer " + api_token}
+    expected_events = ["queued", "assigned", "running", "completed"]
+    atena_payload = {
+        "goal": {"primary": "strength", "secondary": "aerobic_fitness"},
+        "person": {},
+        "constraints": {"available_time": "two sessions per week"},
+        "state": {
+            "performance": "stable",
+            "strength": "stable",
+            "rpe": 7,
+            "recovery": "stable",
+            "symptoms": "none",
+            "sleep": "normal",
+            "wellness": "normal",
+        },
+        "response": {
+            "performance_response": "stable",
+            "recovery_response": "stable",
+        },
+        "question": "Should the current training stimulus be maintained?",
+        "history": {},
+    }
+    tasks = [
+        {
+            "task_id": "zeus-live-atena-v1",
+            "specialist": "ATENA",
+            "domain": "fitness",
+            "objective": "Synthetic ATENA connectivity check; no personal data.",
+            "payload": atena_payload,
+        },
+        {
+            "task_id": "zeus-live-hermes-v1",
+            "specialist": "HERMES",
+            "domain": "markets",
+            "objective": "Synthetic HERMES public-source connectivity check; no investment recommendation.",
+            "payload": {
+                "research_type": "macro",
+                "subject": "Official public macro source connectivity check",
+                "time_horizon": "unspecified",
+                "source_urls": [
+                    "https://fred.stlouisfed.org/graph/fredgraph.csv?id=CPIAUCSL",
+                    "https://www.bls.gov/news.release/cpi.toc.htm",
+                    "https://www.federalreserve.gov/newsevents/pressreleases.htm",
+                ],
+            },
+        },
+    ]
+    agent_results: dict[str, dict[str, Any]] = {}
+
+    for item in tasks:
+        task_id = item["task_id"]
+        existing = ledger.get_task(task_id)
+        if isinstance(existing.get("task"), dict):
+            task = existing["task"]
+            if task.get("status") == "completed":
+                events = ledger.get_events(task_id).get("events", [])
+                if [event.get("to_status") for event in events] == expected_events:
+                    agent_results[item["specialist"]] = {
+                        "status": "already_completed",
+                        "events": len(events),
+                    }
+                    continue
+            raise RuntimeError("ZEUS live-agent smoke task exists in an incomplete state")
+
+        created = client.post("/v1/tasks", headers=auth, json={
+            "task_id": task_id,
+            "objective": item["objective"],
+            "domain": item["domain"],
+            "payload": item["payload"],
+            "requires_approval": False,
+        })
+        if created.status_code != 201:
+            raise RuntimeError(
+                f"ZEUS live-agent smoke could not create {item['specialist']} task"
+            )
+
+        executed = client.post(f"/v1/tasks/{task_id}/run", headers=auth)
+        execution_task = (executed.get_json() or {}).get("task", {})
+        if executed.status_code != 200 or execution_task.get("status") != "completed":
+            raise RuntimeError(
+                f"ZEUS live-agent smoke execution failed for {item['specialist']}"
+            )
+
+        record = coordinator.get(task_id)
+        result = record.result if record is not None else None
+        if not isinstance(result, dict):
+            raise RuntimeError(
+                f"ZEUS live-agent smoke returned no structured {item['specialist']} result"
+            )
+        if item["specialist"] == "ATENA":
+            valid_decisions = {
+                "maintain", "progress", "reduce", "modify", "collect_data", "refer"
+            }
+            if (
+                result.get("decision") not in valid_decisions
+                or not isinstance(result.get("action"), str)
+                or not result["action"].strip()
+            ):
+                raise RuntimeError("ATENA synthetic decision contract was invalid")
+            evidence_count = 0
+        else:
+            documents = result.get("source_documents")
+            if result.get("status") != "completed" or not isinstance(documents, list) or not documents:
+                raise RuntimeError("HERMES did not retrieve an allowlisted public source")
+            evidence_count = len(documents)
+
+        retrieved = client.get(f"/v1/tasks/{task_id}", headers=auth)
+        if retrieved.status_code != 200 or retrieved.get_json().get("task", {}).get("status") != "completed":
+            raise RuntimeError(
+                f"ZEUS live-agent smoke durable read failed for {item['specialist']}"
+            )
+        event_response = client.get(f"/v1/tasks/{task_id}/events", headers=auth)
+        events = (event_response.get_json() or {}).get("events", [])
+        if (
+            event_response.status_code != 200
+            or [event.get("to_status") for event in events] != expected_events
+        ):
+            raise RuntimeError(
+                f"ZEUS live-agent smoke event history failed for {item['specialist']}"
+            )
+        agent_results[item["specialist"]] = {
+            "status": "passed",
+            "events": len(events),
+            "evidence_count": evidence_count,
+        }
+
+    return {
+        "status": "passed",
+        "agents": agent_results,
+        "checks": ["ZEUS routing", "specialist execution", "durable lifecycle", "event history"],
+        "results_persisted": False,
+    }
+
 def create_app(
     coordinator: Coordinator | None = None,
     api_token: str | None = None,
@@ -138,6 +284,21 @@ def create_app(
                     "ZEUS startup smoke failed (%s): %s", type(exc).__name__, exc
                 )
                 raise RuntimeError("ZEUS startup smoke failed") from None
+        if os.environ.get("ZEUS_LIVE_AGENT_SMOKE") == "1":
+            try:
+                result = run_live_agent_smoke(coordinator, ledger, token)
+                logging.getLogger("zeus").info(
+                    "ZEUS live-agent smoke %s (agents=%s, results_persisted=%s)",
+                    result["status"],
+                    ",".join(sorted(result["agents"])),
+                    result["results_persisted"],
+                )
+            except Exception as exc:
+                # This opt-in integration probe must never make the public
+                # coordinator unavailable when a specialist is temporarily down.
+                logging.getLogger("zeus").error(
+                    "ZEUS live-agent smoke failed (%s)", type(exc).__name__
+                )
 
     app = Flask(__name__)
     app.config["MAX_CONTENT_LENGTH"] = MAX_BODY_BYTES
