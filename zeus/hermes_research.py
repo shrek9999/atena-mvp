@@ -198,7 +198,7 @@ class HermesResearchAdapter:
                     "excerpt": text[:MAX_EXCERPT_CHARS],
                     "truncated": len(text) > MAX_EXCERPT_CHARS,
                 })
-            except (ValueError, SpecialistUnavailable):
+            except Exception:
                 failures.append({"url": url, "reason": "source_rejected_or_unavailable"})
 
         status = "completed" if documents else ("blocked" if not urls else "failed")
