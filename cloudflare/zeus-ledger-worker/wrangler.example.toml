@@ -7,6 +7,7 @@ compatibility_date = "2026-11-01"
 binding = "ZEUS_DB"
 database_name = "zeus-task-ledger"
 database_id = "FILL_AFTER_EXPLICIT_APPROVAL"
+migrations_dir = "migrations"
 
 # Set ZEUS_LEDGER_TOKEN as a Worker secret after approval.
 # Never put the token in this file or commit it to Git.
