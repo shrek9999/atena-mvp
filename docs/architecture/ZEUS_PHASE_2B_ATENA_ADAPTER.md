@@ -6,20 +6,24 @@ factory that wires fitness/human-performance tasks to the existing ATENA MCP
 service. HERMES remains deliberately unregistered until its actual
 implementation is located.
 
-The complete GitHub Actions regression suite passed: **115 tests passed** on
-2026-11-01. This includes synthetic end-to-end coordinator-to-adapter tests
-using an in-memory MCP transport.
+**Live integration verified on 2026-11-01.** GitHub Actions executed the actual
+`AtenaMCPAdapter` against `https://atena-mcp.onrender.com/mcp`, discovered
+`atena_capabilities`, and called `atena_decide` with a fully synthetic
+fitness scenario. ATENA returned a valid `maintain` decision and action.
+
+The same run passed the complete offline regression suite: **115 tests passed**.
+Run: https://github.com/shrek9999/atena-mvp/actions/runs/41279734851
 
 ## Safety and scope
-- Network transport is injectable; CI tests use a synthetic in-memory transport.
+- Network transport is injectable; unit tests use a synthetic in-memory transport.
+- The live smoke check calls only `atena_capabilities` and `atena_decide`.
+- The live decision payload is synthetic and contains no user-specific or medical data.
+- The check uses the free `/decision` route through MCP, never `/paid/decision`.
 - Only `fitness` and `human_performance` tasks can route to ATENA.
 - Input is allowlisted to ATENA's documented decision fields and capped at 16 KB.
-- No user-specific or medical data is included in tests.
 - No new Python dependencies were added.
-- No Render service, Cloudflare Worker, production API or live user flow was changed.
+- No Render service, Cloudflare Worker, production deployment or user flow was changed.
 - The adapter does not persist session identifiers or task data.
-- Remote MCP compatibility has not yet been verified; CI proves protocol handling
-  against a synthetic transport, not the live remote endpoint.
 
 ## MCP exchange
 The adapter performs MCP `initialize`, sends
@@ -40,8 +44,9 @@ No HERMES/Pozejdon implementation was identified in these connected resources.
 This is an inventory result, not proof that no implementation exists elsewhere.
 
 ## Next gate
-1. Run a synthetic, read-only live MCP compatibility check against ATENA
-   (capabilities/tool discovery only; no personal data).
-2. Locate or define HERMES source and interface before enabling market routing.
-3. Keep ZEUS isolated from production until the live adapter check, payload
-   contract review, persistent task storage and operational controls are complete.
+1. Locate the actual HERMES source and interface, or design its contract if no
+   implementation exists.
+2. Harden task-ledger isolation, result validation and lifecycle controls.
+3. Define persistent task storage separately from ATENA's coaching D1 database.
+4. Keep ZEUS isolated from production until those controls and end-to-end
+   specialist routing are complete.
