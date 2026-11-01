@@ -11,8 +11,8 @@ implementation is located.
 `atena_capabilities`, and called `atena_decide` with a fully synthetic
 fitness scenario. ATENA returned a valid `maintain` decision and action.
 
-The same run passed the complete offline regression suite: **117 tests passed**. The coordinator ledger now returns isolated snapshots, rejects non-JSON results and caps stored specialist results at 64 KB.
-Run: https://github.com/shrek9999/atena-mvp/actions/runs/41279814196
+The same run passed the complete offline regression suite: **118 tests passed**. The coordinator ledger now returns isolated snapshots, rejects non-JSON results and caps stored specialist results at 64 KB.
+Run: https://github.com/shrek9999/atena-mvp/actions/runs/41279900288
 
 ## Safety and scope
 - Network transport is injectable; unit tests use a synthetic in-memory transport.
@@ -29,8 +29,10 @@ Run: https://github.com/shrek9999/atena-mvp/actions/runs/41279814196
 The adapter performs MCP `initialize`, sends
 `notifications/initialized`, then invokes `tools/call` for `atena_decide`.
 It supports JSON and Server-Sent Events JSON-RPC responses and carries the
-MCP session/protocol headers when supplied. The factory registers this adapter
-under the existing `ATENA` specialist route.
+MCP session/protocol headers when supplied. It opens a fresh session per
+ATENA decision because the hosted MCP service expires idle sessions, and
+serializes adapter calls to prevent session cross-talk. The factory registers
+this adapter under the existing `ATENA` specialist route.
 
 ## HERMES discovery
 The connected account inventory currently shows:
