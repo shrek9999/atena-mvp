@@ -46,3 +46,31 @@ The next safe step is to create or identify a dedicated ZEUS runtime, integrate 
 4. Rotate the Worker bearer secret when the ZEUS runtime is ready, and set matching secrets only on that runtime.
 5. Run an authenticated end-to-end smoke test and verify unauthenticated access remains denied.
 6. Keep the feature PR draft and unmerged pending review and explicit approval for any production rollout.
+
+
+## 5. Separate ZEUS runtime — 2026-11-01
+
+A dedicated Render Free service has now been created and deployed:
+
+- Service: `zeus-coordinator`
+- URL: https://zeus-coordinator.onrender.com
+- Service ID: `srv-dbje8m67bikc73f6sjjg`
+- Region: Frankfurt
+- Runtime: Python 3.12.15 / Gunicorn
+- Auto-deploy: disabled
+- Build and deploy status: live
+- Public root and `/health`: HTTP 200 verified.
+- Task API: HTTP 503 until secure environment secrets are configured; this is intentional fail-closed behavior.
+
+The Render service has only the non-secret ledger URL and ATENA MCP URL configured. The matching ledger bearer secret and the separate ZEUS API bearer token must be entered directly in Cloudflare/Render dashboards. They are not copied into chat, logs or Git. ATENA's environment and deployments remain unchanged.
+
+## 6. Automated verification — 2026-11-01
+
+Latest successful runs:
+- 159 Python tests passed.
+- 8 Node Worker tests passed.
+- Worker syntax check passed.
+- Live synthetic ATENA MCP compatibility check: PASS.
+- HERMES live-source probe: SKIPPED because FRED was unavailable from the GitHub runner; offline HERMES safety tests passed.
+
+The authenticated end-to-end ZEUS → Worker → D1 lifecycle remains pending the direct secret configuration described above.
