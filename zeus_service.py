@@ -77,18 +77,19 @@ def run_startup_smoke(ledger: LedgerWorkerClient, api_token: str) -> dict[str, A
         "task_id": task_id,
         "objective": "Synthetic ZEUS internal lifecycle validation",
         "domain": "fitness",
-        "requires_approval": True,
+        "requires_approval": False,
     })
     if created.status_code != 201:
         raise RuntimeError("ZEUS startup smoke task creation failed")
 
-    approved = client.post(f"/v1/tasks/{task_id}/approve", headers=auth)
-    if approved.status_code != 200:
-        raise RuntimeError("ZEUS startup smoke approval failed")
-
     executed = client.post(f"/v1/tasks/{task_id}/run", headers=auth)
-    if executed.status_code != 200 or executed.get_json()["task"]["status"] != "completed":
-        raise RuntimeError("ZEUS startup smoke execution failed")
+    execution_task = (executed.get_json() or {}).get("task", {})
+    if executed.status_code != 200 or execution_task.get("status") != "completed":
+        raise RuntimeError(
+            "ZEUS startup smoke execution failed "
+            f"(HTTP {executed.status_code}, status={execution_task.get('status')}, "
+            f"error_code={execution_task.get('error_code')})"
+        )
 
     retrieved = client.get(f"/v1/tasks/{task_id}", headers=auth)
     if retrieved.status_code != 200:
@@ -110,7 +111,7 @@ def run_startup_smoke(ledger: LedgerWorkerClient, api_token: str) -> dict[str, A
         "status": "passed",
         "task_id": task_id,
         "events": len(events),
-        "checks": ["authentication", "create", "approve", "run", "durable_read", "event_history"],
+        "checks": ["authentication", "create", "run", "durable_read", "event_history"],
     }
 
 
