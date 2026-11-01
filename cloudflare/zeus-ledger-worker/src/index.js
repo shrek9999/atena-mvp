@@ -8,7 +8,7 @@ const SPECIALIST_BY_DOMAIN = {
   investment_research: "HERMES",
 };
 const TRANSITIONS = {
-  queued: new Set(["assigned", "cancelled"]),
+  queued: new Set(["assigned", "blocked", "cancelled"]),
   assigned: new Set(["running", "blocked", "cancelled"]),
   running: new Set(["completed", "failed", "blocked"]),
 };
@@ -18,6 +18,7 @@ const ERROR_CODES = new Set([
   "specialist_execution_failed",
   "cancelled_by_request",
 ]);
+const RECOVERY_CODES = new Set(["runtime_restarted"]);
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -97,7 +98,7 @@ async function handle(request, env) {
     const rawLimit = Number(url.searchParams.get("limit") || 50);
     const limit = Number.isInteger(rawLimit) ? Math.max(1, Math.min(MAX_LIST_LIMIT, rawLimit)) : 50;
     const result = await env.ZEUS_DB.prepare(
-      "SELECT task_id, domain, specialist, status, created_at, updated_at, started_at, completed_at, expires_at, attempt_count, error_code FROM zeus_tasks ORDER BY created_at DESC LIMIT ?"
+      "SELECT task_id, domain, specialist, status, created_at, updated_at, started_at, completed_at, expires_at, attempt_count, error_code, recovery_code FROM zeus_tasks ORDER BY created_at DESC LIMIT ?"
     ).bind(limit).all();
     return json({ tasks: result.results || [] });
   }
@@ -120,7 +121,7 @@ async function handle(request, env) {
       return json({ error: error.message === "body_too_large" ? "body_too_large" : "invalid_json" }, 400);
     }
     if (!body || typeof body !== "object" || Array.isArray(body)) return json({ error: "invalid_body" }, 400);
-    if (Object.keys(body).some((key) => !["from_status", "to_status", "error_code"].includes(key))) return json({ error: "unknown_field" }, 400);
+    if (Object.keys(body).some((key) => !["from_status", "to_status", "error_code", "recovery_code"].includes(key))) return json({ error: "unknown_field" }, 400);
     const fromStatus = body.from_status;
     const toStatus = body.to_status;
     if (!TRANSITIONS[fromStatus] || !TRANSITIONS[fromStatus].has(toStatus)) {
@@ -128,14 +129,21 @@ async function handle(request, env) {
     }
     const errorCode = body.error_code || null;
     if (errorCode !== null && !ERROR_CODES.has(errorCode)) return json({ error: "invalid_error_code" }, 400);
+    const recoveryCode = body.recovery_code || null;
+    if (recoveryCode !== null && (!RECOVERY_CODES.has(recoveryCode) || toStatus !== "blocked")) {
+      return json({ error: "invalid_recovery_code" }, 400);
+    }
+    if (fromStatus === "queued" && toStatus === "blocked" && recoveryCode !== "runtime_restarted") {
+      return json({ error: "invalid_transition" }, 400);
+    }
 
     const startedAt = toStatus === "running" ? now : null;
     const completedAt = TERMINAL.has(toStatus) ? now : null;
     const expiresAt = TERMINAL.has(toStatus) ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : null;
     const attemptIncrement = toStatus === "running" ? 1 : 0;
     const result = await env.ZEUS_DB.prepare(
-      "UPDATE zeus_tasks SET status = ?, updated_at = ?, started_at = COALESCE(?, started_at), completed_at = COALESCE(?, completed_at), expires_at = COALESCE(?, expires_at), attempt_count = attempt_count + ?, error_code = ? WHERE task_id = ? AND status = ?"
-    ).bind(toStatus, now, startedAt, completedAt, expiresAt, attemptIncrement, errorCode, taskId, fromStatus).run();
+      "UPDATE zeus_tasks SET status = ?, updated_at = ?, started_at = COALESCE(?, started_at), completed_at = COALESCE(?, completed_at), expires_at = COALESCE(?, expires_at), attempt_count = attempt_count + ?, error_code = ?, recovery_code = ? WHERE task_id = ? AND status = ?"
+    ).bind(toStatus, now, startedAt, completedAt, expiresAt, attemptIncrement, errorCode, recoveryCode, taskId, fromStatus).run();
     if (!result.meta || result.meta.changes !== 1) return json({ error: "task_missing_or_state_conflict" }, 409);
     const task = await env.ZEUS_DB.prepare(
       "SELECT task_id, domain, specialist, status, created_at, updated_at, started_at, completed_at, expires_at, attempt_count, error_code FROM zeus_tasks WHERE task_id = ?"
