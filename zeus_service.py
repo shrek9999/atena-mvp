@@ -480,7 +480,7 @@ def create_app(
     def health():
         return jsonify({"status": "ok", "service": "ZEUS"})
 
-    @app.get("/dashboard")
+    @app.get("/dashboard", strict_slashes=False)
     def dashboard():
         response = make_response(DASHBOARD_HTML)
         response.headers["Cache-Control"] = "no-store"
