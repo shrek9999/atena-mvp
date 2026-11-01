@@ -150,7 +150,7 @@ class SmokeLedger:
         now = datetime.now(timezone.utc).isoformat()
         row = {
             "task_id": task_id, "domain": domain,
-            "specialist": "ATENA", "status": "queued",
+            "specialist": "ATENA" if domain in {"fitness", "human_performance"} else "HERMES", "status": "queued",
             "created_at": now, "updated_at": now,
             "attempt_count": 0, "error_code": None, "recovery_code": None,
         }
@@ -202,6 +202,37 @@ def test_opt_in_startup_smoke_exercises_authenticated_durable_api_lifecycle():
     assert second["status"] == "already_completed"
     assert len(ledger.tasks) == 1
 
+
+
+
+def test_live_agent_smoke_routes_synthetic_tasks_to_both_specialists():
+    from zeus_service import run_live_agent_smoke
+
+    ledger = SmokeLedger()
+    coordinator = Coordinator(
+        adapters={
+            "ATENA": lambda _task: {
+                "decision": "maintain",
+                "action": "Maintain the current synthetic training stimulus.",
+            },
+            "HERMES": lambda _task: {
+                "agent": "HERMES",
+                "status": "completed",
+                "source_documents": [{"url": "https://www.bls.gov/news.release/cpi.toc.htm"}],
+            },
+        },
+        ledger=ledger,
+    )
+
+    result = run_live_agent_smoke(coordinator, ledger, TOKEN)
+
+    assert result["status"] == "passed"
+    assert set(result["agents"]) == {"ATENA", "HERMES"}
+    assert result["agents"]["ATENA"]["status"] == "passed"
+    assert result["agents"]["HERMES"]["evidence_count"] == 1
+    assert result["results_persisted"] is False
+    assert ledger.tasks["zeus-live-atena-v1"]["status"] == "completed"
+    assert ledger.tasks["zeus-live-hermes-v1"]["status"] == "completed"
 
 
 def test_lazy_wsgi_initialization_is_serialized_across_threads(monkeypatch):
