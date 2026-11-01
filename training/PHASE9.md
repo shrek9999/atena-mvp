@@ -91,7 +91,7 @@ Header: `X-Profile-Token`
 
 The write endpoint accepts only structured session data and catalogue exercise IDs. No free-text notes are accepted.
 
-### Withdraw or grant health-data consent
+### Review training progress\n\n`GET /coach/profile/{profile_id}/progress`\n\nHeader: `X-Profile-Token`\n\nReturns completed-session counts, recent weekly frequency and per-exercise recorded load/repetition trends. It is descriptive only: no estimated 1RM, medical interpretation or automatic load increase is performed. A reported discomfort flag or a hard latest session is surfaced as a caution flag, not a diagnosis.\n\n### Withdraw or grant health-data consent
 
 `POST /coach/profile/{profile_id}/consent` with `{"health_data_consent": false}` withdraws consent and deletes previously stored discomfort flags. Setting it to `true` is an explicit opt-in for future binary discomfort feedback.
 
@@ -105,7 +105,7 @@ Header: `X-Profile-Token`
 
 - User-facing sign-in, secure token recovery/rotation and multi-device access.
 - A reviewed privacy notice and complete GDPR operational process.
-- Automated progression calculations from longitudinal logs.
+- User-facing descriptive progress summaries from longitudinal logs (new `GET /coach/profile/{profile_id}/progress` endpoint); these report recorded session frequency and per-exercise load/repetition trends only, without automatic load changes.
 - Export/download of a user's full history.
 - Retention expiry and account recovery.
 - Front-end integration and end-to-end user acceptance testing.
