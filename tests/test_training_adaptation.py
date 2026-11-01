@@ -22,22 +22,23 @@ def test_discomfort_always_blocks_progression():
     assert result["volume_change"] == "none_automatic"
 
 
-def test_incomplete_latest_session_requests_feedback():
+def test_incomplete_latest_session_triggers_conservative_volume_review():
     result = assess_next_step([
         record("2026-11-01", completed=False),
         record("2026-10-29", difficulty="easy"),
     ])
-    assert result["decision"] == "collect_feedback"
+    assert result["decision"] == "review_volume_reduction"
+    assert result["volume_change"] == "reduce_next_program_sets"
     assert result["progression_allowed"] is False
 
 
-def test_two_hard_sessions_trigger_volume_review_not_automatic_reduction():
+def test_hard_session_triggers_next_program_volume_reduction():
     result = assess_next_step([
         record("2026-11-01", difficulty="hard"),
         record("2026-10-29", difficulty="hard"),
     ])
     assert result["decision"] == "review_volume_reduction"
-    assert result["volume_change"] == "review_main_exercise_volume"
+    assert result["volume_change"] == "reduce_next_program_sets"
     assert result["progression_allowed"] is False
 
 
