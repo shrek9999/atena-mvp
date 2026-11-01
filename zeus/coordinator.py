@@ -290,6 +290,29 @@ class Coordinator:
             self._purge_expired_locked()
             return [self._snapshot(record) for record in self._tasks.values()]
 
+    def get_task_metadata(self, task_id: str) -> dict[str, Any] | None:
+        """Read task metadata from the durable ledger when configured."""
+        if self._ledger is not None:
+            response = self._ledger.get_task(task_id)
+            if response.get("error") == "not_found":
+                return None
+            task = response.get("task")
+            if not isinstance(task, dict):
+                raise SpecialistUnavailable("ZEUS ledger returned malformed task data")
+            return dict(task)
+        record = self.get(task_id)
+        return self.as_dict(record) if record is not None else None
+
+    def list_task_metadata(self, limit: int = 50) -> list[dict[str, Any]]:
+        """List durable task metadata; never return objectives or specialist results."""
+        if self._ledger is not None:
+            response = self._ledger.list_tasks(limit=limit)
+            tasks = response.get("tasks")
+            if not isinstance(tasks, list) or any(not isinstance(item, dict) for item in tasks):
+                raise SpecialistUnavailable("ZEUS ledger returned malformed task data")
+            return [dict(item) for item in tasks]
+        return [self.as_dict(item) for item in self.list_tasks()]
+
     def _finish(self, record: TaskRecord, status: TaskStatus) -> None:
         self._transition(record, status)
         now = self._clock()
