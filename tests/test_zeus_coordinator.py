@@ -89,3 +89,37 @@ def test_ledger_capacity_is_bounded():
     coordinator.submit(TaskRequest(objective="First", domain="fitness", task_id="first"))
     with pytest.raises(RuntimeError, match="capacity"):
         coordinator.submit(TaskRequest(objective="Second", domain="fitness", task_id="second"))
+
+
+
+def test_returned_records_cannot_mutate_internal_ledger():
+    coordinator = Coordinator(adapters={"ATENA": lambda task: {"decision": {"value": "maintain"}}})
+    returned = coordinator.submit(
+        TaskRequest(objective="Snapshot isolation", domain="fitness", task_id="snapshot-1")
+    )
+    returned.status = TaskStatus.FAILED
+    returned.result["decision"]["value"] = "corrupted"
+
+    stored = coordinator.get("snapshot-1")
+    assert stored.status is TaskStatus.COMPLETED
+    assert stored.result == {"decision": {"value": "maintain"}}
+
+    listed = coordinator.list_tasks()
+    listed[0].result["decision"]["value"] = "also corrupted"
+    assert coordinator.get("snapshot-1").result == {"decision": {"value": "maintain"}}
+
+
+def test_rejects_non_json_and_oversized_specialist_results():
+    non_json = Coordinator(adapters={"ATENA": lambda task: {"bad": object()}})
+    task = non_json.submit(
+        TaskRequest(objective="Reject non JSON", domain="fitness", task_id="bad-json")
+    )
+    assert task.status is TaskStatus.FAILED
+    assert task.error_code == "specialist_execution_failed"
+
+    oversized = Coordinator(adapters={"ATENA": lambda task: {"large": "x" * 65_000}})
+    task = oversized.submit(
+        TaskRequest(objective="Reject oversized", domain="fitness", task_id="large-result")
+    )
+    assert task.status is TaskStatus.FAILED
+    assert task.error_code == "specialist_execution_failed"
