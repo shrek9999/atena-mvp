@@ -180,7 +180,7 @@ def coach_storage_check():
         return jsonify({"database": "reachable", "user_data_storage": "still_disabled"}), 200
     except StorageUnavailable as exc:
         logger.warning("ATENA database connectivity check failed: %s", type(exc).__name__)
-        return jsonify({"database": "unavailable", "user_data_storage": "still_disabled"}), 503
+        return jsonify({"database": "unavailable", "reason": exc.reason, "user_data_storage": "still_disabled"}), 503
 
 
 # Longitudinal profile storage is opt-in and disabled by default. Hosted use
