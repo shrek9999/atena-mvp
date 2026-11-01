@@ -55,7 +55,7 @@ def create_app(
 
     @app.before_request
     def require_authentication():
-        if request.path == "/health":
+        if request.path in {"/", "/health"}:
             return None
         supplied = request.headers.get("Authorization", "")
         expected = "Bearer " + token
