@@ -313,6 +313,38 @@ class Coordinator:
             return [dict(item) for item in tasks]
         return [self.as_dict(item) for item in self.list_tasks()]
 
+    def recover_orphaned_tasks(self, limit: int = 100) -> list[str]:
+        """Block active durable tasks left behind by a prior process.
+
+        Request bodies are intentionally not persisted, so these tasks cannot
+        be resumed safely. Recovery records an explicit reason and requires
+        the caller to submit a fresh task if work should be retried.
+        """
+        if self._ledger is None:
+            return []
+        try:
+            tasks = self.list_task_metadata(limit=limit)
+            recovered = []
+            for task in tasks:
+                status = task.get("status")
+                if status not in {"queued", "assigned", "running"}:
+                    continue
+                task_id = task.get("task_id")
+                if not isinstance(task_id, str) or not task_id:
+                    raise SpecialistUnavailable("ZEUS ledger returned malformed task data")
+                self._ledger.transition_task(
+                    task_id,
+                    status,
+                    "blocked",
+                    recovery_code="runtime_restarted",
+                )
+                recovered.append(task_id)
+            return recovered
+        except SpecialistUnavailable as exc:
+            raise LedgerPersistenceUnavailable(
+                "ZEUS could not safely reconcile tasks after restart"
+            ) from exc
+
     def _finish(self, record: TaskRecord, status: TaskStatus) -> None:
         self._transition(record, status)
         now = self._clock()
