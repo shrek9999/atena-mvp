@@ -88,8 +88,11 @@ class TaskRequest:
             raise ValueError("payload exceeds the 64 KB safety limit")
         if not isinstance(self.requires_approval, bool) or not isinstance(self.approved, bool):
             raise ValueError("approval flags must be boolean")
-        if not isinstance(self.task_id, str) or not self.task_id.strip() or len(self.task_id) > 100:
-            raise ValueError("task_id must be a non-empty string up to 100 characters")
+        if (not isinstance(self.task_id, str) or not self.task_id
+                or len(self.task_id) > 100
+                or any(ch not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
+                       for ch in self.task_id)):
+            raise ValueError("task_id must contain 1-100 letters, digits, underscores or hyphens")
         if self.approved and not self.requires_approval:
             raise ValueError("approved cannot be true when approval is not required")
 
