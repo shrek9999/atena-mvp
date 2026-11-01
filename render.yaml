@@ -30,3 +30,5 @@ services:
         value: https://zeus-task-ledger.grega-jenko.workers.dev
       - key: ATENA_MCP_URL
         value: https://atena-mcp.onrender.com/mcp
+      - key: PYTHON_VERSION
+        value: 3.12.15
