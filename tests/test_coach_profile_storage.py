@@ -255,3 +255,33 @@ def test_profile_storage_is_disabled_without_operator_flags(monkeypatch, tmp_pat
         },
     )
     assert response.status_code == 503
+
+
+def test_withdrawing_health_consent_erases_previously_stored_discomfort_flags(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    headers = {"X-Profile-Token": token}
+    exercise_id = load_catalogue()[0]["id"]
+    logged = client.post(
+        f"/coach/profile/{profile_id}/sessions",
+        headers=headers,
+        json={
+            "session_date": "2026-11-01", "duration_minutes": 40,
+            "difficulty": "moderate", "completed": True,
+            "exercises": [{"exercise_id": exercise_id, "sets_completed": 2, "reps_completed": 12}],
+            "discomfort_reported": True,
+        },
+    )
+    assert logged.status_code == 201
+
+    withdrawn = client.post(
+        f"/coach/profile/{profile_id}/consent",
+        headers=headers,
+        json={"health_data_consent": False},
+    )
+    assert withdrawn.status_code == 200
+    assert withdrawn.get_json()["profile"]["health_data_consent"] is False
+    history = client.get(f"/coach/profile/{profile_id}/sessions", headers=headers).get_json()["sessions"]
+    assert "discomfort_reported" not in history[0]["session"]
