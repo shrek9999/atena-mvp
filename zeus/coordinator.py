@@ -368,7 +368,7 @@ class Coordinator:
             return recovered
         except SpecialistUnavailable as exc:
             raise LedgerPersistenceUnavailable(
-                "ZEUS could not safely reconcile tasks after restart"
+                f"ZEUS could not safely reconcile tasks after restart: {exc}"
             ) from exc
 
     def _finish(self, record: TaskRecord, status: TaskStatus) -> None:
