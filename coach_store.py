@@ -173,6 +173,18 @@ def _init(conn, dialect):
     ]
     for statement in statements:
         _execute(conn, dialect, statement)
+    if dialect == "postgres":
+        # These tables live in Supabase's exposed public schema. The app connects
+        # through the server-side database role; browser/API roles must never
+        # be able to read or mutate profile data directly.
+        postgres_safety = [
+            "ALTER TABLE atena_profiles ENABLE ROW LEVEL SECURITY",
+            "ALTER TABLE atena_training_sessions ENABLE ROW LEVEL SECURITY",
+            "REVOKE ALL PRIVILEGES ON TABLE atena_profiles FROM PUBLIC, anon, authenticated",
+            "REVOKE ALL PRIVILEGES ON TABLE atena_training_sessions FROM PUBLIC, anon, authenticated",
+        ]
+        for statement in postgres_safety:
+            _execute(conn, dialect, statement)
 
 
 def check_database_connection():
