@@ -108,14 +108,27 @@ def check_database_connection():
     except StorageUnavailable:
         raise
     except Exception as exc:
-        # Expose only a coarse category; never return driver text, host, username, or URL.
+        # Return only a safe failure category. Never expose driver text, host,
+        # username, password, connection URI, or raw exception details.
         sqlstate = getattr(exc, "sqlstate", None)
+        error_type = type(exc).__name__.lower()
+        error_text = str(exc).lower()
         if sqlstate in ("28P01", "28000"):
             reason = "database_authentication_failed"
-        elif sqlstate and sqlstate.startswith("08"):
-            reason = "database_network_connection_failed"
         elif sqlstate == "57P03":
             reason = "database_temporarily_unavailable"
+        elif sqlstate and sqlstate.startswith("08"):
+            reason = "database_network_connection_failed"
+        elif "could not translate host name" in error_text or "name or service not known" in error_text or "temporary failure in name resolution" in error_text:
+            reason = "database_dns_resolution_failed"
+        elif "timeout" in error_text or "timed out" in error_text or "connection timeout" in error_text:
+            reason = "database_connection_timeout"
+        elif "connection refused" in error_text:
+            reason = "database_connection_refused"
+        elif "ssl" in error_text or "tls" in error_text or "certificate" in error_text:
+            reason = "database_tls_configuration_failed"
+        elif error_type in {"valueerror", "interfaceerror", "operationalerror"}:
+            reason = "database_connection_configuration_failed"
         else:
             reason = "database_connection_failed"
         raise StorageUnavailable("Database connection check failed.", reason) from exc
