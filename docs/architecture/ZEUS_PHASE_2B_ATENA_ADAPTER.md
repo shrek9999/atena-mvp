@@ -11,7 +11,7 @@ implementation is located.
 `atena_capabilities`, and called `atena_decide` with a fully synthetic
 fitness scenario. ATENA returned a valid `maintain` decision and action.
 
-The same run passed the complete offline regression suite: **115 tests passed**.
+The same run passed the complete offline regression suite: **117 tests passed**. The coordinator ledger now returns isolated snapshots, rejects non-JSON results and caps stored specialist results at 64 KB.
 Run: https://github.com/shrek9999/atena-mvp/actions/runs/41279734851
 
 ## Safety and scope
@@ -45,8 +45,9 @@ This is an inventory result, not proof that no implementation exists elsewhere.
 
 ## Next gate
 1. Locate the actual HERMES source and interface, or design its contract if no
-   implementation exists.
-2. Harden task-ledger isolation, result validation and lifecycle controls.
-3. Define persistent task storage separately from ATENA's coaching D1 database.
-4. Keep ZEUS isolated from production until those controls and end-to-end
-   specialist routing are complete.
+   implementation exists. No HERMES source was found in the two connected GitHub
+   repositories, three Render services, or the connected Cloudflare Worker.
+2. Define persistent task storage separately from ATENA's coaching D1 database.
+3. Add explicit lifecycle controls, cancellation and task expiry before any API.
+4. Keep ZEUS isolated from production until those controls and HERMES routing
+   are complete.
