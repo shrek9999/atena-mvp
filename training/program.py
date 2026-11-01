@@ -493,7 +493,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             used_counts[candidate["id"]] += 1
             prescription = _prescription(p["goal"], p["experience"], effective_pattern, candidate)
             if p["goal"] == "endurance" and effective_pattern == "locomotion":
-                prescription["work_seconds"] = max(600, int(p["session_minutes"] * 30))
+                # Reserve time for warm-up, transitions and interval work; locomotion is a flexible aerobic block.
+                    prescription["work_seconds"] = max(600, int(p["session_minutes"] * 15))
             if reduce_load and p["goal"] not in {"endurance", "mobility"} and not candidate["single_joint"] and pattern not in {"trunk_stability", "anti_rotation"}:
                 prescription["sets"] = max(2, prescription["sets"] - 1)
                 if prescription.get("rir") is not None:
