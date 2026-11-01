@@ -1,3 +1,4 @@
+import io
 import json
 import urllib.error
 
@@ -84,7 +85,7 @@ def test_urllib_transport_returns_http_error_status_without_losing_it(monkeypatc
             404,
             "Not Found",
             {},
-            None,
+            io.BytesIO(b""),
         )
 
     monkeypatch.setattr("urllib.request.urlopen", raise_404)
