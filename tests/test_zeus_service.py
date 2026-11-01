@@ -201,3 +201,40 @@ def test_opt_in_startup_smoke_exercises_authenticated_durable_api_lifecycle():
     second = run_startup_smoke(ledger, TOKEN)
     assert second["status"] == "already_completed"
     assert len(ledger.tasks) == 1
+
+
+
+def test_lazy_wsgi_initialization_is_serialized_across_threads(monkeypatch):
+    import threading
+    import time
+    from werkzeug.test import Client
+    from werkzeug.wrappers import Response
+    import zeus_service
+
+    calls = 0
+    calls_lock = threading.Lock()
+    app = make_app()
+
+    def factory():
+        nonlocal calls
+        with calls_lock:
+            calls += 1
+        time.sleep(0.05)
+        return app
+
+    monkeypatch.setattr(zeus_service, "create_app", factory)
+    lazy = zeus_service._LazyWSGIApp()
+    results = []
+
+    def request_health():
+        response = Client(lazy, Response).get("/health")
+        results.append(response.status_code)
+
+    threads = [threading.Thread(target=request_health) for _ in range(4)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=2)
+
+    assert results == [200, 200, 200, 200]
+    assert calls == 1
