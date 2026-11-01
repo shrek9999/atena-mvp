@@ -75,3 +75,13 @@ ZEUS is considered ready for a limited internal pilot only after the security ro
 - Safe restart reconciliation is not yet implemented. Durable reads now make existing metadata visible after a process restart, but they do not restore private request bodies. A queued/running task whose process-local request was lost must not be replayed automatically. A controlled blocked/retry workflow remains a separate change.
 - Credential rotation remains a pre-pilot security task. The previously disclosed credentials are not to be used for further live tests.
 - The PR remains on its development branch and must not be merged or deployed until the remaining recovery behavior and pre-pilot security steps are reviewed.
+
+
+### Restart recovery implementation — development branch only
+- Added a `recovery_code` metadata column with the constrained value `runtime_restarted`.
+- Added migration `cloudflare/zeus-ledger-worker/migrations/0002_add_recovery_code.sql` and configured the example Wrangler file to use the migrations directory.
+- The Worker accepts a controlled queued → blocked transition only when it carries the explicit `runtime_restarted` marker; assigned/running tasks can also be blocked with that marker.
+- ZEUS startup now scans up to 100 recent ledger tasks and marks active tasks as blocked before serving the authenticated task API. It does not persist or replay private request bodies.
+- The caller must submit a new task to retry; no specialist is automatically re-run after restart.
+
+**Deployment prerequisite:** the D1 migration must be applied before deploying the updated Worker, and the Worker must be deployed before deploying the updated Render service. Neither migration nor deployment has been performed. The currently live services are unchanged.
