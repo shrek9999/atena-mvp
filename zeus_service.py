@@ -8,6 +8,7 @@ from __future__ import annotations
 import hmac
 import logging
 import os
+import threading
 from functools import wraps
 from typing import Any
 
@@ -274,6 +275,7 @@ class _LazyWSGIApp:
 
     def __init__(self):
         self._app = None
+        self._initialization_lock = threading.Lock()
 
     def __call__(self, environ, start_response):
         if self._app is None and environ.get("PATH_INFO") == "/":
@@ -285,24 +287,28 @@ class _LazyWSGIApp:
             ])
             return [body]
         if self._app is None:
-            try:
-                self._app = create_app()
-            except (RuntimeError, ValueError) as exc:
-                # Log only the safe exception type/message; never log tokens
-                # or environment values. This makes startup misconfiguration
-                # diagnosable without weakening the public error response.
-                logging.getLogger("zeus").error(
-                    "ZEUS startup configuration error (%s): %s",
-                    type(exc).__name__,
-                    exc,
-                )
-                body = b'{"error":"service_not_configured"}'
-                start_response("503 Service Unavailable", [
-                    ("Content-Type", "application/json"),
-                    ("Content-Length", str(len(body))),
-                    ("Cache-Control", "no-store"),
-                ])
-                return [body]
+            # Multiple Gunicorn threads can receive the first readiness probe
+            # concurrently. Serialize initialization so recovery and any
+            # opt-in startup smoke can never race each other.
+            with self._initialization_lock:
+                if self._app is None:
+                    try:
+                        self._app = create_app()
+                    except (RuntimeError, ValueError) as exc:
+                        # Log only the safe exception type/message; never log tokens
+                        # or environment values.
+                        logging.getLogger("zeus").error(
+                            "ZEUS startup configuration error (%s): %s",
+                            type(exc).__name__,
+                            exc,
+                        )
+                        body = b'{"error":"service_not_configured"}'
+                        start_response("503 Service Unavailable", [
+                            ("Content-Type", "application/json"),
+                            ("Content-Length", str(len(body))),
+                            ("Cache-Control", "no-store"),
+                        ])
+                        return [body]
         return self._app(environ, start_response)
 
 
