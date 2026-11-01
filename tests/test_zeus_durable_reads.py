@@ -32,6 +32,19 @@ class ReadLedger:
     def list_tasks(self, limit=50, offset=0):
         return {"tasks": [dict(self.task)][offset:offset + limit]}
 
+    def get_events(self, task_id):
+        if task_id != self.task["task_id"]:
+            return {"events": []}
+        return {"events": [{
+            "event_id": 1,
+            "task_id": task_id,
+            "event_type": "status_changed",
+            "from_status": "queued",
+            "to_status": "blocked",
+            "occurred_at": "2026-11-01T10:01:00+00:00",
+            "private_payload": "must not be exposed",
+        }]}
+
 
 def test_task_get_reads_durable_ledger_even_when_process_memory_is_empty():
     ledger = ReadLedger()
@@ -178,3 +191,25 @@ def test_ledger_client_supports_stable_offset_pagination():
     )
     client.list_tasks(limit=75, offset=150)
     assert transport.url.endswith("/v1/tasks?limit=75&offset=150")
+
+
+
+def test_task_events_endpoint_returns_only_allowlisted_lifecycle_fields():
+    app = create_app(coordinator=Coordinator(ledger=ReadLedger()), api_token=TOKEN)
+    response = app.test_client().get(
+        "/v1/tasks/durable-read-1/events", headers=AUTH
+    )
+
+    assert response.status_code == 200
+    events = response.get_json()["events"]
+    assert len(events) == 1
+    assert events[0]["event_type"] == "status_changed"
+    assert events[0]["from_status"] == "queued"
+    assert "private_payload" not in events[0]
+
+
+def test_task_events_endpoint_returns_404_for_missing_task():
+    app = create_app(coordinator=Coordinator(ledger=ReadLedger()), api_token=TOKEN)
+    response = app.test_client().get("/v1/tasks/absent-task/events", headers=AUTH)
+
+    assert response.status_code == 404
