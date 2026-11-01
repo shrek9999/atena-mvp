@@ -137,3 +137,67 @@ def test_lazy_wsgi_fails_closed_when_runtime_secrets_are_missing(monkeypatch):
     response = client.get("/v1/tasks")
     assert response.status_code == 503
     assert response.get_json()["error"] == "service_not_configured"
+
+
+
+class SmokeLedger:
+    def __init__(self):
+        self.tasks = {}
+        self.events = []
+
+    def create_task(self, task_id, domain):
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).isoformat()
+        row = {
+            "task_id": task_id, "domain": domain,
+            "specialist": "ATENA", "status": "queued",
+            "created_at": now, "updated_at": now,
+            "attempt_count": 0, "error_code": None, "recovery_code": None,
+        }
+        self.tasks[task_id] = row
+        self.events.append({"event_id": 1, "task_id": task_id,
+                            "event_type": "created", "from_status": None,
+                            "to_status": "queued", "occurred_at": now})
+
+    def transition_task(self, task_id, from_status, to_status,
+                        error_code=None, recovery_code=None):
+        from datetime import datetime, timezone
+        row = self.tasks[task_id]
+        source = from_status.value if hasattr(from_status, "value") else from_status
+        target = to_status.value if hasattr(to_status, "value") else to_status
+        assert row["status"] == source
+        now = datetime.now(timezone.utc).isoformat()
+        row.update(status=target, updated_at=now, error_code=error_code,
+                   recovery_code=recovery_code)
+        if target == "running":
+            row["attempt_count"] += 1
+        self.events.append({
+            "event_id": len(self.events) + 1, "task_id": task_id,
+            "event_type": "status_changed", "from_status": source,
+            "to_status": target, "occurred_at": now,
+        })
+        return {"task": row}
+
+    def get_task(self, task_id):
+        row = self.tasks.get(task_id)
+        return {"task": dict(row)} if row else {"error": "not_found"}
+
+    def list_tasks(self, limit=50, offset=0):
+        rows = list(self.tasks.values())[offset:offset + limit]
+        return {"tasks": [dict(row) for row in rows]}
+
+    def get_events(self, task_id):
+        return {"events": [dict(event) for event in self.events
+                           if event["task_id"] == task_id]}
+
+
+def test_opt_in_startup_smoke_exercises_authenticated_durable_api_lifecycle():
+    from zeus_service import run_startup_smoke
+
+    ledger = SmokeLedger()
+    first = run_startup_smoke(ledger, TOKEN)
+    assert first["status"] == "passed"
+    assert first["events"] == 4
+    second = run_startup_smoke(ledger, TOKEN)
+    assert second["status"] == "already_completed"
+    assert len(ledger.tasks) == 1
