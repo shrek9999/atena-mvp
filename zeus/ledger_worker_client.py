@@ -25,6 +25,7 @@ class UrllibLedgerTransport:
         headers = {
             "Authorization": "Bearer " + token,
             "Accept": "application/json",
+            "User-Agent": "ZEUS-Ledger-Client/0.1",
         }
         data = None
         if body is not None:
