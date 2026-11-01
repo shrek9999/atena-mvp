@@ -9,6 +9,7 @@ on:
       - "training/program.py"
       - "training/catalogue.py"
       - "training/exercises.json"
+      - "coach_routes.py"
   workflow_dispatch:
 
 permissions:
@@ -17,8 +18,11 @@ permissions:
 jobs:
   verify-staging:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
+      - name: Wait for the free staging deployment to settle
+        run: sleep 90
+
       - name: Validate secret is available (without revealing it)
         env:
           PILOT_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
@@ -29,7 +33,7 @@ jobs:
           fi
           echo "Staging test token is available."
 
-      - name: Test authenticated staging endpoints
+      - name: Test authenticated staging endpoints and coaching behavior
         env:
           PILOT_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
         run: |
@@ -48,55 +52,84 @@ jobs:
               request = urllib.request.Request(
                   BASE + path,
                   data=data,
-                  headers={
-                      "Content-Type": "application/json",
-                      "X-Pilot-Token": TOKEN,
-                  },
+                  headers={"Content-Type": "application/json", "X-Pilot-Token": TOKEN},
                   method="POST",
               )
               try:
                   with urllib.request.urlopen(request, timeout=60) as response:
-                      status = response.status
-                      raw = response.read().decode("utf-8", errors="replace")
+                      return response.status, json.loads(response.read().decode("utf-8"))
               except urllib.error.HTTPError as exc:
-                  status = exc.code
                   raw = exc.read().decode("utf-8", errors="replace")
+                  try:
+                      body = json.loads(raw)
+                  except json.JSONDecodeError:
+                      body = {"error": raw[:300]}
+                  return exc.code, body
               except Exception as exc:
-                  print(f"{path}: NETWORK ERROR: {type(exc).__name__}: {exc}")
-                  return None, None
+                  print(f"{path}: NETWORK ERROR: {type(exc).__name__}")
+                  return None, {}
 
-              try:
-                  body = json.loads(raw)
-              except json.JSONDecodeError:
-                  body = {"raw": raw[:1200]}
-              print(f"\n--- POST {path} ---")
-              print(f"HTTP: {status}")
-              print(json.dumps(body, ensure_ascii=False, indent=2)[:5000])
-              return status, body
+          failures = []
 
-          program_status, program_body = post("/coach/program", {
+          status, body = post("/coach/program", {
               "profile": {
                   "goal": "hypertrophy",
                   "experience": "intermediate",
                   "sessions_per_week": 2,
-                  "session_minutes": 45,
+                  "session_minutes": 60,
                   "equipment": []
               }
           })
+          print(f"Hypertrophy program endpoint: HTTP {status}")
+          program = body.get("program", {})
+          hinges = [
+              exercise for session in program.get("sessions", [])
+              for exercise in session.get("exercises", [])
+              if exercise.get("pattern") == "hinge"
+          ]
+          hinge_ok = any(item.get("pattern_label") == "predklon z ravnim hrbtom" for item in hinges)
+          print(f"Straight-back hinge coaching term: {'PASS' if hinge_ok else 'FAIL'}")
+          if status != 200 or not hinge_ok:
+              failures.append("hypertrophy program or hinge terminology")
 
-          chat_status, chat_body = post("/coach/chat", {
+          status, body = post("/coach/program", {
+              "profile": {
+                  "goal": "endurance",
+                  "experience": "beginner",
+                  "sessions_per_week": 2,
+                  "session_minutes": 45,
+                  "equipment": ["bicycle", "jump_rope", "bodyweight", "step"]
+              }
+          })
+          print(f"45-minute beginner endurance endpoint: HTTP {status}")
+          endurance = body.get("program", {})
+          sessions = endurance.get("sessions", [])
+          time_ok = (
+              len(sessions) == 2
+              and all(session.get("estimated_minutes", 999) <= 45 for session in sessions)
+          )
+          print(f"45-minute time envelope: {'PASS' if time_ok else 'FAIL'}")
+          if status != 200 or not time_ok:
+              failures.append("45-minute endurance time envelope")
+
+          status, body = post("/coach/chat", {
               "messages": [{
                   "role": "user",
                   "content": "Želim razvijati moč in mišično maso. Pred pripravo individualnega programa mi postavi eno najpomembnejše manjkajoče vprašanje."
               }]
           })
+          reply = body.get("reply", "").lower()
+          safety_first = any(term in reply for term in ("boleč", "poškodb", "omejit", "zdravstven"))
+          print(f"Proactive safety-first onboarding: HTTP {status}; {'PASS' if safety_first else 'FAIL'}")
+          if status != 200 or not safety_first:
+              failures.append("safety-first onboarding question")
 
-          print("\n--- POVZETEK ---")
-          print("Program:", "PASS" if program_status == 200 else f"FAIL (HTTP {program_status})")
-          print("Chat:", "PASS" if chat_status == 200 else f"FAIL (HTTP {chat_status})")
-          print("Dostopni žeton ni izpisan ali shranjen v izpisu.")
-          if program_status != 200 or chat_status != 200:
+          print("\n--- RESULT ---")
+          print("Authenticated endpoints and coaching checks:", "PASS" if not failures else "FAIL")
+          if failures:
+              print("Failed checks:", "; ".join(failures))
               sys.exit(1)
+          print("Access token was not printed or stored in the output.")
           PY
 
-# Re-triggered after repository secret configuration.
+# Run the integration checks after changes to the deterministic planner or chat coach.
