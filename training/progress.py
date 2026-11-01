@@ -6,6 +6,8 @@ load increases. Missing data is treated as unknown, never as evidence of readine
 from collections import defaultdict
 from datetime import date
 
+from training.catalogue import get_exercise
+
 
 def _session_parts(item):
     if not isinstance(item, dict):
@@ -81,8 +83,10 @@ def summarize_progress(profile_record, sessions):
                 status = "repetitions_increased" if new_reps > old_reps else (
                     "stable" if new_reps == old_reps else "repetitions_reduced"
                 )
+        exercise_record = get_exercise(exercise_id)
         trends.append({
             "exercise_id": exercise_id,
+            "exercise_name": exercise_record["name"] if exercise_record else exercise_id,
             "status": status,
             "sessions_recorded": len(entries),
             "recent_observations": recent,
