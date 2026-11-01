@@ -480,6 +480,25 @@ def create_app(
     def health():
         return jsonify({"status": "ok", "service": "ZEUS"})
 
+    @app.get("/ready")
+    def readiness():
+        """Authenticated readiness probe; liveness remains available at /health."""
+        try:
+            # In production this performs a bounded read against the durable D1
+            # ledger. It never exposes task metadata or dependency error details.
+            coordinator.list_task_metadata(limit=1, offset=0)
+        except Exception:
+            return jsonify({
+                "status": "not_ready",
+                "service": "ZEUS",
+                "dependencies": {"ledger": "unavailable"},
+            }), 503
+        return jsonify({
+            "status": "ready",
+            "service": "ZEUS",
+            "dependencies": {"ledger": "ok"},
+        })
+
     @app.get("/dashboard", strict_slashes=False)
     def dashboard():
         response = make_response(DASHBOARD_HTML)
