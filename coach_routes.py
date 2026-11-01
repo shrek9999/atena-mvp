@@ -185,6 +185,17 @@ def coach_storage_check():
         return jsonify({"database": "unavailable", "reason": exc.reason, "user_data_storage": "still_disabled"}), 503
 
 
+@coach_bp.route("/coach/storage/diagnostic", methods=["GET"])
+def coach_storage_diagnostic():
+    """Minimal public dependency probe: exposes no credentials, data, or raw DB errors."""
+    try:
+        store_check_database_connection()
+        return jsonify({"service": "ATENA AI Coach", "database": "reachable"}), 200
+    except StorageUnavailable as exc:
+        logger.warning("ATENA public dependency probe failed: %s", type(exc).__name__)
+        return jsonify({"service": "ATENA AI Coach", "database": "unavailable"}), 503
+
+
 @coach_bp.route("/coach/storage/status", methods=["GET", "OPTIONS"])
 def coach_storage_status():
     """Return coarse operator-controlled storage readiness; never expose credentials."""
