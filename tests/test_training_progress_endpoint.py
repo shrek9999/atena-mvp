@@ -8,9 +8,13 @@ def test_progress_endpoint_returns_authenticated_non_prescriptive_summary(monkey
     app = Flask(__name__)
     app.register_blueprint(coach_bp)
     client = app.test_client()
-    monkeypatch.setattr(coach_routes, "store_get_profile", lambda profile_id, token: {
-        "profile_id": profile_id, "profile": {"goal": "strength"},
-    })
+    def get_profile(profile_id, token):
+        if token != "profile-secret":
+            from coach_store import ProfileNotFound
+            raise ProfileNotFound()
+        return {"profile_id": profile_id, "profile": {"goal": "strength"}}
+
+    monkeypatch.setattr(coach_routes, "store_get_profile", get_profile)
     monkeypatch.setattr(coach_routes, "store_list_sessions", lambda profile_id, token, limit=50: [
         {"session_date": "2026-10-30", "session": {
             "completed": True, "difficulty": "moderate",
