@@ -21,6 +21,30 @@ def test_health_is_public_but_task_api_requires_authentication():
     assert client.get("/v1/tasks").status_code == 401
 
 
+def test_readiness_is_authenticated_and_reports_ledger_state_without_details():
+    client = make_app().test_client()
+    assert client.get("/ready").status_code == 401
+
+    ready = client.get("/ready", headers=AUTH)
+    assert ready.status_code == 200
+    assert ready.get_json() == {
+        "status": "ready",
+        "service": "ZEUS",
+        "dependencies": {"ledger": "ok"},
+    }
+
+    unavailable = create_app(
+        coordinator=Coordinator(ledger=UnavailableLedger()),
+        api_token=TOKEN,
+    ).test_client().get("/ready", headers=AUTH)
+    assert unavailable.status_code == 503
+    assert unavailable.get_json() == {
+        "status": "not_ready",
+        "service": "ZEUS",
+        "dependencies": {"ledger": "unavailable"},
+    }
+
+
 
 def test_dashboard_is_public_but_contains_no_secret():
     client = make_app().test_client()
