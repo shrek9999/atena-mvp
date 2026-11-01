@@ -13,7 +13,7 @@ from coach_store import (
     StorageUnavailable, ProfileNotFound, create_profile as store_create_profile,
     get_profile as store_get_profile, update_profile as store_update_profile,
     add_session as store_add_session, list_sessions as store_list_sessions,
-    delete_profile as store_delete_profile,
+    delete_profile as store_delete_profile, set_health_data_consent as store_set_health_data_consent,
 )
 from training.catalogue import get_exercise
 from flask import Blueprint, jsonify, request
@@ -359,6 +359,31 @@ def coach_training_sessions(profile_id):
             session["discomfort_reported"] = discomfort
         saved = store_add_session(profile_id, token, str(uuid.uuid4()), session_date, session)
         return jsonify({"session": saved}), 201
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
+
+
+@coach_bp.route("/coach/profile/<profile_id>/consent", methods=["POST", "OPTIONS"])
+def update_coach_health_consent(profile_id):
+    if request.method == "OPTIONS":
+        return ("", 204)
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict) or set(payload) != {"health_data_consent"}:
+        return jsonify({"error": "Pošlji samo polje health_data_consent."}), 400
+    consent = payload.get("health_data_consent")
+    if not isinstance(consent, bool):
+        return jsonify({"error": "Privolitev mora biti true ali false."}), 400
+    try:
+        profile = store_set_health_data_consent(profile_id, _profile_token(), consent)
+        return jsonify({
+            "profile": profile,
+            "notice": (
+                "Privolitev za zdravstvene podatke je umaknjena; shranjeni podatki o nelagodju so izbrisani."
+                if not consent else "Privolitev za zdravstvene podatke je zabeležena."
+            ),
+        }), 200
     except ProfileNotFound:
         return _profile_auth_error()
     except StorageUnavailable as exc:
