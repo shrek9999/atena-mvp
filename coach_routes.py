@@ -20,6 +20,7 @@ from training.catalogue import get_exercise, load_catalogue
 from flask import Blueprint, jsonify, request
 from training.program import ProgramSafetyBlock, ProgramValidationError, generate_program
 from training.progress import summarize_progress
+from training.adaptation import assess_next_step
 
 logger = logging.getLogger(__name__)
 coach_bp = Blueprint("coach", __name__)
@@ -455,6 +456,27 @@ def export_coach_profile(profile_id):
             'attachment; filename="atena-profile-export.json"'
         )
         return response, 200
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
+
+
+
+@coach_bp.route("/coach/profile/<profile_id>/adaptation", methods=["GET", "OPTIONS"])
+def coach_training_adaptation(profile_id):
+    """Return conservative next-step guidance from recent logged feedback."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    token = _profile_token()
+    try:
+        profile = store_get_profile(profile_id, token)
+        sessions = store_list_sessions(profile_id, token, limit=3)
+        return jsonify({
+            "adaptation": assess_next_step(sessions),
+            "source": "recent_recorded_training_feedback",
+            "automatic_program_changes": False,
+        }), 200
     except ProfileNotFound:
         return _profile_auth_error()
     except StorageUnavailable as exc:
