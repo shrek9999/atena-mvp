@@ -73,3 +73,17 @@ Reference:
 ## 7. Not done
 
 No D1 database has been created, no Worker deployed, no credentials generated, no Render environment variables changed, and no production configuration modified.
+
+
+## 8. Isolated prototype code now prepared
+
+The feature branch now contains:
+- `cloudflare/zeus-ledger-worker/src/index.js`: narrow authenticated Worker API; no arbitrary SQL route.
+- `cloudflare/zeus-ledger-worker/schema.sql`: minimal task metadata table and append-only lifecycle event triggers.
+- `cloudflare/zeus-ledger-worker/wrangler.example.toml`: configuration template with an explicit unprovisioned database ID placeholder.
+- `cloudflare/zeus-ledger-worker/test/worker.test.mjs`: local Node tests for authentication, metadata minimization, domain/specialist matching, status transitions and event history.
+- `zeus/ledger_worker_client.py`: opt-in Python HTTPS client using a secret supplied only through environment variables. It sends task IDs, domain/specialist and lifecycle transitions only; it does not send objectives, prompts, payloads, personal coaching data or results.
+
+This client is not yet connected to the in-memory Coordinator. That integration needs a deliberate persistence/error-recovery contract so a temporary Worker outage cannot leave the in-memory and persistent states inconsistent. The existing coordinator therefore remains the default and no persistence is active.
+
+The Worker tests run against a mocked D1 binding; they do not prove a live D1 database exists or that a Worker has been deployed.
