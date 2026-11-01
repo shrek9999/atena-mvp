@@ -165,11 +165,13 @@ class Coordinator:
         with self._lock:
             self._purge_expired_locked()
             record = self._tasks.get(task_id)
-            request = self._requests.get(task_id)
-            if record is None or request is None:
+            if record is None:
                 raise KeyError("task not found or expired")
             if record.status is not TaskStatus.QUEUED:
                 raise ValueError("only queued tasks can be run")
+            request = self._requests.get(task_id)
+            if request is None:
+                raise KeyError("task request not found or expired")
             specialist = SPECIALIST_BY_DOMAIN[request.domain]
             record.specialist = specialist
             self._transition(record, TaskStatus.ASSIGNED)
