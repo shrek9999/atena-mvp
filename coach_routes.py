@@ -168,6 +168,29 @@ def coach_program():
 
 
 
+@coach_bp.route("/coach/status", methods=["GET", "OPTIONS"])
+def coach_status():
+    """Read-only pilot readiness; exposes no credentials or user data."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    expected = os.getenv("AI_COACH_TEST_TOKEN", "").strip()
+    supplied = request.headers.get("X-Pilot-Token", "").strip()
+    if not expected or not supplied or not hmac.compare_digest(supplied, expected):
+        return jsonify({"error": "Testni dostopni ključ ni pravilen."}), 403
+    try:
+        catalogue_count = len(load_catalogue())
+    except (OSError, ValueError):
+        catalogue_count = 0
+    model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
+    return jsonify({
+        "chat_available": bool(os.getenv("GEMINI_API_KEY", "").strip()),
+        "program_available": catalogue_count > 0,
+        "catalogue_count": catalogue_count,
+        "chat_provider": "google_gemini" if os.getenv("GEMINI_API_KEY", "").strip() else None,
+        "model": model if os.getenv("GEMINI_API_KEY", "").strip() else None,
+    }), 200
+
+
 @coach_bp.route("/coach/storage/check", methods=["GET", "OPTIONS"])
 def coach_storage_check():
     """Pilot-token-protected, read-only DB connectivity check; creates no tables or user data."""
@@ -349,7 +372,7 @@ def coach_training_sessions(profile_id):
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return jsonify({"error": "Pričakovan je JSON objekt."}), 400
-    allowed = {"session_date", "duration_minutes", "difficulty", "completed", "exercises", "discomfort_reported"}
+    allowed = {"session_date", "duration_minutes", "difficulty", "completed", "exercises", "discomfort_reported", "recovery"}
     if set(payload) - allowed:
         return jsonify({"error": "Vadbeni zapis vsebuje nepodprta polja; prosto besedilo ni dovoljeno."}), 400
     session_date = payload.get("session_date")
@@ -363,6 +386,9 @@ def coach_training_sessions(profile_id):
     difficulty = payload.get("difficulty")
     if difficulty not in {"easy", "moderate", "hard"}:
         return jsonify({"error": "Težavnost mora biti easy, moderate ali hard."}), 400
+    recovery = payload.get("recovery", "normal")
+    if recovery not in {"good", "normal", "poor"}:
+        return jsonify({"error": "Regeneracija mora biti good, normal ali poor."}), 400
     if not isinstance(payload.get("completed"), bool):
         return jsonify({"error": "Polje completed mora biti true ali false."}), 400
     exercises = payload.get("exercises")
@@ -399,7 +425,7 @@ def coach_training_sessions(profile_id):
         return jsonify({"error": "discomfort_reported mora biti true ali false."}), 400
     session = {
         "duration_minutes": duration, "difficulty": difficulty,
-        "completed": payload["completed"], "exercises": clean_exercises,
+        "recovery": recovery, "completed": payload["completed"], "exercises": clean_exercises,
     }
     try:
         profile = store_get_profile(profile_id, token)
@@ -489,6 +515,60 @@ def export_coach_profile(profile_id):
     except StorageUnavailable as exc:
         return _storage_error(exc)
 
+
+
+@coach_bp.route("/coach/profile/<profile_id>/program", methods=["POST", "OPTIONS"])
+def coach_profile_program(profile_id):
+    """Build the next programme from the saved profile and most recent logged feedback."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict) or set(payload) != {"no_current_pain_or_restrictions"}:
+        return jsonify({"error": "Potrjena mora biti samo trenutna varnostna izjava."}), 400
+    if payload.get("no_current_pain_or_restrictions") is not True:
+        return jsonify({
+            "blocked": True,
+            "message": "Programa nisem ustvaril. Ob trenutni bolečini, poškodbi ali zdravstveni omejitvi je potrebna individualna presoja ustreznega strokovnjaka.",
+        }), 409
+    token = _profile_token()
+    try:
+        profile = store_get_profile(profile_id, token)
+        sessions = store_list_sessions(profile_id, token, limit=1)
+        feedback = None
+        if sessions:
+            last = sessions[0].get("session", {})
+            if last.get("discomfort_reported") is True:
+                feedback = {
+                    "difficulty": "right",
+                    "completed": bool(last.get("completed", True)),
+                    "discomfort": "yes",
+                }
+            else:
+                difficulty = {"easy": "easy", "moderate": "right", "hard": "hard"}.get(
+                    last.get("difficulty"), "right"
+                )
+                feedback = {
+                    "difficulty": difficulty,
+                    "completed": bool(last.get("completed", True)),
+                    "discomfort": "no",
+                    "recovery": last.get("recovery", "normal"),
+                    "movement_control": "none",
+                }
+        result = generate_program(profile["profile"], feedback=feedback)
+        return jsonify({
+            "program": result,
+            "profile": profile["profile"],
+            "source": "saved_profile_and_recent_training_feedback",
+            "pilot": True,
+        }), 200
+    except ProgramSafetyBlock as exc:
+        return jsonify({"blocked": True, "message": str(exc)}), 409
+    except ProgramValidationError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
 
 
 @coach_bp.route("/coach/profile/<profile_id>/adaptation", methods=["GET", "OPTIONS"])
