@@ -28,6 +28,9 @@ SAFE_TASK_FIELDS = (
     "started_at", "completed_at", "expires_at", "attempt_count", "error_code",
     "recovery_code",
 )
+SAFE_EVENT_FIELDS = (
+    "event_id", "task_id", "event_type", "from_status", "to_status", "occurred_at",
+)
 
 
 def _public_record(record) -> dict[str, Any]:
@@ -134,6 +137,20 @@ def create_app(
         if record is None:
             return jsonify({"error": "not_found"}), 404
         return jsonify({"task": _public_metadata(record)})
+
+    @app.get("/v1/tasks/<task_id>/events")
+    def get_task_events(task_id: str):
+        try:
+            events = coordinator.get_task_events(task_id)
+        except Exception:
+            return jsonify({"error": "ledger_unavailable", "retryable": True}), 503
+        if events is None:
+            return jsonify({"error": "not_found"}), 404
+        safe_events = [
+            {key: item.get(key) for key in SAFE_EVENT_FIELDS}
+            for item in events
+        ]
+        return jsonify({"events": safe_events})
 
     @app.post("/v1/tasks/<task_id>/approve")
     def approve_task(task_id: str):
