@@ -338,3 +338,36 @@ def test_profile_storage_stays_disabled_without_privacy_approval(monkeypatch, tm
         },
     )
     assert response.status_code == 503
+
+
+
+def test_database_connectivity_endpoint_is_protected_and_read_only(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    denied = client.get("/coach/storage/check")
+    assert denied.status_code == 403
+
+    import coach_routes
+    monkeypatch.setattr(coach_routes, "store_check_database_connection", lambda: True)
+    checked = client.get("/coach/storage/check", headers={"X-Pilot-Token": "pilot-test-secret"})
+    assert checked.status_code == 200
+    assert checked.get_json() == {
+        "database": "reachable",
+        "user_data_storage": "still_disabled",
+    }
+
+
+def test_database_connectivity_endpoint_reports_unavailable_without_leaking_details(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    import coach_routes
+    from coach_store import StorageUnavailable
+
+    def fail():
+        raise StorageUnavailable("private connection detail")
+
+    monkeypatch.setattr(coach_routes, "store_check_database_connection", fail)
+    checked = client.get("/coach/storage/check", headers={"X-Pilot-Token": "pilot-test-secret"})
+    assert checked.status_code == 503
+    assert checked.get_json() == {
+        "database": "unavailable",
+        "user_data_storage": "still_disabled",
+    }
