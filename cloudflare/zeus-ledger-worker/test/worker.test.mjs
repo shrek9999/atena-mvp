@@ -167,3 +167,18 @@ test("rejects unknown or misplaced recovery markers", async () => {
   }), bindings);
   assert.equal(response.status, 400);
 });
+
+
+test("returns the recovery marker in durable task reads", async () => {
+  const bindings = env();
+  await worker.fetch(request("/v1/tasks", "POST", {
+    task_id: "orphan-read", domain: "fitness", specialist: "ATENA",
+  }), bindings);
+  await worker.fetch(request("/v1/tasks/orphan-read/status", "POST", {
+    from_status: "queued", to_status: "blocked", recovery_code: "runtime_restarted",
+  }), bindings);
+  const response = await worker.fetch(request("/v1/tasks/orphan-read"), bindings);
+  assert.equal(response.status, 200);
+  const task = (await response.json()).task;
+  assert.equal(task.recovery_code, "runtime_restarted");
+});
