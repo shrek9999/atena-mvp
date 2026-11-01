@@ -12,30 +12,45 @@ import json
 import os
 import sqlite3
 from datetime import datetime, timezone
-from urllib.parse import quote, urlsplit, urlunsplit
+from urllib.parse import quote, unquote, urlsplit
 
 
 def _normalize_supabase_pooler_username(url: str) -> str:
-    """Apply Supabase's project-scoped username when a shared pooler URI uses bare postgres."""
+    """Normalize shared Supabase pooler credentials without exposing or changing the password."""
     try:
+        scheme, separator, remainder = url.partition("://")
+        if not separator:
+            return url
+        # Parse the user-info boundary using the known Supabase pooler host suffix.
+        # This remains robust when a password contains URI-reserved characters such as [ ] / ? # @.
+        suffix = ".pooler.supabase.com"
+        suffix_at = remainder.lower().find(suffix)
+        if suffix_at >= 0:
+            at_sign = remainder.rfind("@", 0, suffix_at)
+            if at_sign < 0:
+                return url
+            raw_userinfo = remainder[:at_sign]
+            host_and_rest = remainder[at_sign + 1:]
+            raw_username, colon, raw_password = raw_userinfo.partition(":")
+            username = unquote(raw_username)
+            project_ref = os.getenv("ATENA_SUPABASE_PROJECT_REF", "gxgmxvtfkhjfpbtfmmcs").strip()
+            if username == "postgres" and project_ref:
+                username = "postgres." + project_ref
+            encoded_user = quote(username, safe=".")
+            if colon:
+                # Decode then encode once so already-escaped passwords are not double-encoded.
+                encoded_password = quote(unquote(raw_password), safe="")
+                userinfo = encoded_user + ":" + encoded_password
+            else:
+                userinfo = encoded_user
+            return scheme + "://" + userinfo + "@" + host_and_rest
+
+        # For non-pooler PostgreSQL URLs, leave the URI unchanged.
         parsed = urlsplit(url)
-        hostname = (parsed.hostname or "").lower()
-        username = parsed.username or ""
-        project_ref = os.getenv("ATENA_SUPABASE_PROJECT_REF", "gxgmxvtfkhjfpbtfmmcs").strip()
-        if not (hostname.endswith(".pooler.supabase.com") and username == "postgres" and project_ref):
-            return url
-        # Preserve the password exactly as supplied (including URL-encoded characters).
-        raw_userinfo, _, hostport = parsed.netloc.rpartition("@")
-        if not hostport:
-            return url
-        raw_password = raw_userinfo.partition(":")[2] if ":" in raw_userinfo else None
-        normalized_userinfo = quote("postgres." + project_ref, safe=".")
-        if raw_password is not None:
-            normalized_userinfo += ":" + raw_password
-        return urlunsplit((parsed.scheme, normalized_userinfo + "@" + hostport,
-                           parsed.path, parsed.query, parsed.fragment))
+        return url
     except (TypeError, ValueError):
         return url
+
 
 class StorageUnavailable(RuntimeError):
     def __init__(self, message: str, reason: str = "storage_unavailable"):
