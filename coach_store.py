@@ -29,7 +29,7 @@ def _normalize_supabase_pooler_username(url: str) -> str:
         if not hostport:
             return url
         raw_password = raw_userinfo.partition(":")[2] if ":" in raw_userinfo else None
-        normalized_userinfo = "postgres." + project_ref
+        normalized_userinfo = quote("postgres." + project_ref, safe=".")
         if raw_password is not None:
             normalized_userinfo += ":" + raw_password
         return urlunsplit((parsed.scheme, normalized_userinfo + "@" + hostport,
