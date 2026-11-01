@@ -6,6 +6,9 @@ on:
       - pilot/website-ai-coach
     paths:
       - ".github/workflows/atena_staging_endpoint_verification.yml"
+      - "training/program.py"
+      - "training/catalogue.py"
+      - "training/exercises.json"
   workflow_dispatch:
 
 permissions:
