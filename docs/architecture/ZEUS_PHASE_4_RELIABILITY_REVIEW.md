@@ -115,3 +115,13 @@ ZEUS is considered ready for a limited internal pilot only after the security ro
 - The service returns only event ID, task ID, event type, status transition and timestamp. Unrecognized fields are discarded.
 - Added regression tests for event history retrieval, field allowlisting and missing-task 404 behavior.
 - This completes the service-level read path needed to inspect the durable lifecycle after create, dispatch, completion and restart recovery.
+
+
+### CI verification after phase 5 changes
+
+- GitHub Actions run: https://github.com/shrek9999/atena-mvp/actions/runs/41298934894
+- Offline Python regression suite: **173 passed**.
+- Cloudflare Worker suite: **11 passed**; the Worker syntax/test step completed successfully.
+- The optional live ATENA MCP compatibility smoke test failed because ATENA returned a tool error. This is separate from the offline ZEUS/Python and Worker checks and remains unresolved.
+- The dedicated ZEUS validation workflow was queued/pending at the time of this review; its separate completion result has not yet been confirmed.
+- An initial assertion failure in the existing restart test was due only to its expectation of insertion order; the test was corrected to assert the recovered task set, and the subsequent offline suite passed.
