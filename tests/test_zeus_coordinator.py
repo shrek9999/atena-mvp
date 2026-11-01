@@ -347,3 +347,39 @@ def test_durable_cancel_write_failure_does_not_claim_cancellation():
 
     assert coordinator.get(queued.task_id).status is TaskStatus.QUEUED
     assert ledger.statuses[queued.task_id] == "queued"
+
+
+
+class RestartRecoveryLedger:
+    def __init__(self):
+        self.tasks = [
+            {"task_id": "orphan-queued", "status": "queued"},
+            {"task_id": "orphan-assigned", "status": "assigned"},
+            {"task_id": "orphan-running", "status": "running"},
+            {"task_id": "already-done", "status": "completed"},
+        ]
+        self.transitions = []
+
+    def list_tasks(self, limit=50):
+        return {"tasks": self.tasks[:limit]}
+
+    def transition_task(self, task_id, from_status, to_status, error_code=None, recovery_code=None):
+        task = next(item for item in self.tasks if item["task_id"] == task_id)
+        assert task["status"] == from_status
+        task["status"] = to_status
+        task["recovery_code"] = recovery_code
+        self.transitions.append((task_id, from_status, to_status, recovery_code))
+        return {"task": dict(task)}
+
+
+def test_restart_recovery_blocks_active_tasks_without_replaying_them():
+    ledger = RestartRecoveryLedger()
+    coordinator = Coordinator(ledger=ledger)
+
+    recovered = coordinator.recover_orphaned_tasks()
+
+    assert recovered == ["orphan-queued", "orphan-assigned", "orphan-running"]
+    assert [task["status"] for task in ledger.tasks] == [
+        "blocked", "blocked", "blocked", "completed"
+    ]
+    assert all(item[3] == "runtime_restarted" for item in ledger.transitions)
