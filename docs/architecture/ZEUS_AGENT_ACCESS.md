@@ -3,7 +3,8 @@
 ## Unified entry point
 
 - Dashboard: https://zeus-coordinator.onrender.com/dashboard (with or without trailing slash)
-- Health: https://zeus-coordinator.onrender.com/health
+- Liveness: https://zeus-coordinator.onrender.com/health (public; confirms the process responds)
+- Readiness: https://zeus-coordinator.onrender.com/ready (authenticated; confirms the durable ledger can be read)
 - API base: https://zeus-coordinator.onrender.com
 - Persistent ledger: Cloudflare D1, accessed only by the ZEUS Worker.
 
@@ -43,7 +44,7 @@ the supported domain to the specialist.
 
 ## API surface
 
-All `/v1/*` routes require `Authorization: Bearer <ZEUS_API_TOKEN>`.
+All `/v1/*` routes require `Authorization: Bearer <ZEUS_API_TOKEN>`. The `/ready` route also requires the same bearer token; `/health` remains public for basic liveness checks.
 
 | Method | Path | Purpose |
 |---|---|---|
