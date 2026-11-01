@@ -19,6 +19,7 @@ from coach_store import (
 from training.catalogue import get_exercise, load_catalogue
 from flask import Blueprint, jsonify, request
 from training.program import ProgramSafetyBlock, ProgramValidationError, generate_program
+from training.progress import summarize_progress
 
 logger = logging.getLogger(__name__)
 coach_bp = Blueprint("coach", __name__)
@@ -403,6 +404,27 @@ def update_coach_health_consent(profile_id):
                 "Privolitev za zdravstvene podatke je umaknjena; shranjeni podatki o nelagodju so izbrisani."
                 if not consent else "Privolitev za zdravstvene podatke je zabeležena."
             ),
+        }), 200
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
+
+
+
+@coach_bp.route("/coach/profile/<profile_id>/progress", methods=["GET", "OPTIONS"])
+def coach_training_progress(profile_id):
+    """Return descriptive training trends; never prescribe automatic load increases."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    token = _profile_token()
+    try:
+        profile = store_get_profile(profile_id, token)
+        sessions = store_list_sessions(profile_id, token, limit=50)
+        return jsonify({
+            "progress": summarize_progress(profile, sessions),
+            "source": "recorded_training_history",
+            "automatic_load_changes": False,
         }), 200
     except ProfileNotFound:
         return _profile_auth_error()
