@@ -14,6 +14,7 @@ from coach_store import (
     get_profile as store_get_profile, update_profile as store_update_profile,
     add_session as store_add_session, list_sessions as store_list_sessions,
     delete_profile as store_delete_profile, set_health_data_consent as store_set_health_data_consent,
+    check_database_connection as store_check_database_connection,
 )
 from training.catalogue import get_exercise, load_catalogue
 from flask import Blueprint, jsonify, request
@@ -162,6 +163,24 @@ def coach_program():
         logger.exception("ATENA catalogue/program generation failed")
         return jsonify({"error": "Programa trenutno ni mogoče sestaviti iz kataloga."}), 500
     return jsonify({"program": result, "source": "curated_exercise_catalogue", "pilot": True}), 200
+
+
+
+@coach_bp.route("/coach/storage/check", methods=["GET", "OPTIONS"])
+def coach_storage_check():
+    """Pilot-token-protected, read-only DB connectivity check; creates no tables or user data."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    expected = os.getenv("AI_COACH_TEST_TOKEN", "").strip()
+    supplied = request.headers.get("X-Pilot-Token", "").strip()
+    if not expected or not supplied or not hmac.compare_digest(supplied, expected):
+        return jsonify({"error": "Testni dostopni ključ ni pravilen."}), 403
+    try:
+        store_check_database_connection()
+        return jsonify({"database": "reachable", "user_data_storage": "still_disabled"}), 200
+    except StorageUnavailable as exc:
+        logger.warning("ATENA database connectivity check failed: %s", type(exc).__name__)
+        return jsonify({"database": "unavailable", "user_data_storage": "still_disabled"}), 503
 
 
 # Longitudinal profile storage is opt-in and disabled by default. Hosted use
