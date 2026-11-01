@@ -150,3 +150,80 @@ def test_adapter_receives_a_copy_of_the_task_payload():
         objective="Payload isolation", domain="fitness", payload=original_payload
     ))
     assert original_payload == {"goal": {"primary": "strength"}}
+
+
+
+def test_enqueue_can_be_cancelled_before_dispatch():
+    calls = []
+    coordinator = Coordinator(adapters={"ATENA": lambda task: calls.append(task.task_id) or {"ok": True}})
+    queued = coordinator.enqueue(TaskRequest(
+        objective="Cancel before dispatch", domain="fitness", task_id="cancel-queued"
+    ))
+
+    assert queued.status is TaskStatus.QUEUED
+    assert coordinator.cancel("cancel-queued") is True
+    cancelled = coordinator.get("cancel-queued")
+    assert cancelled.status is TaskStatus.CANCELLED
+    assert cancelled.error_code == "cancelled_by_request"
+    assert coordinator.cancel("cancel-queued") is False
+    assert calls == []
+
+
+def test_running_task_cannot_be_cancelled_or_misreported_as_stopped():
+    coordinator = None
+    cancel_results = []
+
+    def adapter(task):
+        cancel_results.append(coordinator.cancel(task.task_id))
+        return {"decision": "maintain"}
+
+    coordinator = Coordinator(adapters={"ATENA": adapter})
+    task = coordinator.submit(TaskRequest(
+        objective="Cancellation boundary", domain="fitness", task_id="running-cancel"
+    ))
+
+    assert cancel_results == [False]
+    assert task.status is TaskStatus.COMPLETED
+    assert task.attempt_count == 1
+    assert task.started_at is not None
+    assert task.completed_at is not None
+
+
+def test_expired_terminal_tasks_are_purged_and_capacity_reclaimed():
+    from datetime import datetime, timedelta, timezone
+
+    now = [datetime(2026, 1, 1, tzinfo=timezone.utc)]
+    coordinator = Coordinator(
+        max_tasks=1,
+        retention_seconds=60,
+        clock=lambda: now[0],
+        adapters={"ATENA": lambda task: {"ok": True}},
+    )
+    coordinator.submit(TaskRequest(
+        objective="First task", domain="fitness", task_id="expires"
+    ))
+    assert coordinator.get("expires") is not None
+
+    now[0] += timedelta(seconds=61)
+    assert coordinator.get("expires") is None
+    second = coordinator.enqueue(TaskRequest(
+        objective="Second task", domain="fitness", task_id="capacity-reclaimed"
+    ))
+    assert second.status is TaskStatus.QUEUED
+
+
+def test_queued_task_dispatch_is_single_attempt_only():
+    calls = []
+    coordinator = Coordinator(
+        adapters={"ATENA": lambda task: calls.append(task.task_id) or {"ok": True}}
+    )
+    queued = coordinator.enqueue(TaskRequest(
+        objective="Single dispatch", domain="fitness", task_id="single-dispatch"
+    ))
+    result = coordinator.run(queued.task_id)
+
+    assert result.status is TaskStatus.COMPLETED
+    assert result.attempt_count == 1
+    assert calls == ["single-dispatch"]
+    with pytest.raises(ValueError, match="only queued"):
+        coordinator.run(queued.task_id)
