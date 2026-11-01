@@ -336,7 +336,7 @@ def set_health_data_consent(profile_id: str, token: str, consent: bool):
                             "SELECT session_id, session_json FROM atena_training_sessions WHERE profile_id = %s",
                             (profile_id,)).fetchall()
             for session_id, session_json in rows:
-                record = json.loads(session_json)
+                record = _decode_json(session_json)
                 record.pop("discomfort_reported", None)
                 _execute(conn, dialect,
                          "UPDATE atena_training_sessions SET session_json = %s WHERE session_id = %s",
