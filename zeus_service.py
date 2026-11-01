@@ -6,6 +6,7 @@ All lifecycle writes are fail-closed when the ledger is configured.
 from __future__ import annotations
 
 import hmac
+import logging
 import os
 from functools import wraps
 from typing import Any
@@ -205,7 +206,15 @@ class _LazyWSGIApp:
         if self._app is None:
             try:
                 self._app = create_app()
-            except (RuntimeError, ValueError):
+            except (RuntimeError, ValueError) as exc:
+                # Log only the safe exception type/message; never log tokens
+                # or environment values. This makes startup misconfiguration
+                # diagnosable without weakening the public error response.
+                logging.getLogger("zeus").error(
+                    "ZEUS startup configuration error (%s): %s",
+                    type(exc).__name__,
+                    exc,
+                )
                 body = b'{"error":"service_not_configured"}'
                 start_response("503 Service Unavailable", [
                     ("Content-Type", "application/json"),
