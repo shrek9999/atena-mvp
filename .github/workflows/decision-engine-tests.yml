@@ -35,6 +35,10 @@ jobs:
         env:
           PYTHONPATH: .
         run: pytest -q
+      - name: Check ZEUS ledger Worker syntax and tests
+        run: |
+          node --check cloudflare/zeus-ledger-worker/src/index.js
+          node --test cloudflare/zeus-ledger-worker/test/worker.test.mjs
       - name: Read-only live ATENA MCP compatibility check
         if: github.event_name == 'pull_request' && github.head_ref == 'feature/zeus-coordinator-skeleton'
         env:
