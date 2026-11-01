@@ -185,6 +185,34 @@ def coach_storage_check():
         return jsonify({"database": "unavailable", "reason": exc.reason, "user_data_storage": "still_disabled"}), 503
 
 
+@coach_bp.route("/coach/storage/status", methods=["GET", "OPTIONS"])
+def coach_storage_status():
+    """Return coarse operator-controlled storage readiness; never expose credentials."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    expected = os.getenv("AI_COACH_TEST_TOKEN", "").strip()
+    supplied = request.headers.get("X-Pilot-Token", "").strip()
+    if not expected or not supplied or not hmac.compare_digest(supplied, expected):
+        return jsonify({"error": "Testni dostopni ključ ni pravilen."}), 403
+    enabled = (
+        os.getenv("ATENA_DATA_STORAGE_ENABLED", "").strip().lower() == "true"
+        and os.getenv("ATENA_PRIVACY_NOTICE_APPROVED", "").strip().lower() == "true"
+    )
+    try:
+        store_check_database_connection()
+        return jsonify({
+            "database": "reachable",
+            "storage_enabled": enabled,
+            "privacy_notice_version": os.getenv("ATENA_PRIVACY_NOTICE_VERSION", "pilot-draft-1").strip(),
+        }), 200
+    except StorageUnavailable as exc:
+        return jsonify({
+            "database": "unavailable",
+            "storage_enabled": False,
+            "reason": exc.reason,
+        }), 503
+
+
 # Longitudinal profile storage is opt-in and disabled by default. Hosted use
 # requires a persistent PostgreSQL database and an operator-approved notice.
 PROFILE_FIELDS = {"goal", "experience", "equipment", "sessions_per_week", "session_minutes", "available_days"}
