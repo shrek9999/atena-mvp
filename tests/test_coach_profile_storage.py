@@ -262,6 +262,7 @@ def test_withdrawing_health_consent_erases_previously_stored_discomfort_flags(mo
     created = _create(client, health_consent=True)
     profile_id = created["profile"]["profile_id"]
     token = created["profile_access_token"]
+    assert created["profile"]["health_data_consent_at"]
     headers = {"X-Profile-Token": token}
     exercise_id = load_catalogue()[0]["id"]
     logged = client.post(
@@ -283,6 +284,7 @@ def test_withdrawing_health_consent_erases_previously_stored_discomfort_flags(mo
     )
     assert withdrawn.status_code == 200
     assert withdrawn.get_json()["profile"]["health_data_consent"] is False
+    assert withdrawn.get_json()["profile"]["health_data_consent_at"] is None
     history = client.get(f"/coach/profile/{profile_id}/sessions", headers=headers).get_json()["sessions"]
     assert "discomfort_reported" not in history[0]["session"]
 
