@@ -1,4 +1,5 @@
 name: ATENA Staging Program Quality Matrix
+# Regression gate includes coaching-language checks on the current pilot branch.
 on:
   push:
     branches:
