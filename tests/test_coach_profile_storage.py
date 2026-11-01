@@ -593,3 +593,82 @@ def test_time_based_progress_uses_work_duration_trend():
     ]
     result = summarize_progress(profile, sessions)
     assert result["exercise_trends"][0]["status"] == "work_duration_increased"
+
+
+
+def test_existing_profile_remains_readable_exportable_and_deletable_when_storage_is_disabled(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    monkeypatch.setenv("ATENA_DATA_STORAGE_ENABLED", "false")
+    monkeypatch.setenv("ATENA_PRIVACY_NOTICE_APPROVED", "false")
+
+    headers = {"X-Profile-Token": token}
+    profile_response = client.get(f"/coach/profile/{profile_id}", headers=headers)
+    sessions_response = client.get(f"/coach/profile/{profile_id}/sessions", headers=headers)
+    export_response = client.get(f"/coach/profile/{profile_id}/export", headers=headers)
+    assert profile_response.status_code == 200
+    assert sessions_response.status_code == 200
+    assert export_response.status_code == 200
+
+    delete_response = client.delete(f"/coach/profile/{profile_id}", headers=headers)
+    assert delete_response.status_code == 200
+    missing = client.get(f"/coach/profile/{profile_id}", headers=headers)
+    assert missing.status_code == 404
+
+
+def test_health_consent_can_be_withdrawn_and_erased_when_storage_is_disabled(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    exercise_id = load_catalogue()[0]["id"]
+    saved = client.post(
+        f"/coach/profile/{profile_id}/sessions",
+        headers={"X-Profile-Token": token},
+        json={
+            "session_date": "2026-11-01",
+            "duration_minutes": 45,
+            "difficulty": "moderate",
+            "completed": True,
+            "exercises": [{"exercise_id": exercise_id, "sets_completed": 2, "reps_completed": 8}],
+            "discomfort_reported": True,
+        },
+    )
+    assert saved.status_code == 201
+    monkeypatch.setenv("ATENA_DATA_STORAGE_ENABLED", "false")
+    monkeypatch.setenv("ATENA_PRIVACY_NOTICE_APPROVED", "false")
+
+    withdrawn = client.post(
+        f"/coach/profile/{profile_id}/consent",
+        headers={"X-Profile-Token": token},
+        json={"health_data_consent": False},
+    )
+    assert withdrawn.status_code == 200
+    sessions = client.get(
+        f"/coach/profile/{profile_id}/sessions",
+        headers={"X-Profile-Token": token},
+    ).get_json()["sessions"]
+    assert "discomfort_reported" not in sessions[0]["session"]
+
+
+def test_new_profile_writes_remain_blocked_when_storage_is_disabled(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    monkeypatch.setenv("ATENA_DATA_STORAGE_ENABLED", "false")
+    monkeypatch.setenv("ATENA_PRIVACY_NOTICE_APPROVED", "false")
+    response = client.post(
+        "/coach/profile",
+        headers={"X-Pilot-Token": "pilot-test-secret"},
+        json={
+            "profile": {
+                "goal": "hypertrophy", "experience": "beginner",
+                "equipment": ["bodyweight"], "sessions_per_week": 2,
+                "session_minutes": 45, "available_days": [],
+            },
+            "privacy_notice_acknowledged": True,
+            "privacy_notice_version": "pilot-test-v1",
+            "health_data_consent": False,
+        },
+    )
+    assert response.status_code == 503
