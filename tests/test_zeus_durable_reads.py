@@ -112,6 +112,10 @@ def test_runtime_startup_reconciles_orphaned_tasks_before_serving_api(monkeypatc
         def list_tasks(self, limit=50):
             return {"tasks": [dict(task) for task in self.tasks]}
 
+        def get_task(self, task_id):
+            task = next((item for item in self.tasks if item["task_id"] == task_id), None)
+            return {"task": dict(task)} if task else {"error": "not_found"}
+
         def transition_task(self, task_id, from_status, to_status, error_code=None, recovery_code=None):
             task = self.tasks[0]
             assert task["task_id"] == task_id
