@@ -183,8 +183,11 @@ async function createTask(){
 async function runTask(id){
  try{
   const data=await api("/v1/tasks/"+encodeURIComponent(id)+"/run",{method:"POST"});
-  resultBox.textContent=JSON.stringify(data.result||{message:"Naloga zaključena; rezultat ni bil vrnjen."},null,2);
-  notify("Naloga je zaključena.",false);await loadTasks();
+  const status=(data.task||{}).status||"unknown";
+  resultBox.textContent=JSON.stringify(data.result||{status:status,error_code:(data.task||{}).error_code||null},null,2);
+  if(status==="completed")notify("Naloga je uspešno zaključena.",false);
+  else notify("Naloga se je končala s statusom: "+status,true);
+  await loadTasks();
  }catch(error){notify(error.message,true);await loadTasks().catch(()=>{});}
 }
 async function approveAndRun(id){
