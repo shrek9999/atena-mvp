@@ -43,12 +43,16 @@ def test_factory_routes_fitness_task_to_atena_adapter():
     ]
 
 
-def test_factory_leaves_hermes_blocked_without_adapter():
+def test_factory_registers_hermes_and_returns_blocked_evidence_pack_without_sources():
     coordinator = build_coordinator(atena_transport=FakeTransport())
     record = coordinator.submit(TaskRequest(
         objective="Synthetic market research",
         domain="markets",
+        payload={"research_type": "macro", "subject": "Synthetic macro topic"},
     ))
-    assert record.status is TaskStatus.BLOCKED
+    assert record.status is TaskStatus.COMPLETED
     assert record.specialist == "HERMES"
-    assert record.error_code == "specialist_unavailable"
+    assert record.result["agent"] == "HERMES"
+    assert record.result["status"] == "blocked"
+    assert record.result["executive_view"] == "insufficient_evidence"
+    assert record.error_code is None
