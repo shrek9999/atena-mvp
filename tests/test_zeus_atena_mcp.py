@@ -74,7 +74,7 @@ def test_adapter_rejects_oversized_payload():
 
 
 def test_adapter_parses_sse_response():
-    raw = 'event: message\\ndata: {"jsonrpc":"2.0","id":1,"result":{"ok":true}}\\n\\n'
+    raw = "event: message\ndata: {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"ok\":true}}\n\n"
     assert AtenaMCPAdapter._parse_response(raw)["result"]["ok"] is True
 
 
