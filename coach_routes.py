@@ -509,3 +509,14 @@ def coach_training_adaptation(profile_id):
         return _profile_auth_error()
     except StorageUnavailable as exc:
         return _storage_error(exc)
+
+
+@coach_bp.route("/coach/storage/probe", methods=["GET"])
+def coach_storage_temporary_probe():
+    """Temporary read-only database probe; returns only a safe status category."""
+    try:
+        store_check_database_connection()
+        return jsonify({"database": "reachable"}), 200
+    except StorageUnavailable as exc:
+        logger.warning("ATENA database probe failed: %s", type(exc).__name__)
+        return jsonify({"database": "unavailable", "reason": exc.reason}), 200
