@@ -2,7 +2,7 @@
 
 ## Unified entry point
 
-- Dashboard: https://zeus-coordinator.onrender.com/dashboard
+- Dashboard: https://zeus-coordinator.onrender.com/dashboard (with or without trailing slash)
 - Health: https://zeus-coordinator.onrender.com/health
 - API base: https://zeus-coordinator.onrender.com
 - Persistent ledger: Cloudflare D1, accessed only by the ZEUS Worker.
@@ -85,7 +85,7 @@ not persisted in D1. Durable task and event endpoints expose metadata only.
 - Both live tasks had one attempt and four durable lifecycle events.
 - All synthetic smoke tasks and their event rows were removed after
   verification.
-- Smoke flags were reset to `0`; no permanent test records remain.
+- Smoke flags were disabled (`false`); no permanent test records remain.
 
 ## Known operating constraint
 
