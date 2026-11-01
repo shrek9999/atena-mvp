@@ -77,6 +77,25 @@ jobs:
 
           failures = []
 
+          check_request = urllib.request.Request(
+              BASE + "/coach/storage/check",
+              headers={"X-Pilot-Token": TOKEN},
+              method="GET",
+          )
+          try:
+              with urllib.request.urlopen(check_request, timeout=30) as response:
+                  db_status = response.status
+                  db_body = json.loads(response.read().decode("utf-8"))
+          except urllib.error.HTTPError as exc:
+              db_status = exc.code
+              db_body = {}
+          print(f"Supabase PostgreSQL connectivity: HTTP {db_status}")
+          if db_status == 200 and db_body.get("database") == "reachable":
+              print("Database connectivity: PASS (read-only SELECT 1; no user tables or profiles created)")
+          else:
+              print("Database connectivity: FAIL (check ATENA_DATABASE_URL in Render; no secret is printed)")
+              failures.append("Supabase PostgreSQL connectivity")
+
           status, body = post("/coach/program", {
               "profile": {
                   "goal": "hypertrophy",
