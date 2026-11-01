@@ -13,14 +13,15 @@ def main():
             "research_type": "macro",
             "subject": "Public CPI source connectivity check",
             "time_horizon": "unspecified",
-            "source_urls": ["https://www.bls.gov/news.release/cpi.nr0.htm"],
+            "source_urls": ["https://fred.stlouisfed.org/graph/fredgraph.csv?id=CPIAUCSL"],
         },
     ))
     summary = {
         "agent": result["agent"],
         "status": result["status"],
         "source_count": len(result["source_documents"]),
-        "source_host": "www.bls.gov" if result["source_documents"] else None,
+        "source_host": "fred.stlouisfed.org" if result["source_documents"] else None,
+        "source_failures": result["source_failures"],
         "executive_view": result["executive_view"],
     }
     print(json.dumps(summary, sort_keys=True))
