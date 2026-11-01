@@ -93,7 +93,7 @@ jobs:
           if db_status == 200 and db_body.get("database") == "reachable":
               print("Database connectivity: PASS (read-only SELECT 1; no user tables or profiles created)")
           else:
-              print("Database connectivity: FAIL (check ATENA_DATABASE_URL in Render; no secret is printed)")
+              print(f"Database connectivity: FAIL; safe diagnostic={db_body.get('reason', 'not_returned')} (no secret is printed)")
               failures.append("Supabase PostgreSQL connectivity")
 
           status, body = post("/coach/program", {
