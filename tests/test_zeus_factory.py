@@ -1,7 +1,29 @@
+import json
+
 from zeus.factory import build_coordinator
 from zeus.coordinator import TaskRequest, TaskStatus
 
-from tests.test_zeus_atena_mcp import FakeTransport
+
+class FakeTransport:
+    def __init__(self):
+        self.calls = []
+
+    def post(self, url, body, headers, timeout):
+        self.calls.append((url, body, headers, timeout))
+        method = body.get("method")
+        if method == "initialize":
+            return 200, {"Mcp-Session-Id": "synthetic-session"}, json.dumps({
+                "jsonrpc": "2.0", "id": body["id"],
+                "result": {"protocolVersion": "2025-03-26", "capabilities": {}},
+            })
+        if method == "notifications/initialized":
+            return 202, {}, ""
+        if method == "tools/call":
+            return 200, {}, json.dumps({
+                "jsonrpc": "2.0", "id": body["id"],
+                "result": {"structuredContent": {"decision": "maintain"}},
+            })
+        raise AssertionError(f"Unexpected MCP method: {method}")
 
 
 def test_factory_routes_fitness_task_to_atena_adapter():
