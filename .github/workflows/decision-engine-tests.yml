@@ -36,4 +36,6 @@ jobs:
         run: pytest -q
       - name: Read-only live ATENA MCP compatibility check
         if: github.event_name == 'pull_request' && github.head_ref == 'feature/zeus-coordinator-skeleton'
+        env:
+          PYTHONPATH: .
         run: python scripts/atena_mcp_live_smoke.py
