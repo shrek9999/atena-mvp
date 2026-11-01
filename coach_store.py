@@ -108,8 +108,16 @@ def check_database_connection():
     except StorageUnavailable:
         raise
     except Exception as exc:
-        # Expose only a coarse category, never driver text, host, username, or connection URL.
-        reason = "connection_or_credentials_error"
+        # Expose only a coarse category; never return driver text, host, username, or URL.
+        sqlstate = getattr(exc, "sqlstate", None)
+        if sqlstate in ("28P01", "28000"):
+            reason = "database_authentication_failed"
+        elif sqlstate and sqlstate.startswith("08"):
+            reason = "database_network_connection_failed"
+        elif sqlstate == "57P03":
+            reason = "database_temporarily_unavailable"
+        else:
+            reason = "database_connection_failed"
         raise StorageUnavailable("Database connection check failed.", reason) from exc
 
 
