@@ -14,7 +14,7 @@ from coach_store import (
     get_profile as store_get_profile, update_profile as store_update_profile,
     add_session as store_add_session, list_sessions as store_list_sessions,
     delete_profile as store_delete_profile, set_health_data_consent as store_set_health_data_consent,
-    check_database_connection as store_check_database_connection,
+    check_database_connection as store_check_database_connection, storage_enabled,
 )
 from training.catalogue import get_exercise, load_catalogue
 from flask import Blueprint, jsonify, request
@@ -531,6 +531,8 @@ def coach_profile_program(profile_id):
     """Build the next programme from the saved profile and most recent logged feedback."""
     if request.method == "OPTIONS":
         return ("", 204)
+    if not storage_enabled():
+        return _storage_error(StorageUnavailable("Profile storage is not enabled or approved."))
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict) or set(payload) != {"no_current_pain_or_restrictions"}:
         return jsonify({"error": "Potrjena mora biti samo trenutna varnostna izjava."}), 400
