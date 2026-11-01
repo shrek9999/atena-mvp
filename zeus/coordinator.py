@@ -6,7 +6,8 @@ in-memory ledger. It does not call external services or make model decisions.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+import json
+from dataclasses import asdict, dataclass, field, replace
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Callable
@@ -21,6 +22,9 @@ class TaskStatus(str, Enum):
     FAILED = "failed"
     BLOCKED = "blocked"
     CANCELLED = "cancelled"
+
+
+MAX_RESULT_BYTES = 64_000
 
 
 TERMINAL_STATUSES = {
@@ -138,20 +142,23 @@ class Coordinator:
         if request.requires_approval and not request.approved:
             record.error_code = "approval_required"
             self._transition(record, TaskStatus.BLOCKED)
-            return record
+            return self._snapshot(record)
 
         adapter = self._adapters.get(specialist)
         if adapter is None:
             record.error_code = "specialist_unavailable"
             self._transition(record, TaskStatus.BLOCKED)
-            return record
+            return self._snapshot(record)
 
         self._transition(record, TaskStatus.RUNNING)
         try:
             result = adapter(request)
             if not isinstance(result, dict):
                 raise TypeError("specialist adapter must return a dictionary")
-            record.result = result
+            serialized = json.dumps(result, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
+            if len(serialized.encode("utf-8")) > MAX_RESULT_BYTES:
+                raise ValueError("specialist result exceeds the 64 KB limit")
+            record.result = json.loads(serialized)
             self._transition(record, TaskStatus.COMPLETED)
         except SpecialistUnavailable:
             record.error_code = "specialist_unavailable"
@@ -160,13 +167,19 @@ class Coordinator:
             # Do not expose exception text or payloads in the task ledger.
             record.error_code = "specialist_execution_failed"
             self._transition(record, TaskStatus.FAILED)
-        return record
+        return self._snapshot(record)
 
     def get(self, task_id: str) -> TaskRecord | None:
-        return self._tasks.get(task_id)
+        record = self._tasks.get(task_id)
+        return self._snapshot(record) if record is not None else None
 
     def list_tasks(self) -> list[TaskRecord]:
-        return list(self._tasks.values())
+        return [self._snapshot(record) for record in self._tasks.values()]
+
+    @staticmethod
+    def _snapshot(record: TaskRecord) -> TaskRecord:
+        copied_result = json.loads(json.dumps(record.result)) if record.result is not None else None
+        return replace(record, result=copied_result)
 
     @staticmethod
     def _transition(record: TaskRecord, status: TaskStatus) -> None:
