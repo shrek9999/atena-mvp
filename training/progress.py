@@ -48,6 +48,7 @@ def summarize_progress(profile_record, sessions):
                 "date": day.isoformat(),
                 "sets": exercise.get("sets_completed"),
                 "reps": exercise.get("reps_completed"),
+                "work_seconds": exercise.get("work_seconds_completed"),
                 "load_kg": exercise.get("load_kg"),
                 "rir": exercise.get("rir"),
             })
@@ -71,6 +72,11 @@ def summarize_progress(profile_record, sessions):
                     status = "repetitions_increased"
                 else:
                     status = "stable"
+            elif latest.get("work_seconds") is not None and previous.get("work_seconds") is not None:
+                old_work, new_work = previous["work_seconds"], latest["work_seconds"]
+                status = "work_duration_increased" if new_work > old_work else (
+                    "stable" if new_work == old_work else "work_duration_reduced"
+                )
             elif new_reps is not None and old_reps is not None:
                 status = "repetitions_increased" if new_reps > old_reps else (
                     "stable" if new_reps == old_reps else "repetitions_reduced"
