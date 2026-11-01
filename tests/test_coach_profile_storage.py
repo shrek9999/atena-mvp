@@ -372,3 +372,37 @@ def test_database_connectivity_endpoint_reports_unavailable_without_leaking_deta
         "reason": "storage_unavailable",
         "user_data_storage": "still_disabled",
     }
+
+
+
+def test_jsonb_decoder_accepts_psycopg_decoded_objects():
+    from coach_store import _decode_json
+
+    profile = {"goal": "strength", "equipment": ["barbell", "rack"]}
+    session = {"completed": True, "exercises": [{"exercise_id": "squat"}]}
+    assert _decode_json(profile) == profile
+    assert _decode_json(session) == session
+    assert _decode_json('{"goal":"strength"}') == {"goal": "strength"}
+
+
+def test_saved_profile_limits_match_program_generator():
+    from coach_routes import _validate_profile
+    import pytest
+
+    base = {
+        "goal": "hypertrophy",
+        "experience": "beginner",
+        "equipment": ["bodyweight"],
+        "sessions_per_week": 2,
+        "session_minutes": 45,
+        "available_days": ["monday", "thursday"],
+    }
+    assert _validate_profile(base)["sessions_per_week"] == 2
+    for invalid in (
+        {**base, "sessions_per_week": 1},
+        {**base, "sessions_per_week": 5},
+        {**base, "session_minutes": 20},
+        {**base, "session_minutes": 121},
+    ):
+        with pytest.raises(ValueError):
+            _validate_profile(invalid)
