@@ -27,7 +27,8 @@ class FakeStatement {
       row.expires_at = expires_at || row.expires_at;
       row.attempt_count += increment; row.error_code = error_code; row.recovery_code = recovery_code;
       this.db.events.push({ event_id: this.db.events.length + 1, task_id, event_type: "status_changed", from_status: previous, to_status: status, occurred_at: updated_at });
-      return { meta: { changes: 1 } };
+      // D1 may include the status-event trigger write in meta.changes.
+      return { meta: { changes: 2 } };
     }
     throw new Error("unexpected run SQL");
   }
@@ -93,6 +94,35 @@ test("applies valid state transition and appends event", async () => {
   assert.equal(response.status, 200);
   assert.equal((await response.json()).task.status, "assigned");
   assert.equal(bindings.ZEUS_DB.events.length, 2);
+});
+
+
+test("runs the full lifecycle when D1 includes trigger writes in changes", async () => {
+  const bindings = env();
+  const created = await worker.fetch(request("/v1/tasks", "POST", {
+    task_id: "full-lifecycle", domain: "fitness", specialist: "ATENA",
+  }), bindings);
+  assert.equal(created.status, 201);
+
+  for (const [from_status, to_status] of [
+    ["queued", "assigned"],
+    ["assigned", "running"],
+    ["running", "completed"],
+  ]) {
+    const response = await worker.fetch(request("/v1/tasks/full-lifecycle/status", "POST", {
+      from_status, to_status,
+    }), bindings);
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).task.status, to_status);
+  }
+
+  const task = bindings.ZEUS_DB.tasks.get("full-lifecycle");
+  assert.equal(task.status, "completed");
+  assert.equal(task.attempt_count, 1);
+  assert.deepEqual(
+    bindings.ZEUS_DB.events.map(event => event.to_status),
+    ["queued", "assigned", "running", "completed"],
+  );
 });
 
 test("rejects invalid transition and stale expected state", async () => {
