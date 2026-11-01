@@ -195,7 +195,7 @@ class _LazyWSGIApp:
         self._app = None
 
     def __call__(self, environ, start_response):
-        if self._app is None and environ.get("PATH_INFO") in {"/", "/health"}:
+        if self._app is None and environ.get("PATH_INFO") == "/":
             body = b'{"status":"ok","service":"ZEUS"}'
             start_response("200 OK", [
                 ("Content-Type", "application/json"),
