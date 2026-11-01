@@ -123,3 +123,30 @@ def test_rejects_non_json_and_oversized_specialist_results():
     )
     assert task.status is TaskStatus.FAILED
     assert task.error_code == "specialist_execution_failed"
+
+
+
+def test_rejects_non_json_and_oversized_task_payloads():
+    coordinator = Coordinator()
+    with pytest.raises(ValueError, match="JSON-compatible"):
+        coordinator.submit(TaskRequest(
+            objective="Reject non JSON", domain="fitness", payload={"bad": object()}
+        ))
+    with pytest.raises(ValueError, match="64 KB"):
+        coordinator.submit(TaskRequest(
+            objective="Reject oversized", domain="fitness", payload={"notes": "x" * 65_000}
+        ))
+
+
+def test_adapter_receives_a_copy_of_the_task_payload():
+    original_payload = {"goal": {"primary": "strength"}}
+
+    def mutating_adapter(task):
+        task.payload["goal"]["primary"] = "mutated"
+        return {"ok": True}
+
+    coordinator = Coordinator(adapters={"ATENA": mutating_adapter})
+    coordinator.submit(TaskRequest(
+        objective="Payload isolation", domain="fitness", payload=original_payload
+    ))
+    assert original_payload == {"goal": {"primary": "strength"}}
