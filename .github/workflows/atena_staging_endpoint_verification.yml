@@ -1,0 +1,97 @@
+name: ATENA staging endpoint verification
+
+on:
+  push:
+    branches:
+      - pilot/website-ai-coach
+    paths:
+      - ".github/workflows/atena_staging_endpoint_verification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate secret is available (without revealing it)
+        env:
+          PILOT_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
+        run: |
+          if [ -z "$PILOT_TOKEN" ]; then
+            echo "::error::GitHub repository secret AI_COACH_TEST_TOKEN is not configured."
+            exit 1
+          fi
+          echo "Staging test token is available."
+
+      - name: Test authenticated staging endpoints
+        env:
+          PILOT_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.request
+
+          BASE = "https://atena-ai-coach-pilot.onrender.com"
+          TOKEN = os.environ["PILOT_TOKEN"]
+
+          def post(path, payload):
+              data = json.dumps(payload).encode("utf-8")
+              request = urllib.request.Request(
+                  BASE + path,
+                  data=data,
+                  headers={
+                      "Content-Type": "application/json",
+                      "X-Pilot-Token": TOKEN,
+                  },
+                  method="POST",
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=60) as response:
+                      status = response.status
+                      raw = response.read().decode("utf-8", errors="replace")
+              except urllib.error.HTTPError as exc:
+                  status = exc.code
+                  raw = exc.read().decode("utf-8", errors="replace")
+              except Exception as exc:
+                  print(f"{path}: NETWORK ERROR: {type(exc).__name__}: {exc}")
+                  return None, None
+
+              try:
+                  body = json.loads(raw)
+              except json.JSONDecodeError:
+                  body = {"raw": raw[:1200]}
+              print(f"\n--- POST {path} ---")
+              print(f"HTTP: {status}")
+              print(json.dumps(body, ensure_ascii=False, indent=2)[:5000])
+              return status, body
+
+          program_status, program_body = post("/coach/program", {
+              "profile": {
+                  "goal": "hypertrophy",
+                  "experience": "intermediate",
+                  "sessions_per_week": 2,
+                  "session_minutes": 45,
+                  "equipment": []
+              }
+          })
+
+          chat_status, chat_body = post("/coach/chat", {
+              "messages": [{
+                  "role": "user",
+                  "content": "Želim razvijati moč in mišično maso. Pred pripravo individualnega programa mi postavi eno najpomembnejše manjkajoče vprašanje."
+              }]
+          })
+
+          print("\n--- POVZETEK ---")
+          print("Program:", "PASS" if program_status == 200 else f"FAIL (HTTP {program_status})")
+          print("Chat:", "PASS" if chat_status == 200 else f"FAIL (HTTP {chat_status})")
+          print("Dostopni žeton ni izpisan ali shranjen v izpisu.")
+          if program_status != 200 or chat_status != 200:
+              sys.exit(1)
+          PY
