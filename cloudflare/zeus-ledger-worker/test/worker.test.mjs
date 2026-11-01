@@ -126,3 +126,11 @@ test("unknown methods and paths are not exposed", async () => {
   const response = await worker.fetch(request("/v1/tasks/task-4", "DELETE"), env());
   assert.equal(response.status, 404);
 });
+
+test("rejects user content fields instead of persisting them", async () => {
+  const response = await worker.fetch(request("/v1/tasks", "POST", {
+    task_id: "private-1", domain: "fitness", specialist: "ATENA",
+    objective: "private objective", payload: { health: "private" },
+  }), env());
+  assert.equal(response.status, 400);
+});
