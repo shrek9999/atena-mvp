@@ -369,5 +369,6 @@ def test_database_connectivity_endpoint_reports_unavailable_without_leaking_deta
     assert checked.status_code == 503
     assert checked.get_json() == {
         "database": "unavailable",
+        "reason": "storage_unavailable",
         "user_data_storage": "still_disabled",
     }
