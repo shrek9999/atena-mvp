@@ -97,7 +97,9 @@ def create_profile(profile_id: str, token: str, profile: dict, health_data_conse
              notice_version, 1, int(health_data_consent), now if health_data_consent else None, now, now))
         conn.commit()
         return {"profile_id": profile_id, "profile": profile, "created_at": now, "updated_at": now,
-                "health_data_consent": bool(health_data_consent), "privacy_notice_version": notice_version}
+                "health_data_consent": bool(health_data_consent),
+                "health_data_consent_at": now if health_data_consent else None,
+                "privacy_notice_version": notice_version}
     finally:
         conn.close()
 
