@@ -102,10 +102,15 @@ class LedgerWorkerClient:
             "GET", "/v1/tasks/" + self._path_id(task_id), expected=(200, 404)
         )
 
-    def list_tasks(self, limit: int = 50) -> dict[str, Any]:
+    def list_tasks(self, limit: int = 50, offset: int = 0) -> dict[str, Any]:
         if not isinstance(limit, int) or limit < 1 or limit > 100:
             raise ValueError("limit must be between 1 and 100")
-        return self._request("GET", "/v1/tasks?limit=" + str(limit), expected=(200,))
+        if not isinstance(offset, int) or offset < 0 or offset > 1_000_000:
+            raise ValueError("offset must be between 0 and 1000000")
+        return self._request(
+            "GET", "/v1/tasks?limit=" + str(limit) + "&offset=" + str(offset),
+            expected=(200,),
+        )
 
     def get_events(self, task_id: str) -> dict[str, Any]:
         return self._request("GET", "/v1/tasks/" + self._path_id(task_id) + "/events",
