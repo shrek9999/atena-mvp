@@ -106,3 +106,12 @@ ZEUS is considered ready for a limited internal pilot only after the security ro
 - No production D1 migration, Worker deployment, Render deployment, credential change or live authenticated API test was performed.
 
 **Remaining readiness gates:** run the new CI suite; rotate both compromised credentials directly in their respective dashboards; apply the D1 migration; deploy Worker, then Render; and only then run a synthetic authenticated end-to-end lifecycle test. ATENA's optional live MCP smoke test must also be repeated because the previous run returned a tool error.
+
+
+### Reliability phase 5 — lifecycle observability
+
+- Added an authenticated Render API route for task event history: GET /v1/tasks/{id}/events.
+- The coordinator confirms that the task exists in the durable ledger before reading its append-only events, so a missing task is not confused with an empty event history.
+- The service returns only event ID, task ID, event type, status transition and timestamp. Unrecognized fields are discarded.
+- Added regression tests for event history retrieval, field allowlisting and missing-task 404 behavior.
+- This completes the service-level read path needed to inspect the durable lifecycle after create, dispatch, completion and restart recovery.
