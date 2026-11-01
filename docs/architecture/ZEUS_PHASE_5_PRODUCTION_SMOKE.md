@@ -75,4 +75,4 @@ for service startup if an external specialist is temporarily unavailable.
 
 The 2026-11-01 production run completed both synthetic tasks with one attempt
 each. The three synthetic smoke tasks and their event rows were deleted after
-verification. Both smoke flags were returned to `0`.
+verification. Both smoke flags were disabled (`false`).
