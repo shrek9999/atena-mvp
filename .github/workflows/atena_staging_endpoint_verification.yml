@@ -88,7 +88,11 @@ jobs:
                   db_body = json.loads(response.read().decode("utf-8"))
           except urllib.error.HTTPError as exc:
               db_status = exc.code
-              db_body = {}
+              raw = exc.read().decode("utf-8", errors="replace")
+              try:
+                  db_body = json.loads(raw)
+              except json.JSONDecodeError:
+                  db_body = {}
           print(f"Supabase PostgreSQL connectivity: HTTP {db_status}")
           if db_status == 200 and db_body.get("database") == "reachable":
               print("Database connectivity: PASS (read-only SELECT 1; no user tables or profiles created)")
