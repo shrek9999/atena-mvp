@@ -26,6 +26,7 @@ A training record contains:
 - Unknown profile/session fields and free-text notes are rejected.
 - Health-related discomfort feedback is rejected unless separate `health_data_consent=true` was recorded at profile creation.
 - A profile deletion removes its associated training records through the database foreign key.
+- Health-data consent can be withdrawn separately; doing so removes stored discomfort flags from all existing training records.
 - No profile or training-history endpoint writes personal values to application logs.
 
 These are technical safeguards, not a claim that ATENA is legally GDPR-compliant. The privacy notice, lawful basis, consent wording, retention schedule, data-subject request process, controller/processor roles and cross-border processing arrangements require review before any real-user data is enabled.
@@ -88,6 +89,10 @@ Header: `X-Profile-Token`
 - `GET /coach/profile/{profile_id}/sessions`
 
 The write endpoint accepts only structured session data and catalogue exercise IDs. No free-text notes are accepted.
+
+### Withdraw or grant health-data consent
+
+`POST /coach/profile/{profile_id}/consent` with `{"health_data_consent": false}` withdraws consent and deletes previously stored discomfort flags. Setting it to `true` is an explicit opt-in for future binary discomfort feedback.
 
 ### Delete profile and associated history
 
