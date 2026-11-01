@@ -497,7 +497,8 @@ def create_app(
 
     @app.before_request
     def require_authentication():
-        if request.path in {"/", "/health", "/dashboard", "/favicon.ico"}:
+        public_paths = {"/", "/health", "/dashboard", "/favicon.ico"}
+        if request.endpoint in {"health", "dashboard", "favicon"} or request.path.rstrip("/") in public_paths:
             return None
         supplied = request.headers.get("Authorization", "")
         expected = "Bearer " + token
