@@ -1,4 +1,4 @@
-name: ATENA Decision Engine Tests # Includes the one-off ZEUS live MCP gate
+name: ATENA Decision Engine Tests # Includes offline regression tests and the ZEUS live MCP gate; zeus/** is covered
 on:
   pull_request:
     paths:
