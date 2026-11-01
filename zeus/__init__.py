@@ -8,6 +8,7 @@ from .hermes_research import HermesResearchAdapter
 
 from .coordinator import (
     Coordinator,
+    LedgerPersistenceUnavailable,
     SpecialistUnavailable,
     TaskRequest,
     TaskStatus,
@@ -15,6 +16,7 @@ from .coordinator import (
 
 __all__ = [
     "Coordinator",
+    "LedgerPersistenceUnavailable",
     "SpecialistUnavailable",
     "TaskRequest",
     "TaskStatus",
