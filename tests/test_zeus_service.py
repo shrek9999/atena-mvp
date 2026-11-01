@@ -26,6 +26,7 @@ def test_dashboard_is_public_but_contains_no_secret():
     client = make_app().test_client()
     response = client.get("/dashboard")
     assert response.status_code == 200
+    assert client.get("/dashboard/", follow_redirects=True).status_code == 200
     html = response.get_data(as_text=True)
     assert "ZEUS API žeton" in html
     assert "sessionStorage" in html
