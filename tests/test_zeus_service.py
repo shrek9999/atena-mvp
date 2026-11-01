@@ -99,17 +99,30 @@ def test_api_returns_503_if_durable_task_creation_cannot_be_confirmed():
     assert response.get_json()["error"] == "ledger_unavailable"
 
 
-def test_lazy_wsgi_health_is_available_before_secret_configuration():
+def test_lazy_wsgi_root_is_liveness_but_health_requires_runtime_configuration():
     from werkzeug.test import Client
     from werkzeug.wrappers import Response
     from zeus_service import _LazyWSGIApp
 
     client = Client(_LazyWSGIApp(), Response)
-    response = client.get("/health")
-    assert response.status_code == 200
-    assert response.get_json()["service"] == "ZEUS"
     root_probe = client.head("/")
     assert root_probe.status_code == 200
+    health = client.get("/health")
+    assert health.status_code == 503
+    assert health.get_json()["error"] == "service_not_configured"
+
+
+def test_lazy_wsgi_health_initializes_configured_runtime(monkeypatch):
+    from werkzeug.test import Client
+    from werkzeug.wrappers import Response
+    import zeus_service
+
+    monkeypatch.setattr(zeus_service, "create_app", lambda: make_app())
+    client = Client(zeus_service._LazyWSGIApp(), Response)
+    health = client.get("/health")
+
+    assert health.status_code == 200
+    assert health.get_json()["service"] == "ZEUS"
 
 
 def test_lazy_wsgi_fails_closed_when_runtime_secrets_are_missing(monkeypatch):
