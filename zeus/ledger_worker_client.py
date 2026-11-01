@@ -129,7 +129,11 @@ class LedgerWorkerClient:
             method, self._base_url + path, self._token, body, self._timeout
         )
         if status not in expected:
-            raise SpecialistUnavailable("ZEUS ledger Worker rejected the request")
+            # HTTP status helps distinguish token, route and schema failures.
+            # Never log or expose the untrusted response body.
+            raise SpecialistUnavailable(
+                f"ZEUS ledger Worker rejected the request (HTTP {status})"
+            )
         try:
             decoded = json.loads(raw)
         except (ValueError, TypeError):
