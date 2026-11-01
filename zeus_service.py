@@ -48,6 +48,7 @@ def create_app(
     app = Flask(__name__)
     app.config["MAX_CONTENT_LENGTH"] = MAX_BODY_BYTES
 
+    @app.get("/")
     @app.get("/health")
     def health():
         return jsonify({"status": "ok", "service": "ZEUS"})
