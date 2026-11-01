@@ -41,11 +41,25 @@ def assess_next_step(sessions):
 
     if recent and recent[0][1].get("completed") is not True:
         return {
-            "decision": "collect_feedback",
+            "decision": "review_volume_reduction",
             "progression_allowed": False,
-            "volume_change": "none_automatic",
+            "volume_change": "reduce_next_program_sets",
             "reason_codes": ["session_not_completed"],
-            "message": "Trening ni bil zaključen. Pred spremembo programa je treba ugotoviti razlog.",
+            "message": "Zadnji trening ni bil zaključen. Ob tvoji zahtevi bo naslednji program konservativno zmanjšal število serij; pred tem preveri razlog in regeneracijo.",
+        }
+
+    if recent and (recent[0][1].get("difficulty") == "hard" or recent[0][1].get("recovery") == "poor"):
+        reasons = []
+        if recent[0][1].get("difficulty") == "hard":
+            reasons.append("last_session_hard")
+        if recent[0][1].get("recovery") == "poor":
+            reasons.append("poor_recovery")
+        return {
+            "decision": "review_volume_reduction",
+            "progression_allowed": False,
+            "volume_change": "reduce_next_program_sets",
+            "reason_codes": reasons,
+            "message": "Zadnji trening je bil ocenjen kot težek ali regeneracija ni bila ustrezna. Naslednji program bo ob tvoji zahtevi zmanjšal število serij; obremenitve ne povečuj.",
         }
 
     hard_count = sum(1 for _, s in completed[:2] if s.get("difficulty") == "hard")
