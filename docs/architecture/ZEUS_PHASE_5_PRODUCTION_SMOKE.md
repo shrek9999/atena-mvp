@@ -43,3 +43,36 @@ This validates the authenticated HTTP routes, approval gate, coordinator
 dispatch boundary, durable task transitions, metadata readback, and event
 history in one live runtime. It does not prove a full real-specialist
 customer workflow, because the specialist is intentionally stubbed.
+
+
+## Production defect found and fixed (2026-11-01)
+
+The first live lifecycle attempt exposed a false HTTP 409 on the
+`assigned → running` transition. The D1 status trigger writes both the task
+row and an append-only event row, so the D1 change counter can be greater than
+one. The Worker incorrectly required `meta.changes === 1`.
+
+The Worker now treats any finite positive change count as a successful
+conditional update and still rejects zero-change stale or missing-task
+updates. The deployed Worker version is 6. A production smoke confirmed all
+four transitions and the matching event history.
+
+## Separate live-specialist smoke
+
+The stub-based smoke above remains intentionally isolated from real agents.
+A separate opt-in `ZEUS_LIVE_AGENT_SMOKE=1` (or
+`ZEUS_STARTUP_SMOKE=2`) path exercises both real adapters through the
+ZEUS coordinator using synthetic, non-personal inputs:
+
+- ATENA: Streamable HTTP MCP initialize and `atena_decide` call.
+- HERMES: read-only retrieval from the allowlisted official public sources.
+- Both: authenticated ZEUS task creation, specialist execution, durable
+  metadata readback, and the four-event lifecycle.
+
+Specialist results are checked in process memory only. D1 stores no objective,
+payload, source excerpts, or specialist result. The live smoke is non-blocking
+for service startup if an external specialist is temporarily unavailable.
+
+The 2026-11-01 production run completed both synthetic tasks with one attempt
+each. The three synthetic smoke tasks and their event rows were deleted after
+verification. Both smoke flags were returned to `0`.
