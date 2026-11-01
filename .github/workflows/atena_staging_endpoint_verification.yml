@@ -95,3 +95,5 @@ jobs:
           if program_status != 200 or chat_status != 200:
               sys.exit(1)
           PY
+
+# Re-triggered after repository secret configuration.
