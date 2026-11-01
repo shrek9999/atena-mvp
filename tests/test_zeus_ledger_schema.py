@@ -40,3 +40,31 @@ def test_zeus_d1_schema_rejects_domain_specialist_mismatch():
         pass
     else:
         raise AssertionError("domain/specialist mismatch should be rejected")
+
+
+
+def test_zeus_restart_recovery_migration_adds_constrained_marker():
+    root = Path(__file__).parents[1] / "cloudflare" / "zeus-ledger-worker"
+    schema = (root / "schema.sql").read_text(encoding="utf-8")
+    schema_without_recovery = schema.replace(
+        "  recovery_code TEXT CHECK (recovery_code IS NULL OR recovery_code IN ('runtime_restarted')),\n",
+        "",
+    )
+    connection = sqlite3.connect(":memory:")
+    connection.executescript(schema_without_recovery)
+    connection.executescript(
+        (root / "migrations" / "0002_add_recovery_code.sql").read_text(encoding="utf-8")
+    )
+    connection.execute(
+        "INSERT INTO zeus_tasks (task_id, domain, specialist, status, created_at, updated_at, recovery_code) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        ("recovered-task", "fitness", "ATENA", "blocked", "2026-11-01T00:00:00Z", "2026-11-01T00:01:00Z", "runtime_restarted"),
+    )
+    try:
+        connection.execute(
+            "UPDATE zeus_tasks SET recovery_code = ? WHERE task_id = ?",
+            ("unapproved_reason", "recovered-task"),
+        )
+    except sqlite3.IntegrityError:
+        pass
+    else:
+        raise AssertionError("unknown recovery markers should be rejected")
