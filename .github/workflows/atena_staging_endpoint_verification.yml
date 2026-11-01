@@ -77,7 +77,7 @@ jobs:
                   "experience": "intermediate",
                   "sessions_per_week": 2,
                   "session_minutes": 60,
-                  "equipment": []
+                  "equipment": ["barbell", "rack", "dumbbell", "bench", "pull_up_bar"]
               }
           })
           print(f"Hypertrophy program endpoint: HTTP {status}")
