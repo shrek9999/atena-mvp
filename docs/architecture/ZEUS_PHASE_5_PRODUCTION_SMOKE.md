@@ -15,12 +15,13 @@ test client, backed by the configured live `LedgerWorkerClient` and D1 Worker.
 ## Checks
 
 - Unauthenticated task-list request is rejected with HTTP 401.
-- A synthetic, approval-gated fitness task is created.
-- Explicit approval is accepted.
+- A synthetic fitness task is created.
 - The task is dispatched to a deterministic stub ATENA adapter.
 - Durable task metadata can be read back and contains no objective or payload.
 - Append-only D1 events confirm the ordered lifecycle:
   `queued → assigned → running → completed`.
+
+Approval endpoint semantics remain covered by the automated API contract tests; the production smoke keeps its execution path independent of volatile approval state.
 
 The fixed task ID `zeus-internal-smoke-v1` prevents duplicate smoke records.
 A previously completed task is treated as an already-passed smoke test. An
