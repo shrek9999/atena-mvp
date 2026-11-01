@@ -423,3 +423,117 @@ def test_postgres_profile_tables_enable_rls_and_revoke_public_access(monkeypatch
     assert "ALTER TABLE atena_training_sessions ENABLE ROW LEVEL SECURITY" in statements
     assert any("atena_profiles FROM PUBLIC, anon, authenticated" in sql for sql in statements)
     assert any("atena_training_sessions FROM PUBLIC, anon, authenticated" in sql for sql in statements)
+
+
+
+def test_coach_status_is_protected_and_reports_only_safe_readiness(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    denied = client.get("/coach/status")
+    assert denied.status_code == 403
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-provider-key-not-real")
+    monkeypatch.setenv("GEMINI_MODEL", "test-model")
+    response = client.get(
+        "/coach/status",
+        headers={"X-Pilot-Token": "pilot-test-secret"},
+    )
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["chat_available"] is True
+    assert data["program_available"] is True
+    assert data["catalogue_count"] == len(load_catalogue())
+    assert "GEMINI_API_KEY" not in str(data)
+    assert "test-provider-key-not-real" not in str(data)
+
+
+def test_profile_program_requires_current_safety_confirmation(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+
+    response = client.post(
+        f"/coach/profile/{profile_id}/program",
+        headers={"X-Profile-Token": token},
+        json={"no_current_pain_or_restrictions": False},
+    )
+    assert response.status_code == 409
+    assert response.get_json()["blocked"] is True
+
+
+def test_profile_program_uses_latest_training_feedback(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    exercise_id = load_catalogue()[0]["id"]
+    logged = client.post(
+        f"/coach/profile/{profile_id}/sessions",
+        headers={"X-Profile-Token": token},
+        json={
+            "session_date": "2026-11-01",
+            "duration_minutes": 55,
+            "difficulty": "hard",
+            "recovery": "poor",
+            "completed": False,
+            "exercises": [{
+                "exercise_id": exercise_id, "sets_completed": 2,
+                "reps_completed": 8,
+            }],
+        },
+    )
+    assert logged.status_code == 201
+
+    import coach_routes
+    captured = {}
+    def fake_generate(profile, feedback=None):
+        captured["profile"] = profile
+        captured["feedback"] = feedback
+        return {"goal": profile["goal"], "feedback_applied": feedback, "sessions": []}
+    monkeypatch.setattr(coach_routes, "generate_program", fake_generate)
+
+    response = client.post(
+        f"/coach/profile/{profile_id}/program",
+        headers={"X-Profile-Token": token},
+        json={"no_current_pain_or_restrictions": True},
+    )
+    assert response.status_code == 200
+    assert captured["profile"]["goal"] == "hypertrophy"
+    assert captured["feedback"] == {
+        "difficulty": "hard",
+        "completed": False,
+        "discomfort": "no",
+        "recovery": "poor",
+        "movement_control": "none",
+    }
+
+
+def test_profile_program_stops_after_logged_discomfort(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    exercise_id = load_catalogue()[0]["id"]
+    logged = client.post(
+        f"/coach/profile/{profile_id}/sessions",
+        headers={"X-Profile-Token": token},
+        json={
+            "session_date": "2026-11-01",
+            "duration_minutes": 40,
+            "difficulty": "moderate",
+            "completed": True,
+            "exercises": [{
+                "exercise_id": exercise_id, "sets_completed": 2,
+                "reps_completed": 8,
+            }],
+            "discomfort_reported": True,
+        },
+    )
+    assert logged.status_code == 201
+    response = client.post(
+        f"/coach/profile/{profile_id}/program",
+        headers={"X-Profile-Token": token},
+        json={"no_current_pain_or_restrictions": True},
+    )
+    assert response.status_code == 409
+    assert response.get_json()["blocked"] is True
