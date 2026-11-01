@@ -81,7 +81,8 @@ ZEUS is considered ready for a limited internal pilot only after the security ro
 - Added a `recovery_code` metadata column with the constrained value `runtime_restarted`.
 - Added migration `cloudflare/zeus-ledger-worker/migrations/0002_add_recovery_code.sql` and configured the example Wrangler file to use the migrations directory.
 - The Worker accepts a controlled queued → blocked transition only when it carries the explicit `runtime_restarted` marker; assigned/running tasks can also be blocked with that marker.
-- ZEUS startup now scans up to 100 recent ledger tasks and marks active tasks as blocked before serving the authenticated task API. It does not persist or replay private request bodies.
+- ZEUS startup now pages through the complete durable task listing (100 records per page maximum) using stable `created_at DESC, task_id DESC` ordering, and marks every active orphan task as blocked before serving the authenticated task API. Updating status does not change the pagination ordering. It does not persist or replay private request bodies.
+- Worker list responses now support bounded `offset` pagination, and status-transition responses include `recovery_code` so callers can verify the recovery reason.
 - The caller must submit a new task to retry; no specialist is automatically re-run after restart.
 
 **Deployment prerequisite:** the D1 migration must be applied before deploying the updated Worker, and the Worker must be deployed before deploying the updated Render service. Neither migration nor deployment has been performed. The currently live services are unchanged.
@@ -92,3 +93,16 @@ ZEUS is considered ready for a limited internal pilot only after the security ro
 - Python suite: **168 passed**.
 - Cloudflare Worker suite: **11 passed**; syntax check passed.
 - The separate ATENA workflow's offline regression and Worker checks passed, but its optional live ATENA MCP smoke test returned a tool error. This was not caused by a failing ZEUS unit test; live ATENA compatibility should be rechecked after the deployment/security prerequisites.
+
+
+
+### Reliability phase 5 — complete restart reconciliation
+
+- Replaced the fixed first-page recovery scan with stable offset pagination across the full D1 task listing.
+- Added bounds for page size (1–100) and offset (0–1,000,000) at the client/Worker boundary.
+- The Worker orders pages by immutable creation timestamp and task ID. Recovery mutates status and updated timestamp only, so records do not move between pages during the scan.
+- Fixed the Worker status-transition response to include the recovery marker, matching the task GET/list response shape.
+- Added regression coverage for ledger-client offset construction, Worker query/response contract, and restart recovery across 235 durable tasks with multiple pages.
+- No production D1 migration, Worker deployment, Render deployment, credential change or live authenticated API test was performed.
+
+**Remaining readiness gates:** run the new CI suite; rotate both compromised credentials directly in their respective dashboards; apply the D1 migration; deploy Worker, then Render; and only then run a synthetic authenticated end-to-end lifecycle test. ATENA's optional live MCP smoke test must also be repeated because the previous run returned a tool error.
