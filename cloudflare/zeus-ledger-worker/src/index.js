@@ -149,7 +149,7 @@ async function handle(request, env) {
     const result = await env.ZEUS_DB.prepare(
       "UPDATE zeus_tasks SET status = ?, updated_at = ?, started_at = COALESCE(?, started_at), completed_at = COALESCE(?, completed_at), expires_at = COALESCE(?, expires_at), attempt_count = attempt_count + ?, error_code = ?, recovery_code = ? WHERE task_id = ? AND status = ?"
     ).bind(toStatus, now, startedAt, completedAt, expiresAt, attemptIncrement, errorCode, recoveryCode, taskId, fromStatus).run();
-    if (!result.meta || result.meta.changes !== 1) return json({ error: "task_missing_or_state_conflict" }, 409);
+    if (!Number.isFinite(result.meta?.changes) || result.meta.changes < 1) return json({ error: "task_missing_or_state_conflict" }, 409);
     const task = await env.ZEUS_DB.prepare(
       "SELECT task_id, domain, specialist, status, created_at, updated_at, started_at, completed_at, expires_at, attempt_count, error_code, recovery_code FROM zeus_tasks WHERE task_id = ?"
     ).bind(taskId).first();
