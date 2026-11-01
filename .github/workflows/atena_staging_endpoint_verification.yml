@@ -162,11 +162,6 @@ jobs:
           if status != 200 or not safety_first:
               failures.append("safety-first onboarding question")
 
-          print("\n--- RESULT ---")
-          print("Authenticated endpoints and coaching checks:", "PASS" if not failures else "FAIL")
-          if failures:
-              print("Failed checks:", "; ".join(failures))
-              sys.exit(1)
           # A fake ID and invalid token cannot create or expose any data.
           profile_request = urllib.request.Request(
               BASE + "/coach/profile/00000000-0000-4000-8000-000000000000",
@@ -198,6 +193,11 @@ jobs:
               failures.append("profile API CORS preflight")
 
           print("Access token was not printed or stored in the output.")
+          print("\\n--- RESULT ---")
+          print("Authenticated endpoints and coaching checks:", "PASS" if not failures else "FAIL")
+          if failures:
+              print("Failed checks:", "; ".join(failures))
+              sys.exit(1)
           PY
 
 # Run the integration checks after changes to the deterministic planner or chat coach.
