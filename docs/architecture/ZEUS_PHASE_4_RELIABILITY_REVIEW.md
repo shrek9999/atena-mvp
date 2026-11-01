@@ -1,0 +1,57 @@
+# ZEUS phase 4 — reliability review and next implementation plan
+
+**Date:** 2026-11-01  
+**Status:** read-only review completed; no production changes made.
+
+## Executive finding
+
+The current deployment is a useful prototype, but it is not yet reliable enough to be treated as an operational coordinator. The most important gap is that task lifecycle metadata is durable in Cloudflare D1 while task reads and executable request objects remain process-local in the Render service.
+
+## Verified findings
+
+1. `zeus_service.py` serves `GET /v1/tasks` and `GET /v1/tasks/{id}` from `Coordinator.list_tasks()` and `Coordinator.get()`, which read only the local in-memory dictionaries.
+2. `LedgerWorkerClient` already implements `get_task()` and `list_tasks()`, and the Worker exposes authenticated D1-backed GET routes. The service is not currently using those durable read methods.
+3. `TaskRequest` objects (objective, acceptance criteria and payload) exist only in `Coordinator._requests`. D1 intentionally stores metadata only. After a Render process restart, a queued task can remain in D1 but its executable request object is lost. It cannot safely be replayed.
+4. The previous test result (HTTP 404 from the Render task GET and Worker GET) does not establish whether task creation succeeded. The script's printed PASS labels were not assertions.
+5. Render confirms a separate Free service, Frankfurt region, one instance, one Gunicorn worker/four threads, auto-deploy disabled, and branch `feature/zeus-coordinator-skeleton`. The Render service currently reports an empty health-check path, although the repository deployment notes describe `/health`.
+6. The existing runtime integration document is stale: it describes manual secret configuration as still pending, while a later Render deployment is recorded as Live. It must be updated only after secure credential rotation and a successful authenticated lifecycle test.
+7. The two credentials previously pasted into chat must be treated as compromised and rotated before further authenticated production tests. Their values must never be copied into source control, logs, documentation or chat.
+
+## Recommended implementation order
+
+### 1. Secure the runtime first
+- Generate a new high-entropy `ZEUS_LEDGER_TOKEN`; set it as a Cloudflare Worker secret and as the identical Render secret on the ZEUS service only.
+- Generate a different high-entropy `ZEUS_API_TOKEN`; set it only on the ZEUS Render service.
+- Remove/replace the exposed values. Do not send the new values through chat.
+- Confirm both services restart/deploy successfully before testing.
+
+### 2. Make durable metadata the read source of truth
+- Add coordinator-level durable metadata read methods using the existing ledger client's `get_task` and `list_tasks`.
+- Change authenticated Render GET routes to read D1-backed metadata when a ledger is configured.
+- Preserve the current safe public response allowlist; never expose objectives, payloads, results, health/coaching details or portfolio information.
+- Distinguish a genuine missing task (404) from a ledger outage (503); the current transport collapses HTTP errors into a generic unavailable exception.
+
+### 3. Define safe restart behavior (do not pretend to resume)
+- Do not try to reconstruct or replay tasks from metadata-only D1 records.
+- On service startup, inspect non-terminal durable tasks. Mark tasks whose in-memory request is gone as explicitly blocked with a dedicated `runtime_restarted` error code and event history.
+- Extend Worker transition/error-code constraints and tests for this controlled recovery transition. Keep the metadata-only privacy boundary.
+- Require the caller to resubmit the objective/payload to retry; never silently re-run a specialist after restart.
+
+### 4. Verify the full lifecycle
+Use synthetic, non-personal test objectives only:
+- unauthenticated task API returns 401;
+- authenticated create returns 201 and task appears in D1-backed GET/list;
+- event history contains the created event;
+- run routes to the correct specialist and records confirmed transitions;
+- completion appears in both D1-backed reads and event history;
+- a simulated restart blocks an orphaned queued/running task rather than losing or replaying it;
+- invalid transitions, duplicate IDs, ledger outage and missing task return the expected status codes.
+
+### 5. Operational polish
+- Set Render health-check path to `/health` and verify it is a liveness check only.
+- Update runtime documentation with the actual deployed state and verified test evidence.
+- Keep the service on Free tiers; do not enable paid resources or merge the PR into `main` without a separate review and explicit decision.
+
+## Acceptance gate
+
+ZEUS is considered ready for a limited internal pilot only after the security rotation, durable reads, safe restart behavior and authenticated end-to-end tests all pass. Until then, it should be described as a deployed prototype, not a production-ready autonomous coordinator.
