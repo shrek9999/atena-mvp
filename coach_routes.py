@@ -203,6 +203,7 @@ def coach_storage_diagnostic():
                 "url_present": bool(raw_url),
                 "postgres_scheme": parsed.scheme in {"postgres", "postgresql"},
                 "supabase_pooler_host": (parsed.hostname or "").lower().endswith(".pooler.supabase.com"),
+                "pooler_host": parsed.hostname,
                 "project_scoped_username": (parsed.username or "") == "postgres.gxgmxvtfkhjfpbtfmmcs",
                 "session_pooler_port": parsed.port == 5432,
                 "database_path_present": bool(parsed.path.strip("/")),
