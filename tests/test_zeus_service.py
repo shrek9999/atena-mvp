@@ -21,6 +21,47 @@ def test_health_is_public_but_task_api_requires_authentication():
     assert client.get("/v1/tasks").status_code == 401
 
 
+
+def test_dashboard_is_public_but_contains_no_secret():
+    client = make_app().test_client()
+    response = client.get("/dashboard")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "ZEUS API žeton" in html
+    assert "sessionStorage" in html
+    assert "noindex,nofollow" in html
+
+
+def test_agents_endpoint_requires_auth_and_lists_both_specialists():
+    client = make_app().test_client()
+    assert client.get("/v1/agents").status_code == 401
+    response = client.get("/v1/agents", headers=AUTH)
+    assert response.status_code == 200
+    agents = response.get_json()["agents"]
+    assert {agent["name"] for agent in agents} == {"ATENA", "HERMES"}
+    assert all(agent["status"] == "configured" for agent in agents)
+
+
+def test_run_returns_specialist_result_transiently_not_in_task_metadata():
+    client = make_app().test_client()
+    created = client.post("/v1/tasks", headers=AUTH, json={
+        "task_id": "transient-result",
+        "objective": "Return a synthetic decision",
+        "domain": "fitness",
+    })
+    assert created.status_code == 201
+
+    ran = client.post("/v1/tasks/transient-result/run", headers=AUTH)
+    assert ran.status_code == 200
+    body = ran.get_json()
+    assert body["result"] == {"decision": "maintain"}
+    assert "result" not in body["task"]
+
+    durable = client.get("/v1/tasks/transient-result", headers=AUTH)
+    assert durable.status_code == 200
+    assert "result" not in durable.get_json()["task"]
+
+
 def test_task_api_returns_only_metadata_and_requires_bearer_token():
     client = make_app().test_client()
     response = client.post("/v1/tasks", headers=AUTH, json={
