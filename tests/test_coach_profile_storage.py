@@ -285,3 +285,18 @@ def test_withdrawing_health_consent_erases_previously_stored_discomfort_flags(mo
     assert withdrawn.get_json()["profile"]["health_data_consent"] is False
     history = client.get(f"/coach/profile/{profile_id}/sessions", headers=headers).get_json()["sessions"]
     assert "discomfort_reported" not in history[0]["session"]
+
+
+def test_profile_preflight_allows_profile_token_and_rest_methods(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    response = client.options(
+        "/coach/profile/example",
+        headers={
+            "Origin": "https://gregajenko.si",
+            "Access-Control-Request-Method": "PUT",
+            "Access-Control-Request-Headers": "content-type,x-profile-token",
+        },
+    )
+    assert response.status_code == 204
+    assert "PUT" in response.headers["Access-Control-Allow-Methods"]
+    assert "X-Profile-Token" in response.headers["Access-Control-Allow-Headers"]
