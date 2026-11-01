@@ -700,3 +700,15 @@ def test_carry_is_selected_only_when_a_real_household_load_is_available():
     load_exercises = [exercise for session in load_plan["sessions"] for exercise in session["exercises"]]
     assert not any(exercise["pattern"] == "carry" for exercise in no_load_exercises)
     assert any(exercise["pattern"] == "carry" for exercise in load_exercises)
+
+
+def test_hinge_pattern_uses_clear_coaching_term_predklon_z_ravnim_hrbtom():
+    plan = generate_program({**BASE, "session_minutes": 75})
+    hinges = [
+        exercise
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+        if exercise["pattern"] == "hinge"
+    ]
+    assert hinges
+    assert all(exercise["pattern_label"] == "predklon z ravnim hrbtom" for exercise in hinges)
