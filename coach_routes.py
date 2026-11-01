@@ -396,18 +396,27 @@ def coach_training_sessions(profile_id):
         return jsonify({"error": "Vadbeni zapis lahko vsebuje največ 20 vaj."}), 400
     clean_exercises = []
     for item in exercises:
-        if not isinstance(item, dict) or set(item) - {"exercise_id", "sets_completed", "reps_completed", "load_kg", "rir"}:
+        if not isinstance(item, dict) or set(item) - {"exercise_id", "sets_completed", "reps_completed", "work_seconds_completed", "load_kg", "rir"}:
             return jsonify({"error": "Zapis vaje vsebuje neveljavna polja."}), 400
         exercise_id = item.get("exercise_id")
         if not isinstance(exercise_id, str) or get_exercise(exercise_id) is None:
             return jsonify({"error": "Vaja ni v preverjenem katalogu ATENA."}), 400
         sets = item.get("sets_completed")
         reps = item.get("reps_completed")
+        work_seconds = item.get("work_seconds_completed")
         if not isinstance(sets, int) or isinstance(sets, bool) or not 1 <= sets <= 20:
             return jsonify({"error": "Število izvedenih serij ni veljavno."}), 400
-        if not isinstance(reps, int) or isinstance(reps, bool) or not 1 <= reps <= 100:
+        if reps is not None and (not isinstance(reps, int) or isinstance(reps, bool) or not 1 <= reps <= 100):
             return jsonify({"error": "Število ponovitev ni veljavno."}), 400
-        entry = {"exercise_id": exercise_id, "sets_completed": sets, "reps_completed": reps}
+        if work_seconds is not None and (not isinstance(work_seconds, int) or isinstance(work_seconds, bool) or not 1 <= work_seconds <= 3600):
+            return jsonify({"error": "Trajanje delovne serije ni veljavno."}), 400
+        if reps is None and work_seconds is None:
+            return jsonify({"error": "Za vajo je treba navesti ponovitve ali trajanje delovne serije."}), 400
+        entry = {"exercise_id": exercise_id, "sets_completed": sets}
+        if reps is not None:
+            entry["reps_completed"] = reps
+        if work_seconds is not None:
+            entry["work_seconds_completed"] = work_seconds
         load = item.get("load_kg")
         if load is not None:
             if not isinstance(load, (int, float)) or isinstance(load, bool) or not 0 <= load <= 1000:
