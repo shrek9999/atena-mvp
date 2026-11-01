@@ -121,6 +121,8 @@ jobs:
           })
           reply = body.get("reply", "").lower()
           safety_first = any(term in reply for term in ("boleč", "poškodb", "omejit", "zdravstven"))
+          if status != 200:
+              print(f"Chat endpoint diagnostic: {body.get('error', 'no error detail returned')}")
           print(f"Proactive safety-first onboarding: HTTP {status}; {'PASS' if safety_first else 'FAIL'}")
           if status != 200 or not safety_first:
               failures.append("safety-first onboarding question")
