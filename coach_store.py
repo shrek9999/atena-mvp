@@ -12,7 +12,30 @@ import json
 import os
 import sqlite3
 from datetime import datetime, timezone
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit, urlunsplit
+
+
+def _normalize_supabase_pooler_username(url: str) -> str:
+    """Apply Supabase's project-scoped username when a shared pooler URI uses bare postgres."""
+    try:
+        parsed = urlsplit(url)
+        hostname = (parsed.hostname or "").lower()
+        username = parsed.username or ""
+        project_ref = os.getenv("ATENA_SUPABASE_PROJECT_REF", "gxgmxvtfkhjfpbtfmmcs").strip()
+        if not (hostname.endswith(".pooler.supabase.com") and username == "postgres" and project_ref):
+            return url
+        # Preserve the password exactly as supplied (including URL-encoded characters).
+        raw_userinfo, _, hostport = parsed.netloc.rpartition("@")
+        if not hostport:
+            return url
+        raw_password = raw_userinfo.partition(":")[2] if ":" in raw_userinfo else None
+        normalized_userinfo = "postgres." + project_ref
+        if raw_password is not None:
+            normalized_userinfo += ":" + raw_password
+        return urlunsplit((parsed.scheme, normalized_userinfo + "@" + hostport,
+                           parsed.path, parsed.query, parsed.fragment))
+    except (TypeError, ValueError):
+        return url
 
 class StorageUnavailable(RuntimeError):
     def __init__(self, message: str, reason: str = "storage_unavailable"):
@@ -49,6 +72,7 @@ def _connect():
         import psycopg
     except ImportError as exc:
         raise StorageUnavailable("PostgreSQL driver is not installed.") from exc
+    url = _normalize_supabase_pooler_username(url)
     return psycopg.connect(url, connect_timeout=8), "postgres"
 
 def _execute(conn, dialect, sql, params=()):
@@ -97,6 +121,7 @@ def check_database_connection():
         import psycopg
     except ImportError as exc:
         raise StorageUnavailable("PostgreSQL driver is not installed.", "driver_missing") from exc
+    url = _normalize_supabase_pooler_username(url)
     try:
         with psycopg.connect(url, connect_timeout=8) as conn:
             with conn.cursor() as cur:
