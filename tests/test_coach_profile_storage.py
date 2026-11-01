@@ -406,3 +406,20 @@ def test_saved_profile_limits_match_program_generator():
     ):
         with pytest.raises(ValueError):
             _validate_profile(invalid)
+
+
+def test_postgres_profile_tables_enable_rls_and_revoke_public_access(monkeypatch):
+    import coach_store
+
+    statements = []
+    monkeypatch.setattr(
+        coach_store,
+        "_execute",
+        lambda conn, dialect, sql, params=(): statements.append(sql),
+    )
+    coach_store._init(object(), "postgres")
+
+    assert "ALTER TABLE atena_profiles ENABLE ROW LEVEL SECURITY" in statements
+    assert "ALTER TABLE atena_training_sessions ENABLE ROW LEVEL SECURITY" in statements
+    assert any("atena_profiles FROM PUBLIC, anon, authenticated" in sql for sql in statements)
+    assert any("atena_training_sessions FROM PUBLIC, anon, authenticated" in sql for sql in statements)
