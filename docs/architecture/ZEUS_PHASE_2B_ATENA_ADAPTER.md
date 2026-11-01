@@ -12,7 +12,7 @@ implementation is located.
 fitness scenario. ATENA returned a valid `maintain` decision and action.
 
 The same run passed the complete offline regression suite: **117 tests passed**. The coordinator ledger now returns isolated snapshots, rejects non-JSON results and caps stored specialist results at 64 KB.
-Run: https://github.com/shrek9999/atena-mvp/actions/runs/41279734851
+Run: https://github.com/shrek9999/atena-mvp/actions/runs/41279814196
 
 ## Safety and scope
 - Network transport is injectable; unit tests use a synthetic in-memory transport.
