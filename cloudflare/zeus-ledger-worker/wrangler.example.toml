@@ -1,0 +1,13 @@
+name = "zeus-ledger-api"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+# Do not deploy until a separate ZEUS D1 database is explicitly approved.
+[[d1_databases]]
+binding = "ZEUS_DB"
+database_name = "zeus-task-ledger"
+database_id = "FILL_AFTER_EXPLICIT_APPROVAL"
+migrations_dir = "migrations"
+
+# Set ZEUS_LEDGER_TOKEN as a Worker secret after approval.
+# Never put the token in this file or commit it to Git.
