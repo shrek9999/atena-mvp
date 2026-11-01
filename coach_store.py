@@ -60,6 +60,15 @@ class StorageUnavailable(RuntimeError):
 class ProfileNotFound(RuntimeError):
     pass
 
+def storage_enabled():
+    """True only when the operator has explicitly enabled storage and approved the notice."""
+    return (
+        os.getenv("ATENA_DATA_STORAGE_ENABLED", "").strip().lower() == "true"
+        and os.getenv("ATENA_PRIVACY_NOTICE_APPROVED", "").strip().lower() == "true"
+        and bool(os.getenv("ATENA_DATABASE_URL", "").strip())
+    )
+
+
 def _config(require_enabled=True):
     url = os.getenv("ATENA_DATABASE_URL", "").strip()
     if not url:
