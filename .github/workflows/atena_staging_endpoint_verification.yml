@@ -96,6 +96,8 @@ jobs:
           print(f"Supabase PostgreSQL connectivity: HTTP {db_status}")
           if db_status == 200 and db_body.get("database") == "reachable":
               print("Database connectivity: PASS (read-only SELECT 1; no user tables or profiles created)")
+          elif db_status == 503 and db_body.get("reason") == "missing_url":
+              print("Database connectivity: SKIP (Supabase connection string not configured; profile storage remains disabled)")
           else:
               print(f"Database connectivity: FAIL; safe diagnostic={db_body.get('reason', 'not_returned')} (no secret is printed)")
               failures.append("Supabase PostgreSQL connectivity")
