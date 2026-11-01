@@ -6,6 +6,9 @@ on:
       - "pilot/website-ai-coach"
     paths:
       - "tests/**"
+      - "coach_routes.py"
+      - "coach_store.py"
+      - "requirements.txt"
       - "training/**"
       - ".github/workflows/atena-staging-quality.yml"
   workflow_dispatch:
