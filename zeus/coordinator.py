@@ -198,8 +198,8 @@ class Coordinator:
             if request is None:
                 raise KeyError("task request not found or expired")
             specialist = SPECIALIST_BY_DOMAIN[request.domain]
-            record.specialist = specialist
             self._transition(record, TaskStatus.ASSIGNED)
+            record.specialist = specialist
             if request.requires_approval and not request.approved:
                 record.error_code = "approval_required"
                 self._finish(record, TaskStatus.BLOCKED)
