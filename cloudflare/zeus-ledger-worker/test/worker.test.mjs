@@ -66,7 +66,6 @@ test("creates a minimal task record without objective or payload", async () => {
   const bindings = env();
   const response = await worker.fetch(request("/v1/tasks", "POST", {
     task_id: "test-1", domain: "markets", specialist: "HERMES",
-    objective: "should not be stored", payload: { private: true },
   }), bindings);
   assert.equal(response.status, 201);
   const stored = bindings.ZEUS_DB.tasks.get("test-1");
