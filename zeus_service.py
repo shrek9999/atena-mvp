@@ -68,12 +68,12 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#080e1a;border:1px so
  <div><h1>ZEUS <span style="color:#83b7ff">/</span> AI agent console</h1><p>Enotna vstopna točka za ATENO in HERMES</p></div>
  <div class="sub">ZEUS coordinator · v1</div>
 </header>
+<div id="message" aria-live="polite"></div>
 <section class="card" id="login">
  <h2>Povezava</h2>
  <label for="token">ZEUS API žeton</label>
  <div class="row"><input id="token" type="password" autocomplete="off" placeholder="Prilepi ZEUS_API_TOKEN"><button id="connect">Poveži</button></div>
  <div class="notice">Žeton najdeš v Render → zeus-coordinator → Environment → ZEUS_API_TOKEN. Shrani se samo v sessionStorage tega zavihka in se ne pošilja nikamor drugam kot v ZEUS API.</div>
- <div id="message"></div>
 </section>
 <section id="workspace" hidden>
  <div class="grid">
@@ -491,9 +491,13 @@ def create_app(
         )
         return response
 
+    @app.get("/favicon.ico")
+    def favicon():
+        return "", 204
+
     @app.before_request
     def require_authentication():
-        if request.path in {"/", "/health", "/dashboard"}:
+        if request.path in {"/", "/health", "/dashboard", "/favicon.ico"}:
             return None
         supplied = request.headers.get("Authorization", "")
         expected = "Bearer " + token
