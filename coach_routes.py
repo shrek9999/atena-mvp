@@ -15,7 +15,7 @@ from coach_store import (
     add_session as store_add_session, list_sessions as store_list_sessions,
     delete_profile as store_delete_profile, set_health_data_consent as store_set_health_data_consent,
 )
-from training.catalogue import get_exercise
+from training.catalogue import get_exercise, load_catalogue
 from flask import Blueprint, jsonify, request
 from training.program import ProgramSafetyBlock, ProgramValidationError, generate_program
 
@@ -170,6 +170,7 @@ PROFILE_FIELDS = {"goal", "experience", "equipment", "sessions_per_week", "sessi
 PROFILE_GOALS = {"strength", "hypertrophy", "general_fitness", "functional", "power", "endurance", "mobility"}
 PROFILE_EXPERIENCE = {"beginner", "intermediate", "advanced"}
 PROFILE_DAYS = {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}
+VALID_EQUIPMENT = {item for exercise in load_catalogue() for item in (exercise["equipment"] + exercise["equipment_any"])}
 
 
 def _storage_error(exc):
@@ -191,8 +192,8 @@ def _validate_profile(value):
         raise ValueError("Raven izkušenj ni veljavna.")
     if not isinstance(equipment, list) or len(equipment) > 25 or any(
         not isinstance(item, str) or not item.strip() or len(item) > 40 for item in equipment
-    ):
-        raise ValueError("Seznam opreme ni veljaven.")
+    ) or len(set(equipment)) != len(equipment) or not set(equipment).issubset(VALID_EQUIPMENT):
+        raise ValueError("Seznam opreme vsebuje podvojeno ali nepodprto opremo.")
     if not isinstance(sessions, int) or isinstance(sessions, bool) or not 1 <= sessions <= 7:
         raise ValueError("Tedenska pogostost mora biti med 1 in 7.")
     if not isinstance(minutes, int) or isinstance(minutes, bool) or not 20 <= minutes <= 180:
