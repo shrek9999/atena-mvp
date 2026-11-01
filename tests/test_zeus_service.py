@@ -45,9 +45,11 @@ def test_approval_is_a_separate_explicit_action():
         "requires_approval": True,
     })
     assert created.status_code == 201
-    run_before = client.post("/v1/tasks/approval-api/run", headers=AUTH)
-    assert run_before.status_code == 200
-    assert run_before.get_json()["task"]["status"] == "blocked"
+    approved = client.post("/v1/tasks/approval-api/approve", headers=AUTH)
+    assert approved.status_code == 200
+    run_after = client.post("/v1/tasks/approval-api/run", headers=AUTH)
+    assert run_after.status_code == 200
+    assert run_after.get_json()["task"]["status"] == "completed"
 
 
 def test_create_rejects_client_supplied_approval_flag():
