@@ -672,3 +672,19 @@ def test_new_profile_writes_remain_blocked_when_storage_is_disabled(monkeypatch,
         },
     )
     assert response.status_code == 503
+
+
+
+def test_profile_next_program_is_blocked_when_storage_is_paused(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    monkeypatch.setenv("ATENA_DATA_STORAGE_ENABLED", "false")
+    monkeypatch.setenv("ATENA_PRIVACY_NOTICE_APPROVED", "false")
+    response = client.post(
+        f"/coach/profile/{profile_id}/program",
+        headers={"X-Profile-Token": token},
+        json={"no_current_pain_or_restrictions": True},
+    )
+    assert response.status_code == 503
