@@ -284,7 +284,7 @@ def create_app(
                     "ZEUS startup smoke failed (%s): %s", type(exc).__name__, exc
                 )
                 raise RuntimeError("ZEUS startup smoke failed") from None
-        if os.environ.get("ZEUS_LIVE_AGENT_SMOKE") == "1":
+        if os.environ.get("ZEUS_LIVE_AGENT_SMOKE") == "1" or os.environ.get("ZEUS_STARTUP_SMOKE") == "2":
             try:
                 result = run_live_agent_smoke(coordinator, ledger, token)
                 logging.getLogger("zeus").info(
