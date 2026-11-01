@@ -61,10 +61,10 @@ def assess_next_step(sessions):
             ),
         }
 
-    if len(completed) >= 2 and all(s.get("difficulty") == "easy" for _, s in completed[:2]):
+    if len(recent) >= 2 and all(s.get("completed") is True for _, s in recent[:2]) and all(s.get("difficulty") == "easy" for _, s in recent[:2]):
         observations = [
             exercise
-            for _, session in completed[:2]
+            for _, session in recent[:2]
             for exercise in session.get("exercises", [])
             if isinstance(exercise, dict)
         ]
