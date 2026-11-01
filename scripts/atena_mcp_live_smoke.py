@@ -10,6 +10,9 @@ import time
 import urllib.error
 import urllib.request
 
+from zeus.atena_mcp import AtenaMCPAdapter
+from zeus.coordinator import TaskRequest
+
 ENDPOINT = "https://atena-mcp.onrender.com/mcp"
 PROTOCOL_VERSION = "2025-03-26"
 
@@ -126,8 +129,8 @@ def main() -> None:
     if capabilities.get("service") != "ATENA" or not expected.issubset(actual):
         raise RuntimeError("ATENA MCP capabilities did not match the expected contract")
 
-    # One synthetic, non-personal decision call proves the complete MCP tool
-    # contract end to end. This uses the free /decision route, never /paid/decision.
+    # Exercise the actual ZEUS adapter against the live ATENA MCP endpoint.
+    # The payload is entirely synthetic and uses only the free decision route.
     synthetic_payload = {
         "goal": {"primary": "strength", "secondary": "aerobic_fitness"},
         "person": {},
@@ -145,40 +148,20 @@ def main() -> None:
         "question": "Should the current training stimulus be maintained?",
         "history": {},
     }
-    status, _, raw = post_with_retry({
-        "jsonrpc": "2.0",
-        "id": 3,
-        "method": "tools/call",
-        "params": {"name": "atena_decide", "arguments": {"payload": synthetic_payload}},
-    }, session_id, negotiated)
-    if status != 200:
-        raise RuntimeError(f"atena_decide returned HTTP {status}")
-    decision_response = parse_rpc(raw)
-    if "error" in decision_response or not isinstance(decision_response.get("result"), dict):
-        raise RuntimeError("MCP decision call failed")
-    decision_result = decision_response["result"]
-    if decision_result.get("isError"):
-        raise RuntimeError("ATENA decision tool reported an error")
-
-    decision = decision_result.get("structuredContent")
-    if not isinstance(decision, dict):
-        for item in decision_result.get("content", []):
-            if item.get("type") == "text":
-                try:
-                    candidate = json.loads(item.get("text", ""))
-                except ValueError:
-                    continue
-                if isinstance(candidate, dict):
-                    decision = candidate
-                    break
-    if not isinstance(decision, dict) or decision.get("decision") not in expected:
+    synthetic_request = TaskRequest(
+        objective="Synthetic ATENA MCP compatibility test",
+        domain="fitness",
+        payload=synthetic_payload,
+    )
+    decision = AtenaMCPAdapter(timeout=90)(synthetic_request)
+    if decision.get("decision") not in expected:
         raise RuntimeError("ATENA returned an invalid synthetic decision")
     if not isinstance(decision.get("action"), str) or not decision["action"]:
         raise RuntimeError("ATENA decision response is missing an action")
 
     print("LIVE MCP CHECK: PASS")
     print(f"Service: {capabilities.get('service')} {capabilities.get('version')}")
-    print("Tools: atena_capabilities, atena_decide")
+    print("Tools: atena_capabilities, atena_decide (via ZEUS adapter)")
     print("Decision types: " + ", ".join(sorted(actual)))
     print(f"Synthetic decision: {decision.get('decision')}")
     print("No user data sent; no paid endpoint called.")
