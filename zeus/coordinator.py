@@ -24,6 +24,7 @@ class TaskStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
+MAX_REQUEST_BYTES = 64_000
 MAX_RESULT_BYTES = 64_000
 
 
@@ -72,6 +73,14 @@ class TaskRequest:
             raise ValueError("each acceptance criterion must be a non-empty string up to 300 characters")
         if not isinstance(self.payload, dict):
             raise ValueError("payload must be an object")
+        try:
+            encoded_payload = json.dumps(
+                self.payload, ensure_ascii=False, allow_nan=False, separators=(",", ":")
+            ).encode("utf-8")
+        except (TypeError, ValueError):
+            raise ValueError("payload must contain JSON-compatible values") from None
+        if len(encoded_payload) > MAX_REQUEST_BYTES:
+            raise ValueError("payload exceeds the 64 KB safety limit")
         if not isinstance(self.requires_approval, bool) or not isinstance(self.approved, bool):
             raise ValueError("approval flags must be boolean")
         if not isinstance(self.task_id, str) or not self.task_id.strip() or len(self.task_id) > 100:
@@ -117,6 +126,11 @@ class Coordinator:
 
     def submit(self, request: TaskRequest) -> TaskRecord:
         request.validate()
+        request = replace(
+            request,
+            payload=json.loads(json.dumps(request.payload, ensure_ascii=False, allow_nan=False)),
+            acceptance_criteria=tuple(request.acceptance_criteria),
+        )
         if request.task_id in self._tasks:
             raise ValueError("task_id already exists")
         if len(self._tasks) >= self._max_tasks:
