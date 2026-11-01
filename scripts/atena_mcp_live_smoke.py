@@ -95,34 +95,25 @@ def main() -> None:
     if status not in (200, 202):
         raise RuntimeError(f"MCP initialized notification returned HTTP {status}")
 
-    status, _, raw = post_with_retry({
-        "jsonrpc": "2.0",
-        "id": 2,
-        "method": "tools/call",
-        "params": {"name": "atena_capabilities", "arguments": {}},
-    }, session_id, negotiated)
-    if status != 200:
-        raise RuntimeError(f"atena_capabilities returned HTTP {status}")
-    response = parse_rpc(raw)
-    if "error" in response or not isinstance(response.get("result"), dict):
-        raise RuntimeError("MCP capabilities call failed")
-    result = response["result"]
-    if result.get("isError"):
-        raise RuntimeError("ATENA MCP reported a tool error")
-
-    capabilities = result.get("structuredContent")
+    # The MCP metadata tool is not required by ZEUS at runtime. Validate
+    # the public capability contract directly, then exercise the actual
+    # atena_decide tool through the ZEUS MCP adapter below. This separates
+    # metadata-tool availability from decision-path compatibility.
+    capabilities_request = urllib.request.Request(
+        "https://atena-mvp.onrender.com/capabilities",
+        headers={"Accept": "application/json", "User-Agent": "zeus-live-smoke/0.2"},
+    )
+    try:
+        with urllib.request.urlopen(capabilities_request, timeout=30) as response:
+            if response.status != 200:
+                raise RuntimeError(
+                    f"ATENA capabilities endpoint returned HTTP {response.status}"
+                )
+            capabilities = json.loads(response.read().decode("utf-8"))
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
+        raise RuntimeError("ATENA capabilities endpoint was unavailable or invalid") from exc
     if not isinstance(capabilities, dict):
-        for item in result.get("content", []):
-            if item.get("type") == "text":
-                try:
-                    candidate = json.loads(item.get("text", ""))
-                except ValueError:
-                    continue
-                if isinstance(candidate, dict):
-                    capabilities = candidate
-                    break
-    if not isinstance(capabilities, dict):
-        raise RuntimeError("ATENA MCP returned no structured capabilities")
+        raise RuntimeError("ATENA returned no structured capabilities")
 
     expected = {"maintain", "progress", "reduce", "modify", "collect_data", "refer"}
     actual = set(capabilities.get("decision_types", []))
@@ -161,7 +152,8 @@ def main() -> None:
 
     print("LIVE MCP CHECK: PASS")
     print(f"Service: {capabilities.get('service')} {capabilities.get('version')}")
-    print("Tools: atena_capabilities, atena_decide (via ZEUS adapter)")
+    print("Capability contract: direct read-only HTTP check")
+    print("Decision tool: atena_decide via ZEUS MCP adapter")
     print("Decision types: " + ", ".join(sorted(actual)))
     print(f"Synthetic decision: {decision.get('decision')}")
     print("No user data sent; no paid endpoint called.")
