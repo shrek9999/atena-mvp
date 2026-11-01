@@ -667,7 +667,7 @@ def test_new_profile_writes_remain_blocked_when_storage_is_disabled(monkeypatch,
                 "session_minutes": 45, "available_days": [],
             },
             "privacy_notice_acknowledged": True,
-            "privacy_notice_version": "pilot-test-v1",
+            "privacy_notice_version": "test-v1",
             "health_data_consent": False,
         },
     )
