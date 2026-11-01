@@ -360,8 +360,9 @@ class RestartRecoveryLedger:
         ]
         self.transitions = []
 
-    def list_tasks(self, limit=50):
-        return {"tasks": self.tasks[:limit]}
+    def list_tasks(self, limit=50, offset=0):
+        ordered = sorted(self.tasks, key=lambda item: (item.get("created_at", ""), item["task_id"]), reverse=True)
+        return {"tasks": ordered[offset:offset + limit]}
 
     def transition_task(self, task_id, from_status, to_status, error_code=None, recovery_code=None):
         task = next(item for item in self.tasks if item["task_id"] == task_id)
@@ -383,3 +384,53 @@ def test_restart_recovery_blocks_active_tasks_without_replaying_them():
         "blocked", "blocked", "blocked", "completed"
     ]
     assert all(item[3] == "runtime_restarted" for item in ledger.transitions)
+
+
+
+def test_restart_recovery_pages_through_more_than_one_hundred_tasks():
+    class LargeRestartLedger:
+        def __init__(self):
+            self.tasks = [
+                {
+                    "task_id": f"task-{index:03d}",
+                    "status": "queued" if index % 3 else "completed",
+                    "created_at": f"2026-11-01T00:{index // 60:02d}:{index % 60:02d}Z",
+                }
+                for index in range(235)
+            ]
+            self.transitions = []
+
+        def list_tasks(self, limit=50, offset=0):
+            ordered = sorted(
+                self.tasks,
+                key=lambda item: (item["created_at"], item["task_id"]),
+                reverse=True,
+            )
+            return {"tasks": [dict(item) for item in ordered[offset:offset + limit]]}
+
+        def transition_task(
+            self, task_id, from_status, to_status, error_code=None, recovery_code=None
+        ):
+            task = next(item for item in self.tasks if item["task_id"] == task_id)
+            assert task["status"] == from_status
+            task["status"] = to_status
+            task["recovery_code"] = recovery_code
+            self.transitions.append(task_id)
+            return {"task": dict(task)}
+
+    ledger = LargeRestartLedger()
+    coordinator = Coordinator(ledger=ledger)
+
+    recovered = coordinator.recover_orphaned_tasks(limit=40)
+
+    expected = [
+        item["task_id"] for item in ledger.tasks if item["status"] != "completed"
+    ]
+    assert len(recovered) == len(expected)
+    assert set(recovered) == set(expected)
+    assert len(ledger.transitions) == len(expected)
+    assert all(
+        item["status"] == "blocked"
+        for item in ledger.tasks
+        if item["task_id"] in set(expected)
+    )
