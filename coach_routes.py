@@ -152,6 +152,8 @@ def _coaching_guardrail_reply(messages):
         r"(serij|ponovitev|odmor).{0,40}(eksploziv|moč|trening)|"
         r"(zamenj|alternativ|nadomest).{0,40}(vajo|vaje)|"
         r"(težak|težji|individualiziran).{0,30}(program|trening)|"
+        r"(trening.{0,50}(lahek|lahka|prelahk)|RIR.{0,20}(3\\+|3 ali več)|kaj zdaj|"
+        r"naslednji korak).{0,80}(napred|obremen|program|trening)?|"
         r"(RDL|romunsk.{0,20}mrtv.{0,20}dvig).{0,50}(kako|tehnik|izvedb)",
         latest,
         re.IGNORECASE,
