@@ -173,3 +173,25 @@ def test_chat_rejects_unexpected_payload_fields(monkeypatch):
         },
     )
     assert response.status_code == 400
+
+
+def test_chat_profile_context_fails_closed_when_storage_is_unavailable(monkeypatch):
+    client = _client(monkeypatch)
+    monkeypatch.setattr(
+        coach_routes,
+        "store_get_profile",
+        lambda *_args: (_ for _ in ()).throw(coach_routes.StorageUnavailable("offline")),
+    )
+    response = client.post(
+        "/coach/chat",
+        headers={
+            "X-Pilot-Token": "pilot-test-secret",
+            "X-Profile-Token": "valid-profile-token",
+        },
+        json={
+            "profile_id": "123e4567-e89b-12d3-a456-426614174000",
+            "messages": [{"role": "user", "content": "Kako naj razumem svoj trening?"}],
+        },
+    )
+    assert response.status_code == 503
+    assert "shranjevanje profila" in response.get_json()["error"].lower()
