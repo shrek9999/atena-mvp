@@ -3,15 +3,15 @@
 These tests validate deterministic coaching decisions and the prompt contract.
 They deliberately do not call Gemini or any paid/external API.
 """
-import json
-
 import pytest
 
 from training.catalogue import get_exercises, load_catalogue
 from training.program import (
     ProgramSafetyBlock,
+    ProgramValidationError,
     _prescription,
     generate_program,
+    validate_profile,
 )
 
 
@@ -58,26 +58,20 @@ def test_strength_and_hypertrophy_use_distinct_tempo_intentions():
     assert strength["tempo_description"] != hypertrophy["tempo_description"]
 
 
-def test_hypertrophy_uses_single_joint_accessories_only_when_explicitly_enabled_for_advanced():
-    beginner = generate_program(_profile("hypertrophy", "beginner"))
-    intermediate = generate_program(_profile("hypertrophy", "intermediate"))
-    advanced = generate_program(_profile("hypertrophy", "advanced"))
-
-    for plan in (beginner, intermediate):
-        for session in plan["sessions"]:
-            for exercise in session["exercises"]:
-                source = next(
-                    item for item in load_catalogue()
-                    if item["id"] == exercise["exercise_id"]
-                )
-                assert not source["single_joint"]
-
-    assert advanced["sessions"]
-    assert any(
-        next(item for item in load_catalogue() if item["id"] == exercise["exercise_id"])["single_joint"]
-        for session in advanced["sessions"]
-        for exercise in session["exercises"]
+def test_single_joint_hypertrophy_accessories_are_catalogue_opt_in_and_advanced_only():
+    default_selection = get_exercises(
+        goal="hypertrophy", equipment=_equipment(), include_accessories=False
     )
+    accessory_selection = get_exercises(
+        goal="hypertrophy", equipment=_equipment(), include_accessories=True
+    )
+    assert all(not item["single_joint"] for item in default_selection)
+    assert any(item["single_joint"] for item in accessory_selection)
+
+    beginner_profile = _profile("hypertrophy", "beginner")
+    beginner_profile["include_accessories"] = True
+    with pytest.raises(ProgramValidationError):
+        validate_profile(beginner_profile)
 
 
 @pytest.mark.parametrize(
