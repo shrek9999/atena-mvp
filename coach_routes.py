@@ -757,6 +757,19 @@ def coach_chat():
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict) or set(payload) - {"messages", "profile_id"}:
         return jsonify({"error": "Pričakovan je JSON objekt z dovoljenimi polji."}), 400
+    messages = payload.get("messages")
+    if not isinstance(messages, list) or not messages or len(messages) > MAX_MESSAGES:
+        return jsonify({"error": "Pošlji od 1 do 12 sporočil."}), 400
+    contents = []
+    for item in messages:
+        if not isinstance(item, dict) or item.get("role") not in ("user", "model"):
+            return jsonify({"error": "Neveljavna zgodovina pogovora."}), 400
+        content = item.get("content")
+        if not isinstance(content, str) or not content.strip() or len(content) > MAX_MESSAGE_CHARS:
+            return jsonify({"error": "Sporočilo je prazno ali predolgo (največ 1800 znakov)."}), 400
+        contents.append({"role": item["role"], "parts": [{"text": content.strip()}]})
+
+    # Load stored context only after the request's conversation payload is valid.
     profile_context = ""
     profile_id = payload.get("profile_id")
     if profile_id is not None:
@@ -777,17 +790,6 @@ def coach_chat():
             return _profile_auth_error()
         except StorageUnavailable as exc:
             return _storage_error(exc)
-    messages = payload.get("messages")
-    if not isinstance(messages, list) or not messages or len(messages) > MAX_MESSAGES:
-        return jsonify({"error": "Pošlji od 1 do 12 sporočil."}), 400
-    contents = []
-    for item in messages:
-        if not isinstance(item, dict) or item.get("role") not in ("user", "model"):
-            return jsonify({"error": "Neveljavna zgodovina pogovora."}), 400
-        content = item.get("content")
-        if not isinstance(content, str) or not content.strip() or len(content) > MAX_MESSAGE_CHARS:
-            return jsonify({"error": "Sporočilo je prazno ali predolgo (največ 1800 znakov)."}), 400
-        contents.append({"role": item["role"], "parts": [{"text": content.strip()}]})
     system_prompt = SYSTEM_PROMPT
     if profile_context:
         system_prompt += "\n\n" + profile_context
