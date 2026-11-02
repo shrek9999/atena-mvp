@@ -650,7 +650,7 @@ def coach_chat():
     )
     substitution_request = bool(re.search(
         r"zamenj|alternativ|namesto|druga(?:čno)? vajo|ne ustreza|swap|replace",
-        latest_user_text,
+        user_history_text,
         re.IGNORECASE,
     ))
     # Keep a technique protocol active during follow-up turns. Users often ask
