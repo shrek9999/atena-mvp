@@ -129,3 +129,26 @@ def test_discomfort_still_blocks_automatic_adaptation():
             profile("strength", "intermediate"),
             feedback={"difficulty": "hard", "completed": True, "discomfort": "yes"},
         )
+
+
+def test_intermediate_bodyweight_strength_uses_cossack_squat_and_single_leg_hinge():
+    plan = generate_program(
+        profile("strength", "intermediate", equipment=["bodyweight"])
+    )
+    chosen = exercises(plan)
+    squat = next(x for x in chosen if x["pattern"] == "squat")
+    hinge = next(x for x in chosen if x["pattern"] == "hinge")
+
+    assert squat["exercise_id"] == "cossack_squat"
+    assert hinge["exercise_id"] == "single_leg_rdl"
+
+
+def test_advanced_bodyweight_strength_uses_pistol_squat_progression():
+    plan = generate_program(
+        profile("strength", "advanced", equipment=["bodyweight"], session_minutes=90)
+    )
+    squat = next(x for x in exercises(plan) if x["pattern"] == "squat")
+
+    assert squat["exercise_id"] == "pistol_squat"
+    assert squat["joint_type"] == "multi_joint"
+    assert squat["reps_per_side"] is True
