@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Wait for the staging deployment to settle
-        run: sleep 75
+        run: sleep 300
       - name: Validate secure pilot access
         env:
           PILOT_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
