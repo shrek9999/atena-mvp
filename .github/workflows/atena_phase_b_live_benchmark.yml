@@ -90,6 +90,8 @@ jobs:
                   "id": case["id"],
                   "http_status": status,
                   "reply": reply,
+                  "guardrail_applied": body.get("guardrail_applied") if isinstance(body, dict) else None,
+                  "response_source": body.get("response_source") if isinstance(body, dict) else None,
                   "expected_behaviors": case["expected_behaviors"],
                   "critical_failures_to_check": case["critical_failures"],
                   "transport_error": error,
