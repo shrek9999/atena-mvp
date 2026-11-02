@@ -150,7 +150,7 @@ def _coaching_guardrail_reply(messages):
         r"zamenjam vajo|strukturiram serije|strukturiram trening)|"
         r"(koliko|kakšne).{0,40}(serij|ponovitev|obremenitev|kilogram|odmor)|"
         r"(serij|ponovitev|odmor).{0,40}(eksploziv|moč|trening)|"
-        r"(zamenj|alternativ|nadomest).{0,40}(vajo|vaje)|"
+        r"(zamenj|alternativ|nadomest).{0,40}(vajo|vaje|počep|izpadni korak|RDL)|"
         r"(težak|težji|individualiziran).{0,30}(program|trening)|"
         r"(trening.{0,50}(lahek|lahka|prelahk)|RIR.{0,20}(3\+|3 ali več)|kaj zdaj|naslednji korak)|"
         r"(RDL|romunsk.{0,20}mrtv.{0,20}dvig).{0,50}(kako|tehnik|izvedb)",
