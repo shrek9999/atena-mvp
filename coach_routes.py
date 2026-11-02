@@ -542,7 +542,7 @@ def _build_profile_adaptation(sessions):
         for item in sessions
         if isinstance(item, dict) and isinstance(item.get("session"), dict)
     ]
-    guidance = assess_next_step(session_data)
+    guidance = assess_next_step(sessions)
     if not session_data:
         return None, guidance
     last = session_data[0]
