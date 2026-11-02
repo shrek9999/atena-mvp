@@ -461,6 +461,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                     has_weighted_squat = bool(weighted_squat_equipment & available_equipment)
                     if not has_weighted_squat and p["experience"] == "advanced" and item["id"] == "pistol_squat":
                         return -20
+                    if not has_weighted_squat and p["experience"] == "intermediate" and item["id"] == "single_leg_box_squat":
+                        return -20
                     if not has_weighted_squat and p["experience"] == "intermediate" and item["id"] == "cossack_squat":
                         return -15
                     if item["id"] in {"back_squat", "front_squat"} and {"barbell", "rack"}.issubset(available_equipment):
