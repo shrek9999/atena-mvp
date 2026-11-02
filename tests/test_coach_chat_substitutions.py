@@ -102,10 +102,17 @@ def test_chat_uses_rdl_technique_protocol_for_hinge_learning_request(monkeypatch
     response = app.test_client().post(
         "/coach/chat",
         headers={"X-Pilot-Token": "pilot-test-secret"},
-        json={"messages": [{
-            "role": "user",
-            "content": "Z RDL imam težave. Kako naj ohranim raven hrbet pri predklonu?",
-        }]},
+        json={"messages": [
+            {
+                "role": "user",
+                "content": "Z RDL imam težave. Kako naj ohranim raven hrbet pri predklonu?",
+            },
+            {"role": "model", "content": "Ali gre za bolečino ali učenje tehnike?"},
+            {
+                "role": "user",
+                "content": "Ne boli me, nimam drugih omejitev, želim se naučiti tehnike.",
+            },
+        ]},
     )
 
     assert response.status_code == 200
