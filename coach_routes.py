@@ -212,15 +212,15 @@ def _verified_exercise_catalogue_context(messages):
 def _normalize_slovene_coaching_terms(answer):
     """Correct a small, tested set of recurring literal translations/typos."""
     replacements = (
-        (r"\\btrilogije\\s*\\(tricepsa\\)", "tricepsa"),
-        (r"\\btrilogije\\b", "tricepsa"),
-        (r"\\bprsni tisk\\b", "potisk za prsi"),
-        (r"\\bsäte\\b", "zadnjice"),
-        (r"\\bzadnji del hrbet\\b", "zadnji del hrbta"),
-        (r"\\bzgornji del hrbet\\b", "zgornji del hrbta"),
-        (r"\\bmišične masa\\b", "mišične mase"),
-        (r"\\bprilezi daljši počitek\\b", "vzemi si daljši počitek"),
-        (r"\\bna session\\b", "na vadbeni dan"),
+        (r"\btrilogije\s*\(tricepsa\)", "tricepsa"),
+        (r"\btrilogije\b", "tricepsa"),
+        (r"\bprsni tisk\b", "potisk za prsi"),
+        (r"\bsäte\b", "zadnjice"),
+        (r"\bzadnji del hrbet\b", "zadnji del hrbta"),
+        (r"\bzgornji del hrbet\b", "zgornji del hrbta"),
+        (r"\bmišične masa\b", "mišične mase"),
+        (r"\bprilezi daljši počitek\b", "vzemi si daljši počitek"),
+        (r"\bna session\b", "na vadbeni dan"),
     )
     for pattern, replacement in replacements:
         answer = re.sub(pattern, replacement, answer, flags=re.IGNORECASE)
@@ -436,7 +436,7 @@ def _coaching_guardrail_reply(messages):
         text_value = item
         for marker in (
             "Moje vprašanje: ",
-            "Nadaljevanje prejšnjega pogovora:\\n",
+            "Nadaljevanje prejšnjega pogovora:\n",
             "Prejšnje vprašanje (skrajšano): ",
         ):
             if marker in text_value:
@@ -452,7 +452,7 @@ def _coaching_guardrail_reply(messages):
         intent_text = " ".join(substitution_intent_texts).casefold()
         named_exercise = False
         for exercise in load_catalogue():
-            candidates = [exercise.get("name", ""), exercise.get("name_en", "")]
+            candidates = [str(exercise.get("name") or ""), str(exercise.get("name_en") or "")]
             for candidate in candidates:
                 candidate = candidate.casefold().strip()
                 if not candidate:
@@ -741,7 +741,7 @@ def coach_chat():
         answer = _normalize_slovene_coaching_terms(answer)
         bodyweight_note = _bodyweight_only_program_note(messages)
         if bodyweight_note and bodyweight_note not in answer:
-            answer += "\\n\\n" + bodyweight_note
+            answer += "\n\n" + bodyweight_note
         # The coach brand owner is not automatically the chat user.
         answer = re.sub(
             r"^(Pozdravljen|Živjo|Živijo),\s*Grega[!.,]?\s*",
