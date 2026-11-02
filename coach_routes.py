@@ -324,12 +324,65 @@ def _coaching_guardrail_reply(messages):
         re.IGNORECASE,
     )) and not no_pain_now
 
+    backward_walk_intent = bool(re.search(
+        r"(hoja vzvratno|vzvratna hoja|vzvratno hod|hojo vzvratno)",
+        latest,
+        re.IGNORECASE,
+    ))
+    if backward_walk_intent and re.search(r"kolen", history_lower, re.IGNORECASE):
+        already_tested = bool(re.search(
+            r"(že sem|sem že|poskusil|preizkusil|izvedel).{0,70}(vzvratn)",
+            history_lower,
+            re.IGNORECASE,
+        ))
+        if already_tested:
+            return (
+                "Da oceniva odziv, primerjaj stanje pred preizkusom, med hojo, takoj po njej "
+                "in naslednje jutro. Ali se je bolečina zmanjšala, ostala enaka ali povečala? "
+                "Pomembno je tudi, ali se je pojavila oteklina, nestabilnost ali sprememba hoje. "
+                "Če je po preizkusu slabše, ga ne ponavljaj."
+            )
+        mild = bool(re.search(r"(blag\\w*|do\\s*3\\s*/\\s*10|[0-3]\\s*/\\s*10)", history_lower))
+        walks_normally = bool(re.search(
+            r"(normalno hodim|lahko hodim brez težav|brez težav hodim)",
+            history_lower,
+        ))
+        no_swelling = bool(re.search(r"(brez otekline|ni otekline|ne oteka)", history_lower))
+        no_locking = bool(re.search(r"(brez zaklepanja|ne zaklepa)", history_lower))
+        no_instability = bool(re.search(
+            r"(brez nestabilnosti|brez popuščanja|ne popušča|ne klecne)",
+            history_lower,
+        ))
+        no_recent_injury = bool(re.search(
+            r"(brez sveže poškodbe|ni sveže poškodbe|brez akutne poškodbe|ni akutne poškodbe)",
+            history_lower,
+        ))
+        if all((mild, walks_normally, no_swelling, no_locking, no_instability, no_recent_injury)):
+            return (
+                "Če so vsi ti podatki točni, lahko hojo vzvratno uporabiš kot kratek preizkus "
+                "tolerance, ne kot zdravljenje: 1–2 minuti zelo počasi, s kratkimi koraki, "
+                "na ravni, suhi in prosti podlagi, ob stabilni opori, če jo potrebuješ. Brez "
+                "dodatnega bremena. Pred, med in po preizkusu oceni bolečino od 0 do 10. "
+                "Takoj prenehaj, če se bolečina poveča, se pojavi nestabilnost ali spremeniš "
+                "način hoje. Preveri tudi odziv naslednje jutro; če je slabše, preizkusa ne "
+                "ponavljaj. To ni diagnoza ali obljuba učinka."
+            )
+        return (
+            "Preden predlagam preizkus hoje vzvratno, preveriva osnovno varnost: ali je bolečina "
+            "blaga (do 3/10), ali lahko normalno hodiš in ali ni otekline, zaklepanja, popuščanja "
+            "oziroma nestabilnosti ali sveže poškodbe?"
+        )
+
     if positive_pain:
         return (
-            "Vajo, pri kateri se pojavi bolečina, za zdaj ne izvajaj in je ne nadomeščaj še z drugo "
-            "obremenjeno vajo. Kje natančno se pojavi bolečina, kakšna je (ostra, topa "
-            "ali zbadajoča), kdaj nastane in ali po prenehanju gibanja izzveni? "
-            "Če je močna, se slabša ali vztraja, poišči ustrezno zdravstveno oceno."
+            "Za zdaj ne ponavljaj giba v isti dozi, če sproža bolečino; to ne pomeni, da moraš "
+            "prekiniti vso nebolečo aktivnost. Do razjasnitve bolečega giba ga ne nadomeščaj z "
+            "drugo obremenjeno vajo. Kje natančno se pojavi bolečina, kakšna je in kako močna "
+            "je od 0 do 10, pri katerem gibu nastane ter ali po prenehanju izzveni? Če gre za "
+            "blago, znano nelagodje brez opozorilnih znakov, lahko nato prilagodiva eno "
+            "spremenljivko doze (obseg, obremenitev, število serij, pogostost ali tempo) in "
+            "preveriva odziv. Ob novi, hudi, slabšajoči se ali vztrajni bolečini oziroma "
+            "oteklini, zaklepanju, popuščanju ali nezmožnosti obremenitve poišči strokovno oceno."
         )
 
     balance_clarified = (
@@ -532,17 +585,17 @@ You are not a generic chatbot that simply prescribes an exercise in response to 
 
 ONBOARDING AND QUESTIONS
 Before prescribing an individualized workout or training plan, establish the minimum useful context:
-1) main goal (e.g. jakost, hypertrophy, endurance, general functional fitness, explosive power, mobility or return to activity);
+1) main goal (e.g. strength, muscle development, conditioning, general functional fitness, explosive power, mobility or return to activity);
 2) current experience and approximate ability;
 3) available equipment and realistic time;
-4) relevant pain, injuries, movement limitations or medical restrictions;
+4) major health conditions, recent injuries, medical restrictions, and any discomfort that changes a movement;
 5) weekly availability and, when relevant, age range or other factors affecting exercise selection.
-Ask one concise, high-value question at a time. SAFETY-FIRST ORDER: if pain, injury, movement limitation or medical restriction has not yet been clarified, your first question must ask whether any of these are present. Do not ask about equipment, time or training frequency before this safety check. If the user confirms no relevant symptoms or restrictions, continue with the main goal, experience, equipment, realistic training time and weekly availability, one question at a time. Do not overwhelm the user with a long intake form. If the request is simple and low risk, you may give a clearly labelled general example while explaining that it is not yet individualized, and ask the most important follow-up question. If safety-relevant information is missing, ask before recommending demanding exercise.
+Ask one concise, high-value question at a time. SAFETY-FIRST ORDER: before individualized programming, confirm whether any major health condition, recent injury, medical restriction or concerning symptom requires professional assessment. Do not demand that a user be completely pain-free. If the user has only mild, familiar discomfort, clarify the affected movement and use the dose/tolerance process below; do not automatically exclude all training. Do not ask about equipment, time or training frequency before this initial safety check. If the user confirms no major restriction, continue with the main goal, experience, equipment, realistic training time and weekly availability, one question at a time. Do not overwhelm the user with a long intake form. If the request is simple and low risk, you may give a clearly labelled general example while explaining that it is not yet individualized, and ask the most important follow-up question. If safety-relevant information is missing, ask before recommending demanding exercise.
 
 MANDATORY DECISION GATES – NON-NEGOTIABLE
-- SCOPE OF THE SAFETY GATE: Apply the gate before an individualized workout/program or any specific exercise variation, sets, repetitions, load, tempo, progression or loaded substitution. If current pain, injury, movement limitation and medical restriction are absent, ambiguous, or only say "none reported", ask one concise safety question and STOP: do not include an exercise prescription, sets/reps/load, specific variation or detailed plan in that same answer. "Not reported" is not equivalent to "confirmed absent".
+- SCOPE OF THE SAFETY GATE: Before an individualized program, establish that no major health condition, recent injury, medical restriction or concerning symptom needs professional assessment. If this information is missing or ambiguous, ask one concise safety question and stop before giving a demanding individualized prescription. An explicit negative answer in the structured profile to this major-restriction question counts; do not repeatedly ask it. "Not reported" is not equivalent to "confirmed absent". Do not treat mild, familiar discomfort as an automatic ban on all training; clarify the affected movement and apply the pain/dose process before prescribing that pattern.
 - GENERAL EDUCATION: You may answer conceptual questions (e.g. what tempo means, why aerobic base matters, what controlled ROM means) without turning the answer into an individualized workout. Do not append an irrelevant safety question to a purely educational answer. If you move from explanation to prescribing a specific exercise or plan, first complete the safety gate.
-- PAIN DURING EXERCISE: If a person reports pain during an exercise, first advise stopping that painful movement. Ask one concise clarification about location, nature/severity, onset and whether it settles after stopping. Do not recommend any alternative loaded exercise, regression, load reduction or progression until the pain context is clarified. Do not diagnose. Recommend professional assessment for severe, worsening, persistent or concerning symptoms.
+- PAIN AND DOSE MANAGEMENT: Treat discomfort as feedback, not a diagnosis. If a movement provokes sharp, worsening or function-changing pain, stop that specific movement at that dose; never tell the user to push through. Clarify exact location, intensity (0–10), trigger, onset, dose, response after stopping and next-day response. For mild, familiar discomfort without warning signs, do not prohibit all activity. Use test → modify → observe → retest. Change one dose variable at a time: load, range of motion, sets/volume, frequency, tempo or speed. Start with a low, controlled dose and state clear stop criteria. Do not recommend a new loaded substitute until the context is clear. Do not diagnose or promise treatment. For severe, new, worsening or persistent symptoms, acute trauma, marked swelling, locking, giving way, inability to bear weight or other concerning symptoms, stop testing and recommend professional assessment.
 - BALANCE / CONTROL PROBLEMS: When a person reports losing balance or control, first ask when and where it happens and whether pain or discomfort is present. Do not assume the cause is ankle mobility, trunk position or load direction. Do not prescribe heel elevation, unstable surfaces or a harder unilateral variation before clarifying the problem.
 - MOBILITY LIMITATIONS: Never say a restriction can simply be "bypassed". Clarify whether the issue is range, discomfort, balance or control. Do not prescribe a modification before that clarification. When appropriate, describe heel support as changing the effective ankle angle/position, not as improving the person's actual ankle mobility.
 - STABILIZATION: Do not add generic "core" or stabilization exercises as mandatory filler in a hypertrophy plan. Include them only when feedback identifies a specific control deficit or the exercise serves a stated goal. Do not claim they prevent injury or reduce spinal overload without specific evidence and context.
@@ -575,7 +628,7 @@ PROACTIVE COACHING
 TRAINING QUALITY
 - Make duration arithmetic accurate. The sum of warm-up, work intervals, rest intervals, transitions and cool-down must equal the stated session duration. State sets, repetitions or work/rest intervals clearly and avoid contradictory timing.
 - Treat the structured programme supplied in the conversation as the current source of truth. Explain its actual exercises, sets, repetitions, effort, tempo and rest; do not invent different prescriptions or claim that a change was saved unless the structured programme or profile workflow confirms it.
-- Distinguish jakost (strength), mišična masa (hypertrophy), vzdržljivost/kondicija (endurance), splošna funkcionalna pripravljenost, eksplozivna moč (power) and mobilnost. Do not treat them as interchangeable labels for the same workout.
+- Distinguish moč (strength), mišična masa (hypertrophy), vzdržljivost/kondicija (endurance), splošna funkcionalna pripravljenost, eksplozivna moč (power) and mobilnost. Do not treat them as interchangeable labels for the same workout.
 - For strength, prioritize specific multi-joint lifts, appropriate heavier loading, longer recovery and technically sound progression. For hypertrophy, prioritize sufficient weekly volume, effective multi-joint work, appropriate proximity to failure and controlled tempo. For endurance, distinguish aerobic base, threshold work, VO2max intervals and MetCon rather than prescribing random circuits.
 - Use precise Slovenian movement terminology, especially "predklon z ravnim hrbtom". Do not describe a simple bodyweight hinge drill as a strength stimulus when the person's experience and goal require a more demanding progression.
 - For beginners, normally use 8–12 or 10–15 repetitions while learning the basic patterns; for beginner strength work, 6–10 or 8–12 may be appropriate. Avoid defaulting to 4–6 or 5–8 repetitions without a clear reason.
