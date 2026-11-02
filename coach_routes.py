@@ -316,6 +316,28 @@ def _coaching_guardrail_reply(messages):
             "Ali se enaka nestabilnost pojavi tudi pri počepu z lastno težo, brez dodatne obremenitve?"
         )
 
+    balance_load_issue = (
+        no_pain_now
+        and bool(re.search(
+            r"počep z lastno težo.{0,70}(?:stabil|brez težav)",
+            history_lower,
+            re.IGNORECASE,
+        ))
+        and bool(re.search(
+            r"nestabil\w*.{0,90}dodatn.{0,30}obremen|"
+            r"dodatn.{0,30}obremen.{0,90}nestabil\w*",
+            history_lower,
+            re.IGNORECASE,
+        ))
+    )
+    if balance_load_issue:
+        return (
+            "Ker je počep z lastno težo stabilen, nestabilnost pa se pojavi šele z dodatno "
+            "obremenitvijo, za zdaj ne prehajaj na zahtevnejšo različico in ne povečuj bremena. "
+            "Ostani pri različici, pri kateri ohranjaš nadzor. Da lahko izbereva varen naslednji "
+            "korak, mi povej: s kakšno dodatno obremenitvijo se je nestabilnost pojavila?"
+        )
+
     ankle_mobility = bool(re.search(
         r"(omejena|omejeno|omejen|omejuje).{0,35}(gibljivost|gleženj|obseg)|"
         r"(gibljivost|gleženj|obseg).{0,35}(omejena|omejeno|omejen|omejuje)",
@@ -338,6 +360,20 @@ def _coaching_guardrail_reply(messages):
             "Hvala, jasno: omejitev opisuješ kot zmanjšan obseg gibanja v gležnju, brez bolečine. "
             "Preden izberem prilagoditev, mi povej še eno stvar: ali se ti pri počepu peta dvigne "
             "od tal, ali se ustaviš zaradi občutka omejitve v gležnju, čeprav peta ostane na tleh?"
+        )
+    heel_lift_after_ankle_clarification = (
+        no_pain_now
+        and bool(re.search(r"(omejena|omejen|omejeno).{0,50}(gibljivost|gleženj|obseg)", history_lower, re.IGNORECASE))
+        and bool(re.search(r"(peta se dvigne|peta dvigne|peta.{0,25}od tal)", history_lower, re.IGNORECASE))
+    )
+    if heel_lift_after_ankle_clarification:
+        return (
+            "Ker se peta dviguje zaradi omejenega gibanja v gležnju, prednji počep ni samodejno "
+            "boljša rešitev. Zaradi pokončnejšega trupa in pomika kolen naprej lahko zahteva "
+            "enako ali celo več dorzalne fleksije gležnja. Stabilna podpora pod petami lahko "
+            "spremeni efektivni kot gležnja, ne poveča pa njegove dejanske gibljivosti. Ne bom "
+            "predpostavljal, da imaš ustrezno oporo. Ali imaš na voljo namensko stabilno klinasto "
+            "podporo za pete oziroma drugo varno, ravno podlago, ki se med počepom ne more premakniti?"
         )
 
     rdl_request = bool(re.search(
@@ -409,6 +445,11 @@ MANDATORY DECISION GATES – NON-NEGOTIABLE
 - MOBILITY LIMITATIONS: Never say a restriction can simply be "bypassed". Clarify whether the issue is range, discomfort, balance or control. Do not prescribe a modification before that clarification. When appropriate, describe heel support as changing the effective ankle angle/position, not as improving the person's actual ankle mobility.
 - STABILIZATION: Do not add generic "core" or stabilization exercises as mandatory filler in a hypertrophy plan. Include them only when feedback identifies a specific control deficit or the exercise serves a stated goal. Do not claim they prevent injury or reduce spinal overload without specific evidence and context.
 - BODYWEIGHT-ONLY EQUIPMENT: Do not call a bodyweight squat a Goblet squat, do not imply a dumbbell/bench/band is available, and do not use a machine or prop unless the profile explicitly lists it. Prefer clear names for the actual variation.
+- BODYWEIGHT-ONLY HYPERTROPHY LIMITS: Without external equipment, do not call an unloaded hip hinge an RDL or imply it provides the same loading potential as a loaded hinge. Call it "predklon z ravnim hrbtom brez dodatne obremenitve". Explicitly explain when a meaningful horizontal pulling movement cannot be loaded safely without a confirmed anchor or equipment; never invent table rows, door anchors or improvised supports. Explain realistic progression options and their limits.
+- LOADED BALANCE REGRESSION: If a bodyweight squat is stable but instability appears only after adding load, do not move the load to the shoulders or prescribe a harder variation as the first step. Keep the person at the stable bodyweight variation, do not increase load, and ask which load triggered the loss of control before considering progression.
+- ANKLE DORSIFLEXION: Do not recommend a front squat as an automatic way to reduce ankle dorsiflexion demand. Its more upright torso and forward knee travel can require as much or more ankle dorsiflexion. If the heel lifts, check whether a stable heel support is actually available before suggesting heel elevation. Heel support changes the effective ankle angle; it does not increase actual ankle mobility.
+- LOAD PROGRESSION: Do not prescribe a fixed kilogram increase when the exact exercise, current load and completed repetitions are unknown. Confirm stable technique and successful completion of the target repetitions; change one variable at a time and make only a small, conditional progression.
+- SLOVENIAN TERMINOLOGY: Use idiomatic exercise names such as "potisk za prsi" rather than "prsni tisk". Avoid literal translations and grammatically malformed muscle or movement descriptions.
 - BEGINNER PRESCRIPTION: For beginners, prioritize learning and repeatable technique. As a default, use roughly 8–12 or 10–15 repetitions for general strength learning and hypertrophy, with a manageable load and about 2–4 repetitions in reserve. Do not default beginners to 4–6 or 5–8 repetitions merely because the goal says strength. Use lower ranges only with a clear exercise-specific reason and sufficient competency.
 - POWER PRESCRIPTION: Do not prescribe a universal percentage of 1RM for explosive-power work. Use low repetitions (commonly 2–3), full recovery, maximal intent with a controllable load, and stop when speed or technique declines. Give a percentage only when the user has a reliable tested 1RM for that exact lift and the percentage is justified. Never invent exercise names such as "izbruh z drogom".
 - STRENGTH WITH LIMITED TIME: Do not shorten rest intervals arbitrarily to force a heavy strength session into a short time window. Preserve adequate recovery for the main lift and reduce accessory exercises or total sets instead.
