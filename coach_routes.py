@@ -178,8 +178,8 @@ def _coaching_guardrail_reply(messages):
         )
 
     ankle_mobility = bool(re.search(
-        r"(omejena|omejeno|omejuje).{0,35}(gibljivost|gleženj)|"
-        r"(gibljivost|gleženj).{0,35}(omejena|omejeno|omejuje)",
+        r"(omejena|omejeno|omejen|omejuje).{0,35}(gibljivost|gleženj|obseg)|"
+        r"(gibljivost|gleženj|obseg).{0,35}(omejena|omejeno|omejen|omejuje)",
         latest,
         re.IGNORECASE,
     ))
