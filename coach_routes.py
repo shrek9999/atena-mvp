@@ -553,7 +553,10 @@ def coach_profile_program(profile_id):
     token = _profile_token()
     try:
         profile = store_get_profile(profile_id, token)
-        sessions = store_list_sessions(profile_id, token, limit=1)
+        # Use enough history to enforce the same progression gate shown in the
+        # adaptation endpoint: two completed, easy sessions with RIR >= 3.
+        sessions = store_list_sessions(profile_id, token, limit=3)
+        adaptation = assess_next_step(sessions)
         feedback = None
         if sessions:
             last = sessions[0].get("session", {})
@@ -562,11 +565,14 @@ def coach_profile_program(profile_id):
                     "difficulty": "right",
                     "completed": bool(last.get("completed", True)),
                     "discomfort": "yes",
+                    "recovery": last.get("recovery", "normal"),
                 }
             else:
                 difficulty = {"easy": "easy", "moderate": "right", "hard": "hard"}.get(
                     last.get("difficulty"), "right"
                 )
+                if difficulty == "easy" and not adaptation.get("progression_allowed", False):
+                    difficulty = "right"
                 feedback = {
                     "difficulty": difficulty,
                     "completed": bool(last.get("completed", True)),
@@ -578,6 +584,7 @@ def coach_profile_program(profile_id):
         return jsonify({
             "program": result,
             "profile": profile["profile"],
+            "adaptation_guidance": adaptation,
             "source": "saved_profile_and_recent_training_feedback",
             "pilot": True,
         }), 200
