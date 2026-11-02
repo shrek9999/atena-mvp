@@ -192,3 +192,13 @@ def test_strength_and_hypertrophy_select_different_horizontal_pull_variants():
 
     assert strength_pull["exercise_id"] == "barbell_bent_over_row"
     assert hypertrophy_pull["exercise_id"] in {"dumbbell_bent_over_row", "one_arm_row", "kettlebell_one_arm_row"}
+
+
+def test_beginner_bodyweight_strength_uses_supported_single_leg_hinge_and_discloses_load_limit():
+    plan = generate_program(
+        profile("strength", "beginner", equipment=["bodyweight"])
+    )
+    hinge = next(x for x in exercises(plan) if x["pattern"] == "hinge")
+
+    assert hinge["exercise_id"] == "supported_single_leg_rdl"
+    assert any("Brez zunanjih bremen" in note for note in plan["limitations"])
