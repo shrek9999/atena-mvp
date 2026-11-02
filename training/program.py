@@ -126,7 +126,7 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
     if goal == "endurance":
         # Keep a minimum viable session even when no loaded carry equipment exists.
         # Carry is an optional fourth pattern and is omitted when no safe load is available.
-        return ["locomotion", "lunge", "conditioning", "carry"]
+        return ["locomotion", "lunge", "conditioning"]
     if goal == "mobility":
         return ["mobility", "mobility", "mobility", "mobility_stretch", "squat", "lunge", "hinge", "horizontal_push", "accessory"]
     base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
@@ -137,8 +137,6 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
     else:
         extras = [["lunge", "vertical_push"], ["vertical_pull", "lunge"], ["lunge", "vertical_push"], ["vertical_pull", "lunge"]]
     patterns = base + (extras[session_index][:1] if include_stability else extras[session_index])
-    if session_index == 0 and goal in {"strength", "general_fitness", "functional"}:
-        patterns.append("carry")
     if include_stability:
         patterns.insert(0, "trunk_stability")
     if goal == "power":
@@ -475,8 +473,12 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                         return -15
                     if item["id"] in {"back_squat", "front_squat"} and {"barbell", "rack"}.issubset(available_equipment):
                         return -10 if p["goal"] == "strength" else -5
-                    if item["id"] in {"dumbbell_squat_side", "dumbbell_squat_front_rack", "two_dumbbell_squat", "squat_goblet"} and {"dumbbell", "kettlebell"} & available_equipment:
+                    if item["id"] == "heel_elevated_squat" and {"weight_plate", "heel_wedge", "slant_board"} & available_equipment:
+                        return -8
+                    if item["id"] in {"dumbbell_squat_front_rack", "squat_goblet"} and {"dumbbell", "kettlebell"} & available_equipment:
                         return -10
+                    if item["id"] in {"dumbbell_squat_side", "two_dumbbell_squat"}:
+                        return 40
                     if item["id"] == "single_leg_box_squat" and not (external_load_items & available_equipment):
                         return -5
                 if pattern == "horizontal_push":
@@ -506,13 +508,10 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                     if item["id"] == "jump_rope":
                         return -3
                 if pattern == "hinge" and p["experience"] == "beginner":
-                    has_dumbbell = "dumbbell" in available_equipment
                     has_loaded_hinge = bool({"dumbbell", "kettlebell", "barbell"} & available_equipment)
                     if not has_loaded_hinge and item["id"] == "supported_single_leg_rdl":
                         return -25
                     if not has_loaded_hinge and item["id"] == "bodyweight_hip_hinge":
-                        return -20
-                    if has_dumbbell and item["id"] == "dumbbell_deadlift":
                         return -20
                 if pattern == "horizontal_pull" and p["goal"] in {"hypertrophy", "strength"}:
                     if p["goal"] == "strength" and p["experience"] != "beginner" and item["id"] == "barbell_bent_over_row" and "barbell" in available_equipment:
@@ -526,18 +525,19 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                     if session_index % 2 == 1 and item["id"] in {"band_row", "trx_row", "ring_row"}:
                         return -5
                 if pattern == "hinge":
-                    if p["goal"] == "strength" and p["experience"] != "beginner" and item["id"] == "deadlift" and "barbell" in available_equipment:
+                    has_dumbbell = "dumbbell" in available_equipment
+                    has_barbell = "barbell" in available_equipment
+                    if p["goal"] == "strength" and p["experience"] != "beginner" and item["id"] == "deadlift" and has_barbell:
                         return -15
-                    if p["goal"] == "hypertrophy":
-                        if p["experience"] == "beginner" and item["id"] == "dumbbell_deadlift" and "dumbbell" in available_equipment:
-                            return -15
-                        if p["experience"] != "beginner" and item["id"] == "romanian_deadlift":
-                            return -15
-                        if item["id"] == "dumbbell_deadlift":
-                            return -10
-                        if item["id"] == "deadlift":
-                            return 0
-                    if item["id"] in {"romanian_deadlift", "dumbbell_deadlift", "deadlift"}:
+                    if has_dumbbell and not has_barbell and item["id"] == "romanian_deadlift":
+                        return -20
+                    if item["id"] == "dumbbell_deadlift":
+                        return 35
+                    if item["id"] == "bodyweight_hip_hinge" and (has_dumbbell or has_barbell or "kettlebell" in available_equipment):
+                        return 25
+                    if p["goal"] == "hypertrophy" and item["id"] == "romanian_deadlift":
+                        return -15
+                    if item["id"] in {"romanian_deadlift", "deadlift"}:
                         return -5 if set(item["equipment"]).issubset(available_equipment) else 5
                     if p["goal"] == "hypertrophy" and item["id"] in {"slider_leg_curl", "long_lever_glute_bridge", "elevated_heel_hip_lift"}:
                         return -5
