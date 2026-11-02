@@ -389,7 +389,7 @@ def test_beginner_with_dumbbells_uses_a_loaded_beginner_hinge():
     })
     hinge = [ex for session in plan["sessions"] for ex in session["exercises"] if ex["pattern"] == "hinge"]
     assert hinge
-    assert all(ex["exercise_id"] == "dumbbell_deadlift" for ex in hinge)
+    assert all(ex["exercise_id"] == "romanian_deadlift" for ex in hinge)
 
 
 def test_hard_feedback_updates_beginner_rir_range_consistently():
@@ -585,7 +585,7 @@ def test_bodyweight_squat_does_not_claim_an_unused_household_support():
 
 
 
-def test_strength_and_general_fitness_programmes_include_carries_when_available():
+def test_strength_and_general_fitness_programmes_do_not_insert_carries_automatically():
     for goal in ("strength", "general_fitness", "functional"):
         profile = {
             **BASE,
@@ -596,7 +596,7 @@ def test_strength_and_general_fitness_programmes_include_carries_when_available(
         }
         plan = generate_program(profile)
         exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
-        assert any(exercise["pattern"] == "carry" for exercise in exercises)
+        assert not any(exercise["pattern"] == "carry" for exercise in exercises)
 
 
 def test_advanced_box_jump_intervals_are_not_the_default_when_other_conditioning_is_available():
@@ -682,24 +682,17 @@ def test_power_goal_with_bodyweight_has_explosive_jump_options_without_a_box():
     assert all(exercise["prescription"]["rir"] == 4 for exercise in jumps)
 
 
-def test_carry_is_selected_only_when_a_real_household_load_is_available():
-    no_load = {
+def test_carry_is_not_a_default_pattern_even_when_load_is_available():
+    profile = {
         **BASE,
         "goal": "strength",
         "experience": "intermediate",
-        "equipment": ["bodyweight", "chair", "wall", "household_support"],
+        "equipment": ["bodyweight", "chair", "wall", "household_support", "household_load", "backpack"],
         "session_minutes": 75,
     }
-    with_load = {
-        **no_load,
-        "equipment": ["bodyweight", "chair", "wall", "household_support", "household_load", "backpack"],
-    }
-    no_load_plan = generate_program(no_load)
-    load_plan = generate_program(with_load)
-    no_load_exercises = [exercise for session in no_load_plan["sessions"] for exercise in session["exercises"]]
-    load_exercises = [exercise for session in load_plan["sessions"] for exercise in session["exercises"]]
-    assert not any(exercise["pattern"] == "carry" for exercise in no_load_exercises)
-    assert any(exercise["pattern"] == "carry" for exercise in load_exercises)
+    plan = generate_program(profile)
+    exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
+    assert not any(exercise["pattern"] == "carry" for exercise in exercises)
 
 
 def test_hinge_pattern_uses_clear_coaching_term_predklon_z_ravnim_hrbtom():
