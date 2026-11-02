@@ -3,6 +3,7 @@ from coach_routes import _build_profile_adaptation
 
 def wrapped_session(difficulty="easy", rir=3, recovery="good", completed=True, discomfort=False):
     return {
+        "session_date": "2026-11-02" if difficulty == "easy" else "2026-11-01",
         "session": {
             "difficulty": difficulty,
             "completed": completed,
@@ -40,7 +41,7 @@ def test_hard_session_is_passed_through_for_immediate_reduction():
         wrapped_session(difficulty="hard", rir=1)
     ])
     assert feedback["difficulty"] == "hard"
-    assert guidance["action"] == "reduce_load"
+    assert guidance["decision"] == "review_volume_reduction"
 
 
 def test_poor_recovery_holds_progression_and_preserves_recovery_signal():
@@ -49,6 +50,7 @@ def test_poor_recovery_holds_progression_and_preserves_recovery_signal():
     ])
     assert feedback["difficulty"] == "right"
     assert feedback["recovery"] == "poor"
+    assert guidance["decision"] == "review_volume_reduction"
     assert guidance["progression_allowed"] is False
 
 
@@ -57,7 +59,7 @@ def test_discomfort_is_never_converted_to_a_normal_feedback_signal():
         wrapped_session(discomfort=True)
     ])
     assert feedback["discomfort"] == "yes"
-    assert guidance["action"] == "hold"
+    assert guidance["decision"] == "pause_and_review"
 
 
 def test_no_history_returns_no_feedback_and_a_hold_guidance():
