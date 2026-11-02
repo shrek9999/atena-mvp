@@ -162,3 +162,13 @@ def test_advanced_bodyweight_strength_uses_cossack_until_pistol_skill_is_confirm
     assert assessed_squat["exercise_id"] == "pistol_squat"
     assert assessed_squat["joint_type"] == "multi_joint"
     assert assessed_squat["reps_per_side"] is True
+
+
+def test_strength_and_hypertrophy_select_different_primary_press_variants():
+    strength = generate_program(profile("strength", "intermediate"))
+    hypertrophy = generate_program(profile("hypertrophy", "intermediate"))
+    strength_press = next(x for x in exercises(strength) if x["pattern"] == "horizontal_push")
+    hypertrophy_press = next(x for x in exercises(hypertrophy) if x["pattern"] == "horizontal_push")
+
+    assert strength_press["exercise_id"] == "barbell_bench_press"
+    assert hypertrophy_press["exercise_id"] == "dumbbell_bench_press"
