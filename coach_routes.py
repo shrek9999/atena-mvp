@@ -133,6 +133,9 @@ def coach_chat():
             return jsonify({"error": "Sporočilo je prazno ali predolgo (največ 1800 znakov)."}), 400
         contents.append({"role": item["role"], "parts": [{"text": content.strip()}]})
     system_prompt = SYSTEM_PROMPT
+    user_history_text = "\\n".join(
+        item.get("content", "") for item in messages if item.get("role") == "user"
+    )
     latest_user_text = next(
         (item.get("content", "") for item in reversed(messages) if item.get("role") == "user"),
         "",
@@ -142,9 +145,11 @@ def coach_chat():
         latest_user_text,
         re.IGNORECASE,
     ))
+    # Keep a technique protocol active during follow-up turns. Users often ask
+    # "kaj pa če..." or "ja, samo tehnika" without repeating the exercise name.
     rdl_technique_request = bool(re.search(
-        r"\bRDL\b|romunsk(?:i|ega|em)\s+mrtv(?:i|ega|em)\s+dvig|predklon\s+z\s+ravnim\s+hrbtom|raven\s+hrbet|zaokrož(?:en|anj)",
-        latest_user_text,
+        r"\\bRDL\\b|romunsk(?:i|ega|em)\\s+mrtv(?:i|ega|em)\\s+dvig|predklon\\s+z\\s+ravnim\\s+hrbtom|raven\\s+hrbet|zaokrož(?:en|anj)",
+        user_history_text,
         re.IGNORECASE,
     ))
     if rdl_technique_request:
