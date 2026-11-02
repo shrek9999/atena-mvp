@@ -508,7 +508,7 @@ def test_profile_program_uses_latest_training_feedback(monkeypatch, tmp_path):
     }
 
 
-def test_profile_program_stops_after_logged_discomfort(monkeypatch, tmp_path):
+def test_profile_program_holds_progression_after_logged_discomfort_and_fresh_safety_recheck(monkeypatch, tmp_path):
     client = _client(monkeypatch, tmp_path, health_consent=True)
     created = _create(client, health_consent=True)
     profile_id = created["profile"]["profile_id"]
@@ -535,8 +535,11 @@ def test_profile_program_stops_after_logged_discomfort(monkeypatch, tmp_path):
         headers={"X-Profile-Token": token},
         json={"no_current_pain_or_restrictions": True},
     )
-    assert response.status_code == 409
-    assert response.get_json()["blocked"] is True
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["adaptation_guidance"]["decision"] == "pause_and_review"
+    assert data["program"]["feedback_applied"]["difficulty"] == "right"
+    assert data["program"]["feedback_applied"]["discomfort"] == "no"
 
 
 
