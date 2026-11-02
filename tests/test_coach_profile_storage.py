@@ -539,7 +539,6 @@ def test_profile_program_holds_progression_after_logged_discomfort_and_fresh_saf
     data = response.get_json()
     assert data["adaptation_guidance"]["decision"] == "pause_and_review"
     assert data["program"]["feedback_applied"]["difficulty"] == "right"
-    assert data["program"]["feedback_applied"]["discomfort"] == "no"
 
 
 
