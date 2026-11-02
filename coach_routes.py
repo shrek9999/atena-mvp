@@ -86,6 +86,20 @@ SAFETY AND SCOPE
 You are not a doctor or physiotherapist. Do not diagnose conditions, prescribe treatment, or claim to replace an in-person professional. Do not advise training through worsening pain. For severe, sudden, unexplained or worsening symptoms, recommend assessment by an appropriate healthcare professional. For chest pain, fainting, severe breathing difficulty, new weakness/numbness, or loss of bladder/bowel control with back pain, advise urgent local medical care. If relevant, ask about restrictions before suggesting exercise. Do not overreact to ordinary mild effort or soreness, but distinguish it from concerning or worsening symptoms.
 Do not ask for full names, exact addresses or unnecessary personal data. Use health information only when needed. If uncertain, state the uncertainty rather than inventing facts, credentials, measurements, research or outcomes.
 
+EXERCISE SUBSTITUTIONS – REQUIRED BEHAVIOUR
+When the user asks to replace, swap or find an alternative for an exercise:
+1) Identify the exact exercise from the current structured programme and the user's reason for changing it. Use the programme and profile already supplied; do not ask the user to repeat them.
+2) Preserve the intended movement pattern and training stimulus unless the user explicitly asks to change them.
+3) Recommend 1–2 suitable alternatives from the verified catalogue context supplied with the request. Never invent an exercise or assume equipment that is not available.
+4) Briefly explain the practical difference and how to choose the load/variation. Do not give a new kilogram prescription without the user's training data.
+5) If the user has not identified which exercise, ask one short clarifying question.
+6) Never reply with a generic unavailable message when a useful clarification or catalogue-based alternative can be provided.
+For this pilot, prefer these practical coaching defaults where compatible with the user's goal and equipment:
+- Squat: Goblet počep; Počep z ročkama na ramenih; Počep s podprtimi petami (stable 5–10 cm heel support); barbell back/front squat when the user has the equipment and skill. Do not choose Počep z ročkama ob telesu as a default main lift.
+- Hinge: Romunski mrtvi dvig is generally preferred to a dumbbell deadlift when dumbbell grip or the floor start limits loading. Use a barbell deadlift when strength specificity and skill support it.
+- Carry: Farmers carry is optional and purpose-driven, not an automatic filler exercise.
+Use natural Slovenian exercise names. Retain established English names such as Goblet squat, RDL, Farmers carry or ATG split squat where an artificial Slovenian translation would be less clear.
+
 STYLE
 Be warm, respectful, practical and encouraging without patronizing the user. Usually keep replies under 200 words, unless a plan or explanation genuinely needs more. Prioritize individualized reasoning and the next useful action over generic motivational text. This is a pilot, not individualized medical care."""
 
@@ -116,10 +130,77 @@ def coach_chat():
         if not isinstance(content, str) or not content.strip() or len(content) > MAX_MESSAGE_CHARS:
             return jsonify({"error": "Sporočilo je prazno ali predolgo (največ 1800 znakov)."}), 400
         contents.append({"role": item["role"], "parts": [{"text": content.strip()}]})
+    system_prompt = SYSTEM_PROMPT
+    latest_user_text = next(
+        (item.get("content", "") for item in reversed(messages) if item.get("role") == "user"),
+        "",
+    )
+    substitution_request = bool(re.search(
+        r"zamenj|alternativ|namesto|druga(?:čno)? vajo|ne ustreza|swap|replace",
+        latest_user_text,
+        re.IGNORECASE,
+    ))
+    if substitution_request:
+        # Supply a compact, equipment-filtered catalogue excerpt so the language
+        # model can discuss real alternatives instead of guessing exercise names.
+        profile_text = "\\n".join(
+            item.get("content", "") for item in messages if item.get("role") == "user"
+        ).casefold()
+        available = {"bodyweight"}
+        if "polno opremljen fitnes" in profile_text:
+            available.update({
+                "barbell", "rack", "dumbbell", "bench", "cable", "pull_up_bar",
+                "kettlebell", "dip_bars", "box", "rowing_machine", "ski_erg",
+                "air_bike", "sled", "jump_rope", "gymnastic_rings",
+                "suspension_trainer", "step", "weight_plate",
+            })
+        elif "ročke ali elastike" in profile_text:
+            available.update({"dumbbell", "resistance_band"})
+        current_names = set()
+        for message in messages:
+            content = message.get("content", "")
+            if "Trenutni strukturirani program ATENE:" in content:
+                for line in content.splitlines():
+                    match = re.match(r"\\s*-\\s*(.+?):\\s", line)
+                    if match:
+                        current_names.add(match.group(1).strip().casefold())
+        catalogue = load_catalogue()
+        current_records = [
+            item for item in catalogue
+            if item["name"].casefold() in current_names
+        ]
+        target_patterns = {item["pattern"] for item in current_records}
+        alternatives = [
+            item for item in catalogue
+            if item["pattern"] in target_patterns
+            and item["name"].casefold() not in current_names
+            and item["training_role"] in {"main", "accessory"}
+            and set(item["equipment"]).issubset(available)
+            and (
+                not item["equipment_any"]
+                or bool(set(item["equipment_any"]) & available)
+            )
+        ]
+        compact = [
+            f"- {item['name']} [{item['pattern']}]; oprema: "
+            + (", ".join(item["equipment"] + item["equipment_any"]) or "lastna teža")
+            for item in alternatives[:35]
+        ]
+        current = [
+            f"- {item['name']} [{item['pattern']}]"
+            for item in current_records
+        ]
+        system_prompt += (
+            "\\n\\nVERIFIED CURRENT PROGRAM EXERCISES:\\n"
+            + ("\\n".join(current) if current else "No exact exercise names were matched.")
+            + "\\nVERIFIED AVAILABLE ALTERNATIVES (same movement pattern, filtered by equipment):\\n"
+            + ("\\n".join(compact) if compact else "No matching alternatives found; ask one clarifying question.")
+            + "\\nUse only the alternatives above. If the requested exercise is not identified, ask which exercise."
+        )
     model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
     url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + api_key
     body = {
-        "systemInstruction": {"parts": [{"text": SYSTEM_PROMPT}]},
+        "systemInstruction": {"parts": [{"text": system_prompt}]},
         "contents": contents,
         "generationConfig": {"temperature": 0.25, "maxOutputTokens": 900}
     }
