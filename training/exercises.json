@@ -434,10 +434,11 @@
     "joint_type": "multi_joint",
     "goals": [
       "hypertrophy",
-      "strength"
+      "strength",
+      "general_fitness"
     ],
     "equipment": [],
-    "level": "intermediate",
+    "level": "beginner",
     "primary_muscles": [
       "hamstrings",
       "gluteus_maximus"
@@ -448,23 +449,30 @@
       "forearms"
     ],
     "cues": [
-      "Gib začni s pomikom kolkov nazaj.",
-      "Kolena naj ostanejo rahlo pokrčena.",
-      "Spuščaj breme ob nogah do obsega, kjer ohraniš položaj hrbtenice."
+      "Ročki ali drog drži blizu nog.",
+      "Gib začni s pomikom medenice nazaj; kolena ostanejo rahlo pokrčena.",
+      "Trup nagni naprej ob ohranjanju nadzorovanega položaja hrbtenice.",
+      "Spuščaj breme ob nogah do obsega, kjer ohraniš položaj in napetost zadnjih stegenskih mišic.",
+      "Vrnitev izvedi z iztegom kolkov, brez pretiranega usločenja ledvenega dela."
     ],
     "common_errors": [
       "Pretirano spreminjanje kota kolen.",
       "Iskanje globine z upogibanjem hrbtenice."
     ],
     "regressions": [
-      "Učenje predklona z ravnim hrbtom s palico"
+      "bodyweight_hip_hinge",
+      "supported_single_leg_rdl"
     ],
     "progressions": [
-      "Romunski mrtvi dvig z drogom"
+      "deadlift",
+      "single_leg_rdl"
     ],
-    "alternatives": [],
+    "alternatives": [
+      "supported_single_leg_rdl",
+      "deadlift"
+    ],
     "warnings": [
-      "Obseg giba omeji z nadzorom položaja trupa."
+      "Obremenitev naj omogoča nadzorovan prijem in celoten predpisani obseg ponovitev; če prijem odpove pred ciljnimi mišicami, prilagodi breme ali izberi drugo izvedbo."
     ],
     "single_joint": false,
     "equipment_any": [
@@ -902,8 +910,8 @@
   },
   {
     "id": "farmer_carry",
-    "name": "Kmečka hoja",
-    "name_en": "Farmer carry",
+    "name": "Farmers carry",
+    "name_en": "Farmer's carry",
     "pattern": "carry",
     "joint_type": "multi_joint",
     "goals": [
@@ -924,8 +932,8 @@
     ],
     "cues": [
       "Hodi pokončno z naravnim korakom.",
-      "Breme drži stabilno ob telesu.",
-      "Ohrani enakomerno dihanje."
+      "Bremeni drži stabilno ob telesu.",
+      "Ohrani enakomerno dihanje in nadzor trupa."
     ],
     "common_errors": [
       "Nagibanje v stran.",
@@ -941,6 +949,7 @@
       "Enoročno nošenje uteži"
     ],
     "warnings": [
+      "Vključi ga le, kadar ima nošenje bremen jasen namen v programu; ni obvezna vaja za vsak program.",
       "Pot naj bo prosta in nedrseča."
     ],
     "single_joint": false,
@@ -1306,13 +1315,12 @@
   },
   {
     "id": "two_dumbbell_squat",
-    "name": "Počep z dvema ročkama",
+    "name": "Počep z dvema ročkama – alternativna izvedba",
     "name_en": "Dumbbell front squat",
     "pattern": "squat",
     "joint_type": "multi_joint",
     "goals": [
-      "hypertrophy",
-      "strength"
+      "general_fitness"
     ],
     "equipment": [
       "dumbbell"
@@ -1350,7 +1358,7 @@
     ],
     "single_joint": false,
     "equipment_any": [],
-    "training_role": "main",
+    "training_role": "accessory",
     "loading_potential": "high",
     "time_based": false
   },
@@ -1617,10 +1625,7 @@
     "pattern": "hinge",
     "joint_type": "multi_joint",
     "goals": [
-      "hypertrophy",
-      "strength",
-      "general_fitness",
-      "functional"
+      "general_fitness"
     ],
     "equipment": [
       "dumbbell"
@@ -1655,11 +1660,12 @@
       "romanian_deadlift"
     ],
     "warnings": [
-      "Začni z obremenitvijo, ki omogoča učenje začetnega položaja in nadzorovan dvig."
+      "Ni privzeta glavna vaja za moč ali mišično maso: pri težjih ročkah lahko prijem omeji obremenitev, začetni položaj pa je pogosto nepraktičen.",
+      "Za razvoj zadnje verige praviloma izberi romunski mrtvi dvig z ročkama."
     ],
     "single_joint": false,
     "unilateral": false,
-    "training_role": "main",
+    "training_role": "accessory",
     "loading_potential": "high",
     "time_based": false
   },
@@ -1879,15 +1885,12 @@
   },
   {
     "id": "dumbbell_squat_side",
-    "name": "Počep z ročkama ob telesu",
+    "name": "Počep z ročkama ob telesu (redka različica)",
     "name_en": "Dumbbell squat at sides",
     "pattern": "squat",
     "joint_type": "multi_joint",
     "goals": [
-      "hypertrophy",
-      "strength",
-      "general_fitness",
-      "functional"
+      "general_fitness"
     ],
     "equipment": [],
     "level": "beginner",
@@ -1916,14 +1919,15 @@
     ],
     "alternatives": [],
     "warnings": [
-      "Uporabi obremenitev, ki jo lahko varno odložiš."
+      "Ni privzeta izbira za glavno vajo za moč ali mišično maso; praviloma izberi Goblet počep ali počep z ročkama na ramenih.",
+      "Obremenitev izberi tako, da lahko ročki varno odložiš."
     ],
     "single_joint": false,
     "equipment_any": [
       "dumbbell"
     ],
     "loading_potential": "high",
-    "training_role": "main",
+    "training_role": "accessory",
     "time_based": false,
     "target_regions": [
       "forearm"
@@ -1931,8 +1935,8 @@
   },
   {
     "id": "dumbbell_squat_front_rack",
-    "name": "Počep z ročkama v sprednjem položaju",
-    "name_en": "Dumbbell front rack squat",
+    "name": "Počep z ročkama na ramenih",
+    "name_en": "Dumbbell front-rack squat",
     "pattern": "squat",
     "joint_type": "multi_joint",
     "goals": [
@@ -1940,8 +1944,10 @@
       "strength",
       "general_fitness"
     ],
-    "equipment": [],
-    "level": "intermediate",
+    "equipment": [
+      "dumbbell"
+    ],
+    "level": "beginner",
     "primary_muscles": [
       "quadriceps",
       "gluteus_maximus"
@@ -1952,27 +1958,32 @@
       "rhomboids"
     ],
     "cues": [
-      "Ročki stabilno nasloni ob ramena.",
-      "Komolce drži pod nadzorom."
+      "Ročki namesti ob ramena v stabilen sprednji položaj.",
+      "Trup ohrani čvrst in čim bolj pokončen glede na tvojo telesno zgradbo in gibljivost.",
+      "Spuščaj se v največjo nadzorovano amplitudo, ki jo lahko ohraniš brez bolečine.",
+      "Stopala naj ostanejo stabilna, kolena pa naj sledijo smeri prstov."
     ],
     "common_errors": [
       "Pretiran izteg v ledvenem delu.",
       "Spuščanje komolcev."
     ],
     "regressions": [
-      "Goblet počep"
+      "squat_goblet",
+      "air_squat"
     ],
     "progressions": [
-      "Sprednji počep z drogom"
+      "front_squat",
+      "back_squat"
     ],
-    "alternatives": [],
+    "alternatives": [
+      "squat_goblet",
+      "heel_elevated_squat"
+    ],
     "warnings": [
-      "Prilagodi položaj ročk gibljivosti zapestij in ramen."
+      "Položaj ročk prilagodi gibljivosti ramen in zapestij; ne sili komolcev v neprijeten položaj."
     ],
     "single_joint": false,
-    "equipment_any": [
-      "dumbbell"
-    ],
+    "equipment_any": [],
     "loading_potential": "high",
     "training_role": "main",
     "time_based": false,
@@ -5752,5 +5763,68 @@
     "target_regions": [
       "lower_body"
     ]
+  },
+  {
+    "id": "heel_elevated_squat",
+    "name": "Počep s podprtimi petami",
+    "name_en": "Heel-elevated squat",
+    "pattern": "squat",
+    "joint_type": "multi_joint",
+    "goals": [
+      "strength",
+      "hypertrophy",
+      "general_fitness",
+      "functional"
+    ],
+    "equipment": [
+      "weight_plate"
+    ],
+    "equipment_any": [
+      "heel_wedge",
+      "slant_board"
+    ],
+    "level": "beginner",
+    "primary_muscles": [
+      "quadriceps",
+      "gluteus_maximus"
+    ],
+    "secondary_muscles": [
+      "adductors",
+      "trunk"
+    ],
+    "cues": [
+      "Petnici podpri na stabilni podlagi višine približno 5–10 cm.",
+      "Stopala ostanejo stabilna, teža razporejena čez celotno stopalo.",
+      "Trup lahko ostane bolj pokončen; kolena vodijo v smeri prstov.",
+      "Spuščaj se v največjo nadzorovano amplitudo, ki jo dopuščata gibljivost in neboleča izvedba.",
+      "Dvig izvedi odločno, brez izgube nadzora."
+    ],
+    "common_errors": [
+      "Nestabilna ali preozka podpora pod petami.",
+      "Dvigovanje prstov oziroma izguba stika sprednjega dela stopala s tlemi.",
+      "Siljenje v globino kljub izgubi nadzora."
+    ],
+    "regressions": [
+      "squat_goblet",
+      "air_squat"
+    ],
+    "progressions": [
+      "front_squat",
+      "back_squat"
+    ],
+    "alternatives": [
+      "squat_goblet",
+      "dumbbell_squat_front_rack",
+      "front_squat"
+    ],
+    "warnings": [
+      "Uporabi samo stabilno namensko poševno podlago ali varno pritrjene utežne plošče; ne uporabljaj nestabilnih predmetov.",
+      "Višino podpore prilagodi posamezniku; 5–10 cm je orientacijsko izhodišče, ne obvezna mera."
+    ],
+    "single_joint": false,
+    "unilateral": false,
+    "loading_potential": "high",
+    "training_role": "main",
+    "time_based": false
   }
 ]
