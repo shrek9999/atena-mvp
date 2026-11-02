@@ -515,7 +515,9 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 if pattern == "horizontal_pull" and p["goal"] in {"hypertrophy", "strength"}:
                     if p["goal"] == "strength" and p["experience"] != "beginner" and item["id"] == "barbell_bent_over_row" and "barbell" in available_equipment:
                         return -10
-                    if p["goal"] == "hypertrophy" and item["id"] in {"dumbbell_bent_over_row", "one_arm_row", "kettlebell_one_arm_row"}:
+                    if p["goal"] == "hypertrophy" and session_index % 2 == 0 and item["id"] in {"dumbbell_bent_over_row", "one_arm_row", "kettlebell_one_arm_row"}:
+                        return -10
+                    if p["goal"] == "hypertrophy" and session_index % 2 == 1 and item["id"] in {"band_row", "trx_row", "ring_row"}:
                         return -10
                     if session_index % 2 == 0 and item["id"] in {"dumbbell_bent_over_row", "one_arm_row", "kettlebell_one_arm_row"}:
                         return -5
