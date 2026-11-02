@@ -281,7 +281,7 @@ jobs:
                       round_trip_ok = (
                           sessions_status == 200
                           and len(saved_sessions) == 1
-                          and saved_sessions[0].get("exercises", [{}])[0].get("exercise_id") == "squat_goblet"
+                          and saved_sessions[0].get("session", {}).get("exercises", [{}])[0].get("exercise_id") == "squat_goblet"
                       )
                   if round_trip_ok:
                       progress_status, progress_body = profile_request(
