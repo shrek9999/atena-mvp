@@ -195,3 +195,24 @@ def test_chat_profile_context_fails_closed_when_storage_is_unavailable(monkeypat
     )
     assert response.status_code == 503
     assert "shranjevanje profila" in response.get_json()["error"].lower()
+
+
+def test_chat_validates_messages_before_loading_saved_profile(monkeypatch):
+    client = _client(monkeypatch)
+    calls = {"profile": 0}
+
+    def fake_profile(*_args):
+        calls["profile"] += 1
+        raise AssertionError("profile lookup must not happen for invalid messages")
+
+    monkeypatch.setattr(coach_routes, "store_get_profile", fake_profile)
+    response = client.post(
+        "/coach/chat",
+        headers={
+            "X-Pilot-Token": "pilot-test-secret",
+            "X-Profile-Token": "valid-profile-token",
+        },
+        json={"profile_id": "123e4567-e89b-12d3-a456-426614174000", "messages": []},
+    )
+    assert response.status_code == 400
+    assert calls["profile"] == 0
