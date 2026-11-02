@@ -719,6 +719,26 @@ def _format_recent_training_context(sessions):
                 continue
             exercise = get_exercise(exercise_id)
             name = exercise.get("name") if isinstance(exercise, dict) else exercise_id
+            set_results = item.get("set_results")
+            if isinstance(set_results, list) and set_results:
+                set_summaries = []
+                for index, set_result in enumerate(set_results[:20], start=1):
+                    if not isinstance(set_result, dict):
+                        continue
+                    details = []
+                    if isinstance(set_result.get("reps"), int):
+                        details.append(f"{set_result['reps']} reps")
+                    if isinstance(set_result.get("work_seconds"), int):
+                        details.append(f"{set_result['work_seconds']} s")
+                    if isinstance(set_result.get("load_kg"), (int, float)):
+                        details.append(f"{set_result['load_kg']:g} kg")
+                    if isinstance(set_result.get("rir"), int):
+                        details.append(f"RIR {set_result['rir']}")
+                    if details:
+                        set_summaries.append(f"set {index}: " + ", ".join(details))
+                if set_summaries:
+                    lines.append("  - " + str(name) + ": " + "; ".join(set_summaries))
+                continue
             details = []
             sets = item.get("sets_completed")
             reps = item.get("reps_completed")
