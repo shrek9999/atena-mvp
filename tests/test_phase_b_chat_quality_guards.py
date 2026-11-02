@@ -131,3 +131,13 @@ def test_server_guardrail_answers_persistence_question_directly():
     assert reply is not None
     assert "ne posodobi programa" in reply
     assert "ne morem potrditi" in reply
+
+
+
+def test_server_guardrail_detects_back_pain_during_rdl():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        "Pri RDL me zaboli v križu. Naj zmanjšam težo in nadaljujem?",
+    ))
+    assert reply is not None
+    assert "ne izvajaj" in reply
+    assert "obremenjeno vajo" in reply
