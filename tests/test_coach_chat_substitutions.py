@@ -114,3 +114,31 @@ def test_chat_uses_rdl_technique_protocol_for_hinge_learning_request(monkeypatch
     assert "Predklon z ravnim hrbtom ob steni" in prompt
     assert "bolečino/nelagodje" in prompt
     assert "Ne dodajaj elastike, ovite okoli stopal" in prompt
+
+
+def test_rdl_protocol_remains_active_when_followup_does_not_repeat_exercise_name(monkeypatch):
+    monkeypatch.setenv("AI_COACH_TEST_TOKEN", "pilot-test-secret")
+    monkeypatch.setenv("GEMINI_API_KEY", "test-api-key")
+    captured = {}
+
+    def fake_urlopen(request, timeout):
+        captured["body"] = json.loads(request.data.decode("utf-8"))
+        return FakeGeminiResponse()
+
+    monkeypatch.setattr(coach_routes.urllib.request, "urlopen", fake_urlopen)
+    app = Flask(__name__)
+    app.register_blueprint(coach_routes.coach_bp)
+    response = app.test_client().post(
+        "/coach/chat",
+        headers={"X-Pilot-Token": "pilot-test-secret"},
+        json={"messages": [
+            {"role": "user", "content": "Pri RDL mi zaokroži hrbet. Kako naj se naučim pravilnega predklona?"},
+            {"role": "model", "content": "Najprej preveriva, ali gre za bolečino ali učenje tehnike."},
+            {"role": "user", "content": "Ne boli me, samo tehnike se želim naučiti."},
+        ]},
+    )
+
+    assert response.status_code == 200
+    prompt = captured["body"]["systemInstruction"]["parts"][0]["text"]
+    assert "RDL / PREDKLON Z RAVNIM HRBTOM" in prompt
+    assert "Predklon z ravnim hrbtom ob steni" in prompt
