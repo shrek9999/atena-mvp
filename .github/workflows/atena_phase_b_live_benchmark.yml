@@ -1,0 +1,126 @@
+name: ATENA live coaching benchmark
+on:
+  push:
+    branches:
+      - "pilot/website-ai-coach"
+    paths:
+      - "evaluations/phase_b_live_scenarios.json"
+      - ".github/workflows/atena_phase_b_live_benchmark.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live-benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate secure pilot access
+        env:
+          PILOT_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
+        run: |
+          if [ -z "$PILOT_TOKEN" ]; then
+            echo "::error::Required GitHub secret AI_COACH_TEST_TOKEN is not configured."
+            exit 1
+          fi
+          echo "Secure staging access is available; secret value is not displayed."
+      - name: Run 24 real Gemini coaching scenarios
+        env:
+          PILOT_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.error, urllib.request
+          from pathlib import Path
+
+          BASE = "https://atena-ai-coach-pilot.onrender.com"
+          TOKEN = os.environ["PILOT_TOKEN"]
+          suite = json.loads(Path("evaluations/phase_b_live_scenarios.json").read_text(encoding="utf-8"))
+          results = []
+          failures = []
+
+          for index, case in enumerate(suite["scenarios"]):
+              profile = json.dumps(case["profile"], ensure_ascii=False, separators=(",", ":"))
+              prompt = (
+                  "KONTEKST TESTNEGA UPORABNIKA (upoštevaj kot podatke profila): "
+                  + profile
+                  + "\\n\\nUPORABNIKOVO SPOROČILO: "
+                  + case["prompt"]
+              )
+              payload = {"messages": [{"role": "user", "content": prompt}]}
+              request = urllib.request.Request(
+                  BASE + "/coach/chat",
+                  data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                  headers={"Content-Type": "application/json", "X-Pilot-Token": TOKEN},
+                  method="POST",
+              )
+              status, body, error = None, {}, None
+              for attempt in range(4):
+                  try:
+                      with urllib.request.urlopen(request, timeout=75) as response:
+                          status = response.status
+                          body = json.loads(response.read().decode("utf-8"))
+                      break
+                  except urllib.error.HTTPError as exc:
+                      status = exc.code
+                      raw = exc.read().decode("utf-8", errors="replace")
+                      try:
+                          body = json.loads(raw)
+                      except Exception:
+                          body = {"error": raw[:250]}
+                      if status not in (429, 502, 503, 504) or attempt == 3:
+                          break
+                      time.sleep(15 * (attempt + 1))
+                  except Exception as exc:
+                      error = type(exc).__name__
+                      if attempt == 3:
+                          break
+                      time.sleep(10 * (attempt + 1))
+
+              reply = body.get("reply", "") if isinstance(body, dict) else ""
+              result = {
+                  "id": case["id"],
+                  "http_status": status,
+                  "reply": reply,
+                  "expected_behaviors": case["expected_behaviors"],
+                  "critical_failures_to_check": case["critical_failures"],
+                  "transport_error": error,
+                  "model_error": body.get("error") if isinstance(body, dict) else None,
+                  "human_score": None,
+                  "critical_failure_observed": None,
+                  "review_notes": ""
+              }
+              results.append(result)
+              ok = status == 200 and bool(reply.strip())
+              print(f'{case["id"]}: HTTP {status}; {"REPLY RECEIVED" if ok else "FAILED"}')
+              if not ok:
+                  failures.append(case["id"])
+              # Stay below common free-tier request-per-minute limits.
+              if index < len(suite["scenarios"]) - 1:
+                  time.sleep(5)
+
+          output = {
+              "suite": suite["suite"],
+              "version": suite["version"],
+              "model": "Gemini model configured on the staging server",
+              "total": len(results),
+              "responses_received": sum(1 for x in results if x["http_status"] == 200 and x["reply"]),
+              "transport_or_model_failures": failures,
+              "scoring_note": "Replies are real staging-model outputs. Human quality scoring and critical-failure review are intentionally left explicit; HTTP success is not a coaching-quality pass.",
+              "results": results
+          }
+          Path("phase_b_live_results.json").write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
+          print(f'BENCHMARK_TRANSPORT_RESULT: {output["responses_received"]}/{len(results)} replies received')
+          if failures:
+              raise SystemExit("Some live scenarios did not return a usable reply: " + ", ".join(failures))
+          PY
+      - name: Upload live model responses for quality review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atena-phase-b-live-results
+          path: phase_b_live_results.json
+          if-no-files-found: warn
+          retention-days: 30
