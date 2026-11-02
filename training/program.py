@@ -106,8 +106,12 @@ def validate_profile(profile: object) -> dict:
         raise ProgramValidationError("include_accessories mora biti true ali false.")
     if accessories and level != "advanced":
         raise ProgramValidationError("Enosklepne dopolnilne vaje so v tej fazi na voljo le naprednim vadečim.")
+    pistol_squat_capable = profile.get("pistol_squat_capable", False)
+    if not isinstance(pistol_squat_capable, bool):
+        raise ProgramValidationError("pistol_squat_capable mora biti true ali false.")
     return {
         **profile,
+        "pistol_squat_capable": pistol_squat_capable,
         "sessions_per_week": sessions,
         "session_minutes": duration,
         "equipment": sorted(set(equipment) | {"bodyweight"}),
@@ -463,11 +467,11 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 if pattern == "squat" and p["goal"] in {"hypertrophy", "strength"}:
                     weighted_squat_equipment = {"barbell", "dumbbell", "kettlebell"}
                     has_weighted_squat = bool(weighted_squat_equipment & available_equipment)
-                    if not has_weighted_squat and p["experience"] == "advanced" and item["id"] == "pistol_squat":
+                    if not has_weighted_squat and p["experience"] == "advanced" and p["pistol_squat_capable"] and item["id"] == "pistol_squat":
                         return -20
-                    if not has_weighted_squat and p["experience"] == "intermediate" and item["id"] == "single_leg_box_squat":
+                    if not has_weighted_squat and p["experience"] in {"intermediate", "advanced"} and item["id"] == "single_leg_box_squat":
                         return -20
-                    if not has_weighted_squat and p["experience"] == "intermediate" and item["id"] == "cossack_squat":
+                    if not has_weighted_squat and p["experience"] in {"intermediate", "advanced"} and item["id"] == "cossack_squat":
                         return -15
                     if item["id"] in {"back_squat", "front_squat"} and {"barbell", "rack"}.issubset(available_equipment):
                         return -10 if p["goal"] == "strength" else -5
