@@ -1146,6 +1146,111 @@ def manage_coach_profile(profile_id):
         return _storage_error(exc)
 
 
+def _normalize_logged_exercise(item):
+    """Validate actual exercise performance, supporting both legacy summaries and set-by-set logs."""
+    allowed = {
+        "exercise_id", "sets_completed", "reps_completed",
+        "work_seconds_completed", "load_kg", "rir", "set_results",
+    }
+    if not isinstance(item, dict) or set(item) - allowed:
+        return None, "Zapis vaje vsebuje neveljavna polja."
+    exercise_id = item.get("exercise_id")
+    if not isinstance(exercise_id, str) or get_exercise(exercise_id) is None:
+        return None, "Vaja ni v preverjenem katalogu ATENA."
+
+    set_results = item.get("set_results")
+    if set_results is not None:
+        if not isinstance(set_results, list) or not 1 <= len(set_results) <= 20:
+            return None, "Zapis mora vsebovati od 1 do 20 dejansko izvedenih serij."
+        normalized_sets = []
+        set_kinds = set()
+        for set_item in set_results:
+            if not isinstance(set_item, dict) or set(set_item) - {"reps", "work_seconds", "load_kg", "rir"}:
+                return None, "Posamezna serija vsebuje neveljavna polja."
+            reps = set_item.get("reps")
+            work_seconds = set_item.get("work_seconds")
+            if (reps is None) == (work_seconds is None):
+                return None, "Za vsako serijo navedi ponovitve ali trajanje, ne obojega."
+            if reps is not None:
+                if not isinstance(reps, int) or isinstance(reps, bool) or not 1 <= reps <= 100:
+                    return None, "Število ponovitev v seriji ni veljavno."
+                set_kinds.add("reps")
+            if work_seconds is not None:
+                if not isinstance(work_seconds, int) or isinstance(work_seconds, bool) or not 1 <= work_seconds <= 3600:
+                    return None, "Trajanje delovne serije ni veljavno."
+                set_kinds.add("time")
+            normalized_set = {}
+            if reps is not None:
+                normalized_set["reps"] = reps
+            if work_seconds is not None:
+                normalized_set["work_seconds"] = work_seconds
+            load = set_item.get("load_kg")
+            if load is not None:
+                if not isinstance(load, (int, float)) or isinstance(load, bool) or not 0 <= load <= 1000:
+                    return None, "Obremenitev v seriji ni veljavna."
+                normalized_set["load_kg"] = float(load)
+            rir = set_item.get("rir")
+            if rir is not None:
+                if not isinstance(rir, int) or isinstance(rir, bool) or not 0 <= rir <= 10:
+                    return None, "RIR v seriji mora biti med 0 in 10."
+                normalized_set["rir"] = rir
+            normalized_sets.append(normalized_set)
+        if len(set_kinds) != 1:
+            return None, "Vse serije iste vaje morajo beležiti enako vrsto izvedbe."
+        if item.get("sets_completed") is not None and item.get("sets_completed") != len(normalized_sets):
+            return None, "Število serij se ne ujema s podrobno beleženimi serijami."
+
+        entry = {
+            "exercise_id": exercise_id,
+            "sets_completed": len(normalized_sets),
+            "set_results": normalized_sets,
+        }
+        if "reps" in set_kinds:
+            entry["reps_completed"] = round(
+                sum(row["reps"] for row in normalized_sets) / len(normalized_sets)
+            )
+        else:
+            entry["work_seconds_completed"] = round(
+                sum(row["work_seconds"] for row in normalized_sets) / len(normalized_sets)
+            )
+        loads = [row["load_kg"] for row in normalized_sets if "load_kg" in row]
+        if loads:
+            entry["load_kg"] = round(sum(loads) / len(loads), 2)
+        rir_values = [row["rir"] for row in normalized_sets if "rir" in row]
+        if rir_values:
+            # Minimum RIR represents the hardest completed set and is conservative for progression.
+            entry["rir"] = min(rir_values)
+        return entry, None
+
+    sets = item.get("sets_completed")
+    reps = item.get("reps_completed")
+    work_seconds = item.get("work_seconds_completed")
+    if not isinstance(sets, int) or isinstance(sets, bool) or not 1 <= sets <= 20:
+        return None, "Število izvedenih serij ni veljavno."
+    if reps is not None and (not isinstance(reps, int) or isinstance(reps, bool) or not 1 <= reps <= 100):
+        return None, "Število ponovitev ni veljavno."
+    if work_seconds is not None and (not isinstance(work_seconds, int) or isinstance(work_seconds, bool) or not 1 <= work_seconds <= 3600):
+        return None, "Trajanje delovne serije ni veljavno."
+    if reps is None and work_seconds is None:
+        return None, "Za vajo je treba navesti ponovitve ali trajanje delovne serije."
+    entry = {"exercise_id": exercise_id, "sets_completed": sets}
+    if reps is not None:
+        entry["reps_completed"] = reps
+    if work_seconds is not None:
+        entry["work_seconds_completed"] = work_seconds
+    load = item.get("load_kg")
+    if load is not None:
+        if not isinstance(load, (int, float)) or isinstance(load, bool) or not 0 <= load <= 1000:
+            return None, "Obremenitev ni veljavna."
+        entry["load_kg"] = float(load)
+    rir = item.get("rir")
+    if rir is not None:
+        if not isinstance(rir, int) or isinstance(rir, bool) or not 0 <= rir <= 10:
+            return None, "RIR mora biti med 0 in 10."
+        entry["rir"] = rir
+    return entry, None
+
+
 @coach_bp.route("/coach/profile/<profile_id>/sessions", methods=["GET", "POST", "OPTIONS"])
 def coach_training_sessions(profile_id):
     if request.method == "OPTIONS":
@@ -1186,37 +1291,9 @@ def coach_training_sessions(profile_id):
         return jsonify({"error": "Vadbeni zapis lahko vsebuje največ 20 vaj."}), 400
     clean_exercises = []
     for item in exercises:
-        if not isinstance(item, dict) or set(item) - {"exercise_id", "sets_completed", "reps_completed", "work_seconds_completed", "load_kg", "rir"}:
-            return jsonify({"error": "Zapis vaje vsebuje neveljavna polja."}), 400
-        exercise_id = item.get("exercise_id")
-        if not isinstance(exercise_id, str) or get_exercise(exercise_id) is None:
-            return jsonify({"error": "Vaja ni v preverjenem katalogu ATENA."}), 400
-        sets = item.get("sets_completed")
-        reps = item.get("reps_completed")
-        work_seconds = item.get("work_seconds_completed")
-        if not isinstance(sets, int) or isinstance(sets, bool) or not 1 <= sets <= 20:
-            return jsonify({"error": "Število izvedenih serij ni veljavno."}), 400
-        if reps is not None and (not isinstance(reps, int) or isinstance(reps, bool) or not 1 <= reps <= 100):
-            return jsonify({"error": "Število ponovitev ni veljavno."}), 400
-        if work_seconds is not None and (not isinstance(work_seconds, int) or isinstance(work_seconds, bool) or not 1 <= work_seconds <= 3600):
-            return jsonify({"error": "Trajanje delovne serije ni veljavno."}), 400
-        if reps is None and work_seconds is None:
-            return jsonify({"error": "Za vajo je treba navesti ponovitve ali trajanje delovne serije."}), 400
-        entry = {"exercise_id": exercise_id, "sets_completed": sets}
-        if reps is not None:
-            entry["reps_completed"] = reps
-        if work_seconds is not None:
-            entry["work_seconds_completed"] = work_seconds
-        load = item.get("load_kg")
-        if load is not None:
-            if not isinstance(load, (int, float)) or isinstance(load, bool) or not 0 <= load <= 1000:
-                return jsonify({"error": "Obremenitev ni veljavna."}), 400
-            entry["load_kg"] = float(load)
-        rir = item.get("rir")
-        if rir is not None:
-            if not isinstance(rir, int) or isinstance(rir, bool) or not 0 <= rir <= 10:
-                return jsonify({"error": "RIR mora biti med 0 in 10."}), 400
-            entry["rir"] = rir
+        entry, error = _normalize_logged_exercise(item)
+        if error:
+            return jsonify({"error": error}), 400
         clean_exercises.append(entry)
 
     discomfort = payload.get("discomfort_reported")
