@@ -223,7 +223,11 @@ def _normalize_slovene_coaching_terms(answer):
         (r"\bna session\b", "na vadbeni dan"),
     )
     for pattern, replacement in replacements:
-        answer = re.sub(pattern, replacement, answer, flags=re.IGNORECASE)
+        def preserve_initial_case(match):
+            if match.group(0)[:1].isupper():
+                return replacement[:1].upper() + replacement[1:]
+            return replacement
+        answer = re.sub(pattern, preserve_initial_case, answer, flags=re.IGNORECASE)
     return answer
 
 
