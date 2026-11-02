@@ -198,3 +198,35 @@ def test_unclarified_balance_issue_still_stops_for_assessment():
 
     assert reply is not None
     assert "V kateri fazi počepa" in reply
+
+
+def test_verified_exercise_context_filters_bodyweight_profile_without_inventing_load():
+    messages = [{
+        "role": "user",
+        "content": (
+            'Profil: {"goal":"hypertrophy","experience":"beginner",'
+            '"equipment":["bodyweight"],"sessions_per_week":2}'
+        ),
+    }]
+
+    context = coach_routes._verified_exercise_catalogue_context(messages)
+
+    assert "Počep z lastno težo (air squat)" in context
+    assert "Goblet počep" not in context
+    assert "Počep z ročkama na ramenih" not in context
+
+
+def test_verified_exercise_context_includes_only_declared_dumbbell_options():
+    messages = [{
+        "role": "user",
+        "content": (
+            'Profil: {"goal":"hypertrophy","experience":"beginner",'
+            '"equipment":["dumbbell","bodyweight"]}'
+        ),
+    }]
+
+    context = coach_routes._verified_exercise_catalogue_context(messages)
+
+    assert "Goblet počep" in context
+    assert "Počep z lastno težo (air squat)" in context
+    assert "Počep zadaj" not in context
