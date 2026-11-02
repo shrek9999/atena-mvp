@@ -291,3 +291,47 @@ def test_system_prompt_covers_bodyweight_limits_and_ankle_biomechanics():
     assert "ANKLE DORSIFLEXION" in prompt
     assert "LOAD PROGRESSION" in prompt
     assert 'potisk za prsi' in prompt
+
+
+def test_substitution_intent_asks_safety_then_exact_exercise():
+    first = coach_routes._coaching_guardrail_reply(_user_messages(
+        "V programu imam vajo, za katero nimam ustrezne opreme. Kako jo zamenjam?"
+    ))
+    assert first is not None
+    assert "preveriti varnost" in first
+    assert "Katero točno vajo" not in first
+
+    second = coach_routes._coaching_guardrail_reply(_user_messages(
+        "V programu imam vajo, za katero nimam ustrezne opreme. Kako jo zamenjam?",
+        "Nimam bolečin, poškodb ali gibalnih omejitev.",
+    ))
+    assert second is not None
+    assert "Katero točno vajo želiš zamenjati" in second
+
+
+def test_progression_without_known_lift_or_load_does_not_assign_fixed_kilograms():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        "Dva treninga sta bila lahka, vse serije sem zaključil z vsaj tremi ponovitvami v rezervi. Kaj zdaj?",
+        "Nimam bolečin, poškodb ali gibalnih omejitev.",
+    ))
+    assert reply is not None
+    assert "Ne bom določal fiksnega povečanja" in reply
+    assert "Katero vajo želiš napredovati" in reply
+    assert "2.5" not in reply and "5 kg" not in reply
+
+
+def test_bodyweight_only_program_discloses_missing_loaded_pull_pattern():
+    messages = _user_messages(
+        '{"goal":"hypertrophy","experience":"beginner","equipment":["bodyweight"]}',
+        "Sestavi mi program za hipertrofijo. Na voljo imam samo lastno težo.",
+    )
+    note = coach_routes._bodyweight_only_program_note(messages)
+    assert note is not None
+    assert "ne vsebuje obremenjenega vlečnega vzorca" in note
+    assert "ni enakovreden obremenjenemu RDL" in note
+
+
+def test_slovene_coaching_term_normalizer_corrects_known_errors():
+    source = "prsni tisk; trilogije (tricepsa); säte; zadnji del hrbet; mišične masa"
+    cleaned = coach_routes._normalize_slovene_coaching_terms(source)
+    assert cleaned == "potisk za prsi; tricepsa; zadnjice; zadnji del hrbta; mišične mase"
