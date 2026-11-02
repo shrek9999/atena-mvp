@@ -133,7 +133,7 @@ def coach_chat():
             return jsonify({"error": "Sporočilo je prazno ali predolgo (največ 1800 znakov)."}), 400
         contents.append({"role": item["role"], "parts": [{"text": content.strip()}]})
     system_prompt = SYSTEM_PROMPT
-    user_history_text = "\\n".join(
+    user_history_text = "\n".join(
         item.get("content", "") for item in messages if item.get("role") == "user"
     )
     latest_user_text = next(
