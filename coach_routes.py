@@ -23,6 +23,7 @@ from flask import Blueprint, jsonify, request
 from training.program import ProgramSafetyBlock, ProgramValidationError, generate_program
 from training.progress import summarize_progress
 from training.adaptation import assess_next_step
+from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL
 
 logger = logging.getLogger(__name__)
 coach_bp = Blueprint("coach", __name__)
@@ -141,6 +142,13 @@ def coach_chat():
         latest_user_text,
         re.IGNORECASE,
     ))
+    rdl_technique_request = bool(re.search(
+        r"\\bRDL\\b|romunsk(?:i|ega|em)\\s+mrtv(?:i|ega|em)\\s+dvig|predklon\\s+z\\s+ravnim\\s+hrbtom|raven\\s+hrbet|zaokrož(?:en|anj)",
+        latest_user_text,
+        re.IGNORECASE,
+    ))
+    if rdl_technique_request:
+        system_prompt += "\\n\\n" + RDL_TECHNIQUE_PROTOCOL
     if substitution_request:
         # Supply a compact, equipment-filtered catalogue excerpt so the language
         # model can discuss real alternatives instead of guessing exercise names.
