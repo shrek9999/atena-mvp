@@ -150,3 +150,30 @@ def test_rdl_protocol_remains_active_when_followup_does_not_repeat_exercise_name
     prompt = captured["body"]["systemInstruction"]["parts"][0]["text"]
     assert "RDL / PREDKLON Z RAVNIM HRBTOM" in prompt
     assert "Predklon z ravnim hrbtom ob steni" in prompt
+
+
+def test_clarified_balance_issue_does_not_repeat_the_same_guardrail_question():
+    messages = [
+        {"role": "user", "content": "Pri počepu izgubljam ravnotežje."},
+        {"role": "model", "content": "V kateri fazi počepa izgubiš ravnotežje in ali je prisotna bolečina?"},
+        {
+            "role": "user",
+            "content": (
+                "Pri dvigu iz spodnjega položaja. Ne boli me, nimam poškodb ali omejitev. "
+                "Kako naj izboljšam nadzor?"
+            ),
+        },
+    ]
+
+    assert coach_routes._coaching_guardrail_reply(messages) is None
+
+
+def test_unclarified_balance_issue_still_stops_for_assessment():
+    messages = [
+        {"role": "user", "content": "Pri počepu izgubljam ravnotežje."},
+    ]
+
+    reply = coach_routes._coaching_guardrail_reply(messages)
+
+    assert reply is not None
+    assert "V kateri fazi počepa" in reply
