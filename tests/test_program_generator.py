@@ -14,7 +14,7 @@ BASE = {
 
 def test_generates_two_day_hypertrophy_program_from_catalogue_only():
     plan = generate_program(BASE)
-    assert plan["program_version"] == "2.6.0"
+    assert plan["program_version"] == "2.7.0"
     assert len(plan["sessions"]) == 2
     assert all(len(session["exercises"]) >= 3 for session in plan["sessions"])
     assert all(ex["joint_type"] == "multi_joint" for session in plan["sessions"] for ex in session["exercises"])
@@ -705,3 +705,41 @@ def test_hinge_pattern_uses_clear_coaching_term_predklon_z_ravnim_hrbtom():
     ]
     assert hinges
     assert all(exercise["pattern_label"] == "predklon z ravnim hrbtom" for exercise in hinges)
+
+
+
+def test_fat_loss_goal_keeps_resistance_training_as_the_foundation():
+    two_day = generate_program({**BASE, "goal": "fat_loss", "sessions_per_week": 2})
+    assert len(two_day["sessions"]) == 2
+    for session in two_day["sessions"]:
+        patterns = {exercise["pattern"] for exercise in session["exercises"]}
+        assert {"squat", "hinge", "horizontal_push", "horizontal_pull"}.issubset(patterns)
+        assert not any(pattern in {"locomotion", "conditioning"} for pattern in patterns)
+    assert "ohranitev mišične mase" in two_day["methodology"]["fat_loss_policy"]
+    assert two_day["weekly_summary"]["primary_muscle_set_exposure"]
+
+
+def test_fat_loss_adds_short_aerobic_and_conditioning_work_when_frequency_allows():
+    plan = generate_program({**BASE, "goal": "fat_loss", "sessions_per_week": 3, "session_minutes": 45})
+    assert len(plan["sessions"]) == 3
+    strength_patterns = {exercise["pattern"] for exercise in plan["sessions"][0]["exercises"]}
+    cardio_patterns = {exercise["pattern"] for exercise in plan["sessions"][2]["exercises"]}
+    assert "squat" in strength_patterns and "hinge" in strength_patterns
+    assert {"locomotion", "lunge", "conditioning"}.issubset(cardio_patterns)
+    assert plan["sessions"][2]["estimated_minutes"] <= 45
+    assert all(ex["joint_type"] == "multi_joint" for session in plan["sessions"] for ex in session["exercises"])
+
+
+def test_beginner_bodyweight_fat_loss_program_fits_short_sessions():
+    profile = {
+        **BASE,
+        "goal": "fat_loss",
+        "experience": "beginner",
+        "equipment": ["bodyweight"],
+        "sessions_per_week": 3,
+        "session_minutes": 30,
+    }
+    plan = generate_program(profile)
+    assert len(plan["sessions"]) == 3
+    assert all(session["estimated_minutes"] <= 30 for session in plan["sessions"])
+    assert all(ex["prescription"]["rir"] >= 3 for session in plan["sessions"] for ex in session["exercises"] if ex["pattern"] not in {"locomotion", "conditioning"})
