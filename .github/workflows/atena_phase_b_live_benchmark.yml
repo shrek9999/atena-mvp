@@ -46,7 +46,7 @@ jobs:
               prompt = (
                   "KONTEKST TESTNEGA UPORABNIKA (upoštevaj kot podatke profila): "
                   + profile
-                  + "\\n\\nUPORABNIKOVO SPOROČILO: "
+                  + "\n\nUPORABNIKOVO SPOROČILO: "
                   + case["prompt"]
               )
               payload = {"messages": [{"role": "user", "content": prompt}]}
