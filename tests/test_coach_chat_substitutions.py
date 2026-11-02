@@ -43,6 +43,7 @@ def test_chat_adds_verified_exercise_alternatives_for_substitution_request(monke
                 "role": "user",
                 "content": (
                     "Moj vadbeni profil:\n- Glavni cilj: mišična masa"
+                    "\n- Varnost: nimam bolečin, poškodb ali omejitev"
                     "\n- Izkušnje: nekaj izkušenj"
                     "\n- Oprema: polno opremljen fitnes"
                     "\nTrenutni strukturirani program ATENE:"
