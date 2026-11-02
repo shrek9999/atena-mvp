@@ -463,7 +463,7 @@ When the user asks to replace, swap or find an alternative for an exercise:
 6) Never reply with a generic unavailable message when a useful clarification or catalogue-based alternative can be provided.
 For this pilot, prefer these practical coaching defaults where compatible with the user's goal and equipment:
 - Squat: Goblet počep; Počep z ročkama na ramenih; Počep s podprtimi petami (stable 5–10 cm heel support); barbell back/front squat when the user has the equipment and skill. Do not choose Počep z ročkama ob telesu as a default main lift.
-- Hinge: Romunski mrtvi dvig is generally preferred to a dumbbell deadlift when dumbbell grip or the floor start limits loading. Use a barbell deadlift when strength specificity and skill support it.
+- Hinge: Predklon z ravnim hrbtom (RDL) is generally preferred to a dumbbell deadlift when dumbbell grip or the floor start limits loading. Use a conventional barbell deadlift when strength specificity and skill support it.
 - Carry: Farmers carry is optional and purpose-driven, not an automatic filler exercise.
 Use natural Slovenian exercise names. Retain established English names such as Goblet squat, RDL, Farmers carry or ATG split squat where an artificial Slovenian translation would be less clear.
 
