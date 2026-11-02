@@ -6,6 +6,7 @@ import logging
 import urllib.error
 import urllib.request
 import secrets
+import socket
 import uuid
 from datetime import date
 
@@ -120,11 +121,11 @@ def coach_chat():
     body = {
         "systemInstruction": {"parts": [{"text": SYSTEM_PROMPT}]},
         "contents": contents,
-        "generationConfig": {"temperature": 0.35, "maxOutputTokens": 600}
+        "generationConfig": {"temperature": 0.25, "maxOutputTokens": 900}
     }
     req = urllib.request.Request(url, data=json.dumps(body).encode("utf-8"), headers={"Content-Type": "application/json"}, method="POST")
     try:
-        with urllib.request.urlopen(req, timeout=35) as response:
+        with urllib.request.urlopen(req, timeout=65) as response:
             data = json.loads(response.read().decode("utf-8"))
         parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
         answer = "\n".join(p.get("text", "") for p in parts if isinstance(p, dict)).strip()
@@ -140,7 +141,7 @@ def coach_chat():
         if exc.code == 429:
             return jsonify({"error": "Trenutno je dosežena omejitev uporabe. Poskusi pozneje."}), 429
         return jsonify({"error": "Storitev trenutno ni dosegljiva. Poskusi znova."}), 502
-    except (TimeoutError, urllib.error.URLError, json.JSONDecodeError):
+    except (TimeoutError, socket.timeout, urllib.error.URLError, json.JSONDecodeError):
         logger.warning("Gemini request failed due to timeout, network error, or invalid JSON for model %s", model)
         return jsonify({"error": "Odgovor se je predolgo pripravljal ali povezava ni uspela. Poskusi znova."}), 504
 
