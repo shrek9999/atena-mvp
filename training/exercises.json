@@ -5776,10 +5776,9 @@
       "general_fitness",
       "functional"
     ],
-    "equipment": [
-      "weight_plate"
-    ],
+    "equipment": [],
     "equipment_any": [
+      "weight_plate",
       "heel_wedge",
       "slant_board"
     ],
