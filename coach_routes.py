@@ -48,6 +48,134 @@ def add_cors_headers(response):
 MAX_MESSAGE_CHARS = 1800
 MAX_MESSAGES = 12
 
+
+def _has_explicit_no_pain_confirmation(text):
+    return bool(re.search(
+        r"\b(?:ne boli me|ne čutim bolečine|nimam bolečin|brez bolečin|no pain)\b",
+        text,
+        re.IGNORECASE,
+    ))
+
+
+def _has_explicit_safety_clearance(text):
+    patterns = (
+        r"\bnimam\b[^.\\n]{0,80}\b(?:bolečin|poškodb|omejitev)\b",
+        r"\bbrez\b[^.\\n]{0,60}\b(?:bolečin|poškodb|omejitev)\b",
+        r"\bno (?:pain|injuries|limitations)\b",
+    )
+    return any(re.search(pattern, text, re.IGNORECASE) for pattern in patterns)
+
+
+def _coaching_guardrail_reply(messages):
+    """Deterministic safety/persistence gate; never rely on model compliance alone."""
+    user_texts = [
+        item.get("content", "") for item in messages
+        if item.get("role") == "user" and isinstance(item.get("content"), str)
+    ]
+    if not user_texts:
+        return None
+    history = "\n".join(user_texts)
+    latest = user_texts[-1]
+    lowered = latest.casefold()
+    history_lower = history.casefold()
+
+    # Answer persistence questions directly; a conversational response is not a saved change.
+    if re.search(r"(ali si že|si že).{0,80}(prilagodil|spremenil|shranil)|naslednj.{0,20}(trening|program).{0,30}(shranjen|spremenjen|prilagojen)", lowered):
+        return (
+            "Ne morem potrditi, da je naslednji trening že spremenjen ali shranjen. "
+            "Sporočilo v klepetu samo po sebi ne posodobi programa. Lahko predlagam "
+            "prilagoditev na podlagi tvojega poročila, vendar je ne smem predstavljati "
+            "kot shranjeno, dokler je ne potrdi namenski postopek za program oziroma profil."
+        )
+
+    no_pain_now = _has_explicit_no_pain_confirmation(latest)
+    positive_pain = bool(re.search(
+        r"(me boli|boli me|zaboli me|čutim bolečino|občutim bolečino|"
+        r"bolečina se pojavi|nova bolečina|po treningu.{0,30}bolečin)",
+        latest,
+        re.IGNORECASE,
+    )) and not no_pain_now
+
+    if positive_pain:
+        return (
+            "Vaje, ki sproži bolečino, za zdaj ne izvajaj in je ne nadomeščaj še z drugo "
+            "obremenjeno vajo. Kje natančno se pojavi bolečina, kakšna je (ostra, topa "
+            "ali zbadajoča), kdaj nastane in ali po prenehanju gibanja izzveni? "
+            "Če je močna, se slabša ali vztraja, poišči ustrezno zdravstveno oceno."
+        )
+
+    balance_problem = bool(re.search(
+        r"(izgubljam ravnotežje|težave z ravnotežjem|izgubim ravnotežje|"
+        r"ravnotežje.{0,30}(počep|vaji)|počep.{0,40}ravnotež)",
+        latest,
+        re.IGNORECASE,
+    ))
+    if balance_problem:
+        return (
+            "Preden predlagam spremembo počepa, morava razjasniti težavo. "
+            "V kateri fazi počepa izgubiš ravnotežje – pri spuščanju, v spodnjem "
+            "položaju ali pri dvigu? Ali ob tem občutiš bolečino oziroma nelagodje?"
+        )
+
+    ankle_mobility = bool(re.search(
+        r"(omejena|omejeno|omejuje).{0,35}(gibljivost|gleženj)|"
+        r"(gibljivost|gleženj).{0,35}(omejena|omejeno|omejuje)",
+        latest,
+        re.IGNORECASE,
+    ))
+    if ankle_mobility and not no_pain_now:
+        return (
+            "Preden predlagam prilagoditev počepa, morava razjasniti, kaj te omejuje. "
+            "Ali gre predvsem za omejen obseg gibanja v gležnju, bolečino/nelagodje "
+            "ali izgubo ravnotežja oziroma nadzora?"
+        )
+
+    rdl_request = bool(re.search(
+        r"\bRDL\b|romunsk(?:i|ega|em)\s+mrtv(?:i|ega|em)\s+dvig|"
+        r"predklon\s+z\s+ravnim\s+hrbtom",
+        latest,
+        re.IGNORECASE,
+    ))
+    if rdl_request and re.search(r"(težav|problem|nauč|tehnik|hrbet|zaokrož)", lowered) and not no_pain_now:
+        return (
+            "Preden podam tehnična navodila za RDL, morava preveriti varnost: "
+            "ali pri izvedbi občutiš bolečino ali nelagodje, ali gre izključno "
+            "za učenje tehnike?"
+        )
+
+    prescription_request = bool(re.search(
+        r"(pripravi|sestavi|naredi|ustvari).{0,60}(program|trening|vadb)|"
+        r"(program|trening|vadb).{0,50}(pripravi|sestavi|prilagod|zamenj)|"
+        r"(kako naj|kako lahko).{0,60}(prilagodim trening|napredujem|povečam obremenitev|"
+        r"zamenjam vajo|strukturiram serije)|"
+        r"(koliko|kakšne).{0,40}(serij|ponovitev|obremenitev|kilogram|odmor)|"
+        r"(serij|ponovitev|odmor).{0,40}(eksploziv|moč|trening)|"
+        r"(zamenj|alternativ|nadomest).{0,40}(vajo|vaje)|"
+        r"(težak|težji|individualiziran).{0,30}(program|trening)|"
+        r"(RDL|romunsk.{0,20}mrtv.{0,20}dvig).{0,50}(kako|tehnik|izvedb)",
+        latest,
+        re.IGNORECASE,
+    ))
+    if prescription_request and not _has_explicit_safety_clearance(history):
+        contradiction = bool(re.search(
+            r"(začetnik|začetniški).{0,80}(deset let|dolgoletn|napreden)|"
+            r"(deset let|dolgoletn|napreden).{0,80}(začetnik|začetniški)",
+            history_lower,
+        ))
+        if contradiction:
+            return (
+                "Pred zahtevnejšim programom morava najprej preveriti varnost. "
+                "Ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve "
+                "ali zdravstvene zadržke? Opazil sem tudi neskladje med podatkom "
+                "»začetnik« in navedbo desetih let treninga; to bova razjasnila takoj zatem."
+            )
+        return (
+            "Preden pripravim individualni trening ali predlagam konkretne vaje in "
+            "obremenitve, moram preveriti varnost: ali imaš trenutno kakršne koli "
+            "bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
+        )
+    return None
+
 SYSTEM_PROMPT = """You are ATENA, Grega Jenko's pilot AI fitness coach. Reply in natural, grammatically correct Slovenian unless the user uses another language. Use clear, idiomatic wording, correct Slovenian grammar and punctuation, and concise headings/lists where helpful. Avoid awkward literal translations, excessive English jargon, and unsupported certainty.
 
 ROLE AND METHOD
@@ -242,6 +370,17 @@ def coach_chat():
         if not answer:
             logger.warning("Gemini returned no text for model %s", model)
             return jsonify({"error": "Model ni vrnil odgovora. Poskusi znova."}), 502
+        guarded_answer = _coaching_guardrail_reply(messages)
+        if guarded_answer:
+            answer = guarded_answer
+        else:
+            # The coach brand owner is not automatically the chat user.
+            answer = re.sub(
+                r"^(Pozdravljen|Živjo|Živijo),\\s*Grega[!.,]?\\s*",
+                r"\\1! ",
+                answer,
+                flags=re.IGNORECASE,
+            )
         return jsonify({"reply": answer, "model": model, "pilot": True})
     except urllib.error.HTTPError as exc:
         # Log only status and model; never log provider body, API key, or secret-bearing URL.
