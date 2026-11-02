@@ -172,3 +172,13 @@ def test_strength_and_hypertrophy_select_different_primary_press_variants():
 
     assert strength_press["exercise_id"] == "barbell_bench_press"
     assert hypertrophy_press["exercise_id"] == "dumbbell_bench_press"
+
+
+def test_strength_and_hypertrophy_select_different_hinge_variants():
+    strength = generate_program(profile("strength", "intermediate"))
+    hypertrophy = generate_program(profile("hypertrophy", "intermediate"))
+    strength_hinge = next(x for x in exercises(strength) if x["pattern"] == "hinge")
+    hypertrophy_hinge = next(x for x in exercises(hypertrophy) if x["pattern"] == "hinge")
+
+    assert strength_hinge["exercise_id"] == "deadlift"
+    assert hypertrophy_hinge["exercise_id"] == "romanian_deadlift"
