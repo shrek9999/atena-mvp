@@ -259,3 +259,35 @@ def test_unknown_profile_safety_answer_still_requires_clarification():
     ))
     assert reply is not None
     assert "Preden pripravim individualni trening" in reply
+
+
+def test_loaded_balance_issue_does_not_trigger_a_harder_squat():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        "Pri počepu izgubljam ravnotežje. Kaj naj naredim?",
+        "Pri dvigu iz spodnjega položaja. Ne boli me in nimam poškodb ali omejitev.",
+        "Pri počepu z lastno težo je izvedba stabilna; nestabilnost se pojavi samo z dodatno obremenitvijo. Nimam bolečin ali poškodb. Kako naj varno nadaljujeva?",
+    ))
+    assert reply is not None
+    assert "ne prehajaj na zahtevnejšo različico" in reply
+    assert "s kakšno dodatno obremenitvijo" in reply
+    assert "počep z ročkama na ramenih" not in reply
+
+
+def test_heel_lift_with_ankle_mobility_does_not_default_to_front_squat():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        "Pri počepu me omejuje gibljivost gležnja. Kako prilagodim izvedbo?",
+        "Gre za omejen obseg gibanja, brez bolečine in brez težav z ravnotežjem.",
+        "Pri počepu se mi peta dvigne od tal. Nimam bolečin ali poškodb. Na voljo imam drog in stojalo.",
+    ))
+    assert reply is not None
+    assert "prednji počep ni samodejno boljša rešitev" in reply
+    assert "Ali imaš na voljo namensko stabilno klinasto podporo" in reply
+
+
+def test_system_prompt_covers_bodyweight_limits_and_ankle_biomechanics():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "BODYWEIGHT-ONLY HYPERTROPHY LIMITS" in prompt
+    assert "LOADED BALANCE REGRESSION" in prompt
+    assert "ANKLE DORSIFLEXION" in prompt
+    assert "LOAD PROGRESSION" in prompt
+    assert 'potisk za prsi' in prompt
