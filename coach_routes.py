@@ -238,7 +238,7 @@ def coach_storage_status():
 
 # Longitudinal profile storage is opt-in and disabled by default. Hosted use
 # requires a persistent PostgreSQL database and an operator-approved notice.
-PROFILE_FIELDS = {"goal", "experience", "equipment", "sessions_per_week", "session_minutes", "available_days"}
+PROFILE_FIELDS = {"goal", "experience", "equipment", "sessions_per_week", "session_minutes", "available_days", "pistol_squat_capable"}
 PROFILE_GOALS = {"strength", "hypertrophy", "general_fitness", "functional", "power", "endurance", "mobility"}
 PROFILE_EXPERIENCE = {"beginner", "intermediate", "advanced"}
 PROFILE_DAYS = {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}
@@ -273,10 +273,13 @@ def _validate_profile(value):
     days = value.get("available_days", [])
     if not isinstance(days, list) or len(days) > 7 or any(day not in PROFILE_DAYS for day in days):
         raise ValueError("Razpoložljivi dnevi niso veljavni.")
+    pistol_squat_capable = value.get("pistol_squat_capable", False)
+    if not isinstance(pistol_squat_capable, bool):
+        raise ValueError("pistol_squat_capable mora biti true ali false.")
     return {
         "goal": goal, "experience": experience, "equipment": equipment,
         "sessions_per_week": sessions, "session_minutes": minutes,
-        "available_days": days,
+        "available_days": days, "pistol_squat_capable": pistol_squat_capable,
     }
 
 
