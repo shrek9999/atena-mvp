@@ -480,6 +480,12 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                     if item["id"] == "single_leg_box_squat" and not (external_load_items & available_equipment):
                         return -5
                 if pattern == "horizontal_push":
+                    if item["id"] == "barbell_bench_press":
+                        if p["goal"] == "strength" and p["experience"] != "beginner":
+                            return -10
+                        return 5
+                    if item["id"] == "dumbbell_bench_press" and p["goal"] == "hypertrophy":
+                        return -10
                     if item["id"] == "bench_dip":
                         return 10
                     if item["id"] == "parallel_bar_dip":
