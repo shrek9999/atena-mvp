@@ -161,7 +161,7 @@ def coach_chat():
             content = message.get("content", "")
             if "Trenutni strukturirani program ATENE:" in content:
                 for line in content.splitlines():
-                    match = re.match(r"\s*-\\s*(.+?):\\s", line)
+                    match = re.match(r"\s*-\s*(.+?):\s", line)
                     if match:
                         current_names.add(match.group(1).strip().casefold())
         catalogue = load_catalogue()
