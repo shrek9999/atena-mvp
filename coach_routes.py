@@ -59,7 +59,7 @@ def _has_explicit_no_pain_confirmation(text):
 
 def _has_explicit_safety_clearance(text):
     patterns = (
-        r"\bnimam\b[^.\\n]{0,80}\b(?:bolečin|poškodb|omejitev)\b",
+        r"\bnimam\b[^.\n]{0,80}\b(?:bolečin|poškodb|omejitev)\b",
         r"\bbrez\b[^.\\n]{0,60}\b(?:bolečin|poškodb|omejitev)\b",
         r"\bno (?:pain|injuries|limitations)\b",
     )
@@ -376,8 +376,8 @@ def coach_chat():
         else:
             # The coach brand owner is not automatically the chat user.
             answer = re.sub(
-                r"^(Pozdravljen|Živjo|Živijo),\\s*Grega[!.,]?\\s*",
-                r"\\1! ",
+                r"^(Pozdravljen|Živjo|Živijo),\s*Grega[!.,]?\s*",
+                r"\1! ",
                 answer,
                 flags=re.IGNORECASE,
             )
