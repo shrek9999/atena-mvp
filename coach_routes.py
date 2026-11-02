@@ -60,7 +60,7 @@ def _has_explicit_no_pain_confirmation(text):
 def _has_explicit_safety_clearance(text):
     patterns = (
         r"\bnimam\b[^.\n]{0,80}\b(?:bolečin|poškodb|omejitev)\b",
-        r"\bbrez\b[^.\\n]{0,60}\b(?:bolečin|poškodb|omejitev)\b",
+        r"\bbrez\b[^.\n]{0,60}\b(?:bolečin|poškodb|omejitev)\b",
         r"\bno (?:pain|injuries|limitations)\b",
     )
     return any(re.search(pattern, text, re.IGNORECASE) for pattern in patterns)
