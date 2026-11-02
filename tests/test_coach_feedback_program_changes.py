@@ -182,3 +182,13 @@ def test_strength_and_hypertrophy_select_different_hinge_variants():
 
     assert strength_hinge["exercise_id"] == "deadlift"
     assert hypertrophy_hinge["exercise_id"] == "romanian_deadlift"
+
+
+def test_strength_and_hypertrophy_select_different_horizontal_pull_variants():
+    strength = generate_program(profile("strength", "intermediate"))
+    hypertrophy = generate_program(profile("hypertrophy", "intermediate"))
+    strength_pull = next(x for x in exercises(strength) if x["pattern"] == "horizontal_pull")
+    hypertrophy_pull = next(x for x in exercises(hypertrophy) if x["pattern"] == "horizontal_pull")
+
+    assert strength_pull["exercise_id"] == "barbell_bent_over_row"
+    assert hypertrophy_pull["exercise_id"] in {"dumbbell_bent_over_row", "one_arm_row", "kettlebell_one_arm_row"}
