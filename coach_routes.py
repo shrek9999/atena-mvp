@@ -166,7 +166,7 @@ def _verified_exercise_catalogue_context(messages):
     priority = {"main": 0, "power": 1, "conditioning": 2, "accessory": 3, "mobility": 4, "stability": 5}
     records.sort(key=lambda item: (priority.get(item["training_role"], 9), item["single_joint"], item["name"]))
     lines = [
-        f"- {item['name']} [{item['pattern']}; {item['level']}; oprema: "
+        f"- {('Predklon z ravnim hrbtom (RDL)' if item['id'] == 'romanian_deadlift' else item['name'])} [{item['pattern']}; {item['level']}; oprema: "
         + (", ".join(item["equipment"] + item["equipment_any"]) or "lastna teža")
         + "]"
         for item in records[:28]
@@ -515,6 +515,16 @@ def coach_chat():
             })
         elif "ročke ali elastike" in profile_text:
             available.update({"dumbbell", "resistance_band"})
+        # Structured profiles may list equipment IDs instead of prose labels.
+        for equipment in (
+            "bodyweight", "dumbbell", "barbell", "rack", "bench",
+            "resistance_band", "cable", "pull_up_bar", "kettlebell",
+            "box", "weight_plate", "heel_wedge", "slant_board",
+            "chair", "step", "rowing_machine", "air_bike", "ski_erg",
+            "jump_rope",
+        ):
+            if f'"{equipment}"' in profile_text:
+                available.add(equipment)
         current_names = set()
         for message in messages:
             content = message.get("content", "")
@@ -541,12 +551,12 @@ def coach_chat():
             )
         ]
         compact = [
-            f"- {item['name']} [{item['pattern']}]; oprema: "
+            f"- {('Predklon z ravnim hrbtom (RDL)' if item['id'] == 'romanian_deadlift' else item['name'])} [{item['pattern']}]; oprema: "
             + (", ".join(item["equipment"] + item["equipment_any"]) or "lastna teža")
             for item in alternatives[:35]
         ]
         current = [
-            f"- {item['name']} [{item['pattern']}]"
+            f"- {('Predklon z ravnim hrbtom (RDL)' if item['id'] == 'romanian_deadlift' else item['name'])} [{item['pattern']}]
             for item in current_records
         ]
         system_prompt += (
