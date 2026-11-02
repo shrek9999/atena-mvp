@@ -220,7 +220,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
             sets, reps, rir, rest = 3, ("6–8" if unilateral else "6–8"), 2, (120 if unilateral else 120)
     elif goal == "hypertrophy":
         if pattern in {"squat", "hinge"}:
-            sets, reps, rir, rest = 3, "6–10", (2 if level != "beginner" else 3), 150 if level == "advanced" else 120
+            sets, reps, rir, rest = 3, "6–10", (2 if level != "beginner" else 3), 120 if level == "advanced" else 90
         elif pattern == "lunge" or unilateral:
             sets, reps, rir, rest = 2, "8–10", (2 if level != "beginner" else 3), 90
         elif pattern in {"vertical_push", "vertical_pull"}:
