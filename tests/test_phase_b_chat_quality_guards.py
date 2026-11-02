@@ -378,3 +378,38 @@ def test_generic_discomfort_uses_dose_adjustment_without_banning_all_activity():
     assert "ne pomeni, da moraš prekiniti vso nebolečo aktivnost" in reply
     assert "spremenljivko doze" in reply
     assert "Kje natančno se pojavi bolečina" in reply
+
+
+def test_authenticated_training_history_context_uses_actual_logged_values():
+    context = coach_routes._format_recent_training_context([{
+        "session_date": "2026-11-01",
+        "session": {
+            "session_date": "2026-11-01",
+            "duration_minutes": 42,
+            "difficulty": "moderate",
+            "recovery": "good",
+            "completed": True,
+            "discomfort_reported": False,
+            "exercises": [{
+                "exercise_id": "squat_goblet",
+                "sets_completed": 3,
+                "reps_completed": 10,
+                "load_kg": 20,
+                "rir": 2,
+            }],
+        },
+    }])
+    assert "2026-11-01" in context
+    assert "42 min" in context
+    assert "completed" in context
+    assert "Goblet" in context or "goblet" in context
+    assert "3 sets" in context
+    assert "~10 reps/set" in context
+    assert "20 kg" in context
+    assert "RIR 2" in context
+
+
+def test_authenticated_training_history_context_is_honest_when_empty():
+    context = coach_routes._format_recent_training_context([])
+    assert "No training sessions have been recorded" in context
+    assert "planned values as completed work" in context
