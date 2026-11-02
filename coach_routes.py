@@ -556,7 +556,7 @@ def coach_chat():
             for item in alternatives[:35]
         ]
         current = [
-            f"- {('Predklon z ravnim hrbtom (RDL)' if item['id'] == 'romanian_deadlift' else item['name'])} [{item['pattern']}]
+            f"- {('Predklon z ravnim hrbtom (RDL)' if item['id'] == 'romanian_deadlift' else item['name'])} [{item['pattern']}]"
             for item in current_records
         ]
         system_prompt += (
