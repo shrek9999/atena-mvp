@@ -537,12 +537,16 @@ def export_coach_profile(profile_id):
 
 def _build_profile_adaptation(sessions):
     """Normalize stored session wrappers and gate progression on recorded history."""
-    session_data = [
-        item.get("session", {})
-        for item in sessions
-        if isinstance(item, dict) and isinstance(item.get("session"), dict)
-    ]
-    guidance = assess_next_step(sessions)
+    ordered_sessions = sorted(
+        [
+            item for item in sessions
+            if isinstance(item, dict) and isinstance(item.get("session"), dict)
+        ],
+        key=lambda item: item.get("session_date", ""),
+        reverse=True,
+    )
+    session_data = [item["session"] for item in ordered_sessions]
+    guidance = assess_next_step(ordered_sessions)
     if not session_data:
         return None, guidance
     last = session_data[0]
