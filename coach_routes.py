@@ -90,7 +90,7 @@ def _coaching_guardrail_reply(messages):
 
     no_pain_now = _has_explicit_no_pain_confirmation(latest)
     positive_pain = bool(re.search(
-        r"(me boli|boli me|zaboli me|čutim bolečino|občutim bolečino|"
+        r"(me boli|boli me|me zaboli|zaboli me|čutim bolečino|občutim bolečino|"
         r"bolečina se pojavi|nova bolečina|po treningu.{0,30}bolečin)",
         latest,
         re.IGNORECASE,
@@ -98,7 +98,7 @@ def _coaching_guardrail_reply(messages):
 
     if positive_pain:
         return (
-            "Vaje, ki sproži bolečino, za zdaj ne izvajaj in je ne nadomeščaj še z drugo "
+            "Vajo, pri kateri se pojavi bolečina, za zdaj ne izvajaj in je ne nadomeščaj še z drugo "
             "obremenjeno vajo. Kje natančno se pojavi bolečina, kakšna je (ostra, topa "
             "ali zbadajoča), kdaj nastane in ali po prenehanju gibanja izzveni? "
             "Če je močna, se slabša ali vztraja, poišči ustrezno zdravstveno oceno."
