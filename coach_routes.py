@@ -681,7 +681,7 @@ def _format_recent_training_context(sessions):
     ]
     if not sessions:
         lines.append("- No training sessions have been recorded in this profile yet.")
-        return "\\n".join(lines)
+        return "\n".join(lines)
     for record in sessions[:5]:
         if not isinstance(record, dict):
             continue
@@ -777,19 +777,19 @@ def coach_chat():
             recent_sessions = store_list_sessions(profile_id, profile_token, limit=5)
             history_context = _format_recent_training_context(recent_sessions)
             if history_context:
-                system_prompt += "\\n\\n" + history_context
+                system_prompt += "\n\n" + history_context
         except ProfileNotFound:
             return jsonify({"error": "Dostop do profila ni pravilen. Obnovi dostop z ID-jem in ključem."}), 403
         except StorageUnavailable:
             logger.warning("Stored training history unavailable for authenticated coach chat")
             system_prompt += (
-                "\\n\\nRECENT TRAINING HISTORY: temporarily unavailable. "
+                "\n\nRECENT TRAINING HISTORY: temporarily unavailable. "
                 "Do not claim to know the user's stored training records."
             )
         except Exception:
             logger.exception("Could not load stored training history for authenticated coach chat")
             system_prompt += (
-                "\\n\\nRECENT TRAINING HISTORY: unavailable. "
+                "\n\nRECENT TRAINING HISTORY: unavailable. "
                 "Do not claim to know the user's stored training records."
             )
     user_history_text = "\n".join(
