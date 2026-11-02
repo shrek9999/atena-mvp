@@ -165,7 +165,28 @@ def test_clarified_balance_issue_does_not_repeat_the_same_guardrail_question():
         },
     ]
 
-    assert coach_routes._coaching_guardrail_reply(messages) is None
+    reply = coach_routes._coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "Ali se enaka nestabilnost pojavi tudi pri počepu z lastno težo" in reply
+    assert "Goblet" not in reply
+
+
+def test_clarified_ankle_mobility_asks_about_observable_heel_lift():
+    messages = [
+        {"role": "user", "content": "Pri počepu me omejuje gibljivost gležnja."},
+        {"role": "model", "content": "Ali gre za obseg, bolečino ali ravnotežje?"},
+        {
+            "role": "user",
+            "content": (
+                "Ne boli me, nimam poškodb; gre samo za omejen obseg gibanja v gležnju, "
+                "ne za izgubo ravnotežja. Kako naj prilagodim počep?"
+            ),
+        },
+    ]
+
+    reply = coach_routes._coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "ali se ti pri počepu peta dvigne od tal" in reply
 
 
 def test_unclarified_balance_issue_still_stops_for_assessment():
