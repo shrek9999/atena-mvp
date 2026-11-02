@@ -671,6 +671,73 @@ Use natural Slovenian exercise names. Retain established English names such as G
 STYLE
 Be warm, respectful, practical and encouraging without patronizing the user. Usually keep replies under 200 words, unless a plan or explanation genuinely needs more. Prioritize individualized reasoning and the next useful action over generic motivational text. This is a pilot, not individualized medical care."""
 
+def _format_recent_training_context(sessions):
+    """Format a small, factual summary of the user's own stored training records."""
+    if not isinstance(sessions, list):
+        return ""
+    lines = [
+        "AUTHENTICATED RECENT TRAINING HISTORY (actual user-logged records; newest first):",
+        "Use this as factual context, not as a complete diary. Never treat planned values as completed work.",
+    ]
+    if not sessions:
+        lines.append("- No training sessions have been recorded in this profile yet.")
+        return "\\n".join(lines)
+    for record in sessions[:5]:
+        if not isinstance(record, dict):
+            continue
+        session = record.get("session")
+        if not isinstance(session, dict):
+            continue
+        session_date = session.get("session_date") or record.get("session_date") or "date not recorded"
+        duration = session.get("duration_minutes")
+        difficulty = session.get("difficulty")
+        recovery = session.get("recovery")
+        completed = session.get("completed")
+        discomfort = session.get("discomfort_reported")
+        summary = [str(session_date)]
+        if isinstance(duration, int):
+            summary.append(f"{duration} min")
+        if difficulty:
+            summary.append(f"difficulty: {difficulty}")
+        if recovery:
+            summary.append(f"recovery: {recovery}")
+        if completed is not None:
+            summary.append("completed" if completed else "partially completed")
+        if discomfort is True:
+            summary.append("discomfort reported")
+        lines.append("- " + " · ".join(summary))
+        exercises = session.get("exercises")
+        if not isinstance(exercises, list):
+            continue
+        for item in exercises[:8]:
+            if not isinstance(item, dict):
+                continue
+            exercise_id = item.get("exercise_id")
+            if not isinstance(exercise_id, str) or not exercise_id:
+                continue
+            exercise = get_exercise(exercise_id)
+            name = exercise.get("name") if isinstance(exercise, dict) else exercise_id
+            details = []
+            sets = item.get("sets_completed")
+            reps = item.get("reps_completed")
+            work_seconds = item.get("work_seconds_completed")
+            load = item.get("load_kg")
+            rir = item.get("rir")
+            if isinstance(sets, int):
+                details.append(f"{sets} sets")
+            if isinstance(reps, int):
+                details.append(f"~{reps} reps/set")
+            if isinstance(work_seconds, int):
+                details.append(f"{work_seconds} s work")
+            if isinstance(load, (int, float)):
+                details.append(f"{load:g} kg")
+            if isinstance(rir, int):
+                details.append(f"RIR {rir}")
+            if details:
+                lines.append("  - " + str(name) + ": " + ", ".join(details))
+    return "\\n".join(lines)
+
+
 @coach_bp.route("/coach/chat", methods=["POST", "OPTIONS"])
 def coach_chat():
     if request.method == "OPTIONS":
@@ -699,6 +766,32 @@ def coach_chat():
             return jsonify({"error": "Sporočilo je prazno ali predolgo (največ 1800 znakov)."}), 400
         contents.append({"role": item["role"], "parts": [{"text": content.strip()}]})
     system_prompt = SYSTEM_PROMPT
+    profile_id = request.headers.get("X-Profile-Id", "").strip()
+    profile_token = request.headers.get("X-Profile-Token", "").strip()
+    if bool(profile_id) != bool(profile_token):
+        return jsonify({"error": "Za uporabo zgodovine treningov sta potrebna ID profila in dostopni ključ."}), 400
+    if profile_id and profile_token:
+        if len(profile_id) > 64 or not 20 <= len(profile_token) <= 256:
+            return jsonify({"error": "Podatki za dostop do profila niso veljavni."}), 400
+        try:
+            recent_sessions = store_list_sessions(profile_id, profile_token, limit=5)
+            history_context = _format_recent_training_context(recent_sessions)
+            if history_context:
+                system_prompt += "\\n\\n" + history_context
+        except ProfileNotFound:
+            return jsonify({"error": "Dostop do profila ni pravilen. Obnovi dostop z ID-jem in ključem."}), 403
+        except StorageUnavailable:
+            logger.warning("Stored training history unavailable for authenticated coach chat")
+            system_prompt += (
+                "\\n\\nRECENT TRAINING HISTORY: temporarily unavailable. "
+                "Do not claim to know the user's stored training records."
+            )
+        except Exception:
+            logger.exception("Could not load stored training history for authenticated coach chat")
+            system_prompt += (
+                "\\n\\nRECENT TRAINING HISTORY: unavailable. "
+                "Do not claim to know the user's stored training records."
+            )
     user_history_text = "\n".join(
         item.get("content", "") for item in messages if item.get("role") == "user"
     )
