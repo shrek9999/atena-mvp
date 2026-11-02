@@ -7,6 +7,8 @@ import coach_routes
 
 def test_system_prompt_has_non_bypassable_safety_gate():
     prompt = coach_routes.SYSTEM_PROMPT
+    assert "FAT LOSS / BODY COMPOSITION" in prompt
+    assert "sustainable energy deficit" in prompt
     assert "MANDATORY DECISION GATES – NON-NEGOTIABLE" in prompt
     assert '"none reported"' in prompt
     assert "ask one concise safety question and stop before giving a demanding individualized prescription" in prompt
