@@ -175,7 +175,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
             sets, reps, rir, rest = 2, "10–15", 3, 60
         elif goal == "strength":
             if pattern in {"squat", "hinge"}:
-                sets, reps, rir, rest = 3, "8–12", 3, 120
+                sets, reps, rir, rest = 3, "8–12", 3, 150
             elif pattern == "lunge" or unilateral:
                 sets, reps, rir, rest = 2, "8–10", 3, 90
             elif pattern in {"vertical_push", "vertical_pull"}:
@@ -540,7 +540,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 prescription["rest_seconds"] += 30
                 prescription["adjustment_note"] = (
                     "Ker je bil zadnji trening pretežek oziroma regeneracija slabša, "
-                    "je naslednja obremenitev konservativno zmanjšana. OhranI nadzorovano izvedbo."
+                    "je naslednja obremenitev konservativno zmanjšana. Ohrani nadzorovano izvedbo."
                 )
             elif progress_load:
                 # One easy report earns only a small, reversible progression:
