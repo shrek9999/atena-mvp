@@ -108,12 +108,14 @@ def test_server_guardrail_clarifies_ankle_restriction_before_modification():
 
 
 def test_server_guardrail_does_not_interrupt_general_education():
-    assert coach_routes._coaching_guardrail_reply(_user_messages(
+    tempo_reply = coach_routes._coaching_guardrail_reply(_user_messages(
         "Kaj pomeni tempo 3-1-2-0 in ali je vedno najboljši?",
-    )) is None
-    assert coach_routes._coaching_guardrail_reply(_user_messages(
+    ))
+    assert tempo_reply is not None and "3 sekunde" in tempo_reply
+    endurance_reply = coach_routes._coaching_guardrail_reply(_user_messages(
         "Ali naj delam samo MetCone za vzdržljivost?",
-    )) is None
+    ))
+    assert endurance_reply is not None and "aerobne osnove" in endurance_reply
 
 
 def test_server_guardrail_stops_progression_until_safety_confirmation():
