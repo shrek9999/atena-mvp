@@ -54,3 +54,80 @@ def test_system_prompt_does_not_confuse_coach_brand_with_user_identity():
     prompt = coach_routes.SYSTEM_PROMPT
     assert "not automatically the user" in prompt
     assert "do not address the user as Grega" in prompt
+
+
+
+def _user_messages(*contents):
+    return [{"role": "user", "content": content} for content in contents]
+
+
+def test_server_guardrail_stops_individual_program_until_safety_is_confirmed():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        'Profil: {"goal":"hypertrophy","limitations":"none reported"}',
+        "S star sem začetnik. Pripravi mi trening za celo telo.",
+    ))
+    assert reply is not None
+    assert "Preden pripravim individualni trening" in reply
+    assert "vaje in obremenitve" in reply
+
+
+def test_none_reported_is_not_treated_as_safety_clearance():
+    assert not coach_routes._has_explicit_safety_clearance('{"limitations":"none reported"}')
+
+
+def test_explicit_no_pain_injury_and_limitation_confirmation_allows_next_step():
+    text = "Nimam bolečin, poškodb ali gibalnih omejitev."
+    assert coach_routes._has_explicit_safety_clearance(text)
+
+
+def test_server_guardrail_stops_painful_exercise_before_substitution():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        "Pri izpadnem koraku me boli koleno. S čim naj zamenjam vajo?",
+    ))
+    assert reply is not None
+    assert "ne nadomeščaj" in reply
+    assert "Kje natančno se pojavi bolečina" in reply
+    assert "Goblet počep" not in reply
+
+
+def test_server_guardrail_asks_about_balance_before_suggesting_modification():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        "Pri počepu izgubljam ravnotežje. Kaj naj naredim?",
+    ))
+    assert reply is not None
+    assert "V kateri fazi počepa" in reply
+    assert "Podpora pod petami" not in reply
+
+
+def test_server_guardrail_clarifies_ankle_restriction_before_modification():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        "Pri počepu me omejuje gibljivost gležnja. Kako prilagodim izvedbo?",
+    ))
+    assert reply is not None
+    assert "omejen obseg gibanja v gležnju" in reply
+
+
+def test_server_guardrail_does_not_interrupt_general_education():
+    assert coach_routes._coaching_guardrail_reply(_user_messages(
+        "Kaj pomeni tempo 3-1-2-0 in ali je vedno najboljši?",
+    )) is None
+    assert coach_routes._coaching_guardrail_reply(_user_messages(
+        "Ali naj delam samo MetCone za vzdržljivost?",
+    )) is None
+
+
+def test_server_guardrail_stops_progression_until_safety_confirmation():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        "Dva treninga sta bila lahka, vse serije sem končal z RIR 3+. Kaj zdaj?",
+    ))
+    assert reply is not None
+    assert "Preden pripravim individualni trening" in reply
+
+
+def test_server_guardrail_answers_persistence_question_directly():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        "Včeraj je bil trening pretežek. Ali si že prilagodil moj naslednji trening?",
+    ))
+    assert reply is not None
+    assert "ne posodobi programa" in reply
+    assert "ne morem potrditi" in reply
