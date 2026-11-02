@@ -457,6 +457,12 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                     if item["id"] == "reaching_squat":
                         return -5
                 if pattern == "squat" and p["goal"] in {"hypertrophy", "strength"}:
+                    weighted_squat_equipment = {"barbell", "dumbbell", "kettlebell"}
+                    has_weighted_squat = bool(weighted_squat_equipment & available_equipment)
+                    if not has_weighted_squat and p["experience"] == "advanced" and item["id"] == "pistol_squat":
+                        return -20
+                    if not has_weighted_squat and p["experience"] == "intermediate" and item["id"] == "cossack_squat":
+                        return -15
                     if item["id"] in {"back_squat", "front_squat"} and {"barbell", "rack"}.issubset(available_equipment):
                         return -10 if p["goal"] == "strength" else -5
                     if item["id"] in {"dumbbell_squat_side", "dumbbell_squat_front_rack", "two_dumbbell_squat", "squat_goblet"} and {"dumbbell", "kettlebell"} & available_equipment:
