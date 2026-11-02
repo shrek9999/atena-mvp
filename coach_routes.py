@@ -356,6 +356,15 @@ def coach_chat():
             + "\nUse only the alternatives above. If the requested exercise is not identified, ask which exercise."
         )
     model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
+    guarded_answer = _coaching_guardrail_reply(messages)
+    if guarded_answer:
+        return jsonify({
+            "reply": guarded_answer,
+            "model": model,
+            "pilot": True,
+            "guardrail_applied": True,
+            "response_source": "server_guardrail",
+        })
     url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + api_key
     body = {
         "systemInstruction": {"parts": [{"text": system_prompt}]},
@@ -371,18 +380,20 @@ def coach_chat():
         if not answer:
             logger.warning("Gemini returned no text for model %s", model)
             return jsonify({"error": "Model ni vrnil odgovora. Poskusi znova."}), 502
-        guarded_answer = _coaching_guardrail_reply(messages)
-        if guarded_answer:
-            answer = guarded_answer
-        else:
-            # The coach brand owner is not automatically the chat user.
-            answer = re.sub(
-                r"^(Pozdravljen|Živjo|Živijo),\s*Grega[!.,]?\s*",
-                r"\1! ",
-                answer,
-                flags=re.IGNORECASE,
-            )
-        return jsonify({"reply": answer, "model": model, "pilot": True})
+        # The coach brand owner is not automatically the chat user.
+        answer = re.sub(
+            r"^(Pozdravljen|Živjo|Živijo),\s*Grega[!.,]?\s*",
+            r"\1! ",
+            answer,
+            flags=re.IGNORECASE,
+        )
+        return jsonify({
+            "reply": answer,
+            "model": model,
+            "pilot": True,
+            "guardrail_applied": False,
+            "response_source": "gemini",
+        })
     except urllib.error.HTTPError as exc:
         # Log only status and model; never log provider body, API key, or secret-bearing URL.
         logger.error("Gemini provider returned HTTP %s for model %s", exc.code, model)
