@@ -75,7 +75,7 @@ jobs:
                   print(f"{path}: NETWORK ERROR: {type(exc).__name__}")
                   return None, {}
 
-          def profile_request(method, path, profile_token, payload=None):
+          def call_profile_api(method, path, profile_token, payload=None):
               headers = {"X-Profile-Token": profile_token}
               data = None
               if payload is not None:
@@ -248,7 +248,7 @@ jobs:
               round_trip_ok = created_status == 201 and profile_id and profile_token
               try:
                   if round_trip_ok:
-                      read_status, read_body = profile_request(
+                      read_status, read_body = call_profile_api(
                           "GET", f"/coach/profile/{profile_id}", profile_token
                       )
                       round_trip_ok = (
@@ -256,7 +256,7 @@ jobs:
                           and read_body.get("profile", {}).get("profile_id") == profile_id
                       )
                   if round_trip_ok:
-                      session_status, session_body = profile_request(
+                      session_status, session_body = call_profile_api(
                           "POST", f"/coach/profile/{profile_id}/sessions", profile_token, {
                               "session_date": __import__("datetime").date.today().isoformat(),
                               "duration_minutes": 30,
@@ -274,7 +274,7 @@ jobs:
                       )
                       round_trip_ok = session_status == 201 and bool(session_body.get("session"))
                   if round_trip_ok:
-                      sessions_status, sessions_body = profile_request(
+                      sessions_status, sessions_body = call_profile_api(
                           "GET", f"/coach/profile/{profile_id}/sessions", profile_token
                       )
                       saved_sessions = sessions_body.get("sessions", [])
@@ -284,13 +284,13 @@ jobs:
                           and saved_sessions[0].get("session", {}).get("exercises", [{}])[0].get("exercise_id") == "squat_goblet"
                       )
                   if round_trip_ok:
-                      progress_status, progress_body = profile_request(
+                      progress_status, progress_body = call_profile_api(
                           "GET", f"/coach/profile/{profile_id}/progress", profile_token
                       )
                       round_trip_ok = progress_status == 200 and isinstance(progress_body.get("progress"), dict)
               finally:
                   if profile_id and profile_token:
-                      delete_status, _ = profile_request(
+                      delete_status, _ = call_profile_api(
                           "DELETE", f"/coach/profile/{profile_id}", profile_token
                       )
                       round_trip_ok = round_trip_ok and delete_status == 200
