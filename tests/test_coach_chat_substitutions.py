@@ -230,3 +230,20 @@ def test_verified_exercise_context_includes_only_declared_dumbbell_options():
     assert "Goblet počep" in context
     assert "Počep z lastno težo (air squat)" in context
     assert "Počep zadaj" not in context
+
+
+def test_structured_profile_equipment_is_authoritative_over_unavailable_mentions():
+    messages = [{
+        "role": "user",
+        "content": (
+            'Profil: {"goal":"hypertrophy","experience":"beginner",'
+            '"equipment":["bodyweight"]}. Nimam ročk, klopi ali elastik.'
+        ),
+    }]
+
+    available = coach_routes._profile_available_equipment(messages)
+    context = coach_routes._verified_exercise_catalogue_context(messages)
+
+    assert available == {"bodyweight"}
+    assert "Goblet počep" not in context
+    assert "Potisk z ročkami" not in context
