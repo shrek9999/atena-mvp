@@ -148,7 +148,7 @@ def coach_chat():
     # Keep a technique protocol active during follow-up turns. Users often ask
     # "kaj pa če..." or "ja, samo tehnika" without repeating the exercise name.
     rdl_technique_request = bool(re.search(
-        r"\\bRDL\\b|romunsk(?:i|ega|em)\\s+mrtv(?:i|ega|em)\\s+dvig|predklon\\s+z\\s+ravnim\\s+hrbtom|raven\\s+hrbet|zaokrož(?:en|anj)",
+        r"\bRDL\b|romunsk(?:i|ega|em)\s+mrtv(?:i|ega|em)\s+dvig|predklon\s+z\s+ravnim\s+hrbtom|raven\s+hrbet|zaokrož(?:en|anj)",
         user_history_text,
         re.IGNORECASE,
     ))
