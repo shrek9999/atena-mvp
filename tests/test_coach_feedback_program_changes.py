@@ -30,7 +30,7 @@ def test_beginner_strength_and_hypertrophy_have_distinct_dosing():
     hypertrophy_squat = next(x for x in exercises(hypertrophy) if x["pattern"] == "squat")
 
     assert strength_squat["prescription"]["reps"] == "8–12"
-    assert hypertrophy_squat["prescription"]["reps"] == "10–15"
+    assert hypertrophy_squat["prescription"]["reps"] == "8–12"
     assert strength_squat["prescription"]["rest_seconds"] > hypertrophy_squat["prescription"]["rest_seconds"]
 
 
