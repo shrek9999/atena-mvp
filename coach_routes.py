@@ -319,7 +319,7 @@ def _coaching_guardrail_reply(messages):
     balance_load_issue = (
         no_pain_now
         and bool(re.search(
-            r"počep z lastno težo.{0,70}(?:stabil|brez težav)",
+            r"počep(?:u)? z lastno težo.{0,70}(?:stabil|brez težav)",
             history_lower,
             re.IGNORECASE,
         ))
