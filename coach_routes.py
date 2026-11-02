@@ -147,13 +147,12 @@ def _coaching_guardrail_reply(messages):
         r"(pripravi|sestavi|naredi|ustvari).{0,60}(program|trening|vadb)|"
         r"(program|trening|vadb).{0,50}(pripravi|sestavi|prilagod|zamenj)|"
         r"(kako naj|kako lahko).{0,60}(prilagodim trening|napredujem|povečam obremenitev|"
-        r"zamenjam vajo|strukturiram serije)|"
+        r"zamenjam vajo|strukturiram serije|strukturiram trening)|"
         r"(koliko|kakšne).{0,40}(serij|ponovitev|obremenitev|kilogram|odmor)|"
         r"(serij|ponovitev|odmor).{0,40}(eksploziv|moč|trening)|"
         r"(zamenj|alternativ|nadomest).{0,40}(vajo|vaje)|"
         r"(težak|težji|individualiziran).{0,30}(program|trening)|"
-        r"(trening.{0,50}(lahek|lahka|prelahk)|RIR.{0,20}(3\+|3 ali več)|kaj zdaj|"naslednji korak).{0,80}(napred|obremen|program|trening)?|"
-        r"naslednji korak).{0,80}(napred|obremen|program|trening)?|"
+        r"(trening.{0,50}(lahek|lahka|prelahk)|RIR.{0,20}(3\+|3 ali več)|kaj zdaj|naslednji korak)|"
         r"(RDL|romunsk.{0,20}mrtv.{0,20}dvig).{0,50}(kako|tehnik|izvedb)",
         latest,
         re.IGNORECASE,
