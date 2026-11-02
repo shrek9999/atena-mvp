@@ -1,0 +1,33 @@
+import coach_routes
+
+
+def test_system_prompt_has_non_bypassable_safety_gate():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "MANDATORY DECISION GATES – NON-NEGOTIABLE" in prompt
+    assert '"none reported"' in prompt
+    assert "ask one concise safety question and STOP" in prompt
+    assert "do not include a workout" in prompt
+
+
+def test_system_prompt_blocks_loaded_substitution_before_pain_clarification():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "Do not advise continuing a painful loaded movement" in prompt
+    assert "Do not diagnose" in prompt
+
+
+def test_system_prompt_avoids_assumptions_about_balance_and_mobility():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "Do not assume the cause is ankle mobility" in prompt
+    assert 'Never say a restriction can simply be "bypassed"' in prompt
+
+
+def test_system_prompt_keeps_stabilization_conditional_and_tempo_exact():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "Do not add generic" in prompt
+    assert "the phases are exactly 3 seconds eccentric, 1-second pause, 2 seconds concentric" in prompt
+
+
+def test_system_prompt_requires_profile_and_persistence_honesty():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "Do not invent the user's name" in prompt
+    assert "A chat reply does not itself save feedback" in prompt
