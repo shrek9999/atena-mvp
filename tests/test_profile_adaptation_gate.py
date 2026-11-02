@@ -58,7 +58,8 @@ def test_discomfort_is_never_converted_to_a_normal_feedback_signal():
     feedback, guidance = _build_profile_adaptation([
         wrapped_session(discomfort=True)
     ])
-    assert feedback["discomfort"] == "yes"
+    assert feedback["discomfort"] == "no"
+    assert feedback["difficulty"] == "right"
     assert guidance["decision"] == "pause_and_review"
 
 
