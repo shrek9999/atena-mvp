@@ -1,3 +1,7 @@
+import json
+
+from flask import Flask
+
 import coach_routes
 
 
@@ -413,3 +417,90 @@ def test_authenticated_training_history_context_is_honest_when_empty():
     context = coach_routes._format_recent_training_context([])
     assert "No training sessions have been recorded" in context
     assert "planned values as completed work" in context
+
+
+
+def test_chat_route_injects_authenticated_recent_training_history(monkeypatch):
+    monkeypatch.setenv("AI_COACH_TEST_TOKEN", "pilot-token-for-tests-123456")
+    monkeypatch.setenv("GEMINI_API_KEY", "gemini-test-key")
+    monkeypatch.setenv("GEMINI_MODEL", "gemini-test-model")
+    monkeypatch.setattr(coach_routes, "store_list_sessions", lambda profile_id, token, limit: [{
+        "session_date": "2026-11-01",
+        "session": {
+            "session_date": "2026-11-01",
+            "duration_minutes": 42,
+            "difficulty": "moderate",
+            "recovery": "good",
+            "completed": True,
+            "exercises": [{
+                "exercise_id": "squat_goblet",
+                "sets_completed": 3,
+                "reps_completed": 10,
+                "load_kg": 20,
+                "rir": 2,
+            }],
+        },
+    }])
+    captured = {}
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self):
+            return json.dumps({
+                "candidates": [{"content": {"parts": [{"text": "Živjo! Kako ti lahko pomagam?"}]}}]
+            }).encode()
+
+    def fake_urlopen(req, timeout):
+        captured["body"] = json.loads(req.data.decode())
+        return FakeResponse()
+
+    monkeypatch.setattr(coach_routes.urllib.request, "urlopen", fake_urlopen)
+    app = Flask(__name__)
+    app.register_blueprint(coach_routes.coach_bp)
+    response = app.test_client().post(
+        "/coach/chat",
+        headers={
+            "X-Pilot-Token": "pilot-token-for-tests-123456",
+            "X-Profile-Id": "profile-test-123",
+            "X-Profile-Token": "profile-access-token-for-tests-123456",
+        },
+        json={"messages": [{"role": "user", "content": "Živjo."}]},
+    )
+    assert response.status_code == 200
+    prompt = captured["body"]["systemInstruction"]["parts"][0]["text"]
+    assert "AUTHENTICATED RECENT TRAINING HISTORY" in prompt
+    assert "2026-11-01" in prompt
+    assert "RIR 2" in prompt
+
+
+def test_chat_route_rejects_invalid_profile_access_without_calling_model(monkeypatch):
+    monkeypatch.setenv("AI_COACH_TEST_TOKEN", "pilot-token-for-tests-123456")
+    monkeypatch.setenv("GEMINI_API_KEY", "gemini-test-key")
+
+    def reject_profile(*args, **kwargs):
+        raise coach_routes.ProfileNotFound()
+
+    monkeypatch.setattr(coach_routes, "store_list_sessions", reject_profile)
+    monkeypatch.setattr(
+        coach_routes.urllib.request,
+        "urlopen",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("Gemini must not be called")),
+    )
+    app = Flask(__name__)
+    app.register_blueprint(coach_routes.coach_bp)
+    response = app.test_client().post(
+        "/coach/chat",
+        headers={
+            "X-Pilot-Token": "pilot-token-for-tests-123456",
+            "X-Profile-Id": "profile-test-123",
+            "X-Profile-Token": "invalid-profile-token-123456",
+        },
+        json={"messages": [{"role": "user", "content": "Živjo."}]},
+    )
+    assert response.status_code == 403
+    assert "Dostop do profila ni pravilen" in response.get_json()["error"]
