@@ -144,12 +144,21 @@ def _coaching_guardrail_reply(messages):
             "Če je močna, se slabša ali vztraja, poišči ustrezno zdravstveno oceno."
         )
 
+    balance_clarified = (
+        bool(re.search(
+            r"(pri spuščanju|pri dvigu|v spodnjem položaju|iz spodnjega položaja)",
+            latest,
+            re.IGNORECASE,
+        ))
+        and no_pain_now
+        and bool(re.search(r"\b(?:nimam|brez)\b[^.\n]{0,60}\b(?:poškodb|omejitev)\b", latest, re.IGNORECASE))
+    )
     balance_problem = bool(re.search(
         r"(izgubljam ravnotežje|težave z ravnotežjem|izgubim ravnotežje|"
         r"ravnotežje.{0,30}(počep|vaji)|počep.{0,40}ravnotež)",
         latest,
         re.IGNORECASE,
-    ))
+    )) and not balance_clarified
     if balance_problem:
         return (
             "Preden predlagam spremembo počepa, morava razjasniti težavo. "
