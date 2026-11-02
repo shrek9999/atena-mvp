@@ -3409,7 +3409,7 @@
     "id": "cossack_squat",
     "name": "Kozaški počep (Cossack squat)",
     "name_en": "Cossack squat",
-    "pattern": "mobility",
+    "pattern": "squat",
     "joint_type": "multi_joint",
     "goals": [
       "mobility",
@@ -3440,7 +3440,7 @@
       "Stranski prenos teže z oporo"
     ],
     "progressions": [
-      "Cossack squat z utežjo"
+      "Kozaški počep z ročko"
     ],
     "alternatives": [],
     "warnings": [
@@ -3453,7 +3453,66 @@
     ],
     "unilateral": true,
     "loading_potential": "moderate",
-    "training_role": "mobility",
+    "training_role": "main",
+    "time_based": false
+  },
+  {
+    "id": "pistol_squat",
+    "name": "Enonožni počep (pistol squat)",
+    "name_en": "Pistol squat",
+    "pattern": "squat",
+    "joint_type": "multi_joint",
+    "goals": [
+      "strength",
+      "hypertrophy",
+      "functional"
+    ],
+    "equipment": [],
+    "equipment_any": [
+      "bodyweight"
+    ],
+    "level": "advanced",
+    "primary_muscles": [
+      "quadriceps",
+      "gluteus_maximus"
+    ],
+    "secondary_muscles": [
+      "adductors",
+      "hamstrings",
+      "trunk"
+    ],
+    "cues": [
+      "Stojno stopalo ohrani stabilno in enakomerno obremenjeno.",
+      "Drugo nogo iztegni pred telesom in nadzoruj ravnotežje.",
+      "Spuščaj se počasi v največjo amplitudo, ki jo obvladaš brez izgube položaja.",
+      "Koleno naj sledi smeri stopala; vstani brez sunkov."
+    ],
+    "common_errors": [
+      "Izguba ravnotežja ali nenadzorovan padec v spodnji položaj.",
+      "Izguba stika stopala s tlemi.",
+      "Koleno izgubi smer nad stopalom.",
+      "Siljenje v globino kljub izgubi nadzora."
+    ],
+    "regressions": [
+      "single_leg_box_squat",
+      "cossack_squat",
+      "air_squat"
+    ],
+    "progressions": [
+      "Enonožni počep z ročko"
+    ],
+    "alternatives": [
+      "single_leg_box_squat",
+      "cossack_squat"
+    ],
+    "warnings": [
+      "Zelo zahtevna unilateralna različica; primerna samo za napredne vadeče z ustrezno jakostjo, ravnotežjem in mobilnostjo.",
+      "Ob izgubi nadzora izberi regresijo; ne izvajaj skozi bolečino."
+    ],
+    "single_joint": false,
+    "unilateral": true,
+    "loading_potential": "high",
+    "training_role": "main",
     "time_based": false
   },
   {
