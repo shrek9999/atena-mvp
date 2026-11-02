@@ -169,7 +169,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     elif goal == "endurance" and pattern in {"carry", "lunge"}:
         sets, reps, rir, rest = 2, "12–20", None, 45
     elif is_power:
-        sets, reps, rir, rest = 3, "3–5", 4, 150
+        sets, reps, rir, rest = 3, "3–5", 4, 180
     elif level == "beginner":
         # Beginners still train toward the selected goal; the goal changes the
         # dose while technique and a conservative effort reserve remain priorities.
@@ -209,7 +209,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         rir_range = "2–3"
     elif goal == "strength":
         if pattern in {"squat", "hinge"}:
-            sets, reps, rir, rest = (4, "3–6", 2, 180) if level == "advanced" else (3, "5–8", 2, 150)
+            sets, reps, rir, rest = (4, "3–6", 2, 210) if level == "advanced" else (3, "5–8", 2, 180)
         elif is_stability:
             sets, reps, rir, rest = 2, "10–15", 3, 60
         elif pattern in {"carry", "hip_extension"}:
