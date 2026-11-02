@@ -247,7 +247,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     elif is_stability:
         tempo, tempo_description, tempo_seconds = "2–1–2–1", "2 s izteg oziroma odmik · 1 s nadzor · 2 s vrnitev · 1 s ponastavitev.", 6
     elif goal == "strength":
-        tempo, tempo_description, tempo_seconds = "2–0–1–0", "2 s nadzorovan spust · brez zadrževanja · 1 s odločen dvig · brez premora v vrhu. Dvig izvedi z namero, da premagaš breme hitro, vendar brez izgube tehnike.", 3
+        tempo, tempo_description, tempo_seconds = "2–0–X–0", "2 s nadzorovan spust · brez premora v spodnjem položaju · koncentrično fazo izvedi z maksimalno namero hitrosti (X), vendar brez izgube tehnike · brez premora v vrhu.", 3
     elif goal == "hypertrophy":
         tempo, tempo_description, tempo_seconds = "3–1–2–0", "3 s ekscentrična faza · 1 s nadzor v spodnjem položaju · 2 s koncentrična faza · brez premora v vrhu.", 6
     else:
