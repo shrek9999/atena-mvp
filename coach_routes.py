@@ -61,6 +61,10 @@ def _has_explicit_safety_clearance(text):
     patterns = (
         r"\bnimam\b[^.\n]{0,80}\b(?:bolečin|poškodb|omejitev)\b",
         r"\bbrez\b[^.\n]{0,60}\b(?:bolečin|poškodb|omejitev)\b",
+        # The website intake form records an explicit negative answer in this
+        # structured profile summary. Treat that exact statement as clearance;
+        # do not confuse it with an absent/unknown value such as "none reported".
+        r"\btrenutna\s+bolečina\s*/\s*poškodba\s*/\s*zdravstvena\s+omejitev\s*:\s*ne\b",
         r"\bno (?:pain|injuries|limitations)\b",
     )
     return any(re.search(pattern, text, re.IGNORECASE) for pattern in patterns)
