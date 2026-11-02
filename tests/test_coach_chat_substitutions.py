@@ -1,0 +1,86 @@
+import json
+
+from flask import Flask
+
+import coach_routes
+
+
+class FakeGeminiResponse:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+    def read(self):
+        return json.dumps({
+            "candidates": [{
+                "content": {"parts": [{"text": "Predlagam Goblet počep."}]}
+            }]
+        }).encode("utf-8")
+
+
+def test_chat_adds_verified_exercise_alternatives_for_substitution_request(monkeypatch):
+    monkeypatch.setenv("AI_COACH_TEST_TOKEN", "pilot-test-secret")
+    monkeypatch.setenv("GEMINI_API_KEY", "test-api-key")
+    captured = {}
+
+    def fake_urlopen(request, timeout):
+        captured["timeout"] = timeout
+        captured["body"] = json.loads(request.data.decode("utf-8"))
+        return FakeGeminiResponse()
+
+    monkeypatch.setattr(coach_routes.urllib.request, "urlopen", fake_urlopen)
+    app = Flask(__name__)
+    app.register_blueprint(coach_routes.coach_bp)
+    client = app.test_client()
+
+    response = client.post(
+        "/coach/chat",
+        headers={"X-Pilot-Token": "pilot-test-secret"},
+        json={"messages": [
+            {
+                "role": "user",
+                "content": (
+                    "Moj vadbeni profil:\\n- Glavni cilj: mišična masa"
+                    "\\n- Izkušnje: nekaj izkušenj"
+                    "\\n- Oprema: polno opremljen fitnes"
+                    "\\nTrenutni strukturirani program ATENE:"
+                    "\\nTrening A\\n- Počep z ročkama ob telesu: 3 × 8–12"
+                ),
+            },
+            {"role": "model", "content": "Razumem."},
+            {"role": "user", "content": "Lahko zamenjava počep z ročkama ob telesu?"},
+        ]},
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["reply"] == "Predlagam Goblet počep."
+    assert captured["timeout"] == 65
+    prompt = captured["body"]["systemInstruction"]["parts"][0]["text"]
+    assert "VERIFIED AVAILABLE ALTERNATIVES" in prompt
+    assert "Goblet počep" in prompt
+    assert "Počep z ročkama na ramenih" in prompt
+    assert "Počep z ročkama ob telesu [squat]" in prompt
+
+
+def test_chat_keeps_timeout_as_a_controlled_gateway_error(monkeypatch):
+    import socket
+
+    monkeypatch.setenv("AI_COACH_TEST_TOKEN", "pilot-test-secret")
+    monkeypatch.setenv("GEMINI_API_KEY", "test-api-key")
+
+    def timeout_urlopen(_request, timeout):
+        assert timeout == 65
+        raise socket.timeout()
+
+    monkeypatch.setattr(coach_routes.urllib.request, "urlopen", timeout_urlopen)
+    app = Flask(__name__)
+    app.register_blueprint(coach_routes.coach_bp)
+    response = app.test_client().post(
+        "/coach/chat",
+        headers={"X-Pilot-Token": "pilot-test-secret"},
+        json={"messages": [{"role": "user", "content": "Živjo."}]},
+    )
+    assert response.status_code == 504
+    assert "predolgo" in response.get_json()["error"]
