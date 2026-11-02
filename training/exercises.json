@@ -1716,6 +1716,63 @@
     "time_based": false
   },
   {
+    "id": "supported_single_leg_rdl",
+    "name": "Podprti enonožni predklon z ravnim hrbtom",
+    "name_en": "Supported single-leg hip hinge",
+    "pattern": "hinge",
+    "joint_type": "multi_joint",
+    "goals": [
+      "strength",
+      "hypertrophy",
+      "functional"
+    ],
+    "equipment": [],
+    "equipment_any": [
+      "bodyweight"
+    ],
+    "level": "beginner",
+    "primary_muscles": [
+      "hamstrings",
+      "gluteus_maximus"
+    ],
+    "secondary_muscles": [
+      "erector_spinae",
+      "gluteus_medius",
+      "trunk"
+    ],
+    "cues": [
+      "Po potrebi se z eno roko rahlo opri ob steno ali stabilno oporo.",
+      "Stojno koleno naj bo rahlo pokrčeno; gib začni s pomikom medenice nazaj.",
+      "Trup nagni naprej ob ohranjanju nevtralnega položaja hrbtenice.",
+      "Medenica naj ostane čim bolj poravnana; vrni se v stojo z nadzorovano ekstenzijo kolka."
+    ],
+    "common_errors": [
+      "Predklon skozi ledveno hrbtenico namesto gibanja v kolku.",
+      "Rotacija medenice in trupa proti odprti strani.",
+      "Izguba ravnotežja zaradi nepotrebnega odmika roke od opore.",
+      "Pretirano iztegovanje kolena stojne noge."
+    ],
+    "regressions": [
+      "bodyweight_hip_hinge"
+    ],
+    "progressions": [
+      "single_leg_rdl"
+    ],
+    "alternatives": [
+      "single_leg_rdl",
+      "bodyweight_hip_hinge"
+    ],
+    "warnings": [
+      "Opora je namenjena ravnotežju, ne vlečenju telesa navzgor.",
+      "Če ni mogoče ohraniti nadzora medenice in hrbtenice, uporabi regresijo."
+    ],
+    "single_joint": false,
+    "unilateral": true,
+    "loading_potential": "moderate",
+    "training_role": "main",
+    "time_based": false
+  },
+  {
     "id": "air_squat",
     "name": "Počep z lastno težo (air squat)",
     "name_en": "Air squat",
