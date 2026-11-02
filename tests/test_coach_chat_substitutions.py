@@ -42,11 +42,11 @@ def test_chat_adds_verified_exercise_alternatives_for_substitution_request(monke
             {
                 "role": "user",
                 "content": (
-                    "Moj vadbeni profil:\\n- Glavni cilj: mišična masa"
-                    "\\n- Izkušnje: nekaj izkušenj"
-                    "\\n- Oprema: polno opremljen fitnes"
-                    "\\nTrenutni strukturirani program ATENE:"
-                    "\\nTrening A\\n- Počep z ročkama ob telesu: 3 × 8–12"
+                    "Moj vadbeni profil:\n- Glavni cilj: mišična masa"
+                    "\n- Izkušnje: nekaj izkušenj"
+                    "\n- Oprema: polno opremljen fitnes"
+                    "\nTrenutni strukturirani program ATENE:"
+                    "\nTrening A\n- Počep z ročkama ob telesu: 3 × 8–12"
                 ),
             },
             {"role": "model", "content": "Razumem."},
