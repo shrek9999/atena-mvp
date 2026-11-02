@@ -6,7 +6,7 @@ def test_system_prompt_has_non_bypassable_safety_gate():
     assert "MANDATORY DECISION GATES – NON-NEGOTIABLE" in prompt
     assert '"none reported"' in prompt
     assert "ask one concise safety question and STOP" in prompt
-    assert "do not include a workout" in prompt
+    assert "do not include an exercise prescription" in prompt
 
 
 def test_system_prompt_blocks_loaded_substitution_before_pain_clarification():
