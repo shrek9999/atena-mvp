@@ -169,18 +169,41 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     elif is_power:
         sets, reps, rir, rest = 3, "3–5", 4, 150
     elif level == "beginner":
-        # For novices, movement skill and repeatable technique outrank maximal loading,
-        # even when the selected long-term goal is strength.
+        # Beginners still train toward the selected goal; the goal changes the
+        # dose while technique and a conservative effort reserve remain priorities.
         if is_stability:
             sets, reps, rir, rest = 2, "10–15", 3, 60
-        elif pattern in {"lunge"} or unilateral:
-            sets, reps, rir, rest = 2, "8–10", 3, 90
-        elif pattern in {"vertical_push", "vertical_pull"}:
-            sets, reps, rir, rest = 2, "8–12", 3, 90
-        elif pattern in {"hip_extension", "carry"}:
-            sets, reps, rir, rest = 2, "10–15", 3, 75
+        elif goal == "strength":
+            if pattern in {"squat", "hinge"}:
+                sets, reps, rir, rest = 3, "8–12", 3, 120
+            elif pattern == "lunge" or unilateral:
+                sets, reps, rir, rest = 2, "8–10", 3, 90
+            elif pattern in {"vertical_push", "vertical_pull"}:
+                sets, reps, rir, rest = 2, "8–12", 3, 90
+            elif pattern in {"hip_extension", "carry"}:
+                sets, reps, rir, rest = 2, "10–15", 3, 75
+            else:
+                sets, reps, rir, rest = 3, "8–12", 3, 90
+        elif goal == "hypertrophy":
+            if pattern in {"squat", "hinge"}:
+                sets, reps, rir, rest = 3, "10–15", 3, 120
+            elif pattern == "lunge" or unilateral:
+                sets, reps, rir, rest = 2, "10–12", 3, 90
+            elif pattern in {"vertical_push", "vertical_pull"}:
+                sets, reps, rir, rest = 2, "10–15", 3, 90
+            elif pattern in {"hip_extension", "carry"}:
+                sets, reps, rir, rest = 2, "12–15", 3, 75
+            else:
+                sets, reps, rir, rest = 3, "10–15", 3, 90
         else:
-            sets, reps, rir, rest = 3, "8–12", 3, 90
+            if pattern in {"lunge"} or unilateral:
+                sets, reps, rir, rest = 2, "8–10", 3, 90
+            elif pattern in {"vertical_push", "vertical_pull"}:
+                sets, reps, rir, rest = 2, "8–12", 3, 90
+            elif pattern in {"hip_extension", "carry"}:
+                sets, reps, rir, rest = 2, "10–15", 3, 75
+            else:
+                sets, reps, rir, rest = 3, "8–12", 3, 90
         rir_range = "2–3"
     elif goal == "strength":
         if pattern in {"squat", "hinge"}:
@@ -290,6 +313,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
     reduce_load = bool(response and (
         response["difficulty"] == "hard" or not response["completed"] or response["recovery"] == "poor"
     ))
+    progress_load = bool(response and response["difficulty"] == "easy"
+                         and response["completed"] and response["recovery"] != "poor")
     include_stability = bool(response and response.get("movement_control", "none") != "none")
     goal_sources = {
         "functional": ["functional", "general_fitness", "strength", "mobility"],
@@ -495,13 +520,48 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             if p["goal"] == "endurance" and effective_pattern == "locomotion":
                 # Reserve time for warm-up, transitions and interval work; locomotion is a flexible aerobic block.
                     prescription["work_seconds"] = max(600, int(p["session_minutes"] * 15))
-            if reduce_load and p["goal"] not in {"endurance", "mobility"} and not candidate["single_joint"] and pattern not in {"trunk_stability", "anti_rotation"}:
-                prescription["sets"] = max(2, prescription["sets"] - 1)
+            if reduce_load:
+                # A "too hard" report must change the actual next prescription,
+                # including aerobic and mobility work, not only its explanatory text.
+                if prescription.get("sets", 1) > 2:
+                    prescription["sets"] -= 1
+                elif prescription.get("work_seconds") is not None:
+                    floor = 300 if pattern == "locomotion" else 10
+                    prescription["work_seconds"] = max(floor, int(prescription["work_seconds"] * 0.85))
+                else:
+                    bounds = [int(value) for value in prescription.get("reps", "").split("–") if value.isdigit()]
+                    if len(bounds) == 2:
+                        low, high = bounds
+                        prescription["reps"] = f"{low}–{max(low, high - 2)}"
                 if prescription.get("rir") is not None:
                     prescription["rir"] = min(4, prescription["rir"] + 1)
                     if prescription.get("rir_range") == "2–3":
                         prescription["rir_range"] = "3–4"
                 prescription["rest_seconds"] += 30
+                prescription["adjustment_note"] = (
+                    "Ker je bil zadnji trening pretežek oziroma regeneracija slabša, "
+                    "je naslednja obremenitev konservativno zmanjšana. OhranI nadzorovano izvedbo."
+                )
+            elif progress_load:
+                # One easy report earns only a small, reversible progression:
+                # one additional target rep (or a small time increase), not an
+                # invented kilogram increase. Load rises only after the top of
+                # the rep range is repeatedly achieved with sound technique.
+                if prescription.get("work_seconds") is not None:
+                    ceiling = 1800 if pattern == "locomotion" else 300
+                    prescription["work_seconds"] = min(
+                        ceiling, int(prescription["work_seconds"] * 1.05)
+                    )
+                else:
+                    bounds = [int(value) for value in prescription.get("reps", "").split("–") if value.isdigit()]
+                    if len(bounds) == 2 and bounds[0] < bounds[1]:
+                        low, high = bounds
+                        prescription["reps"] = f"{low + 1}–{high}"
+                prescription["adjustment_note"] = (
+                    "Ker je bil zadnji trening prelahek, je cilj naslednjič nekoliko višji: "
+                    "dodaj eno kakovostno ponovitev na serijo oziroma podaljšaj delovni interval. "
+                    "Breme povečaj šele, ko večkrat dosežeš zgornjo mejo z ustrezno rezervo in tehniko."
+                )
             def equipment_priority(item: str) -> tuple[int, str]:
                 if item in {"dumbbell", "kettlebell", "barbell", "resistance_band"}:
                     return (0, item)
