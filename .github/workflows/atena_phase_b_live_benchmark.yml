@@ -99,7 +99,7 @@ jobs:
               original = case["prompt"]
               first_user = (
                   "KONTEKST TESTNEGA UPORABNIKA (podatki profila; ne sklepaj več, kot piše): "
-                  + profile + "\\n\\nUPORABNIKOVO SPOROČILO: " + original
+                  + profile + "\n\nUPORABNIKOVO SPOROČILO: " + original
               )
               messages = [{"role": "user", "content": first_user}]
               status, body, error = post_chat(messages)
@@ -168,7 +168,7 @@ jobs:
           print(f'BENCHMARK_TRANSPORT_RESULT: {output["responses_received"]}/{len(results)} replies received; Gemini={output["gemini_responses"]}; guardrail={output["server_guardrail_responses"]}')
           if failures:
               raise SystemExit("Some live scenarios did not return a usable reply: " + ", ".join(failures))
-          PYPY
+          PY
       - name: Upload live model responses for quality review
         if: always()
         uses: actions/upload-artifact@v4
