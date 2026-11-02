@@ -130,7 +130,7 @@ def test_server_guardrail_answers_persistence_question_directly():
     ))
     assert reply is not None
     assert "ne posodobi programa" in reply
-    assert "ne morem potrditi" in reply
+    assert "Ne morem potrditi" in reply
 
 
 
