@@ -88,6 +88,46 @@ def _coaching_guardrail_reply(messages):
             "kot shranjeno, dokler je ne potrdi namenski postopek za program oziroma profil."
         )
 
+    # Stable, factual answers for common conceptual questions. These do not create
+    # an individualized prescription and therefore do not trigger the safety gate.
+    if re.search(r"(samo|izključno).{0,20}metcon|metcon.{0,20}(samo|edini|izključno)", lowered):
+        return (
+            "Ne. MetCon je lahko koristen za mešano delovno kapaciteto, vendar sam po sebi "
+            "ne nadomesti sistematičnega razvoja aerobne osnove. Vzdržljivost lahko razvijaš "
+            "z enakomernim aerobnim delom, pragovnimi oziroma VO2max intervali in po potrebi "
+            "MetConom. Razmerje med njimi je odvisno od cilja, izkušenj in regeneracije. "
+            "MetCon ni samodejno škodljiv, vendar lahko prevelik delež intenzivnega dela "
+            "oteži regeneracijo."
+        )
+    if re.search(r"(čim večjo|maximalno|največjo).{0,30}amplitud|amplitud.{0,30}(vsaki|vsaka|največjo)", lowered):
+        return (
+            "Ne. Cilj je čim večja amplituda, ki jo lahko izvedeš nadzorovano, brez bolečine "
+            "in brez kompenzacij. Če pri večjem obsegu izgubiš nadzor ali položaj, se ustavi "
+            "pred to točko. Pri vadbi mobilnosti obseg postopno razvijaj; ne sili v skrajni položaj."
+        )
+    if re.search(r"tempo\\s*3-1-2-0|kaj pomeni tempo", lowered):
+        return (
+            "Tempo 3-1-2-0 pomeni: 3 sekunde ekscentrične faze (spuščanje), 1 sekundo "
+            "premora v spodnjem položaju, 2 sekundi koncentrične faze (dvig) in 0 sekund "
+            "premora na vrhu. To ni univerzalno najboljši tempo. Uporabi ga, kadar pomaga "
+            "pri nadzoru in načrtovanem dražljaju; pri eksplozivni moči mora biti koncentrična "
+            "faza izvedena z največjo namero hitrosti."
+        )
+    if "stabilizacij" in lowered and "hipertrof" in lowered and re.search(r"zakaj|vključ", lowered):
+        return (
+            "Stabilizacijskih vaj ne dodajamo kot obveznega polnila. Vključimo jih, kadar "
+            "povratne informacije pokažejo konkreten primanjkljaj nadzora ali kadar jih "
+            "zahteva določena vaja. Pri hipertrofiji ostajajo v ospredju ustrezno odmerjene "
+            "večsklepne vaje. Preden sestavim tvoj individualni program, moram preveriti: "
+            "ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
+        )
+    if re.search(r"(izpustil|izpuščen).{0,40}(trening|vadb)|dvojni obseg|dvojno količino", lowered):
+        return (
+            "Ne. Izpuščenega treninga praviloma ne nadomeščaj z dvojnim obsegom v naslednji "
+            "vadbi. Nadaljuj po običajnem razporedu; zamujenega treninga ni treba 'loviti'. "
+            "Če si zaradi premora še utrujen ali slabše regeneriran, nadaljuj konservativno."
+        )
+
     no_pain_now = _has_explicit_no_pain_confirmation(latest)
     positive_pain = bool(re.search(
         r"(me boli|boli me|me zaboli|zaboli me|čutim bolečino|občutim bolečino|"
@@ -148,7 +188,7 @@ def _coaching_guardrail_reply(messages):
         r"(program|trening|vadb).{0,50}(pripravi|sestavi|prilagod|zamenj)|"
         r"(kako naj|kako lahko).{0,60}(prilagodim trening|napredujem|povečam obremenitev|"
         r"zamenjam vajo|strukturiram serije|strukturiram trening)|"
-        r"(koliko|kakšne).{0,40}(serij|ponovitev|obremenitev|kilogram|odmor)|"
+        r"(koliko|kakšne).{0,40}(serij|ponovit|obremen|kilogram|odmor)|"
         r"(serij|ponovitev|odmor).{0,40}(eksploziv|moč|trening)|"
         r"(zamenj|alternativ|nadomest).{0,40}(vajo|vaje|počep|izpadni korak|RDL)|"
         r"(težak|težji|individualiziran).{0,30}(program|trening)|"
