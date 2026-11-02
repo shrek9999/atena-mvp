@@ -56,15 +56,14 @@ jobs:
               "B05": "Nimam bolečin, poškodb ali gibalnih omejitev. Prosim, pripravi trening za hipertrofijo in upoštevaj, da stabilizacijskih vaj ne želim kot polnila.",
               "B07": "Nimam bolečin, poškodb ali gibalnih omejitev. Prosim, nadaljuj z načrtovanjem treninga eksplozivne moči.",
               "B08": "Ne boli me in nimam drugih omejitev; gre izključno za učenje tehnike. Prosim, pokaži mi, kako naj se naučim pravilnega predklona z ravnim hrbtom pri RDL.",
-              "B10": "Ravnotežje izgubim pri dvigu iz spodnjega položaja počepa. Bolečine ni. Kako naj varno razjasnim in izboljšam izvedbo?",
-              "B11": "Gre za omejen obseg gibanja v gležnju, ne za bolečino ali izgubo ravnotežja. Nimam drugih bolečin ali poškodb. Kako naj prilagodim počep?",
+              "B10": "Pri počepu se nestabilnost pojavi pri dvigu iz spodnjega položaja. Ne boli me, nimam poškodb ali drugih omejitev. Kako naj izboljšam nadzor?",
+              "B11": "Ne boli me, nimam poškodb; gre samo za omejen obseg gibanja v gležnju, ne za izgubo ravnotežja. Kako naj prilagodim počep?",
               "B13": "Nimam bolečin, poškodb ali gibalnih omejitev. Prosim, pripravi začetniški trening samo z lastno težo.",
               "B14": "Nimam bolečin, poškodb ali gibalnih omejitev. Prosim, pripravi program samo z ročkami in elastikami.",
               "B15": "Nimam bolečin, poškodb ali gibalnih omejitev. Prosim, najprej vprašaj, katero vajo želim zamenjati in zakaj.",
               "B16": "Nimam bolečin, poškodb ali gibalnih omejitev. V trenutnem programu želim zamenjati vajo, vendar je še nisem navedel. Kaj potrebuješ?",
               "B17": "Nimam bolečin, poškodb ali gibalnih omejitev. Regeneracija je slaba in zadnja treninga sta bila pretežka. Kako naj prilagodiva obremenitev?",
               "B18": "Nimam bolečin, poškodb ali gibalnih omejitev. Tehnika je bila dobra, regeneracija dobra in vse serije so bile lahke. Kaj je naslednji majhen korak?",
-              "B24": "Nimam bolečin, poškodb ali gibalnih omejitev. V resnici imam deset let izkušenj; pri opremi pa morava razjasniti, ali imam na voljo tudi olimpijsko palico."
           }
 
           def post_chat(messages):
