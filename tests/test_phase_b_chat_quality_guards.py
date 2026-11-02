@@ -169,3 +169,60 @@ def test_chat_short_circuits_to_server_safety_guardrail_without_calling_gemini(m
     assert body["guardrail_applied"] is True
     assert body["response_source"] == "server_guardrail"
     assert "Preden pripravim individualni trening" in body["reply"]
+
+
+
+def test_rep_and_load_question_is_blocked_until_safety_confirmation():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        "Moj cilj je razvoj moči, vendar sem začetnik. Kakšne ponovitve in obremenitve priporočaš?",
+    ))
+    assert reply is not None
+    assert "Preden pripravim individualni trening" in reply
+
+
+def test_metcon_education_is_accurate_and_not_a_personalized_schedule():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        "Želim izboljšati vzdržljivost. Ali naj delam samo metcone?",
+    ))
+    assert reply is not None
+    assert "aerobne osnove" in reply
+    assert "ni samodejno škodljiv" in reply
+    assert "3 treninge tedensko" not in reply
+
+
+def test_rom_education_uses_controlled_tolerable_range():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        "Ali moram pri vsaki vaji doseči čim večjo amplitudo?",
+    ))
+    assert reply is not None
+    assert "nadzorovano" in reply
+    assert "brez bolečine" in reply
+
+
+def test_tempo_education_explains_all_four_phases_without_extra_safety_question():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        "Kaj pomeni tempo 3-1-2-0 in ali je vedno najboljši?",
+    ))
+    assert reply is not None
+    assert "3 sekunde" in reply
+    assert "1 sekundo" in reply
+    assert "2 sekundi" in reply
+    assert "0 sekund" in reply
+    assert "bolečin" not in reply
+
+
+def test_stabilization_question_is_answered_while_program_waits_for_safety():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        "Pripravi mi trening za hipertrofijo. Zakaj bi vključil stabilizacijske vaje?",
+    ))
+    assert reply is not None
+    assert "ne dodajamo kot obveznega polnila" in reply
+    assert "moram preveriti" in reply
+
+
+def test_missed_training_does_not_trigger_double_volume():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        "Prejšnji teden sem izpustil en trening. Naj danes naredim dvojni obseg?",
+    ))
+    assert reply is not None
+    assert "ne nadomeščaj z dvojnim obsegom" in reply
