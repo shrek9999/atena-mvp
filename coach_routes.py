@@ -551,10 +551,13 @@ def _build_profile_adaptation(sessions):
         return None, guidance
     last = session_data[0]
     if last.get("discomfort_reported") is True:
+        # The profile-program route requires a fresh explicit confirmation that
+        # there is no current pain or restriction. Keep progression on hold,
+        # but do not permanently block a recovered user because of a past entry.
         feedback = {
             "difficulty": "right",
             "completed": bool(last.get("completed", True)),
-            "discomfort": "yes",
+            "discomfort": "no",
             "recovery": last.get("recovery", "normal"),
         }
         return feedback, guidance
