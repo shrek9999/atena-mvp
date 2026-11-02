@@ -342,7 +342,7 @@ def _coaching_guardrail_reply(messages):
                 "Pomembno je tudi, ali se je pojavila oteklina, nestabilnost ali sprememba hoje. "
                 "Če je po preizkusu slabše, ga ne ponavljaj."
             )
-        mild = bool(re.search(r"(blag\\w*|do\\s*3\\s*/\\s*10|[0-3]\\s*/\\s*10)", history_lower))
+        mild = bool(re.search(r"(blag\w*|do\s*3\s*/\s*10|[0-3]\s*/\s*10)", history_lower))
         walks_normally = bool(re.search(
             r"(normalno hodim|lahko hodim brez težav|brez težav hodim)",
             history_lower,
