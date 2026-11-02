@@ -141,3 +141,31 @@ def test_server_guardrail_detects_back_pain_during_rdl():
     assert reply is not None
     assert "ne izvajaj" in reply
     assert "obremenjeno vajo" in reply
+
+
+
+def test_chat_short_circuits_to_server_safety_guardrail_without_calling_gemini(monkeypatch):
+    from flask import Flask
+
+    monkeypatch.setenv("AI_COACH_TEST_TOKEN", "pilot-test-secret")
+    monkeypatch.setenv("GEMINI_API_KEY", "test-api-key")
+
+    def forbidden_model_call(*_args, **_kwargs):
+        raise AssertionError("Gemini must not be called when the server safety gate blocks prescription.")
+
+    monkeypatch.setattr(coach_routes.urllib.request, "urlopen", forbidden_model_call)
+    app = Flask(__name__)
+    app.register_blueprint(coach_routes.coach_bp)
+    response = app.test_client().post(
+        "/coach/chat",
+        headers={"X-Pilot-Token": "pilot-test-secret"},
+        json={"messages": [{
+            "role": "user",
+            "content": "Profil: none reported. Pripravi mi individualni program za hipertrofijo.",
+        }]},
+    )
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["guardrail_applied"] is True
+    assert body["response_source"] == "server_guardrail"
+    assert "Preden pripravim individualni trening" in body["reply"]
