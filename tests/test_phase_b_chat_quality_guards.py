@@ -228,3 +228,34 @@ def test_missed_training_does_not_trigger_double_volume():
     ))
     assert reply is not None
     assert "ne nadomeščaj z dvojnim obsegom" in reply
+
+
+
+def test_structured_profile_form_negative_safety_answer_allows_next_step():
+    profile = (
+        "Moj vadbeni profil:\\n"
+        "- Glavni cilj: mišična masa\\n"
+        "- Izkušnje: začetnik\\n"
+        "- Trenutna bolečina/poškodba/zdravstvena omejitev: ne"
+    )
+    assert coach_routes._has_explicit_safety_clearance(profile)
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        profile,
+        "Moje vprašanje: Sestavi mi trening za celo telo.",
+    ))
+    assert reply is None
+
+
+def test_unknown_profile_safety_answer_still_requires_clarification():
+    profile = (
+        "Moj vadbeni profil:\\n"
+        "- Glavni cilj: mišična masa\\n"
+        "- Trenutna bolečina/poškodba/zdravstvena omejitev: da / nisem prepričan"
+    )
+    assert not coach_routes._has_explicit_safety_clearance(profile)
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        profile,
+        "Moje vprašanje: Sestavi mi trening za celo telo.",
+    ))
+    assert reply is not None
+    assert "Preden pripravim individualni trening" in reply
