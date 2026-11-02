@@ -559,28 +559,31 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 prescription["rest_seconds"] += 30
                 prescription["adjustment_note"] = (
                     "Ker je bil zadnji trening pretežek oziroma regeneracija slabša, "
-                    "je naslednja obremenitev konservativno zmanjšana. Ohrani nadzorovano izvedbo."
+                    "je naslednji vadbeni odmerek konservativno zmanjšan. Ohrani nadzorovano izvedbo."
                 )
             elif progress_load:
                 # One easy report earns only a small, reversible progression:
-                # one additional target rep (or a small time increase), not an
-                # invented kilogram increase. Load rises only after the top of
-                # the rep range is repeatedly achieved with sound technique.
+                # one additional target rep or a small work-time increase. Never
+                # invent a kilogram increase without knowing the actual load.
                 if prescription.get("work_seconds") is not None:
                     ceiling = 1800 if pattern == "locomotion" else 300
                     prescription["work_seconds"] = min(
                         ceiling, int(prescription["work_seconds"] * 1.05)
+                    )
+                    prescription["adjustment_note"] = (
+                        "Ker je bil zadnji trening prelahek, je delovni interval "
+                        "podaljšan za majhen korak. Ohrani predpisano ciljno intenzivnost."
                     )
                 else:
                     bounds = [int(value) for value in prescription.get("reps", "").split("–") if value.isdigit()]
                     if len(bounds) == 2 and bounds[0] < bounds[1]:
                         low, high = bounds
                         prescription["reps"] = f"{low + 1}–{high}"
-                prescription["adjustment_note"] = (
-                    "Ker je bil zadnji trening prelahek, je cilj naslednjič nekoliko višji: "
-                    "dodaj eno kakovostno ponovitev na serijo oziroma podaljšaj delovni interval. "
-                    "Breme povečaj šele, ko večkrat dosežeš zgornjo mejo z ustrezno rezervo in tehniko."
-                )
+                    prescription["adjustment_note"] = (
+                        "Ker je bil zadnji trening prelahek, je cilj naslednjič nekoliko višji: "
+                        "dodaj eno kakovostno ponovitev na serijo. Breme povečaj šele, ko "
+                        "večkrat dosežeš zgornjo mejo z ustrezno rezervo in tehniko."
+                    )
             def equipment_priority(item: str) -> tuple[int, str]:
                 if item in {"dumbbell", "kettlebell", "barbell", "resistance_band"}:
                     return (0, item)
