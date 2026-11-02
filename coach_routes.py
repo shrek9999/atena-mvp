@@ -209,6 +209,47 @@ def _verified_exercise_catalogue_context(messages):
         "unless you ask a clarifying question. Never infer equipment that is not listed."
     )
 
+def _normalize_slovene_coaching_terms(answer):
+    """Correct a small, tested set of recurring literal translations/typos."""
+    replacements = (
+        (r"\\btrilogije\\s*\\(tricepsa\\)", "tricepsa"),
+        (r"\\btrilogije\\b", "tricepsa"),
+        (r"\\bprsni tisk\\b", "potisk za prsi"),
+        (r"\\bsäte\\b", "zadnjice"),
+        (r"\\bzadnji del hrbet\\b", "zadnji del hrbta"),
+        (r"\\bzgornji del hrbet\\b", "zgornji del hrbta"),
+        (r"\\bmišične masa\\b", "mišične mase"),
+        (r"\\bprilezi daljši počitek\\b", "vzemi si daljši počitek"),
+        (r"\\bna session\\b", "na vadbeni dan"),
+    )
+    for pattern, replacement in replacements:
+        answer = re.sub(pattern, replacement, answer, flags=re.IGNORECASE)
+    return answer
+
+
+def _bodyweight_only_program_note(messages):
+    """Add a transparent equipment limitation when no pulling anchor exists."""
+    profile = _profile_from_messages(messages) or {}
+    equipment = set(profile.get("equipment") or [])
+    if not equipment or equipment != {"bodyweight"}:
+        return None
+    user_text = " ".join(
+        item.get("content", "") for item in messages
+        if item.get("role") == "user" and isinstance(item.get("content"), str)
+    ).casefold()
+    if not re.search(r"program|trening|vadb|sestavi|pripravi", user_text):
+        return None
+    return (
+        "Pomembna omejitev opreme: ker imaš na voljo samo lastno težo in ni potrjene varne "
+        "opore, ta program ne vsebuje obremenjenega vlečnega vzorca za hrbet. Ne bom predlagal "
+        "veslanja pod mizo ali improviziranih opor. Za popolnejši razvoj hrbtnih mišic bi "
+        "potreboval elastiko, drog ali drugo stabilno oporo. Pri hipertrofiji je napredovanje "
+        "zgolj z lastno težo omejeno; zahtevnejši vzvodi, enostranske različice, nadzorovan "
+        "tempo in premori lahko pomagajo, vendar ne nadomestijo vedno zunanje obremenitve. "
+        "Tudi predklon z ravnim hrbtom brez dodatne obremenitve ni enakovreden obremenjenemu RDL."
+    )
+
+
 def _coaching_guardrail_reply(messages):
     """Deterministic safety/persistence gate; never rely on model compliance alone."""
     user_texts = [
@@ -389,6 +430,49 @@ def _coaching_guardrail_reply(messages):
             "za učenje tehnike?"
         )
 
+    # Substitution requests are a two-step intake: safety first, then the exact exercise.
+    substitution_intent_texts = []
+    for item in user_texts:
+        text_value = item
+        for marker in (
+            "Moje vprašanje: ",
+            "Nadaljevanje prejšnjega pogovora:\\n",
+            "Prejšnje vprašanje (skrajšano): ",
+        ):
+            if marker in text_value:
+                text_value = text_value.split(marker, 1)[1]
+        if re.search(r"zamenj|nadomest|alternativ|namesto|swap|replace", text_value, re.IGNORECASE):
+            substitution_intent_texts.append(text_value)
+    if substitution_intent_texts:
+        if not _has_explicit_safety_clearance(history):
+            return (
+                "Preden predlagam zamenjavo vaje, moram preveriti varnost: ali imaš trenutno "
+                "kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
+            )
+        intent_text = " ".join(substitution_intent_texts).casefold()
+        named_exercise = False
+        for exercise in load_catalogue():
+            candidates = [exercise.get("name", ""), exercise.get("name_en", "")]
+            for candidate in candidates:
+                candidate = candidate.casefold().strip()
+                if not candidate:
+                    continue
+                words = candidate.split()
+                if candidate in intent_text or any(
+                    " ".join(words[index:index + 2]) in intent_text
+                    for index in range(max(0, len(words) - 1))
+                ):
+                    named_exercise = True
+                    break
+            if named_exercise:
+                break
+        if not named_exercise:
+            return (
+                "V redu, varnost sva preverila. Katero točno vajo želiš zamenjati? Napiši njeno "
+                "ime iz programa, da lahko izberem ustrezno alternativo z enakim gibalnim vzorcem "
+                "in samo z opremo, ki jo imaš."
+            )
+
     prescription_request = bool(re.search(
         r"(pripravi|sestavi|naredi|ustvari).{0,60}(program|trening|vadb)|"
         r"(program|trening|vadb).{0,50}(pripravi|sestavi|prilagod|zamenj)|"
@@ -420,6 +504,20 @@ def _coaching_guardrail_reply(messages):
             "Preden pripravim individualni trening ali predlagam konkretne vaje in "
             "obremenitve, moram preveriti varnost: ali imaš trenutno kakršne koli "
             "bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
+        )
+
+    if (
+        re.search(r"dva treninga sta bila lahka", history_lower)
+        and re.search(r"vsaj tremi ponovitvami v rezervi", history_lower)
+        and _has_explicit_safety_clearance(history)
+    ):
+        return (
+            "Dva lahka treninga in dobra regeneracija lahko upravičita majhen korak naprej, "
+            "če je bila tehnika pri vseh ponovitvah stabilna. Ne bom določal fiksnega povečanja "
+            "v kilogramih brez podatka o konkretni vaji in trenutni obremenitvi. Spremeni samo "
+            "eno spremenljivko naenkrat; izberi najmanjši razpoložljivi korak ali dodaj ponovitev "
+            "znotraj ciljnega razpona. Katero vajo želiš napredovati in s kakšno obremenitvijo "
+            "trenutno delaš?"
         )
     return None
 
@@ -640,6 +738,10 @@ def coach_chat():
         if not answer:
             logger.warning("Gemini returned no text for model %s", model)
             return jsonify({"error": "Model ni vrnil odgovora. Poskusi znova."}), 502
+        answer = _normalize_slovene_coaching_terms(answer)
+        bodyweight_note = _bodyweight_only_program_note(messages)
+        if bodyweight_note and bodyweight_note not in answer:
+            answer += "\\n\\n" + bodyweight_note
         # The coach brand owner is not automatically the chat user.
         answer = re.sub(
             r"^(Pozdravljen|Živjo|Živijo),\s*Grega[!.,]?\s*",
