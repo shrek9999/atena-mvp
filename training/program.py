@@ -6,7 +6,7 @@ from typing import Any
 
 from training.catalogue import get_exercises
 
-SUPPORTED_GOALS = {"hypertrophy", "strength", "general_fitness", "functional", "power", "endurance", "mobility"}
+SUPPORTED_GOALS = {"hypertrophy", "strength", "fat_loss", "general_fitness", "functional", "power", "endurance", "mobility"}
 SUPPORTED_LEVELS = {"beginner", "intermediate", "advanced"}
 SUPPORTED_SESSIONS = {2, 3, 4}
 PATTERN_LABELS = {
@@ -123,6 +123,10 @@ def validate_profile(profile: object) -> dict:
 
 def _session_patterns(session_index: int, sessions: int, goal: str, include_accessories: bool = False, include_stability: bool = False) -> list[str]:
     """Compact full-body templates; trunk-control work is added only when feedback supports it."""
+    if goal == "fat_loss" and sessions >= 3 and session_index >= 2:
+        # Two resistance-focused full-body days remain the foundation. Additional days
+        # add a short aerobic/conditioning session rather than more lifting volume.
+        return ["locomotion", "lunge", "conditioning"]
     if goal == "endurance":
         # Keep a minimum viable session even when no loaded carry equipment exists.
         # Carry is an optional fourth pattern and is omitted when no safe load is available.
@@ -156,6 +160,16 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         sets, reps, rir, rest = 2, "20–30 s", None, 30
     elif goal == "mobility" or pattern in {"mobility", "mobility_stretch"}:
         sets, reps, rir, rest = 2, "5–8", None, 30
+    elif goal == "fat_loss" and pattern == "locomotion":
+        sets, reps, rir, rest = 1, "8 min", None, 0
+    elif goal == "fat_loss" and pattern == "conditioning":
+        kind = exercise.get("endurance_type")
+        if kind == "aerobic":
+            sets, reps, rir, rest = 2, "1 min", None, 60
+        elif kind == "anaerobic":
+            sets, reps, rir, rest = 2, "15–20 s", None, 60
+        else:
+            sets, reps, rir, rest = 2, "20–30 s", None, 60
     elif goal == "endurance" and pattern == "locomotion":
         sets, reps, rir, rest = 1, "20–30 min", None, 0
     elif goal == "endurance" and pattern == "conditioning":
@@ -186,7 +200,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
                 sets, reps, rir, rest = 2, "10–15", 3, 75
             else:
                 sets, reps, rir, rest = 3, "8–12", 3, 90
-        elif goal == "hypertrophy":
+        elif goal in {"hypertrophy", "fat_loss"}:
             if pattern in {"squat", "hinge"}:
                 sets, reps, rir, rest = 3, "8–12", 3, 120
             elif pattern == "lunge" or unilateral:
@@ -216,7 +230,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
             sets, reps, rir, rest = 2, "8–12", 3, 75
         else:
             sets, reps, rir, rest = 3, ("6–8" if unilateral else "6–8"), 2, (120 if unilateral else 120)
-    elif goal == "hypertrophy":
+    elif goal in {"hypertrophy", "fat_loss"}:
         if pattern in {"squat", "hinge"}:
             sets, reps, rir, rest = 3, "6–10", (2 if level != "beginner" else 3), 120 if level == "advanced" else 90
         elif pattern == "lunge" or unilateral:
@@ -240,7 +254,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         tempo, tempo_description, tempo_seconds = "zadržanje", "Zadrži blag do zmeren razteg, dihaj sproščeno in ne sili v končni položaj.", 0
     elif goal == "mobility" or pattern == "mobility":
         tempo, tempo_description, tempo_seconds = "kontrolirano", "Aktivno raziskuj razpoložljivo amplitudo brez sunkov in prisiljevanja.", 4
-    elif goal == "endurance":
+    elif goal == "endurance" or (goal == "fat_loss" and pattern in {"locomotion", "conditioning"}):
         tempo, tempo_description, tempo_seconds = "ritmično", "Ohrani enakomeren ritem in intenzivnost, ki ustreza predpisanemu cilju.", 0
     elif is_power:
         tempo, tempo_description, tempo_seconds = "1–0–X–0", "Nadzorovan začetni položaj; dvig oziroma odriv izvedi hitro in tehnično čisto; med ponovitvami se ponastavi.", 3
@@ -248,7 +262,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         tempo, tempo_description, tempo_seconds = "2–1–2–1", "2 s izteg oziroma odmik · 1 s nadzor · 2 s vrnitev · 1 s ponastavitev.", 6
     elif goal == "strength":
         tempo, tempo_description, tempo_seconds = "2–0–X–0", "2 s nadzorovan spust · brez premora v spodnjem položaju · koncentrično fazo izvedi z maksimalno namero hitrosti (X), vendar brez izgube tehnike · brez premora v vrhu.", 3
-    elif goal == "hypertrophy":
+    elif goal in {"hypertrophy", "fat_loss"}:
         tempo, tempo_description, tempo_seconds = "3–1–2–0", "3 s ekscentrična faza · 1 s nadzor v spodnjem položaju · 2 s koncentrična faza · brez premora v vrhu.", 6
     else:
         tempo, tempo_description, tempo_seconds = "2–0–1–0", "2 s nadzorovan spust · 1 s dvig; ohrani tekočo, tehnično čisto izvedbo.", 3
@@ -261,7 +275,13 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         "tempo_description": tempo_description,
         "tempo_seconds_per_rep": tempo_seconds,
     }
-    if goal == "endurance" and pattern == "locomotion":
+    if goal == "fat_loss" and pattern == "locomotion":
+        prescription.update({"work_seconds": 480, "time_label": "kratka aerobna aktivnost", "effort_target": "Lahkoten do zmeren pogovorni tempo; izvedba naj ostane sproščena in ponovljiva."})
+    elif goal == "fat_loss" and pattern == "conditioning":
+        kind = exercise.get("endurance_type")
+        work_seconds = 60 if kind == "aerobic" else (18 if kind == "anaerobic" else 25)
+        prescription.update({"work_seconds": work_seconds, "time_label": "kratek kondicijski interval", "effort_target": "Nadzorovana intenzivnost; ne izvajaj maksimalno in ne žrtvuj tehnike."})
+    elif goal == "endurance" and pattern == "locomotion":
         prescription.update({"work_seconds": 1200, "time_label": "neprekinjene aerobne aktivnosti", "effort_target": "Zmeren pogovorni tempo; lahko govoriš v stavkih, vendar čutiš pospešeno dihanje."})
     elif goal == "endurance" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
@@ -323,6 +343,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                          and response["completed"] and response["recovery"] != "poor")
     include_stability = bool(response and response.get("movement_control", "none") != "none")
     goal_sources = {
+        "fat_loss": ["strength", "hypertrophy", "general_fitness", "endurance"],
         "functional": ["functional", "general_fitness", "strength", "mobility"],
         "general_fitness": ["general_fitness", "functional", "strength", "endurance"],
         "power": ["power", "strength", "general_fitness"],
@@ -436,7 +457,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 continue
             seen_patterns.add(pattern)
             candidates = by_pattern.get(pattern, [])
-            if p["goal"] == "endurance" and pattern == "locomotion":
+            if p["goal"] in {"endurance", "fat_loss"} and pattern == "locomotion":
                 candidates = [item for item in candidates if item.get("endurance_type") == "aerobic"]
             if not candidates:
                 # A vertical pull is not mandatory when the available catalogue/equipment cannot support it.
@@ -781,7 +802,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 session_patterns_seen.add(item["pattern"])
             pattern_work_sets[item["pattern"]] += item["prescription"]["sets"]
     return {
-        "program_version": "2.6.0",
+        "program_version": "2.7.0",
         "goal": p["goal"],
         "experience": p["experience"],
         "sessions_per_week": p["sessions_per_week"],
@@ -794,19 +815,24 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "equipment_policy": "Brez uteži ne pomeni brez običajnih stabilnih gospodinjskih opor. Stol, kavč, miza, stopnica, brisača ali palica so dovoljeni le, kadar jih profil izrecno vključuje in so varni za uporabo.",
             "endurance_policy": "Vzdržljivost je ločen cilj; aerobne aktivnosti, intervali in mišična vzdržljivost so označeni ločeno.",
             "mobility_policy": "Mobilnost vključuje aktivne gibalne vaje, kontrolirano gibanje v končnih amplitudah in moč skozi razpoložljiv obseg, ne samo pasivnega raztezanja.",
+            "fat_loss_policy": "Pri hujšanju je osnova ohranitev mišične mase in zmogljivosti: dva treninga moči ostaneta jedro programa; ob treh ali štirih treningih dodamo kratko aerobno/kondicijsko enoto. Pri dveh treningih ATENA priporoči dodatno vsakodnevno gibanje, ne pa neselektivnega dodajanja serij. Za zmanjšanje telesne maščobe je potreben vzdržen energijski primanjkljaj; brez ekstremnih diet in brez obljub o lokalnem kurjenju maščobe.",
             "experience_adaptation": (
                 "Vzdržljivost: začetnik gradi predvsem enakomeren aerobni obseg v pogovornem tempu; intervale uvajaj postopno. Naprednejši lahko kombinira daljše aerobne enote, intervale in mišično vzdržljivost, vendar ne vsega maksimalno v isti vadbi."
                 if p["goal"] == "endurance" else
+                "Hujšanje: ohrani kakovostna treninga moči kot osnovo, aerobno delo dodajaj glede na razpoložljiv čas in regeneracijo. Ne povečuj obsega vadbe zgolj zato, da bi porabil čim več kalorij."
+                if p["goal"] == "fat_loss" else
                 "Mobilnost: začetnik začne z aktivnimi, podprtimi in kontroliranimi gibi. Napredovanje temelji na kakovosti, postopnem povečevanju neboleče amplitude in sposobnosti ustvarjanja sile v novih položajih; ne na siljenju v končni obseg."
                 if p["goal"] == "mobility" else
                 "Začetnik: prednost imajo učenje osnovnih gibalnih vzorcev, nadzorovana amplituda in ponovljiva tehnika. Tudi pri cilju moč začni večinoma z 8–12 ponovitvami in približno 2–3 ponovitvami v rezervi; šele z napredovanjem postopno preidi na nižje razpone in večje obremenitve."
                 if p["experience"] == "beginner" else
                 "Intermediate: uporablja bolj specifične razpone glede na cilj; pri glavnih vajah za moč je običajen razpon 5–8 ponovitev, pri hipertrofiji večinoma 6–12. Advanced: pri glavnih vajah za moč lahko uporablja 3–6 ponovitev, ob večji obremenitvi pa zahteva ustrezno tehniko, regeneracijo in daljše odmore."
             ),
-            "tempo": "Tempo je določen glede na cilj: jakost praviloma 2–0–X–0, hipertrofija 3–1–2–0, eksplozivna moč hiter koncentrični del, vzdržljivost ritmično delo, mobilnost pa počasno aktivno raziskovanje obsega. Stabilizacijsko delo se doda ciljno, ne avtomatično.",
+            "tempo": "Tempo je določen glede na cilj: moč praviloma 2–0–X–0, hipertrofija 3–1–2–0, eksplozivna moč hiter koncentrični del, vzdržljivost ritmično delo, mobilnost pa počasno aktivno raziskovanje obsega. Stabilizacijsko delo se doda ciljno, ne avtomatično.",
             "range_of_motion": "Pri vsaki vaji uporabi največjo amplitudo, ki jo omogočata gibljivost in nadzor. Amplitudo postopno razvijaj; ne žrtvuj položaja, stabilnosti ali neboleče izvedbe. Pri mobilnosti kombiniraj aktivno gibanje in moč skozi razpoložljivo amplitudo.",
             "progression": ("Pri aerobni vzdržljivosti postopno povečuj trajanje ali obseg, nato po potrebi intenzivnost; pri intervalih spreminjaj le eno spremenljivko naenkrat. Ohraniti moraš ponovljivo tehniko in regeneracijo."
                 if p["goal"] == "endurance" else
+                "Pri hujšanju ohrani ali postopno izboljšuj delovne obremenitve pri vajah za moč, da podpreš ohranitev mišične mase. Kondicijski obseg povečuj postopno; ne kompenziraj prehrane z nenadnim povečanjem treninga."
+                if p["goal"] == "fat_loss" else
                 "Pri mobilnosti postopno povečuj nadzorovan obseg, kakovost končnega položaja in sposobnost ustvarjanja sile v njem. Ne sili v globino in ne napreduj skozi bolečino."
                 if p["goal"] == "mobility" else
                 "Ko pri vseh serijah dosežeš zgornjo mejo ponovitev in ohraniš predpisano rezervo ter tehniko, povečaj dražljaj: najprej obremenitev, če je na voljo; sicer težjo različico, daljši vzvod, večjo nadzorovano amplitudo ali enostransko izvedbo. Če tehnika ali regeneracija odstopata, obdrži ali zmanjša zahtevnost."
@@ -821,7 +847,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "exercise_frequency": dict(used_counts),
             "primary_muscle_set_exposure": (
                 {key: value for key, value in exposure.items() if value > 0}
-                if p["goal"] in {"hypertrophy", "strength"} else {}
+                if p["goal"] in {"hypertrophy", "strength", "fat_loss"} else {}
             ),
             "time_based_work_seconds": timed_work_seconds,
             "endurance_type_work_seconds": dict(endurance_work_seconds),
@@ -837,9 +863,9 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "Tedenska izpostavljenost mišičnih skupin pri večsklepnih vajah ni enaka številu neposrednih delovnih serij za posamezno mišico.",
         ] + (
             [
-                "Brez zunanjih bremen je dolgoročno povečevanje jakosti in mišične mase omejeno. Program zato uporablja zahtevnejše enonožne in tempo različice; za nadaljnjo progresijo bo sčasoma koristna dodatna obremenitev."
+                "Brez zunanjih bremen je dolgoročno povečevanje moči in mišične mase omejeno. Program zato uporablja zahtevnejše enonožne in tempo različice; za nadaljnjo progresijo bo sčasoma koristna dodatna obremenitev."
             ]
-            if p["goal"] in {"strength", "hypertrophy"}
+            if p["goal"] in {"strength", "hypertrophy", "fat_loss"}
             and not ({"barbell", "dumbbell", "kettlebell"} & available_equipment)
             else []
         ),
