@@ -583,6 +583,76 @@ def _coaching_guardrail_reply(messages):
         )
     return None
 
+def _build_profile_training_context(profile_id, token):
+    """Build a small, authenticated, health-data-free summary of saved training history."""
+    profile_record = store_get_profile(profile_id, token)
+    profile = profile_record.get("profile") if isinstance(profile_record, dict) else {}
+    profile = profile if isinstance(profile, dict) else {}
+    sessions = store_list_sessions(profile_id, token, limit=4)
+
+    goal_labels = {
+        "strength": "moč", "hypertrophy": "mišična masa",
+        "fat_loss": "zmanjšanje telesne maščobe", "general_fitness": "splošna funkcionalna pripravljenost",
+        "functional": "splošna funkcionalna pripravljenost", "power": "eksplozivna moč",
+        "endurance": "kondicija in vzdržljivost", "mobility": "mobilnost",
+    }
+    experience_labels = {
+        "beginner": "začetnik", "intermediate": "nekaj izkušenj", "advanced": "napreden vadeči",
+    }
+    lines = [
+        "AUTHENTICATED SAVED ATENA PROFILE AND TRAINING HISTORY",
+        "This context was loaded server-side after validating the user's profile access token.",
+        "It is authoritative structured history, not a model-generated recollection.",
+        "Profile goal: " + goal_labels.get(profile.get("goal"), str(profile.get("goal") or "not recorded")),
+        "Experience: " + experience_labels.get(profile.get("experience"), str(profile.get("experience") or "not recorded")),
+        "Weekly sessions: " + str(profile.get("sessions_per_week") or "not recorded"),
+        "Session time frame: " + str(profile.get("session_minutes") or "not recorded") + " min",
+        "Available equipment: " + ", ".join(profile.get("equipment") or []) if isinstance(profile.get("equipment"), list) else "Available equipment: not recorded",
+        "RECENT RECORDED SESSIONS (newest first):",
+    ]
+    valid_sessions = [
+        item for item in sessions
+        if isinstance(item, dict) and isinstance(item.get("session"), dict)
+    ]
+    if not valid_sessions:
+        lines.append("No completed training sessions are stored yet.")
+    for wrapper in valid_sessions[:4]:
+        session = wrapper["session"]
+        date_label = str(wrapper.get("session_date") or "date not recorded")
+        status = "completed" if session.get("completed") is True else "not marked complete"
+        summary = (
+            f"- {date_label}: {session.get('duration_minutes', '?')} min; "
+            f"difficulty={session.get('difficulty', 'not recorded')}; "
+            f"recovery={session.get('recovery', 'not recorded')}; {status}."
+        )
+        lines.append(summary)
+        exercise_lines = []
+        for entry in (session.get("exercises") or [])[:6]:
+            if not isinstance(entry, dict):
+                continue
+            exercise = get_exercise(entry.get("exercise_id", ""))
+            if not exercise:
+                continue
+            name = "Predklon z ravnim hrbtom (RDL)" if exercise.get("id") == "romanian_deadlift" else exercise.get("name", exercise["id"])
+            details = [f"{entry.get('sets_completed', '?')} series"]
+            if entry.get("reps_completed") is not None:
+                details.append(f"{entry['reps_completed']} reps per set (recorded average)")
+            if entry.get("work_seconds_completed") is not None:
+                details.append(f"{entry['work_seconds_completed']} work seconds")
+            if entry.get("load_kg") is not None:
+                details.append(f"{entry['load_kg']:g} kg")
+            if entry.get("rir") is not None:
+                details.append(f"RIR {entry['rir']}")
+            exercise_lines.append("  • " + name + ": " + ", ".join(details))
+        lines.extend(exercise_lines or ["  • No catalogue exercise details recorded."])
+
+    lines.append(
+        "Use this only as training continuity context. Distinguish recorded performance from planned work; "
+        "do not invent missing loads, repetitions or outcomes. No pain, diagnosis or other health data is included."
+    )
+    return "\n".join(lines)[:3200]
+
+
 SYSTEM_PROMPT = """You are ATENA, Grega Jenko's pilot AI fitness coach. Reply in natural, grammatically correct Slovenian unless the user uses another language. Use clear, idiomatic wording, correct Slovenian grammar and punctuation, and concise headings/lists where helpful. Avoid awkward literal translations, excessive English jargon, and unsupported certainty.
 
 ROLE AND METHOD
@@ -685,8 +755,28 @@ def coach_chat():
     if not api_key:
         return jsonify({"error": "Pilot še ni aktiviran: skrbnik mora na strežniku nastaviti GEMINI_API_KEY."}), 503
     payload = request.get_json(silent=True)
-    if not isinstance(payload, dict):
-        return jsonify({"error": "Pričakovan je JSON objekt."}), 400
+    if not isinstance(payload, dict) or set(payload) - {"messages", "profile_id"}:
+        return jsonify({"error": "Pričakovan je JSON objekt z dovoljenimi polji."}), 400
+    profile_context = ""
+    profile_id = payload.get("profile_id")
+    if profile_id is not None:
+        if not isinstance(profile_id, str) or len(profile_id) > 64:
+            return jsonify({"error": "ID profila ni veljaven."}), 400
+        try:
+            normalized_profile_id = str(uuid.UUID(profile_id))
+        except (ValueError, TypeError, AttributeError):
+            return jsonify({"error": "ID profila ni veljaven."}), 400
+        if normalized_profile_id != profile_id.lower():
+            return jsonify({"error": "ID profila ni veljaven."}), 400
+        profile_token = _profile_token()
+        if not profile_token:
+            return _profile_auth_error()
+        try:
+            profile_context = _build_profile_training_context(normalized_profile_id, profile_token)
+        except ProfileNotFound:
+            return _profile_auth_error()
+        except StorageUnavailable as exc:
+            return _storage_error(exc)
     messages = payload.get("messages")
     if not isinstance(messages, list) or not messages or len(messages) > MAX_MESSAGES:
         return jsonify({"error": "Pošlji od 1 do 12 sporočil."}), 400
@@ -699,6 +789,8 @@ def coach_chat():
             return jsonify({"error": "Sporočilo je prazno ali predolgo (največ 1800 znakov)."}), 400
         contents.append({"role": item["role"], "parts": [{"text": content.strip()}]})
     system_prompt = SYSTEM_PROMPT
+    if profile_context:
+        system_prompt += "\n\n" + profile_context
     user_history_text = "\n".join(
         item.get("content", "") for item in messages if item.get("role") == "user"
     )
