@@ -5,8 +5,12 @@ on:
       - "pilot/website-ai-coach"
     paths:
       - "evaluations/phase_b_live_scenarios.json"
+      - "coach_routes.py"
       - ".github/workflows/atena_phase_b_live_benchmark.yml"
   workflow_dispatch:
+concurrency:
+  group: atena-phase-b-live-benchmark
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
