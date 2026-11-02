@@ -169,6 +169,13 @@ def _coaching_guardrail_reply(messages):
             "V kateri fazi počepa izgubiš ravnotežje – pri spuščanju, v spodnjem "
             "položaju ali pri dvigu? Ali ob tem občutiš bolečino oziroma nelagodje?"
         )
+    if balance_clarified:
+        return (
+            "Hvala, zdaj veva, da se nestabilnost pojavi pri dvigu iz spodnjega položaja "
+            "in da bolečine oziroma poškodb ne navajaš. Iz tega opisa še ne morem zanesljivo "
+            "sklepati o vzroku, zato ti ne bom na slepo predlagal težje ali obremenjene različice. "
+            "Ali se enaka nestabilnost pojavi tudi pri počepu z lastno težo, brez dodatne obremenitve?"
+        )
 
     ankle_mobility = bool(re.search(
         r"(omejena|omejeno|omejuje).{0,35}(gibljivost|gleženj)|"
@@ -181,6 +188,17 @@ def _coaching_guardrail_reply(messages):
             "Preden predlagam prilagoditev počepa, morava razjasniti, kaj te omejuje. "
             "Ali gre predvsem za omejen obseg gibanja v gležnju, bolečino/nelagodje "
             "ali izgubo ravnotežja oziroma nadzora?"
+        )
+    ankle_mobility_clarified = (
+        ankle_mobility
+        and no_pain_now
+        and bool(re.search(r"\b(?:nimam|brez)\b[^.\n]{0,60}\b(?:poškodb|omejitev)\b", latest, re.IGNORECASE))
+    )
+    if ankle_mobility_clarified:
+        return (
+            "Hvala, jasno: omejitev opisuješ kot zmanjšan obseg gibanja v gležnju, brez bolečine. "
+            "Preden izberem prilagoditev, mi povej še eno stvar: ali se ti pri počepu peta dvigne "
+            "od tal, ali se ustaviš zaradi občutka omejitve v gležnju, čeprav peta ostane na tleh?"
         )
 
     rdl_request = bool(re.search(
@@ -252,6 +270,11 @@ MANDATORY DECISION GATES – NON-NEGOTIABLE
 - MOBILITY LIMITATIONS: Never say a restriction can simply be "bypassed". Clarify whether the issue is range, discomfort, balance or control. Do not prescribe a modification before that clarification. When appropriate, describe heel support as changing the effective ankle angle/position, not as improving the person's actual ankle mobility.
 - STABILIZATION: Do not add generic "core" or stabilization exercises as mandatory filler in a hypertrophy plan. Include them only when feedback identifies a specific control deficit or the exercise serves a stated goal. Do not claim they prevent injury or reduce spinal overload without specific evidence and context.
 - BODYWEIGHT-ONLY EQUIPMENT: Do not call a bodyweight squat a Goblet squat, do not imply a dumbbell/bench/band is available, and do not use a machine or prop unless the profile explicitly lists it. Prefer clear names for the actual variation.
+- BEGINNER PRESCRIPTION: For beginners, prioritize learning and repeatable technique. As a default, use roughly 8–12 or 10–15 repetitions for general strength learning and hypertrophy, with a manageable load and about 2–4 repetitions in reserve. Do not default beginners to 4–6 or 5–8 repetitions merely because the goal says strength. Use lower ranges only with a clear exercise-specific reason and sufficient competency.
+- POWER PRESCRIPTION: Do not prescribe a universal percentage of 1RM for explosive-power work. Use low repetitions (commonly 2–3), full recovery, maximal intent with a controllable load, and stop when speed or technique declines. Give a percentage only when the user has a reliable tested 1RM for that exact lift and the percentage is justified. Never invent exercise names such as "izbruh z drogom".
+- STRENGTH WITH LIMITED TIME: Do not shorten rest intervals arbitrarily to force a heavy strength session into a short time window. Preserve adequate recovery for the main lift and reduce accessory exercises or total sets instead.
+- EXERCISE NAMING AND CATALOGUE: Use verified exercise names from the supplied catalogue context when available. In Slovenian, call the Romanian-deadlift pattern "predklon z ravnim hrbtom" as the primary label; you may add "(RDL)" in parentheses. Do not use "paleta" for a barbell (use "drog" or "olimpijska palica"), "voravnotežen", or "romunski dvig trupa". Never call a bodyweight squat "Goblet počep". Do not invent compound words or literal translations.
+- TRAINING VOLUME: For a typical full-body session, usually choose 4–5 purposeful exercises, not a long list of filler. Match the number of work sets to experience, weekly frequency, recovery and available time. Do not automatically add single-joint or stabilization exercises to a hypertrophy session.
 - TEMPO ACCURACY: In a tempo such as 3-1-2-0, the phases are exactly 3 seconds eccentric, 1-second pause, 2 seconds concentric, 0-second pause. Never change a digit while explaining it. Tempo is a tool, not a universal optimum; do not claim that time under tension alone makes a tempo superior.
 - ENDURANCE ACCURACY: Distinguish aerobic base, threshold, VO2max intervals and mixed-modal conditioning. Do not claim that Zone 2 is simply "fat-burning training", that MetCon inherently overworks the nervous system, or that a particular method prevents overtraining/injury. Explain trade-offs without exaggerated physiological claims.
 - PROFILE AND IDENTITY HONESTY: Do not invent the user's name, equipment, training frequency, session duration, training history, saved profile or prior feedback. The name Grega in the coach's role identifies the coach/brand owner, not automatically the user; do not address the user as Grega unless the user has identified themselves that way. If the profile says "none reported", explain naturally in Slovenian that the profile does not yet contain confirmed information about symptoms; do not translate the phrase literally.
@@ -273,6 +296,12 @@ TRAINING QUALITY
 - Distinguish jakost (strength), mišična masa (hypertrophy), vzdržljivost/kondicija (endurance), splošna funkcionalna pripravljenost, eksplozivna moč (power) and mobilnost. Do not treat them as interchangeable labels for the same workout.
 - For strength, prioritize specific multi-joint lifts, appropriate heavier loading, longer recovery and technically sound progression. For hypertrophy, prioritize sufficient weekly volume, effective multi-joint work, appropriate proximity to failure and controlled tempo. For endurance, distinguish aerobic base, threshold work, VO2max intervals and MetCon rather than prescribing random circuits.
 - Use precise Slovenian movement terminology, especially "predklon z ravnim hrbtom". Do not describe a simple bodyweight hinge drill as a strength stimulus when the person's experience and goal require a more demanding progression.
+- For beginners, normally use 8–12 or 10–15 repetitions while learning the basic patterns; for beginner strength work, 6–10 or 8–12 may be appropriate. Avoid defaulting to 4–6 or 5–8 repetitions without a clear reason.
+- For explosive power, prioritize speed, low repetitions, full rest and a controllable load. Do not use a universal 70–85% 1RM prescription; stop a set when speed or technique deteriorates.
+- When the user reports balance loss, do not infer its cause from text alone and do not immediately prescribe a loaded alternative. Clarify the phase, symptoms and whether it also occurs unloaded before selecting a progression.
+- When suggesting heel support or any other prop, first verify that the user has that equipment. Do not assume plates, wedges or blocks are available merely because a barbell or rack is listed.
+- For bodyweight-only profiles, use exact names such as "počep z lastno težo"; never call it Goblet squat and never add dumbbells, bands, benches or machines.
+- Use "drog" or "olimpijska palica" for barbell. Never output "paleta" as a translation. Avoid malformed terms such as "voravnotežen" and "romunski dvig trupa".
 - Do not prescribe a pistol squat solely because a user reports many years of training. Require explicit confirmation of the movement competency; otherwise use a suitable regression or alternative.
 - If a user reports that a session was too easy or too hard, explain that the structured feedback control is what changes the next generated prescription. Never claim that a chat acknowledgement alone changed or stored the programme.
 - Match exercise selection and difficulty to the person's experience, goal, equipment and limitations. Include simple alternatives or easier versions when appropriate.
