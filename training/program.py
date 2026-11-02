@@ -508,6 +508,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 if pattern == "hinge" and p["experience"] == "beginner":
                     has_dumbbell = "dumbbell" in available_equipment
                     has_loaded_hinge = bool({"dumbbell", "kettlebell", "barbell"} & available_equipment)
+                    if not has_loaded_hinge and item["id"] == "supported_single_leg_rdl":
+                        return -25
                     if not has_loaded_hinge and item["id"] == "bodyweight_hip_hinge":
                         return -20
                     if has_dumbbell and item["id"] == "dumbbell_deadlift":
@@ -833,5 +835,12 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "Ocena trajanja je približek; dejanski čas je odvisen od hitrosti izvedbe, menjave opreme in individualnih odmorov.",
             "Katalog ne ocenjuje zdravstvenih stanj. Omejitve in simptome mora pred izbiro vaj pregledati trener oziroma ustrezen zdravstveni strokovnjak.",
             "Tedenska izpostavljenost mišičnih skupin pri večsklepnih vajah ni enaka številu neposrednih delovnih serij za posamezno mišico.",
-        ],
+        ] + (
+            [
+                "Brez zunanjih bremen je dolgoročno povečevanje jakosti in mišične mase omejeno. Program zato uporablja zahtevnejše enonožne in tempo različice; za nadaljnjo progresijo bo sčasoma koristna dodatna obremenitev."
+            ]
+            if p["goal"] in {"strength", "hypertrophy"}
+            and not ({"barbell", "dumbbell", "kettlebell"} & available_equipment)
+            else []
+        ),
     }
