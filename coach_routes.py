@@ -535,6 +535,40 @@ def export_coach_profile(profile_id):
 
 
 
+def _build_profile_adaptation(sessions):
+    """Normalize stored session wrappers and gate progression on recorded history."""
+    session_data = [
+        item.get("session", {})
+        for item in sessions
+        if isinstance(item, dict) and isinstance(item.get("session"), dict)
+    ]
+    guidance = assess_next_step(session_data)
+    if not session_data:
+        return None, guidance
+    last = session_data[0]
+    if last.get("discomfort_reported") is True:
+        feedback = {
+            "difficulty": "right",
+            "completed": bool(last.get("completed", True)),
+            "discomfort": "yes",
+            "recovery": last.get("recovery", "normal"),
+        }
+        return feedback, guidance
+    difficulty = {"easy": "easy", "moderate": "right", "hard": "hard"}.get(
+        last.get("difficulty"), "right"
+    )
+    if difficulty == "easy" and not guidance.get("progression_allowed", False):
+        difficulty = "right"
+    feedback = {
+        "difficulty": difficulty,
+        "completed": bool(last.get("completed", True)),
+        "discomfort": "no",
+        "recovery": last.get("recovery", "normal"),
+        "movement_control": "none",
+    }
+    return feedback, guidance
+
+
 @coach_bp.route("/coach/profile/<profile_id>/program", methods=["POST", "OPTIONS"])
 def coach_profile_program(profile_id):
     """Build the next programme from the saved profile and most recent logged feedback."""
@@ -556,30 +590,7 @@ def coach_profile_program(profile_id):
         # Use enough history to enforce the same progression gate shown in the
         # adaptation endpoint: two completed, easy sessions with RIR >= 3.
         sessions = store_list_sessions(profile_id, token, limit=3)
-        adaptation = assess_next_step(sessions)
-        feedback = None
-        if sessions:
-            last = sessions[0].get("session", {})
-            if last.get("discomfort_reported") is True:
-                feedback = {
-                    "difficulty": "right",
-                    "completed": bool(last.get("completed", True)),
-                    "discomfort": "yes",
-                    "recovery": last.get("recovery", "normal"),
-                }
-            else:
-                difficulty = {"easy": "easy", "moderate": "right", "hard": "hard"}.get(
-                    last.get("difficulty"), "right"
-                )
-                if difficulty == "easy" and not adaptation.get("progression_allowed", False):
-                    difficulty = "right"
-                feedback = {
-                    "difficulty": difficulty,
-                    "completed": bool(last.get("completed", True)),
-                    "discomfort": "no",
-                    "recovery": last.get("recovery", "normal"),
-                    "movement_control": "none",
-                }
+        feedback, adaptation = _build_profile_adaptation(sessions)
         result = generate_program(profile["profile"], feedback=feedback)
         return jsonify({
             "program": result,
@@ -607,8 +618,9 @@ def coach_training_adaptation(profile_id):
     try:
         profile = store_get_profile(profile_id, token)
         sessions = store_list_sessions(profile_id, token, limit=3)
+        _feedback, adaptation = _build_profile_adaptation(sessions)
         return jsonify({
-            "adaptation": assess_next_step(sessions),
+            "adaptation": adaptation,
             "source": "recent_recorded_training_feedback",
             "automatic_program_changes": False,
         }), 200
