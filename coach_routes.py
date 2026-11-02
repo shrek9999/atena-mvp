@@ -70,23 +70,34 @@ def _has_explicit_safety_clearance(text):
     return any(re.search(pattern, text, re.IGNORECASE) for pattern in patterns)
 
 
-def _verified_exercise_catalogue_context(messages):
-    """Return a small equipment-, goal- and experience-filtered exercise list for Gemini."""
+def _profile_from_messages(messages):
+    user_text = "\n".join(
+        item.get("content", "") for item in messages if item.get("role") == "user"
+    )
+    for match in re.finditer(r'\{[^{}]*"equipment"\s*:\s*\[[^\]]*\][^{}]*\}', user_text):
+        try:
+            profile = json.loads(match.group(0))
+        except (TypeError, json.JSONDecodeError):
+            continue
+        if isinstance(profile, dict) and isinstance(profile.get("equipment"), list):
+            return profile
+    return {}
+
+
+def _profile_available_equipment(messages):
+    """Use structured equipment as authoritative; use text aliases only without a structured profile."""
+    profile = _profile_from_messages(messages)
+    if isinstance(profile.get("equipment"), list):
+        return {
+            value for value in profile["equipment"]
+            if isinstance(value, str) and value.strip()
+        }
+
     user_text = "\n".join(
         item.get("content", "") for item in messages if item.get("role") == "user"
     )
     lowered = user_text.casefold()
     available = set()
-
-    # Prefer structured profile fields when the UI or benchmark supplies JSON.
-    for match in re.finditer(r'"equipment"\s*:\s*(\[[^\]]*\])', user_text, re.IGNORECASE):
-        try:
-            values = json.loads(match.group(1))
-        except (TypeError, json.JSONDecodeError):
-            continue
-        if isinstance(values, list):
-            available.update(value for value in values if isinstance(value, str))
-
     aliases = {
         "bodyweight": ("lastno težo", "lastna teža", "brez opreme", "bodyweight"),
         "dumbbell": ("ročk", "dumbbell"),
@@ -118,27 +129,47 @@ def _verified_exercise_catalogue_context(messages):
             "heel_wedge", "slant_board", "chair", "step", "rowing_machine",
             "air_bike", "ski_erg", "jump_rope",
         })
+    return available
+
+
+def _verified_exercise_catalogue_context(messages):
+    """Return a small equipment-, goal- and experience-filtered exercise list for Gemini."""
+    user_text = "\n".join(
+        item.get("content", "") for item in messages if item.get("role") == "user"
+    )
+    lowered = user_text.casefold()
+    profile = _profile_from_messages(messages)
+    available = _profile_available_equipment(messages)
     if not available:
         return ""
 
     goals = set()
-    if "hypertrophy" in lowered or "hipertrof" in lowered or "mišičn" in lowered:
-        goals.add("hypertrophy")
-    if "strength" in lowered or "moč" in lowered or "jakost" in lowered:
-        goals.add("strength")
-    if "endurance" in lowered or "vzdržljiv" in lowered:
-        goals.add("endurance")
-    if "power" in lowered or "eksploziv" in lowered:
-        goals.add("power")
-    if "general_fitness" in lowered or "splošn" in lowered or "funkcionaln" in lowered:
-        goals.add("general_fitness")
+    goal_value = profile.get("goal")
+    if isinstance(goal_value, str) and goal_value.strip():
+        goals.add(goal_value.strip().casefold())
+    else:
+        if "hypertrophy" in lowered or "hipertrof" in lowered or "mišičn" in lowered:
+            goals.add("hypertrophy")
+        if "strength" in lowered or "moč" in lowered or "jakost" in lowered:
+            goals.add("strength")
+        if "endurance" in lowered or "vzdržljiv" in lowered:
+            goals.add("endurance")
+        if "power" in lowered or "eksploziv" in lowered:
+            goals.add("power")
+        if "general_fitness" in lowered or "splošn" in lowered or "funkcionaln" in lowered:
+            goals.add("general_fitness")
 
-    if "beginner" in lowered or "začetnik" in lowered:
+    experience = str(profile.get("experience", "")).casefold()
+    if experience in {"beginner", "začetnik"}:
+        levels = {"beginner"}
+    elif experience in {"advanced", "napreden", "napredni"}:
+        levels = {"beginner", "intermediate", "advanced"}
+    elif experience in {"intermediate", "srednji", "srednje"}:
+        levels = {"beginner", "intermediate"}
+    elif "beginner" in lowered or "začetnik" in lowered:
         levels = {"beginner"}
     elif "advanced" in lowered or "napred" in lowered:
         levels = {"beginner", "intermediate", "advanced"}
-    elif "intermediate" in lowered or "srednje" in lowered:
-        levels = {"beginner", "intermediate"}
     else:
         levels = {"beginner", "intermediate"}
 
@@ -177,7 +208,6 @@ def _verified_exercise_catalogue_context(messages):
         + "\nUse the exact Slovenian names above. Recommend only exercises from this list "
         "unless you ask a clarifying question. Never infer equipment that is not listed."
     )
-
 
 def _coaching_guardrail_reply(messages):
     """Deterministic safety/persistence gate; never rely on model compliance alone."""
@@ -502,29 +532,7 @@ def coach_chat():
     if substitution_request:
         # Supply a compact, equipment-filtered catalogue excerpt so the language
         # model can discuss real alternatives instead of guessing exercise names.
-        profile_text = "\n".join(
-            item.get("content", "") for item in messages if item.get("role") == "user"
-        ).casefold()
-        available = {"bodyweight"}
-        if "polno opremljen fitnes" in profile_text:
-            available.update({
-                "barbell", "rack", "dumbbell", "bench", "cable", "pull_up_bar",
-                "kettlebell", "dip_bars", "box", "rowing_machine", "ski_erg",
-                "air_bike", "sled", "jump_rope", "gymnastic_rings",
-                "suspension_trainer", "step", "weight_plate",
-            })
-        elif "ročke ali elastike" in profile_text:
-            available.update({"dumbbell", "resistance_band"})
-        # Structured profiles may list equipment IDs instead of prose labels.
-        for equipment in (
-            "bodyweight", "dumbbell", "barbell", "rack", "bench",
-            "resistance_band", "cable", "pull_up_bar", "kettlebell",
-            "box", "weight_plate", "heel_wedge", "slant_board",
-            "chair", "step", "rowing_machine", "air_bike", "ski_erg",
-            "jump_rope",
-        ):
-            if f'"{equipment}"' in profile_text:
-                available.add(equipment)
+        available = _profile_available_equipment(messages) or {"bodyweight"}
         current_names = set()
         for message in messages:
             content = message.get("content", "")
