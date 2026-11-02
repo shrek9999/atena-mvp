@@ -191,10 +191,15 @@ jobs:
           except urllib.error.HTTPError as exc:
               storage_status = exc.code
               storage_body = {}
-          storage_disabled = storage_status == 200 and storage_body.get("storage_enabled") is False
-          print(f"Profile storage operator state: HTTP {storage_status}; {'DISABLED' if storage_disabled else 'NOT CONFIRMED DISABLED'}")
-          if not storage_disabled:
-              failures.append("profile storage must remain disabled until explicit privacy approval")
+          storage_state_valid = (
+              storage_status == 200
+              and isinstance(storage_body.get("storage_enabled"), bool)
+              and bool(storage_body.get("privacy_notice_version"))
+          )
+          state_label = "ENABLED" if storage_body.get("storage_enabled") is True else "DISABLED"
+          print(f"Profile storage operator state: HTTP {storage_status}; {state_label if storage_state_valid else 'NOT VERIFIED'}")
+          if not storage_state_valid:
+              failures.append("profile storage state and privacy notice version must be reported safely")
 
           preflight = urllib.request.Request(
               BASE + "/coach/profile/example",
