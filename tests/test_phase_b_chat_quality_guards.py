@@ -508,3 +508,56 @@ def test_chat_route_rejects_invalid_profile_access_without_calling_model(monkeyp
     )
     assert response.status_code == 403
     assert "Dostop do profila ni pravilen" in response.get_json()["error"]
+
+
+def test_set_by_set_exercise_log_derives_conservative_aggregates():
+    entry, error = coach_routes._normalize_logged_exercise({
+        "exercise_id": "squat_goblet",
+        "set_results": [
+            {"reps": 10, "load_kg": 20, "rir": 3},
+            {"reps": 10, "load_kg": 22.5, "rir": 2},
+            {"reps": 9, "load_kg": 22.5, "rir": 1},
+        ],
+    })
+    assert error is None
+    assert entry["sets_completed"] == 3
+    assert entry["reps_completed"] == 10
+    assert entry["load_kg"] == 21.67
+    assert entry["rir"] == 1
+    assert len(entry["set_results"]) == 3
+
+
+def test_set_by_set_time_intervals_are_supported():
+    entry, error = coach_routes._normalize_logged_exercise({
+        "exercise_id": "mountain_climber",
+        "set_results": [
+            {"work_seconds": 45},
+            {"work_seconds": 60},
+        ],
+    })
+    assert error is None
+    assert entry["sets_completed"] == 2
+    assert entry["work_seconds_completed"] == 52
+
+
+def test_set_by_set_log_rejects_mixed_rep_and_time_rows():
+    entry, error = coach_routes._normalize_logged_exercise({
+        "exercise_id": "squat_goblet",
+        "set_results": [{"reps": 10}, {"work_seconds": 30}],
+    })
+    assert entry is None
+    assert "enako vrsto izvedbe" in error
+
+
+def test_legacy_exercise_log_format_remains_supported():
+    entry, error = coach_routes._normalize_logged_exercise({
+        "exercise_id": "squat_goblet",
+        "sets_completed": 3,
+        "reps_completed": 10,
+        "load_kg": 20,
+        "rir": 2,
+    })
+    assert error is None
+    assert entry["sets_completed"] == 3
+    assert entry["reps_completed"] == 10
+    assert "set_results" not in entry
