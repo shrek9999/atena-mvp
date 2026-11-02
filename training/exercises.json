@@ -1885,7 +1885,7 @@
   },
   {
     "id": "dumbbell_squat_side",
-    "name": "Počep z ročkama ob telesu (redka različica)",
+    "name": "Počep z ročkama ob telesu",
     "name_en": "Dumbbell squat at sides",
     "pattern": "squat",
     "joint_type": "multi_joint",
