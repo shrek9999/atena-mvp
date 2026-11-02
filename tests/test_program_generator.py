@@ -379,7 +379,7 @@ def test_beginner_without_weights_still_practises_the_hinge_pattern():
     })
     hinge = [ex for session in plan["sessions"] for ex in session["exercises"] if ex["pattern"] == "hinge"]
     assert hinge
-    assert all(ex["exercise_id"] == "bodyweight_hip_hinge" for ex in hinge)
+    assert all(ex["exercise_id"] == "supported_single_leg_rdl" for ex in hinge)
 
 
 def test_beginner_with_dumbbells_uses_a_loaded_beginner_hinge():
