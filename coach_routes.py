@@ -143,12 +143,12 @@ def coach_chat():
         re.IGNORECASE,
     ))
     rdl_technique_request = bool(re.search(
-        r"\\bRDL\\b|romunsk(?:i|ega|em)\\s+mrtv(?:i|ega|em)\\s+dvig|predklon\\s+z\\s+ravnim\\s+hrbtom|raven\\s+hrbet|zaokrož(?:en|anj)",
+        r"\bRDL\b|romunsk(?:i|ega|em)\s+mrtv(?:i|ega|em)\s+dvig|predklon\s+z\s+ravnim\s+hrbtom|raven\s+hrbet|zaokrož(?:en|anj)",
         latest_user_text,
         re.IGNORECASE,
     ))
     if rdl_technique_request:
-        system_prompt += "\\n\\n" + RDL_TECHNIQUE_PROTOCOL
+        system_prompt += "\n\n" + RDL_TECHNIQUE_PROTOCOL
     if substitution_request:
         # Supply a compact, equipment-filtered catalogue excerpt so the language
         # model can discuss real alternatives instead of guessing exercise names.
