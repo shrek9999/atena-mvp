@@ -186,9 +186,9 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
                 sets, reps, rir, rest = 3, "8–12", 3, 90
         elif goal == "hypertrophy":
             if pattern in {"squat", "hinge"}:
-                sets, reps, rir, rest = 3, "10–15", 3, 120
+                sets, reps, rir, rest = 3, "8–12", 3, 120
             elif pattern == "lunge" or unilateral:
-                sets, reps, rir, rest = 2, "10–12", 3, 90
+                sets, reps, rir, rest = 2, "8–10", 3, 90
             elif pattern in {"vertical_push", "vertical_pull"}:
                 sets, reps, rir, rest = 2, "10–15", 3, 90
             elif pattern in {"hip_extension", "carry"}:
@@ -520,7 +520,26 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             if p["goal"] == "endurance" and effective_pattern == "locomotion":
                 # Reserve time for warm-up, transitions and interval work; locomotion is a flexible aerobic block.
                     prescription["work_seconds"] = max(600, int(p["session_minutes"] * 15))
-            if reduce_load:
+            if reduce_load and response["recovery"] == "poor" and response["difficulty"] != "hard" and response["completed"]:
+                # Poor recovery alone trims only optional training cost; preserve
+                # accessory and non-compound work unless the session was also hard.
+                is_compound = (
+                    not candidate["single_joint"]
+                    and pattern not in {
+                        "trunk_stability", "anti_rotation", "mobility",
+                        "mobility_stretch", "conditioning", "locomotion", "hip_extension"
+                    }
+                )
+                if is_compound and prescription.get("sets", 1) > 2:
+                    prescription["sets"] -= 1
+                    if prescription.get("rir") is not None:
+                        prescription["rir"] = min(4, prescription["rir"] + 1)
+                    prescription["rest_seconds"] += 30
+                    prescription["adjustment_note"] = (
+                        "Regeneracija je bila slabša, zato je zmanjšan samo del glavnega "
+                        "večsklepnega volumna; ostalo delo ostaja nespremenjeno."
+                    )
+            elif reduce_load:
                 # A "too hard" report must change the actual next prescription,
                 # including aerobic and mobility work, not only its explanatory text.
                 if prescription.get("sets", 1) > 2:
