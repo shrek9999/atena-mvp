@@ -5,13 +5,13 @@ def test_system_prompt_has_non_bypassable_safety_gate():
     prompt = coach_routes.SYSTEM_PROMPT
     assert "MANDATORY DECISION GATES – NON-NEGOTIABLE" in prompt
     assert '"none reported"' in prompt
-    assert "ask one concise safety question and STOP" in prompt
-    assert "do not include an exercise prescription" in prompt
+    assert "ask one concise safety question and stop before giving a demanding individualized prescription" in prompt
+    assert "Do not treat mild, familiar discomfort as an automatic ban on all training" in prompt
 
 
 def test_system_prompt_blocks_loaded_substitution_before_pain_clarification():
     prompt = coach_routes.SYSTEM_PROMPT
-    assert "first advise stopping that painful movement" in prompt
+    assert "stop that specific movement at that dose" in prompt
     assert "Do not diagnose" in prompt
 
 
@@ -41,7 +41,7 @@ def test_system_prompt_separates_general_education_from_exercise_prescription():
 
 def test_system_prompt_forbids_loaded_substitution_before_pain_context():
     prompt = coach_routes.SYSTEM_PROMPT
-    assert "Do not recommend any alternative loaded exercise" in prompt
+    assert "Do not recommend a new loaded substitute until the context is clear" in prompt
 
 
 def test_system_prompt_answers_saved_program_status_directly():
@@ -141,7 +141,7 @@ def test_server_guardrail_detects_back_pain_during_rdl():
         "Pri RDL me zaboli v križu. Naj zmanjšam težo in nadaljujem?",
     ))
     assert reply is not None
-    assert "ne izvajaj" in reply
+    assert "ne ponavljaj giba" in reply
     assert "obremenjeno vajo" in reply
 
 
@@ -335,3 +335,46 @@ def test_slovene_coaching_term_normalizer_corrects_known_errors():
     source = "prsni tisk; trilogije (tricepsa); säte; zadnji del hrbet; mišične masa"
     cleaned = coach_routes._normalize_slovene_coaching_terms(source)
     assert cleaned == "potisk za prsi; tricepsa; zadnjice; zadnji del hrbta; mišične mase"
+
+
+def test_knee_backward_walk_requires_basic_safety_screening_first():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        "Pri bolečinah v kolenu razmišljam o hoji vzvratno. Ali naj jo poskusim?"
+    ))
+    assert reply is not None
+    assert "Preden predlagam preizkus hoje vzvratno" in reply
+    assert "otekline, zaklepanja, popuščanja" in reply
+
+
+def test_knee_backward_walk_is_only_a_low_dose_tolerance_test_after_screening():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        "Koleno me občasno blago boli, približno 2/10. Normalno hodim, brez otekline, "
+        "brez zaklepanja, brez nestabilnosti in brez sveže poškodbe. Ali lahko poskusim hojo vzvratno?"
+    ))
+    assert reply is not None
+    assert "1–2 minuti zelo počasi" in reply
+    assert "preizkus tolerance, ne kot zdravljenje" in reply
+    assert "odziv naslednje jutro" in reply
+    assert "To ni diagnoza" in reply
+
+
+def test_knee_backward_walk_followup_checks_response_not_assumed_benefit():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        "Koleno me občasno blago boli, približno 2/10. Normalno hodim, brez otekline, "
+        "brez zaklepanja, brez nestabilnosti in brez sveže poškodbe.",
+        "Poskusil sem hojo vzvratno. Ali pomaga?"
+    ))
+    assert reply is not None
+    assert "primerjaj stanje pred preizkusom" in reply
+    assert "naslednje jutro" in reply
+    assert "Če je po preizkusu slabše, ga ne ponavljaj" in reply
+
+
+def test_generic_discomfort_uses_dose_adjustment_without_banning_all_activity():
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        "Pri izpadnem koraku me blago zaboli koleno. Kaj naj naredim?"
+    ))
+    assert reply is not None
+    assert "ne pomeni, da moraš prekiniti vso nebolečo aktivnost" in reply
+    assert "spremenljivko doze" in reply
+    assert "Kje natančno se pojavi bolečina" in reply
