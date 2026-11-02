@@ -695,7 +695,6 @@ def _format_recent_training_context(sessions):
         difficulty = session.get("difficulty")
         recovery = session.get("recovery")
         completed = session.get("completed")
-        discomfort = session.get("discomfort_reported")
         summary = [str(session_date)]
         if isinstance(duration, int):
             summary.append(f"{duration} min")
@@ -705,8 +704,6 @@ def _format_recent_training_context(sessions):
             summary.append(f"recovery: {recovery}")
         if completed is not None:
             summary.append("completed" if completed else "partially completed")
-        if discomfort is True:
-            summary.append("discomfort reported")
         lines.append("- " + " · ".join(summary))
         exercises = session.get("exercises")
         if not isinstance(exercises, list):
