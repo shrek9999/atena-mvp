@@ -20,4 +20,5 @@ def test_staging_endpoint_workflow_embedded_python_is_valid():
     # The synthetic profile test must never store health data and must clean up.
     assert '"health_data_consent": False' in script
     assert "finally:" in script
+    assert "def call_profile_api(" in script
     assert '"discomfort_reported"' not in script
