@@ -561,3 +561,21 @@ def test_legacy_exercise_log_format_remains_supported():
     assert entry["sets_completed"] == 3
     assert entry["reps_completed"] == 10
     assert "set_results" not in entry
+
+
+def test_authenticated_history_context_preserves_set_by_set_details():
+    context = coach_routes._format_recent_training_context([{
+        "session": {
+            "session_date": "2026-11-02",
+            "exercises": [{
+                "exercise_id": "squat_goblet",
+                "sets_completed": 2,
+                "set_results": [
+                    {"reps": 10, "load_kg": 20, "rir": 3},
+                    {"reps": 8, "load_kg": 22, "rir": 1},
+                ],
+            }],
+        },
+    }])
+    assert "set 1: 10 reps, 20 kg, RIR 3" in context
+    assert "set 2: 8 reps, 22 kg, RIR 1" in context
