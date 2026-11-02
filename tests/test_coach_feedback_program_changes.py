@@ -202,3 +202,33 @@ def test_beginner_bodyweight_strength_uses_supported_single_leg_hinge_and_disclo
 
     assert hinge["exercise_id"] == "supported_single_leg_rdl"
     assert any("Brez zunanjih bremen" in note for note in plan["limitations"])
+
+
+def test_dumbbell_only_program_prefers_romanian_deadlift_over_dumbbell_deadlift():
+    plan = generate_program(
+        profile("strength", "intermediate", equipment=["dumbbell"])
+    )
+    hinge = next(x for x in exercises(plan) if x["pattern"] == "hinge")
+    assert hinge["exercise_id"] == "romanian_deadlift"
+
+
+def test_main_squat_avoids_dumbbells_held_at_sides():
+    plan = generate_program(
+        profile("hypertrophy", "intermediate", equipment=["dumbbell"])
+    )
+    squat = next(x for x in exercises(plan) if x["pattern"] == "squat")
+    assert squat["exercise_id"] in {"squat_goblet", "dumbbell_squat_front_rack"}
+
+
+def test_heel_elevated_squat_is_available_when_stable_support_is_selected():
+    plan = generate_program(
+        profile("strength", "beginner", equipment=["weight_plate"])
+    )
+    squat = next(x for x in exercises(plan) if x["pattern"] == "squat")
+    assert squat["exercise_id"] == "heel_elevated_squat"
+    assert "5–10 cm" in " ".join(squat["cues"])
+
+
+def test_carries_are_not_inserted_as_default_filler():
+    plan = generate_program(profile("strength", "intermediate"))
+    assert all(x["pattern"] != "carry" for x in exercises(plan))
