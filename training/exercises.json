@@ -428,7 +428,7 @@
   },
   {
     "id": "romanian_deadlift",
-    "name": "Romunski mrtvi dvig",
+    "name": "Predklon z ravnim hrbtom",
     "name_en": "Romanian deadlift",
     "pattern": "hinge",
     "joint_type": "multi_joint",
