@@ -145,12 +145,20 @@ def test_intermediate_bodyweight_strength_uses_cossack_squat_and_single_leg_hing
     assert hinge["exercise_id"] == "single_leg_rdl"
 
 
-def test_advanced_bodyweight_strength_uses_pistol_squat_progression():
+def test_advanced_bodyweight_strength_uses_cossack_until_pistol_skill_is_confirmed():
     plan = generate_program(
         profile("strength", "advanced", equipment=["bodyweight"], session_minutes=90)
     )
     squat = next(x for x in exercises(plan) if x["pattern"] == "squat")
+    assert squat["exercise_id"] == "cossack_squat"
 
-    assert squat["exercise_id"] == "pistol_squat"
-    assert squat["joint_type"] == "multi_joint"
-    assert squat["reps_per_side"] is True
+    assessed = generate_program(
+        profile(
+            "strength", "advanced", equipment=["bodyweight"],
+            session_minutes=90, pistol_squat_capable=True
+        )
+    )
+    assessed_squat = next(x for x in exercises(assessed) if x["pattern"] == "squat")
+    assert assessed_squat["exercise_id"] == "pistol_squat"
+    assert assessed_squat["joint_type"] == "multi_joint"
+    assert assessed_squat["reps_per_side"] is True
