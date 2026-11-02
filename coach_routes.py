@@ -70,6 +70,115 @@ def _has_explicit_safety_clearance(text):
     return any(re.search(pattern, text, re.IGNORECASE) for pattern in patterns)
 
 
+def _verified_exercise_catalogue_context(messages):
+    """Return a small equipment-, goal- and experience-filtered exercise list for Gemini."""
+    user_text = "\\n".join(
+        item.get("content", "") for item in messages if item.get("role") == "user"
+    )
+    lowered = user_text.casefold()
+    available = set()
+
+    # Prefer structured profile fields when the UI or benchmark supplies JSON.
+    for match in re.finditer(r'"equipment"\\s*:\\s*(\\[[^\\]]*\\])', user_text, re.IGNORECASE):
+        try:
+            values = json.loads(match.group(1))
+        except (TypeError, json.JSONDecodeError):
+            continue
+        if isinstance(values, list):
+            available.update(value for value in values if isinstance(value, str))
+
+    aliases = {
+        "bodyweight": ("lastno težo", "lastna teža", "brez opreme", "bodyweight"),
+        "dumbbell": ("ročk", "dumbbell"),
+        "barbell": ("olimpijska palica", "palica", "drog", "barbell"),
+        "rack": ("stojal", "rack"),
+        "bench": ("klop", "bench"),
+        "resistance_band": ("elastik", "resistance band"),
+        "cable": ("kabel", "cable"),
+        "pull_up_bar": ("drogu za zgibe", "pull-up", "pull up bar"),
+        "kettlebell": ("kettlebell", "girj"),
+        "box": ("škatl", "box"),
+        "weight_plate": ("utežn plošč", "weight plate"),
+        "heel_wedge": ("podložk za pete", "heel wedge"),
+        "slant_board": ("poševn podlag", "slant board"),
+        "chair": ("stol", "chair"),
+        "step": ("stopničk", "step"),
+        "rowing_machine": ("veslašk", "rowing machine"),
+        "air_bike": ("air bike",),
+        "ski_erg": ("ski erg",),
+        "jump_rope": ("kolebn", "jump rope"),
+    }
+    for equipment, terms in aliases.items():
+        if any(term in lowered for term in terms):
+            available.add(equipment)
+    if "polno opremljen fitnes" in lowered:
+        available.update({
+            "dumbbell", "barbell", "rack", "bench", "resistance_band",
+            "cable", "pull_up_bar", "kettlebell", "box", "weight_plate",
+            "heel_wedge", "slant_board", "chair", "step", "rowing_machine",
+            "air_bike", "ski_erg", "jump_rope",
+        })
+    if not available:
+        return ""
+
+    goals = set()
+    if "hypertrophy" in lowered or "hipertrof" in lowered or "mišičn" in lowered:
+        goals.add("hypertrophy")
+    if "strength" in lowered or "moč" in lowered or "jakost" in lowered:
+        goals.add("strength")
+    if "endurance" in lowered or "vzdržljiv" in lowered:
+        goals.add("endurance")
+    if "power" in lowered or "eksploziv" in lowered:
+        goals.add("power")
+    if "general_fitness" in lowered or "splošn" in lowered or "funkcionaln" in lowered:
+        goals.add("general_fitness")
+
+    if "beginner" in lowered or "začetnik" in lowered:
+        levels = {"beginner"}
+    elif "advanced" in lowered or "napred" in lowered:
+        levels = {"beginner", "intermediate", "advanced"}
+    elif "intermediate" in lowered or "srednje" in lowered:
+        levels = {"beginner", "intermediate"}
+    else:
+        levels = {"beginner", "intermediate"}
+
+    records = []
+    for exercise in load_catalogue():
+        if exercise["level"] not in levels:
+            continue
+        if goals and not (set(exercise["goals"]) & goals):
+            continue
+        required = set(exercise["equipment"])
+        optional = set(exercise["equipment_any"])
+        available_with_bodyweight = available | {"bodyweight"}
+        if not required.issubset(available_with_bodyweight):
+            continue
+        if optional and not (optional & available_with_bodyweight):
+            continue
+        if exercise["single_joint"] and "advanced" not in levels:
+            continue
+        if exercise["training_role"] == "stability":
+            continue
+        records.append(exercise)
+
+    if not records:
+        return ""
+    priority = {"main": 0, "power": 1, "conditioning": 2, "accessory": 3, "mobility": 4, "stability": 5}
+    records.sort(key=lambda item: (priority.get(item["training_role"], 9), item["single_joint"], item["name"]))
+    lines = [
+        f"- {item['name']} [{item['pattern']}; {item['level']}; oprema: "
+        + (", ".join(item["equipment"] + item["equipment_any"]) or "lastna teža")
+        + "]"
+        for item in records[:28]
+    ]
+    return (
+        "\\n\\nVERIFIED EXERCISE CATALOGUE FOR THIS PROFILE:\\n"
+        + "\\n".join(lines)
+        + "\\nUse the exact Slovenian names above. Recommend only exercises from this list "
+        "unless you ask a clarifying question. Never infer equipment that is not listed."
+    )
+
+
 def _coaching_guardrail_reply(messages):
     """Deterministic safety/persistence gate; never rely on model compliance alone."""
     user_texts = [
@@ -380,6 +489,16 @@ def coach_chat():
     ))
     if rdl_technique_request:
         system_prompt += "\n\n" + RDL_TECHNIQUE_PROTOCOL
+    exercise_intent = bool(re.search(
+        r"program|trening|vadb|vajo|počep|izpadni|RDL|mrtv.{0,10}dvig|"
+        r"serij|ponovitev|obremenitev|moč|hipertrof|vzdržljiv|eksploziv",
+        user_history_text,
+        re.IGNORECASE,
+    ))
+    if exercise_intent and not substitution_request:
+        catalogue_context = _verified_exercise_catalogue_context(messages)
+        if catalogue_context:
+            system_prompt += catalogue_context
     if substitution_request:
         # Supply a compact, equipment-filtered catalogue excerpt so the language
         # model can discuss real alternatives instead of guessing exercise names.
