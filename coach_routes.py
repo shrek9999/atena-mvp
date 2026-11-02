@@ -72,14 +72,14 @@ def _has_explicit_safety_clearance(text):
 
 def _verified_exercise_catalogue_context(messages):
     """Return a small equipment-, goal- and experience-filtered exercise list for Gemini."""
-    user_text = "\\n".join(
+    user_text = "\n".join(
         item.get("content", "") for item in messages if item.get("role") == "user"
     )
     lowered = user_text.casefold()
     available = set()
 
     # Prefer structured profile fields when the UI or benchmark supplies JSON.
-    for match in re.finditer(r'"equipment"\\s*:\\s*(\\[[^\\]]*\\])', user_text, re.IGNORECASE):
+    for match in re.finditer(r'"equipment"\s*:\s*(\[[^\]]*\])', user_text, re.IGNORECASE):
         try:
             values = json.loads(match.group(1))
         except (TypeError, json.JSONDecodeError):
@@ -172,9 +172,9 @@ def _verified_exercise_catalogue_context(messages):
         for item in records[:28]
     ]
     return (
-        "\\n\\nVERIFIED EXERCISE CATALOGUE FOR THIS PROFILE:\\n"
-        + "\\n".join(lines)
-        + "\\nUse the exact Slovenian names above. Recommend only exercises from this list "
+        "\n\nVERIFIED EXERCISE CATALOGUE FOR THIS PROFILE:\n"
+        + "\n".join(lines)
+        + "\nUse the exact Slovenian names above. Recommend only exercises from this list "
         "unless you ask a clarifying question. Never infer equipment that is not listed."
     )
 
