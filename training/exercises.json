@@ -688,6 +688,62 @@
     "time_based": false
   },
   {
+    "id": "barbell_bench_press",
+    "name": "Potisk s prsi z drogom (bench press)",
+    "name_en": "Barbell bench press",
+    "pattern": "horizontal_push",
+    "joint_type": "multi_joint",
+    "goals": [
+      "strength",
+      "hypertrophy"
+    ],
+    "equipment": [
+      "barbell",
+      "bench",
+      "rack"
+    ],
+    "equipment_any": [],
+    "level": "intermediate",
+    "primary_muscles": [
+      "pectoralis_major"
+    ],
+    "secondary_muscles": [
+      "triceps",
+      "anterior_deltoid",
+      "serratus_anterior"
+    ],
+    "cues": [
+      "Lopatice stabilno namesti na klop in ohrani stik stopal s tlemi.",
+      "Palico spuščaj nad srednji del prsnega koša z nadzorovano potjo.",
+      "Zapesti ohrani nad komolci; potisk izvedi brez izgube stabilnosti trupa."
+    ],
+    "common_errors": [
+      "Izguba stabilnega položaja lopatic.",
+      "Prekomerno razpiranje komolcev.",
+      "Odbijanje palice od prsnega koša.",
+      "Nezavarovana izvedba brez varnostnih ročic ali pomočnika."
+    ],
+    "regressions": [
+      "dumbbell_bench_press",
+      "push_up"
+    ],
+    "progressions": [
+      "Potisk s prsi z večjo obremenitvijo"
+    ],
+    "alternatives": [
+      "dumbbell_bench_press"
+    ],
+    "warnings": [
+      "Varnostne ročice pravilno nastavi pred serijo ali zagotovi usposobljenega pomočnika.",
+      "Obremenitev izberi tako, da ohraniš nadzorovano pot palice in stabilen položaj."
+    ],
+    "single_joint": false,
+    "unilateral": false,
+    "loading_potential": "high",
+    "training_role": "main",
+    "time_based": false
+  },
+  {
     "id": "overhead_press",
     "name": "Potisk nad glavo",
     "name_en": "Overhead press",
