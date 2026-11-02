@@ -146,7 +146,11 @@ def _verified_exercise_catalogue_context(messages):
     goals = set()
     goal_value = profile.get("goal")
     if isinstance(goal_value, str) and goal_value.strip():
-        goals.add(goal_value.strip().casefold())
+        normalized_goal = goal_value.strip().casefold()
+        if normalized_goal == "fat_loss":
+            goals.update({"strength", "hypertrophy", "general_fitness", "endurance"})
+        else:
+            goals.add(normalized_goal)
     else:
         if "hypertrophy" in lowered or "hipertrof" in lowered or "mišičn" in lowered:
             goals.add("hypertrophy")
@@ -927,7 +931,7 @@ def coach_storage_status():
 # Longitudinal profile storage is opt-in and disabled by default. Hosted use
 # requires a persistent PostgreSQL database and an operator-approved notice.
 PROFILE_FIELDS = {"goal", "experience", "equipment", "sessions_per_week", "session_minutes", "available_days", "pistol_squat_capable"}
-PROFILE_GOALS = {"strength", "hypertrophy", "general_fitness", "functional", "power", "endurance", "mobility"}
+PROFILE_GOALS = {"strength", "hypertrophy", "fat_loss", "general_fitness", "functional", "power", "endurance", "mobility"}
 PROFILE_EXPERIENCE = {"beginner", "intermediate", "advanced"}
 PROFILE_DAYS = {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}
 VALID_EQUIPMENT = {item for exercise in load_catalogue() for item in (exercise["equipment"] + exercise["equipment_any"])}
