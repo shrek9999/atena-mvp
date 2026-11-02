@@ -143,7 +143,7 @@ def coach_chat():
     if substitution_request:
         # Supply a compact, equipment-filtered catalogue excerpt so the language
         # model can discuss real alternatives instead of guessing exercise names.
-        profile_text = "\\n".join(
+        profile_text = "\n".join(
             item.get("content", "") for item in messages if item.get("role") == "user"
         ).casefold()
         available = {"bodyweight"}
@@ -161,7 +161,7 @@ def coach_chat():
             content = message.get("content", "")
             if "Trenutni strukturirani program ATENE:" in content:
                 for line in content.splitlines():
-                    match = re.match(r"\\s*-\\s*(.+?):\\s", line)
+                    match = re.match(r"\s*-\\s*(.+?):\\s", line)
                     if match:
                         current_names.add(match.group(1).strip().casefold())
         catalogue = load_catalogue()
@@ -191,11 +191,11 @@ def coach_chat():
             for item in current_records
         ]
         system_prompt += (
-            "\\n\\nVERIFIED CURRENT PROGRAM EXERCISES:\\n"
-            + ("\\n".join(current) if current else "No exact exercise names were matched.")
-            + "\\nVERIFIED AVAILABLE ALTERNATIVES (same movement pattern, filtered by equipment):\\n"
-            + ("\\n".join(compact) if compact else "No matching alternatives found; ask one clarifying question.")
-            + "\\nUse only the alternatives above. If the requested exercise is not identified, ask which exercise."
+            "\n\nVERIFIED CURRENT PROGRAM EXERCISES:\n"
+            + ("\n".join(current) if current else "No exact exercise names were matched.")
+            + "\nVERIFIED AVAILABLE ALTERNATIVES (same movement pattern, filtered by equipment):\n"
+            + ("\n".join(compact) if compact else "No matching alternatives found; ask one clarifying question.")
+            + "\nUse only the alternatives above. If the requested exercise is not identified, ask which exercise."
         )
     model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
     url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + api_key
