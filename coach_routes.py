@@ -318,14 +318,15 @@ def _coaching_guardrail_reply(messages):
 
     no_pain_now = _has_explicit_no_pain_confirmation(latest)
     positive_pain = bool(re.search(
-        r"(me boli|boli me|me zaboli|zaboli me|čutim bolečino|občutim bolečino|"
+        r"(me\\s+(?:blago\\s+)?boli|boli me|me\\s+(?:blago\\s+)?zaboli|zaboli me|"
+        r"blag\\w*\\s+(?:bolečin\\w*|boli|zaboli)|čutim bolečino|občutim bolečino|"
         r"bolečina se pojavi|nova bolečina|po treningu.{0,30}bolečin)",
         latest,
         re.IGNORECASE,
     )) and not no_pain_now
 
     backward_walk_intent = bool(re.search(
-        r"(hoja vzvratno|vzvratna hoja|vzvratno hod|hojo vzvratno)",
+        r"(hoja vzvratno|hoji vzvratno|vzvratna hoja|vzvratno hod|hojo vzvratno|vzvratno hojo)",
         latest,
         re.IGNORECASE,
     ))
