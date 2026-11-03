@@ -230,6 +230,8 @@ def test_cossack_squat_progression_uses_canonical_name_without_literal_translati
 
 
 def test_beginner_bodyweight_hypertrophy_uses_challenging_posterior_chain_option():
+    from training.program import generate_program
+
     result = generate_program({
         "goal": "strength_hypertrophy",
         "experience": "beginner",
@@ -248,6 +250,8 @@ def test_beginner_bodyweight_hypertrophy_uses_challenging_posterior_chain_option
 
 
 def test_bodyweight_only_program_discloses_horizontal_pull_equipment_limit():
+    from training.program import generate_program
+
     result = generate_program({
         "goal": "strength_hypertrophy",
         "experience": "beginner",
