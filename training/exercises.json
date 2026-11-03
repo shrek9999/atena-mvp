@@ -2407,7 +2407,7 @@
     "id": "parallel_bar_dip",
     "name": "Dips na bradlji",
     "name_en": "Parallel bar dip",
-    "pattern": "horizontal_push",
+    "pattern": "vertical_push",
     "joint_type": "multi_joint",
     "goals": [
       "hypertrophy",
