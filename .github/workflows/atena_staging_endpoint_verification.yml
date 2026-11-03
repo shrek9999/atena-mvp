@@ -1,18 +1,15 @@
 name: ATENA staging endpoint verification
 
 on:
-  push:
-    branches:
-      - pilot/website-ai-coach
-    paths:
-      - ".github/workflows/atena_staging_endpoint_verification.yml"
-      - "training/program.py"
-      - "training/catalogue.py"
-      - "training/exercises.json"
-      - "coach_routes.py"
-      - "coach_store.py"
-      - "tests/test_catalogue_goal_logic.py"
   workflow_dispatch:
+    inputs:
+      confirm_free_tier:
+        description: "Type I_CONFIRM_FREE_TIER only after confirming the Gemini project has no linked billing account"
+        required: true
+        type: choice
+        options:
+          - "NO"
+          - "I_CONFIRM_FREE_TIER"
 
 concurrency:
   group: atena-staging-endpoint-verification
@@ -23,11 +20,30 @@ permissions:
 
 jobs:
   verify-staging:
+    if: ${{ inputs.confirm_free_tier == 'I_CONFIRM_FREE_TIER' }}
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
-      - name: Wait for the free staging deployment to settle
-        run: sleep 90
+      - name: Wait for staging health without a fixed idle delay
+        run: |
+          python - <<'PY'
+          import time, urllib.request
+          url = "https://atena-ai-coach-pilot.onrender.com/health"
+          deadline = time.monotonic() + 300
+          last_error = "not checked"
+          while time.monotonic() < deadline:
+              try:
+                  with urllib.request.urlopen(url, timeout=20) as response:
+                      if response.status == 200:
+                          print("Staging backend health: PASS")
+                          break
+                      last_error = f"HTTP {response.status}"
+              except Exception as exc:
+                  last_error = type(exc).__name__
+              time.sleep(10)
+          else:
+              raise SystemExit(f"Staging did not become healthy within 5 minutes: {last_error}")
+          PY
 
       - name: Validate secret is available (without revealing it)
         env:
@@ -38,6 +54,37 @@ jobs:
             exit 1
           fi
           echo "Staging test token is available."
+
+      - name: Verify staging authentication and storage before integration checks
+        env:
+          PILOT_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.error, urllib.request
+          request = urllib.request.Request(
+              "https://atena-ai-coach-pilot.onrender.com/coach/storage/status",
+              headers={"X-Pilot-Token": os.environ["PILOT_TOKEN"]},
+              method="GET",
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  status = response.status
+                  body = json.loads(response.read().decode("utf-8"))
+          except urllib.error.HTTPError as exc:
+              status = exc.code
+              body = {}
+          if status != 200:
+              raise SystemExit(
+                  f"Staging authentication preflight failed (HTTP {status}); "
+                  "no chat or profile integration calls were sent."
+              )
+          if not isinstance(body.get("storage_enabled"), bool) or not body.get("privacy_notice_version"):
+              raise SystemExit(
+                  "Staging storage/privacy preflight failed; no chat or profile integration calls were sent."
+              )
+          print("Staging authentication and storage preflight: PASS")
+          PY
+
 
       - name: Test authenticated staging endpoints and coaching behavior
         env:
