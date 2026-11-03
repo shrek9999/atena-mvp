@@ -23,7 +23,7 @@ def exercises(plan):
     return [item for session in plan["sessions"] for item in session["exercises"]]
 
 
-def test_beginner_strength_and_hypertrophy_share_reps_and_effort_reserve():
+def test_less_experienced_strength_and_hypertrophy_share_reps_and_effort_reserve():
     strength = generate_program(profile("strength", "beginner"))
     hypertrophy = generate_program(profile("hypertrophy", "beginner"))
     strength_squat = next(x for x in exercises(strength) if x["pattern"] == "squat")
