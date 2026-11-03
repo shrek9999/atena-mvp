@@ -25,6 +25,7 @@ from training.progress import summarize_progress
 from training.adaptation import assess_next_step
 from training.exercise_progression import recommend_exercise_progression, apply_exercise_progression
 from training.longitudinal_progression import summarize_longitudinal_progression
+from training.conditioning_progression import summarize_conditioning_progress
 from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL
 
 logger = logging.getLogger(__name__)
@@ -1182,6 +1183,53 @@ def manage_coach_profile(profile_id):
         return _storage_error(exc)
 
 
+def _normalize_conditioning_block(item):
+    """Validate a separately logged conditioning block; never mix it with resistance sets."""
+    allowed = {
+        "modality", "protocol_id", "work_seconds", "duration_seconds",
+        "intervals_completed", "rpe", "distance_m", "average_heart_rate",
+    }
+    if not isinstance(item, dict) or set(item) - allowed:
+        return None, "Kondicijski zapis vsebuje neveljavna polja."
+    modality = item.get("modality")
+    if modality not in {"aerobic_base", "threshold_intervals", "vo2max_intervals", "metcon"}:
+        return None, "Vrsta kondicijske vadbe ni veljavna."
+    protocol_id = item.get("protocol_id")
+    if not isinstance(protocol_id, str) or not protocol_id.strip() or len(protocol_id) > 80:
+        return None, "Oznaka kondicijskega protokola ni veljavna."
+    work = item.get("work_seconds")
+    duration = item.get("duration_seconds")
+    intervals = item.get("intervals_completed", 1)
+    rpe = item.get("rpe")
+    if not isinstance(work, int) or isinstance(work, bool) or not 1 <= work <= 14400:
+        return None, "Skupni čas dela mora biti med 1 in 14400 sekundami."
+    if not isinstance(duration, int) or isinstance(duration, bool) or not work <= duration <= 21600:
+        return None, "Skupno trajanje mora biti najmanj toliko kot čas dela in največ 6 ur."
+    if not isinstance(intervals, int) or isinstance(intervals, bool) or not 1 <= intervals <= 100:
+        return None, "Število zaključenih intervalov ni veljavno."
+    if not isinstance(rpe, (int, float)) or isinstance(rpe, bool) or not 1 <= rpe <= 10:
+        return None, "Ocena napora (RPE) mora biti med 1 in 10."
+    result = {
+        "modality": modality,
+        "protocol_id": protocol_id.strip(),
+        "work_seconds": work,
+        "duration_seconds": duration,
+        "intervals_completed": intervals,
+        "rpe": float(rpe),
+    }
+    distance = item.get("distance_m")
+    if distance is not None:
+        if not isinstance(distance, (int, float)) or isinstance(distance, bool) or not 1 <= distance <= 100000:
+            return None, "Razdalja ni veljavna."
+        result["distance_m"] = float(distance)
+    heart_rate = item.get("average_heart_rate")
+    if heart_rate is not None:
+        if not isinstance(heart_rate, int) or isinstance(heart_rate, bool) or not 30 <= heart_rate <= 240:
+            return None, "Povprečni srčni utrip ni veljaven."
+        result["average_heart_rate"] = heart_rate
+    return result, None
+
+
 def _normalize_logged_exercise(item):
     """Validate actual exercise performance, supporting both legacy summaries and set-by-set logs."""
     allowed = {
@@ -1346,7 +1394,7 @@ def coach_training_sessions(profile_id):
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return jsonify({"error": "Pričakovan je JSON objekt."}), 400
-    allowed = {"session_date", "duration_minutes", "difficulty", "completed", "exercises", "discomfort_reported", "recovery"}
+    allowed = {"session_date", "duration_minutes", "difficulty", "completed", "exercises", "conditioning", "discomfort_reported", "recovery"}
     if set(payload) - allowed:
         return jsonify({"error": "Vadbeni zapis vsebuje nepodprta polja; prosto besedilo ni dovoljeno."}), 400
     session_date = payload.get("session_date")
@@ -1375,12 +1423,23 @@ def coach_training_sessions(profile_id):
             return jsonify({"error": error}), 400
         clean_exercises.append(entry)
 
+    conditioning = payload.get("conditioning", [])
+    if not isinstance(conditioning, list) or len(conditioning) > 8:
+        return jsonify({"error": "Vadbeni zapis lahko vsebuje največ 8 kondicijskih blokov."}), 400
+    clean_conditioning = []
+    for item in conditioning:
+        entry, error = _normalize_conditioning_block(item)
+        if error:
+            return jsonify({"error": error}), 400
+        clean_conditioning.append(entry)
+
     discomfort = payload.get("discomfort_reported")
     if discomfort is not None and not isinstance(discomfort, bool):
         return jsonify({"error": "discomfort_reported mora biti true ali false."}), 400
     session = {
         "duration_minutes": duration, "difficulty": difficulty,
         "recovery": recovery, "completed": payload["completed"], "exercises": clean_exercises,
+        "conditioning": clean_conditioning,
     }
     try:
         profile = store_get_profile(profile_id, token)
@@ -1435,6 +1494,7 @@ def coach_training_progress(profile_id):
             "progress": summarize_progress(profile, sessions),
             "exercise_progressions": recommend_exercise_progression(sessions),
             "longitudinal_progression": summarize_longitudinal_progression(sessions),
+            "conditioning_progression": summarize_conditioning_progress(sessions),
             "source": "recorded_training_history",
             "automatic_load_changes": False,
         }), 200
