@@ -86,6 +86,14 @@ def test_technique_flag_holds_progression_for_that_exercise():
     assert decision(recommend_exercise_progression(sessions), "goblet_squat")["decision"] == "technique_review"
 
 
+def test_unknown_execution_quality_does_not_count_as_controlled():
+    sessions = [
+        record("2026-11-03", [exercise("goblet_squat", quality="unknown")]),
+        record("2026-10-30", [exercise("goblet_squat")]),
+    ]
+    assert decision(recommend_exercise_progression(sessions), "goblet_squat")["decision"] == "collect_data"
+
+
 def test_hard_effort_or_low_rir_reduces_only_the_relevant_dose():
     sessions = [
         record("2026-11-03", [exercise("goblet_squat", rir=(1, 2, 2))]),
