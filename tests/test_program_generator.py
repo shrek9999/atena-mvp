@@ -1,6 +1,6 @@
 import pytest
 
-from training.program import ProgramValidationError, generate_program, validate_profile
+from training.program import ProgramValidationError, _endurance_protocol, generate_program, validate_profile
 
 
 BASE = {
@@ -517,6 +517,40 @@ def test_hypertrophy_without_weights_uses_scalable_posterior_chain_options():
     assert any(exercise["exercise_id"] == "inverted_row_table" for exercise in exercises)
     assert any(exercise["exercise_id"] == "single_leg_box_squat" for exercise in exercises)
 
+
+def test_endurance_protocols_separate_training_stimulus_from_exercise_modality():
+    assert _endurance_protocol("beginner", 2, 0, "locomotion", "aerobic")["id"] == "aerobic_base"
+    assert _endurance_protocol("intermediate", 2, 0, "conditioning", "aerobic")["id"] == "threshold_intervals"
+    assert _endurance_protocol("intermediate", 2, 1, "conditioning", "aerobic")["id"] == "aerobic_intervals"
+    assert _endurance_protocol("advanced", 3, 0, "conditioning", "aerobic")["id"] == "vo2max_intervals"
+    assert _endurance_protocol("advanced", 2, 0, "conditioning", "aerobic")["id"] == "threshold_intervals"
+    assert _endurance_protocol("advanced", 3, 1, "conditioning", "anaerobic")["id"] == "mixed_modal_metcon"
+    assert _endurance_protocol("advanced", 3, 1, "conditioning", "muscular")["id"] == "local_muscular_endurance"
+
+
+def test_endurance_protocol_intensity_targets_are_distinct_and_progression_is_conservative():
+    base = _endurance_protocol("beginner", 2, 0, "locomotion", "aerobic")
+    threshold = _endurance_protocol("intermediate", 2, 0, "conditioning", "aerobic")
+    vo2 = _endurance_protocol("advanced", 3, 0, "conditioning", "aerobic")
+    metcon = _endurance_protocol("advanced", 3, 1, "conditioning", "anaerobic")
+    assert base["intensity_rpe"] == "3–4/10"
+    assert threshold["intensity_rpe"] == "7–8/10"
+    assert vo2["intensity_rpe"] == "8–9/10"
+    assert metcon["intensity_rpe"] == "6–7/10"
+    assert all(item["effort_target"] and item["progression"] for item in (base, threshold, vo2, metcon))
+
+
+def test_endurance_protocol_metadata_is_attached_to_generated_timed_work():
+    plan = generate_program({
+        **BASE, "goal": "endurance", "experience": "beginner",
+        "equipment": ["bodyweight", "chair", "household_support", "household_load"],
+        "session_minutes": 45,
+    })
+    timed = [item for session in plan["sessions"] for item in session["exercises"]
+             if item["pattern"] in {"locomotion", "conditioning"}]
+    assert timed
+    assert all(item["prescription"].get("training_protocol") for item in timed)
+    assert all(item["prescription"].get("effort_target") for item in timed)
 
 def test_endurance_goal_generates_timed_aerobic_and_interval_work():
     profile = {
