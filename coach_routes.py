@@ -1218,7 +1218,7 @@ def _normalize_logged_exercise(item):
     if target_work is not None and target_min is not None:
         return None, "Vaja ne more hkrati uporabljati cilja ponovitev in časa."
     execution_quality = item.get("execution_quality", "unknown")
-    if execution_quality not in {"unknown", "controlled", "needs_attention"}:
+    if not isinstance(execution_quality, str) or execution_quality not in {"unknown", "controlled", "needs_attention"}:
         return None, "Ocena kakovosti izvedbe ni veljavna."
 
     set_results = item.get("set_results")
