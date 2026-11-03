@@ -6660,7 +6660,7 @@
     ],
     "training_role": "stability",
     "loading_potential": "low",
-    "time_based": true,
+    "time_based": false,
     "movement_family": "trunk_control",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
@@ -6689,7 +6689,9 @@
     "warnings": [
       "Občutek naj ostane v mejah nadzorovanega mišičnega napora; ob bolečini prilagodi obseg."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "unilateral": true,
+    "reps_per_side": true
   },
   {
     "pattern": "trunk_stability",
