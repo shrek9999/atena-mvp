@@ -916,7 +916,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 session_patterns_seen.add(item["pattern"])
             pattern_work_sets[item["pattern"]] += item["prescription"]["sets"]
     return {
-        "program_version": "2.7.0",
+        "program_version": "2.8.0",
         "goal": p["goal"],
         "training_emphasis": p["training_emphasis"],
         "experience": p["experience"],
@@ -943,7 +943,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 if p["experience"] == "beginner" else
                 "Intermediate: uporablja bolj specifične razpone glede na cilj; pri glavnih vajah za moč je običajen razpon 5–8 ponovitev, pri hipertrofiji večinoma 6–12. Advanced: pri glavnih vajah za moč lahko uporablja 3–6 ponovitev, ob večji obremenitvi pa zahteva ustrezno tehniko, regeneracijo in daljše odmore."
             ),
-            "tempo": "Tempo je določen glede na cilj: moč praviloma 2–0–X–0, hipertrofija 3–1–2–0, eksplozivna moč hiter koncentrični del, vzdržljivost ritmično delo, mobilnost pa počasno aktivno raziskovanje obsega. Stabilizacijsko delo se doda ciljno, ne avtomatično.",
+            "tempo": ("Za začetnika s kombiniranim ciljem moči in mišične mase je pri osnovnih vajah privzeti tempo 2–1–1–0: 2 s nadzorovan spust, 1 s nadzor v spodnjem položaju, 1 s dvig in brez premora v vrhu. Eksplozivne, časovno določene in mobilnostne vaje imajo ustrezno specifičen tempo." if planning_goal == "strength_hypertrophy" and p["experience"] == "beginner" else "Tempo je določen glede na cilj: moč praviloma 2–0–X–0, hipertrofija 3–1–2–0, eksplozivna moč hiter koncentrični del, vzdržljivost ritmično delo, mobilnost pa počasno aktivno raziskovanje obsega. Stabilizacijsko delo se doda ciljno, ne avtomatično."),
             "range_of_motion": "Pri vsaki vaji uporabi največjo amplitudo, ki jo omogočata gibljivost in nadzor. Amplitudo postopno razvijaj; ne žrtvuj položaja, stabilnosti ali neboleče izvedbe. Pri mobilnosti kombiniraj aktivno gibanje in moč skozi razpoložljivo amplitudo.",
             "progression": ("Pri aerobni vzdržljivosti postopno povečuj trajanje ali obseg, nato po potrebi intenzivnost; pri intervalih spreminjaj le eno spremenljivko naenkrat. Ohraniti moraš ponovljivo tehniko in regeneracijo."
                 if planning_goal == "endurance" else
