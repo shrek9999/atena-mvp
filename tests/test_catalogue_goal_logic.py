@@ -219,3 +219,41 @@ def test_beginner_combined_strength_hypertrophy_uses_foundational_tempo():
         prescription = _prescription("strength_hypertrophy", "beginner", pattern, exercise)
         assert prescription["tempo"] == "2–1–1–0", pattern
         assert prescription["tempo_seconds_per_rep"] == 4, pattern
+
+
+
+def test_cossack_squat_progression_uses_canonical_name_without_literal_translation():
+    exercise = next(item for item in load_catalogue() if item["id"] == "cossack_squat")
+    references = exercise["regressions"] + exercise["progressions"] + exercise["alternatives"]
+    assert all("kozaški" not in reference.casefold() for reference in references)
+    assert "Cossack squat z ročko" in exercise["progressions"]
+
+
+def test_beginner_bodyweight_hypertrophy_uses_challenging_posterior_chain_option():
+    result = generate_program({
+        "goal": "strength_hypertrophy",
+        "experience": "beginner",
+        "sessions_per_week": 2,
+        "session_minutes": 60,
+        "equipment": ["bodyweight"],
+    })
+    exercises = [item for session in result["sessions"] for item in session["exercises"]]
+    ids = {item["exercise_id"] for item in exercises}
+    assert "long_lever_glute_bridge" in ids
+    assert "supported_single_leg_rdl" not in ids
+    assert "bodyweight_hip_hinge" not in ids
+    bridge = next(item for item in exercises if item["exercise_id"] == "long_lever_glute_bridge")
+    assert bridge["loading_potential"] == "moderate"
+    assert bridge["prescription"]["rir_range"] == "2–3"
+
+
+def test_bodyweight_only_program_discloses_horizontal_pull_equipment_limit():
+    result = generate_program({
+        "goal": "strength_hypertrophy",
+        "experience": "beginner",
+        "sessions_per_week": 2,
+        "session_minutes": 60,
+        "equipment": ["bodyweight"],
+    })
+    assert "horizontal_pull" in result["weekly_summary"]["unfilled_patterns"]
+    assert any("horizontalnega potega" in note for note in result["limitations"])
