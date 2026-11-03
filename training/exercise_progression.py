@@ -63,11 +63,13 @@ def _exercise_observation(exercise, session, day):
         "work_seconds": work,
         "loads": loads,
         "rirs": rirs,
-        "rir_complete": bool(rirs) and len(rirs) == len(sets) if sets else bool(rirs),
+        # Only set-by-set RIR is sufficient for individual progression.
+        # Legacy session summaries cannot prove that every set had adequate reserve.
+        "rir_complete": bool(sets) and len(rirs) == len(sets),
         "sets_complete": (
             exercise.get("planned_sets") is None
-            or len(sets) == exercise.get("planned_sets")
-        ) if sets else True,
+            or (len(sets) if sets else exercise.get("sets_completed")) == exercise.get("planned_sets")
+        ),
         "planned_sets": exercise.get("planned_sets"),
         "target_reps_min": exercise.get("target_reps_min"),
         "target_reps_max": exercise.get("target_reps_max"),
