@@ -147,17 +147,21 @@ def recommend_exercise_progression(sessions):
     ordered = _ordered_sessions(sessions)
     # A reported symptom is a global safety hold, not a signal to work around it.
     if any(session.get("discomfort_reported") is True for _, session in ordered[:3]):
+        affected_ids = set()
+        for _, session in ordered[:3]:
+            exercises = session.get("exercises", [])
+            if not isinstance(exercises, list):
+                continue
+            affected_ids.update(
+                exercise["exercise_id"] for exercise in exercises
+                if isinstance(exercise, dict) and isinstance(exercise.get("exercise_id"), str)
+            )
         return [{
             "exercise_id": exercise_id,
             "decision": "pause_and_review",
             "exposures_recorded": 0,
             "reason": "Zabeleženo je bilo nelagodje. Samodejno napredovanje vseh vaj je ustavljeno do ustrezne presoje.",
-        } for exercise_id in sorted({
-            exercise.get("exercise_id")
-            for _, session in ordered[:3]
-            for exercise in session.get("exercises", [])
-            if isinstance(exercise, dict) and isinstance(exercise.get("exercise_id"), str)
-        })]
+        } for exercise_id in sorted(affected_ids)]
 
     by_exercise = defaultdict(list)
     for day, session in ordered:
