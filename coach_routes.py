@@ -1692,11 +1692,12 @@ def coach_profile_program(profile_id):
             profile["profile"], sessions, exercise_progressions,
             longitudinal_progression, conditioning_progression,
         )
-        # A global "easy" rating must not progress every exercise. The
-        # exercise-level engine owns positive progression from this point.
-        if feedback and feedback.get("difficulty") == "easy":
-            feedback = {**feedback, "difficulty": "right"}
-        result = generate_program(profile["profile"], feedback=feedback)
+        # Global session feedback is now advisory only. It must not silently
+        # reduce or increase every exercise: the adaptive decision explains the
+        # scope, while the exercise engine applies only independently justified
+        # exercise-level rep guidance. A future user-confirmed session-level
+        # adjustment can be applied through an explicit programme revision.
+        result = generate_program(profile["profile"])
         result = apply_exercise_progression(result, exercise_progressions)
         return jsonify({
             "program": result,
