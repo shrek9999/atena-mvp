@@ -59,7 +59,10 @@ def test_program_quality_across_goal_and_experience_matrix(goal, experience):
             if experience == "beginner" and goal in {"hypertrophy", "strength", "general_fitness", "functional"}:
                 if exercise["pattern"] not in {"trunk_stability", "anti_rotation", "balance", "coordination"}:
                     assert exercise["prescription"]["rir"] >= 3
-                    assert exercise["prescription"]["reps"] in {"8–10", "8–12", "10–15", "12–15"}
+                    if exercise["pattern"] in {"jump", "hinge_power"}:
+                        assert exercise["prescription"]["reps"] == "3–5"
+                    else:
+                        assert exercise["prescription"]["reps"] in {"8–10", "8–12", "10–15", "12–15"}
 
 
 @pytest.mark.parametrize("session_minutes", [30, 45, 60, 90])
