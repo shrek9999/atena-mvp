@@ -276,6 +276,101 @@ def _bodyweight_only_program_note(messages):
     )
 
 
+def _profile_contradiction_reply(messages):
+    """Block individualized prescriptions while explicit profile/message conflicts remain unresolved."""
+    user_texts = [
+        item.get("content", "") for item in messages
+        if item.get("role") == "user" and isinstance(item.get("content"), str)
+    ]
+    if not user_texts:
+        return None
+
+    profile = _profile_from_messages(messages)
+    if not profile:
+        return None
+
+    latest = user_texts[-1].casefold()
+    history = "\\n".join(user_texts).casefold()
+
+    # A deliberate source-of-truth confirmation resolves the conflict. Merely
+    # confirming pain/safety status does not silently overwrite profile data.
+    profile_confirmed = bool(re.search(
+        r"(?:profil|podatki v profilu).{0,45}(?:je|so)\\s+(?:pravilen|pravilni|točni)|"
+        r"upoštevaj\\s+(?:obstoječi\\s+)?profil",
+        latest,
+    ))
+    message_confirmed = bool(re.search(
+        r"(?:zadnje\\s+)?sporočil(?:o|a).{0,45}(?:je|so)\\s+(?:pravilno|pravilna|točno)|"
+        r"upoštevaj\\s+(?:moje\\s+)?zadnje\\s+sporočilo|"
+        r"profil\\s+(?:je\\s+)?zastarel",
+        latest,
+    ))
+    if profile_confirmed or message_confirmed:
+        return None
+
+    conflicts = []
+
+    experience = str(profile.get("experience", "")).casefold()
+    says_beginner = bool(re.search(
+        r"\\b(?:sem\\s+začetnik|začetniški\\s+sem|moja\\s+stopnja\\s+je\\s+začetniška)\\b",
+        history,
+    ))
+    says_advanced = bool(re.search(
+        r"\\b(?:sem\\s+napreden|napredni\\s+vadbenec|treniram\\s+(?:že\\s+)?(?:več\\s+let|\\d{1,2}\\s+let)|"
+        r"imam\\s+(?:že\\s+)?(?:več\\s+let|\\d{1,2}\\s+let)\\s+(?:trening|vadb))",
+        history,
+    ))
+    if experience in {"beginner", "začetnik", "začetna"} and says_advanced:
+        conflicts.append("stopnja izkušenj (profil: začetnik; sporočilo: večletne izkušnje oziroma napredna stopnja)")
+    elif experience in {"advanced", "napreden", "napredni"} and says_beginner:
+        conflicts.append("stopnja izkušenj (profil: napreden; sporočilo: začetnik)")
+
+    equipment = profile.get("equipment")
+    if isinstance(equipment, list):
+        profile_equipment = {
+            value.casefold() for value in equipment
+            if isinstance(value, str) and value.strip()
+        }
+        aliases = {
+            "barbell": r"olimpijsk\\w*\\s+palic|utežn\\w*\\s+palic|\\bbarbell\\b",
+            "dumbbell": r"ročk\\w*|\\bdumbbell\\w*",
+            "kettlebell": r"girj\\w*|\\bkettlebell\\w*",
+            "cable": r"kabelsk\\w*\\s+naprav|\\bcable\\b",
+            "pull_up_bar": r"drog\\w*\\s+za\\s+zgib|\\bpull[- ]?up\\s+bar\\b",
+            "rack": r"stojal\\w*\\s+za\\s+počep|\\brack\\b",
+            "bench": r"vadben\\w*\\s+klop|\\bbench\\b",
+        }
+        mentioned = {
+            equipment_id for equipment_id, pattern in aliases.items()
+            if re.search(pattern, history, re.IGNORECASE)
+        }
+        unavailable = sorted(mentioned - profile_equipment)
+        if unavailable:
+            labels = {
+                "barbell": "olimpijska/utežna palica",
+                "dumbbell": "ročke",
+                "kettlebell": "kettlebell",
+                "cable": "kabelska naprava",
+                "pull_up_bar": "drog za zgibe",
+                "rack": "stojalo",
+                "bench": "vadbena klop",
+            }
+            conflicts.append(
+                "oprema (profil ne vključuje: " + ", ".join(labels[item] for item in unavailable) + ")"
+            )
+
+    if not conflicts:
+        return None
+
+    details = "; ".join(conflicts)
+    return (
+        "Pred pripravo individualnega programa morava razjasniti neskladje med shranjenim "
+        f"profilom in tvojim sporočilom: {details}. "
+        "Kateri podatek naj upoštevam – obstoječi profil ali tvoje zadnje sporočilo? "
+        "Do potrditve ne bom izbral zahtevnosti, vaj ali obremenitev na podlagi ugibanja."
+    )
+
+
 def _coaching_guardrail_reply(messages):
     """Deterministic safety/persistence gate; never rely on model compliance alone."""
     user_texts = [
@@ -585,6 +680,10 @@ def _coaching_guardrail_reply(messages):
             "obremenitve, moram preveriti varnost: ali imaš trenutno kakršne koli "
             "bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
         )
+
+    contradiction_reply = _profile_contradiction_reply(messages)
+    if contradiction_reply:
+        return contradiction_reply
 
     if (
         re.search(r"dva treninga sta bila lahka", history_lower)
