@@ -29,13 +29,17 @@ Every decision returns:
    adjustment is not silently replaced by another proposal.
 6. Missing or mixed evidence results in a hold/clarifying question, not a guess.
 
-## Integration boundary
+## Integration status
 
-This phase introduces the pure decision layer and its regression tests. The
-session API and website must next expose structured completion reasons and
-adaptation outcomes, then call this layer from the authenticated adaptation
-and next-program routes. Until that integration is complete, this module is
-not yet the active production decision path.
+The decision layer is wired into the authenticated progress, adaptation and
+next-program API responses on the isolated phase-5 branch. The session API
+accepts structured completion reasons and adaptation outcomes. Feedback is
+bound to the deterministic ID of the latest decision ATENA issued.
+
+The website still needs UI controls to collect these fields and display the
+decision's scope, explanation, objective and clarifying question. The new path
+is not active in production until the draft PR is reviewed, merged and
+separately deployed.
 
 ## Safety and cost
 
