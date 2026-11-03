@@ -24,6 +24,7 @@ from training.program import ProgramSafetyBlock, ProgramValidationError, generat
 from training.progress import summarize_progress
 from training.adaptation import assess_next_step
 from training.exercise_progression import recommend_exercise_progression, apply_exercise_progression
+from training.longitudinal_progression import summarize_longitudinal_progression
 from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL
 
 logger = logging.getLogger(__name__)
@@ -1433,6 +1434,7 @@ def coach_training_progress(profile_id):
         return jsonify({
             "progress": summarize_progress(profile, sessions),
             "exercise_progressions": recommend_exercise_progression(sessions),
+            "longitudinal_progression": summarize_longitudinal_progression(sessions),
             "source": "recorded_training_history",
             "automatic_load_changes": False,
         }), 200
