@@ -1535,8 +1535,12 @@ def coach_profile_program(profile_id):
         # adaptation endpoint: two completed, easy sessions with RIR >= 3.
         sessions = store_list_sessions(profile_id, token, limit=3)
         feedback, adaptation = _build_profile_adaptation(sessions)
-        result = generate_program(profile["profile"], feedback=feedback)
         exercise_progressions = recommend_exercise_progression(sessions)
+        # A global "easy" rating must not progress every exercise. The
+        # exercise-level engine owns positive progression from this point.
+        if feedback and feedback.get("difficulty") == "easy":
+            feedback = {**feedback, "difficulty": "right"}
+        result = generate_program(profile["profile"], feedback=feedback)
         result = apply_exercise_progression(result, exercise_progressions)
         return jsonify({
             "program": result,
