@@ -69,7 +69,31 @@ def assess_next_step(sessions):
             for exercise in session.get("exercises", [])
             if isinstance(exercise, dict)
         ]
-        if observations and all(isinstance(x.get("rir"), int) and x["rir"] >= 3 for x in observations):
+        def has_complete_reserve_feedback(exercise):
+            set_results = exercise.get("set_results")
+            if isinstance(set_results, list) and set_results:
+                reserves = [
+                    row.get("rir") for row in set_results
+                    if isinstance(row, dict)
+                ]
+                return (
+                    len(reserves) == len(set_results)
+                    and all(
+                        isinstance(value, int)
+                        and not isinstance(value, bool)
+                        and 0 <= value <= 10
+                        and value >= 3
+                        for value in reserves
+                    )
+                )
+            reserve = exercise.get("rir")
+            return (
+                isinstance(reserve, int)
+                and not isinstance(reserve, bool)
+                and 3 <= reserve <= 10
+            )
+
+        if observations and all(has_complete_reserve_feedback(x) for x in observations):
             return {
                 "decision": "progression_candidate",
                 "progression_allowed": True,
