@@ -605,3 +605,12 @@ def test_mobility_programming_includes_strength_through_controlled_range():
     assert "strength through the largest controlled, tolerated range" in prompt
     assert "ATG split squat" in prompt
     assert "never force end range" in prompt
+
+
+
+def test_system_prompt_preserves_cossack_name_and_beginner_combined_tempo():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert 'Keep "Cossack squat" in English' in prompt
+    assert 'never translate it as "kozaški počep"' in prompt
+    assert "use 2–1–1–0 as the consistent default tempo" in prompt
+    assert "Do not switch some ordinary exercises to 3–1–2–0 or 2–0–X–0" in prompt
