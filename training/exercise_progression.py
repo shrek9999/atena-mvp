@@ -124,22 +124,52 @@ def _classify(history):
     if latest["recovery"] == "poor" or previous["recovery"] == "poor":
         return "hold", "Regeneracija ni bila ustrezna v obeh zadnjih izpostavitvah. Progresijo zadrži."
 
+    target_min = latest["target_reps_min"]
     target_max = latest["target_reps_max"]
-    if latest_reps and target_max and all(value >= target_max for value in latest_reps):
-        if latest["loads"] and previous["loads"]:
-            old_load = sum(previous["loads"]) / len(previous["loads"])
-            new_load = sum(latest["loads"]) / len(latest["loads"])
-            if new_load < old_load:
-                return "hold", "Obremenitev se je med zadnjima izvedbama spremenila. Najprej utrdi primerljivo izvedbo."
-            if new_load == old_load:
-                return "increase_load", "Zgornjo mejo ponovitev si dosegel v vseh serijah z najmanj 3 RIR v dveh zaporednih izvedbah. Naslednjič lahko poskusiš najmanjši razpoložljivi dvig obremenitve; serije in ponovitve ohrani."
-        return "progress_variation", "Zgornjo mejo ponovitev si dosegel z ustrezno rezervo. Če zunanja obremenitev ni na voljo, izberi le majhen korak zahtevnejše različice; ne spreminjaj hkrati tempa in obsega."
+    if target_min is not None and target_max is not None:
+        if (
+            previous["target_reps_min"] != target_min
+            or previous["target_reps_max"] != target_max
+        ):
+            return "hold", "Ciljno območje ponovitev se je med izvedbama spremenilo. Najprej zberi dve primerljivi izvedbi."
+        previous_reps = previous["reps"]
+        if not latest_reps or not previous_reps:
+            return "collect_data", "Za primerjavo manjka dejansko število ponovitev v eni od zadnjih izvedb."
+        if (
+            not all(value >= target_min for value in previous_reps)
+            or not all(value >= target_min for value in latest_reps)
+        ):
+            return "hold", "Spodnja meja načrtovanega območja še ni bila dosežena v obeh zadnjih izvedbah. Ohrani trenutni odmerek."
+        latest_at_top = all(value >= target_max for value in latest_reps)
+        previous_at_top = all(value >= target_max for value in previous_reps)
+        if latest_at_top and not previous_at_top:
+            return "hold", "Zgornjo mejo si dosegel šele v zadnji izvedbi. Pred dvigom obremenitve jo potrdi še enkrat."
+        if latest_at_top and previous_at_top:
+            if latest["loads"] and previous["loads"]:
+                old_load = sum(previous["loads"]) / len(previous["loads"])
+                new_load = sum(latest["loads"]) / len(latest["loads"])
+                if new_load != old_load:
+                    return "hold", "Obremenitev se je že spremenila. Najprej utrdi novo obremenitev v dveh primerljivih izvedbah."
+                return "increase_load", "Zgornjo mejo ponovitev si dosegel v vseh serijah v dveh zaporednih izvedbah z najmanj 3 RIR. Naslednjič lahko poskusiš najmanjši razpoložljivi dvig obremenitve; serije in ponovitve ohrani."
+            if not latest["loads"] and not previous["loads"]:
+                return "progress_variation", "Zgornjo mejo ponovitev si dosegel v obeh izvedbah z ustrezno rezervo. Če zunanja obremenitev ni na voljo, izberi le majhen korak zahtevnejše različice."
+            return "collect_data", "Za primerjavo obremenitve manjka podatek iz ene od zadnjih izvedb."
+        if any(current < prior for current, prior in zip(latest_reps, previous_reps)):
+            return "hold", "Ponovitve v zadnji izvedbi še niso bile stabilne glede na prejšnjo. Ohrani trenutni odmerek."
+        return "add_repetitions", "Dve zaporedni kakovostni izvedbi z vsaj 3 RIR in doseženo spodnjo mejo dopuščata majhen korak: naslednjič dodaj eno ponovitev na serijo, obremenitev in število serij pa ohrani."
 
-    if latest_reps and latest["target_reps_min"] and all(value >= latest["target_reps_min"] for value in latest_reps):
-        return "add_repetitions", "Dve zaporedni kakovostni izvedbi z vsaj 3 RIR dopuščata majhen korak: naslednjič dodaj eno ponovitev na serijo, obremenitev in število serij pa ohrani."
-    if latest_work and latest["target_work_seconds"] and all(value >= latest["target_work_seconds"] for value in latest_work):
-        return "increase_work_time", "Trajanje ciljnega dela je bilo doseženo z ustrezno rezervo v dveh izvedbah. Naslednjič podaljšaj delo za majhen korak, ostale spremenljivke ohrani."
-    return "hold", "Odziv še ne dosega načrtovanega območja z zadostno rezervo. Ohrani odmerek in najprej utrdi kakovostne ponovitve."
+    target_work = latest["target_work_seconds"]
+    if target_work is not None:
+        if previous["target_work_seconds"] != target_work:
+            return "hold", "Ciljno trajanje se je med izvedbama spremenilo. Najprej zberi dve primerljivi izvedbi."
+        if (
+            latest_work and previous["work_seconds"]
+            and all(value >= target_work for value in latest_work)
+            and all(value >= target_work for value in previous["work_seconds"])
+        ):
+            return "increase_work_time", "Načrtovano trajanje si dosegel v obeh izvedbah z ustrezno rezervo. Naslednjič podaljšaj delo za majhen korak, ostale spremenljivke ohrani."
+        return "hold", "Načrtovano trajanje še ni bilo doseženo v obeh zadnjih izvedbah. Ohrani trenutni odmerek."
+    return "collect_data", "Manjka primerljiv načrt ponovitev ali trajanja. Pred individualno progresijo zberi popolne podatke."
 
 
 def recommend_exercise_progression(sessions):
