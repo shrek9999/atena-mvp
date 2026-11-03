@@ -1,13 +1,26 @@
 name: ATENA live coaching benchmark
 on:
-  push:
-    branches:
-      - "pilot/website-ai-coach"
-    paths:
-      - "evaluations/phase_b_live_scenarios.json"
-      - "coach_routes.py"
-      - ".github/workflows/atena_phase_b_live_benchmark.yml"
   workflow_dispatch:
+    inputs:
+      confirm_free_tier:
+        description: "Type I_CONFIRM_FREE_TIER only after confirming this Gemini project has no linked billing account"
+        required: true
+        type: choice
+        options:
+          - "NO"
+          - "I_CONFIRM_FREE_TIER"
+      scenario_limit:
+        description: "Maximum number of live Gemini scenarios to run"
+        required: true
+        default: "1"
+        type: choice
+        options:
+          - "1"
+          - "2"
+          - "3"
+          - "5"
+          - "10"
+          - "24"
 concurrency:
   group: atena-phase-b-live-benchmark
   cancel-in-progress: true
@@ -15,6 +28,7 @@ permissions:
   contents: read
 jobs:
   live-benchmark:
+    if: ${{ inputs.confirm_free_tier == 'I_CONFIRM_FREE_TIER' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -33,9 +47,39 @@ jobs:
             exit 1
           fi
           echo "Secure staging access is available; secret value is not displayed."
-      - name: Run 24 real Gemini coaching scenarios
+      - name: Verify staging authentication and storage before any AI calls
         env:
           PILOT_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.error, urllib.request
+          request = urllib.request.Request(
+              "https://atena-ai-coach-pilot.onrender.com/coach/storage/status",
+              headers={"X-Pilot-Token": os.environ["PILOT_TOKEN"]},
+              method="GET",
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  status = response.status
+                  body = json.loads(response.read().decode("utf-8"))
+          except urllib.error.HTTPError as exc:
+              status = exc.code
+              body = {}
+          if status != 200:
+              raise SystemExit(
+                  f"Staging authentication preflight failed (HTTP {status}); "
+                  "no Gemini scenarios were sent. Check that the GitHub and Render pilot tokens match."
+              )
+          if body.get("storage_enabled") is not True or not body.get("privacy_notice_version"):
+              raise SystemExit(
+                  "Staging storage/privacy preflight failed; no Gemini scenarios were sent."
+              )
+          print("Staging authentication and storage preflight: PASS")
+          PY
+      - name: Run the explicitly bounded live Gemini coaching scenarios
+        env:
+          PILOT_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
+          SCENARIO_LIMIT: ${{ inputs.scenario_limit }}
         run: |
           python - <<'PY'
           import json, os, time, urllib.error, urllib.request
@@ -44,6 +88,10 @@ jobs:
           BASE = "https://atena-ai-coach-pilot.onrender.com"
           TOKEN = os.environ["PILOT_TOKEN"]
           suite = json.loads(Path("evaluations/phase_b_live_scenarios.json").read_text(encoding="utf-8"))
+          limit = int(os.environ["SCENARIO_LIMIT"])
+          if not 1 <= limit <= 24:
+              raise SystemExit("SCENARIO_LIMIT must be between 1 and 24")
+          scenarios = suite["scenarios"][:limit]
 
           # These are simulated follow-up answers in a controlled test conversation,
           # not assertions that "none reported" means "no symptoms".
@@ -98,7 +146,7 @@ jobs:
                       time.sleep(10 * (attempt + 1))
 
           results, failures = [], []
-          for index, case in enumerate(suite["scenarios"]):
+          for index, case in enumerate(scenarios):
               profile = json.dumps(case["profile"], ensure_ascii=False, separators=(",", ":"))
               original = case["prompt"]
               first_user = (
@@ -171,13 +219,14 @@ jobs:
               print(f'{case["id"]}: HTTP {status}; source={source}; followup={followup_used}; {"REPLY RECEIVED" if ok else "FAILED"}')
               if not ok:
                   failures.append(case["id"])
-              if index < len(suite["scenarios"]) - 1:
+              if index < len(scenarios) - 1:
                   time.sleep(5)
 
           output = {
               "suite": suite["suite"],
               "version": suite["version"],
               "model": "Gemini model configured on the staging server",
+              "requested_limit": limit,
               "total": len(results),
               "responses_received": sum(1 for x in results if x["http_status"] == 200 and x["reply"]),
               "gemini_responses": sum(1 for x in results if x["response_source"] == "gemini"),
