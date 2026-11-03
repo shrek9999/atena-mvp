@@ -29,11 +29,13 @@ PATTERN_LABELS = {
     "mobility": "aktivna mobilnost",
     "mobility_stretch": "raztezanje",
     "knee_flexion": "upogib kolena",
+    "balance": "ravnotežje",
+    "coordination": "koordinacija",
 }
 PATTERN_ORDER = [
     "squat", "lunge", "hinge", "hip_extension", "horizontal_push", "horizontal_pull",
     "vertical_push", "vertical_pull", "carry", "anti_rotation",
-    "trunk_stability", "jump", "hinge_power", "conditioning", "locomotion", "mobility", "mobility_stretch", "knee_flexion",
+    "trunk_stability", "jump", "hinge_power", "conditioning", "locomotion", "mobility", "mobility_stretch", "knee_flexion", "balance", "coordination",
 ]
 
 
@@ -127,6 +129,11 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # Two resistance-focused full-body days remain the foundation. Additional days
         # add a short aerobic/conditioning session rather than more lifting volume.
         return ["locomotion", "lunge", "conditioning"]
+    if goal == "functional":
+        base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
+        extras = [["lunge", "vertical_push"], ["lunge", "vertical_pull"], ["lunge", "vertical_push"], ["lunge", "vertical_pull"]]
+        functional_additions = [["balance", "jump"], ["coordination", "conditioning"], ["balance", "conditioning"], ["coordination", "jump"]]
+        return base + extras[session_index] + functional_additions[session_index]
     if goal == "endurance":
         # Keep a minimum viable session even when no loaded carry equipment exists.
         # Carry is an optional fourth pattern and is omitted when no safe load is available.
@@ -141,6 +148,8 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
     else:
         extras = [["lunge", "vertical_push"], ["vertical_pull", "lunge"], ["lunge", "vertical_push"], ["vertical_pull", "lunge"]]
     patterns = base + (extras[session_index][:1] if include_stability else extras[session_index])
+    if goal == "fat_loss":
+        patterns.append("conditioning")
     if include_stability:
         patterns.insert(0, "trunk_stability")
     if goal == "power":
@@ -184,6 +193,22 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         sets, reps, rir, rest = 2, "12–20", None, 45
     elif is_power:
         sets, reps, rir, rest = 3, "3–5", 4, 180
+    elif pattern == "balance":
+        sets, reps, rir, rest = 2, "5–8", None, 45
+    elif pattern == "coordination":
+        sets, reps, rir, rest = 3, "10–15 s", None, 45
+    elif level == "beginner" and goal in {"strength", "hypertrophy", "strength_hypertrophy"}:
+        # Early training age: use one shared strength-and-muscle-development dose.
+        # Exercise quality, repeatable technique and gradual loading matter more than a narrow goal split.
+        if pattern in {"lunge"} or unilateral:
+            sets, reps, rir, rest = 2, "8–12", 3, 90
+        elif pattern in {"vertical_push", "vertical_pull"}:
+            sets, reps, rir, rest = 2, "8–12", 3, 90
+        elif pattern in {"hip_extension", "carry"}:
+            sets, reps, rir, rest = 2, "10–15", 3, 75
+        else:
+            sets, reps, rir, rest = 3, "8–12", 3, 120 if pattern in {"squat", "hinge"} else 90
+        rir_range = "2–3"
     elif level == "beginner":
         # Beginners still train toward the selected goal; the goal changes the
         # dose while technique and a conservative effort reserve remain priorities.
@@ -269,6 +294,8 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         tempo, tempo_description, tempo_seconds = "ritmično", "Ohrani enakomeren ritem in intenzivnost, ki ustreza predpisanemu cilju.", 0
     elif is_power:
         tempo, tempo_description, tempo_seconds = "1–0–X–0", "Nadzorovan začetni položaj; dvig oziroma odriv izvedi hitro in tehnično čisto; med ponovitvami se ponastavi.", 3
+    elif pattern in {"balance", "coordination"}:
+        tempo, tempo_description, tempo_seconds = "kontrolirano", "Najprej kakovost in nadzor; hitrost ali doseg povečuj šele, ko je izvedba ponovljiva.", 0
     elif is_stability:
         tempo, tempo_description, tempo_seconds = "2–1–2–1", "2 s izteg oziroma odmik · 1 s nadzor · 2 s vrnitev · 1 s ponastavitev.", 6
     elif goal == "strength_hypertrophy" and pattern in {"squat", "hinge"}:
@@ -313,7 +340,11 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         duration = 30 if pattern == "mobility_stretch" else 20
         target = "Zadrži blag do zmeren razteg brez bolečine, mravljinčenja ali prisiljevanja." if pattern == "mobility_stretch" else "Deluj v kontrolirani neboleči amplitudi; brez siljenja v končni položaj."
         prescription.update({"work_seconds": duration, "time_label": "zadržanja" if pattern == "mobility_stretch" else "aktivnega zadržanja", "effort_target": target})
-    if is_stability:
+    if pattern == "balance":
+        prescription["effort_target"] = "Ohrani stabilno oporo in nadzor; končaj serijo, ko se kakovost izvedbe poslabša."
+    elif pattern == "coordination":
+        prescription["effort_target"] = "Izvedi kratke, kakovostne ponovitve; ustavi interval, ko se poslabša koordinacija ali zaviranje."
+    elif is_stability:
         prescription["effort_target"] = (
             "Serijo zaključi, preden izgubiš stabilen položaj ali nadzor nad gibanjem."
         )
@@ -834,8 +865,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "exercise_scaling": "Vsaka vaja ima označen potencial obremenitve, vlogo, zahteve glede opreme in stopnjevanje. Nizko obremenljive učne vaje niso privzeta glavna izbira za hipertrofijo.",
             "equipment_policy": "Brez uteži ne pomeni brez običajnih stabilnih gospodinjskih opor. Stol, kavč, miza, stopnica, brisača ali palica so dovoljeni le, kadar jih profil izrecno vključuje in so varni za uporabo.",
             "endurance_policy": "Vzdržljivost je ločen cilj; aerobne aktivnosti, intervali in mišična vzdržljivost so označeni ločeno.",
-            "mobility_policy": "Mobilnost vključuje aktivne gibalne vaje, kontrolirano gibanje v končnih amplitudah in moč skozi razpoložljiv obseg, ne samo pasivnega raztezanja.",
-            "fat_loss_policy": "Pri hujšanju je osnova ohranitev mišične mase in zmogljivosti: dva treninga moči ostaneta jedro programa; ob treh ali štirih treningih dodamo kratko aerobno/kondicijsko enoto. Pri dveh treningih ATENA priporoči dodatno vsakodnevno gibanje, ne pa neselektivnega dodajanja serij. Za zmanjšanje telesne maščobe je potreben vzdržen energijski primanjkljaj; brez ekstremnih diet in brez obljub o lokalnem kurjenju maščobe.",
+            "mobility_policy": "Mobilnost vključuje aktivne gibalne vaje, kontrolirano gibanje v končnih amplitudah in razvoj moči skozi čim večji nadzorovan in toleriran obseg (npr. predklon z ravnim hrbtom/RDL, ATG izpadni počep, kozaški počep in obremenjeni globoki počep), ne samo pasivnega raztezanja.",
+            "fat_loss_policy": "Pri uravnavanju telesne teže združi vadbo moči za ohranjanje mišične mase s kratkimi, odmerjenimi kondicijskimi intervali v istem treningu; ob treh ali štirih treningih je lahko dodatna enota pretežno aerobna. MetCon naj bo nadzorovan, ne maksimalen in ne na račun tehnike ali regeneracije. Za zmanjšanje telesne maščobe je potreben vzdržen energijski primanjkljaj; vadba sama ga ne zagotavlja.",
             "experience_adaptation": (
                 "Vzdržljivost: začetnik gradi predvsem enakomeren aerobni obseg v pogovornem tempu; intervale uvajaj postopno. Naprednejši lahko kombinira daljše aerobne enote, intervale in mišično vzdržljivost, vendar ne vsega maksimalno v isti vadbi."
                 if p["goal"] == "endurance" else
