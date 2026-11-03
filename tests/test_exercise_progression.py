@@ -199,6 +199,23 @@ def test_discomfort_stops_all_exercise_progression():
     assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "pause_and_review"
 
 
+def test_aerobic_time_is_not_progressed_from_duration_and_rir_alone():
+    aerobic = {
+        "exercise_id": "running_easy",
+        "planned_sets": 1,
+        "target_work_seconds": 1200,
+        "execution_quality": "controlled",
+        "set_results": [{"work_seconds": 1200, "rir": 4}],
+    }
+    sessions = [
+        record("2026-11-03", [aerobic]),
+        record("2026-10-30", [aerobic]),
+    ]
+    result = decision(recommend_exercise_progression(sessions), "running_easy")
+    assert result["decision"] == "collect_data"
+    assert "intenzivnosti" in result["reason"]
+
+
 def test_two_successful_timed_exposures_increase_work_by_a_meaningful_step():
     timed = {
         "exercise_id": "deep_squat_hold",
