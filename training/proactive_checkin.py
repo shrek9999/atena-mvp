@@ -17,7 +17,10 @@ def _latest_session(sessions):
             day = date.fromisoformat(item.get("session_date", ""))
         except (TypeError, ValueError):
             continue
-        by_day[day.isoformat()] = (day, item["session"])
+        # store_list_sessions returns newest-created first for a date.
+        # Keep the first record rather than overwriting it with an older same-day log.
+        if day.isoformat() not in by_day:
+            by_day[day.isoformat()] = (day, item["session"])
     ordered = sorted(by_day.values(), key=lambda row: row[0], reverse=True)
     return ordered[0][1] if ordered else None
 
