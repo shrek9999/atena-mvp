@@ -1473,6 +1473,14 @@ def coach_training_sessions(profile_id):
             if not profile["health_data_consent"]:
                 return jsonify({"error": "Za shranjevanje podatka o nelagodju je potrebna ločena privolitev za zdravstvene podatke."}), 403
             session["discomfort_reported"] = discomfort
+        if adaptation_response is not None:
+            prior_sessions = store_list_sessions(profile_id, token, limit=50)
+            expected_adaptation_id = _build_adaptive_decision(prior_sessions)["adaptation_id"]
+            if adaptation_response["adaptation_id"] != expected_adaptation_id:
+                return jsonify({
+                    "error": "Odziv se ne nanaša na zadnjo prilagoditev, ki jo je izdala ATENA.",
+                    "code": "adaptation_id_mismatch",
+                }), 409
         saved = store_add_session(profile_id, token, str(uuid.uuid4()), session_date, session)
         return jsonify({"session": saved}), 201
     except ProfileNotFound:
