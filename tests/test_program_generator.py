@@ -714,7 +714,8 @@ def test_fat_loss_goal_keeps_resistance_training_as_the_foundation():
     for session in two_day["sessions"]:
         patterns = {exercise["pattern"] for exercise in session["exercises"]}
         assert {"squat", "hinge", "horizontal_push", "horizontal_pull"}.issubset(patterns)
-        assert not any(pattern in {"locomotion", "conditioning"} for pattern in patterns)
+        assert "conditioning" in patterns
+        assert "locomotion" not in patterns
     assert "ohranitev mišične mase" in two_day["methodology"]["fat_loss_policy"]
     assert two_day["weekly_summary"]["primary_muscle_set_exposure"]
 
