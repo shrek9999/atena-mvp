@@ -87,6 +87,25 @@ def test_rir_must_be_recorded_for_every_set():
     assert decision(recommend_exercise_progression(sessions), "goblet_squat")["decision"] == "collect_data"
 
 
+def test_legacy_aggregated_rir_does_not_substitute_for_set_by_set_data():
+    legacy = {
+        "exercise_id": "goblet_squat",
+        "sets_completed": 3,
+        "reps_completed": 12,
+        "load_kg": 20,
+        "rir": 4,
+        "planned_sets": 3,
+        "target_reps_min": 8,
+        "target_reps_max": 12,
+        "execution_quality": "controlled",
+    }
+    sessions = [
+        record("2026-11-03", [legacy]),
+        record("2026-10-30", [legacy]),
+    ]
+    assert decision(recommend_exercise_progression(sessions), "goblet_squat")["decision"] == "collect_data"
+
+
 def test_missing_planned_set_is_not_treated_as_full_success():
     partial = exercise("goblet_squat", reps=(12, 12), rir=(4, 4), sets=3)
     sessions = [
