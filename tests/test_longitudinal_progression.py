@@ -148,3 +148,17 @@ def test_time_based_conditioning_is_not_misclassified_as_resistance_progression(
     result = summarize_longitudinal_progression(sessions)
     assert result["exercise_trends"][0]["status"] == "not_supported"
     assert result["exercise_trends"][0]["review"] == "use_modality_specific_assessment"
+
+
+
+def test_duplicate_same_day_entries_do_not_count_as_separate_exposures():
+    records = [
+        _record("2026-10-01"),
+        _record("2026-10-08"),
+        _record("2026-10-15"),
+        _record("2026-10-22"),
+        _record("2026-10-22"),
+    ]
+    trend = _trend(records)
+    assert trend["recorded_exposures"] == 4
+    assert trend["status"] == "building_baseline"
