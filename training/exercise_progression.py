@@ -63,6 +63,11 @@ def _exercise_observation(exercise, session, day):
         "work_seconds": work,
         "loads": loads,
         "rirs": rirs,
+        "rir_complete": bool(rirs) and len(rirs) == len(sets) if sets else bool(rirs),
+        "sets_complete": (
+            exercise.get("planned_sets") is None
+            or len(sets) == exercise.get("planned_sets")
+        ) if sets else True,
         "planned_sets": exercise.get("planned_sets"),
         "target_reps_min": exercise.get("target_reps_min"),
         "target_reps_max": exercise.get("target_reps_max"),
@@ -103,8 +108,13 @@ def _classify(history):
         return "collect_data", "V prejšnjem treningu kakovost izvedbe ni bila potrjena. Potrebna je še ena zanesljivo ocenjena izpostavitev."
     if previous["difficulty"] == "hard" or previous["recovery"] == "poor":
         return "hold", "Prejšnji odziv ni bil dovolj stabilen za progresijo. Ohrani odmerek in preveri naslednjo kakovostno izvedbo."
-    if not latest["rirs"] or not previous["rirs"]:
-        return "collect_data", "Manjka zanesljiva ocena RIR v obeh zadnjih izvedbah. Brez nje ne bom sklepal, da je progresija upravičena."
+    if (
+        not latest["rirs"] or not previous["rirs"]
+        or not latest["rir_complete"] or not previous["rir_complete"]
+    ):
+        return "collect_data", "Manjka zanesljiva ocena RIR za vsako serijo v obeh zadnjih izvedbah. Brez popolnih podatkov ne bom sklepal, da je progresija upravičena."
+    if not latest["sets_complete"] or not previous["sets_complete"]:
+        return "hold", "V eni od zadnjih izvedb ni bilo zabeleženih vseh načrtovanih serij. Najprej preveri razlog in utrdi načrtovani odmerek."
     if min(latest["rirs"]) < 3 or min(previous["rirs"]) < 3:
         return "hold", "Rezerva ponovitev še ne potrjuje lahke izvedbe v dveh zaporednih treningih. Ohrani trenutno obremenitev in obseg."
     if latest["difficulty"] not in {"easy", "moderate"} or previous["difficulty"] not in {"easy", "moderate"}:
