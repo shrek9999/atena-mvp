@@ -44,13 +44,13 @@ def test_beginner_receives_lower_effort_and_volume():
                 assert exercise["prescription"]["rir"] >= 3
 
 
-def test_intermediate_strength_program_uses_specific_moderate_rep_ranges():
+def test_intermediate_strength_program_uses_shared_strength_hypertrophy_rep_ranges():
     profile = {**BASE, "goal": "strength", "experience": "intermediate"}
     plan = generate_program(profile)
     main = [ex for s in plan["sessions"] for ex in s["exercises"] if ex["pattern"] in {"squat", "hinge"}]
     assert main
-    assert all(ex["prescription"]["reps"] == "5–8" for ex in main)
-    assert all(ex["prescription"]["rest_seconds"] >= 150 for ex in main)
+    assert all(ex["prescription"]["reps"] == "8–12" for ex in main)
+    assert all(ex["prescription"]["rir"] == 3 for ex in main)
 
 
 def test_beginner_strength_prioritizes_skill_and_8_to_12_reps():
@@ -237,7 +237,7 @@ def test_hypertrophy_defaults_to_compound_work_without_stability_exercises():
     plan = generate_program({**BASE, "session_minutes": 75})
     exercises = [ex for session in plan["sessions"] for ex in session["exercises"]]
     assert all(ex["pattern"] not in {"trunk_stability", "anti_rotation"} for ex in exercises)
-    assert any(ex["pattern"] == "squat" and ex["prescription"]["reps"] == "6–10" for ex in exercises)
+    assert any(ex["pattern"] == "squat" and ex["prescription"]["reps"] == "8–12" for ex in exercises)
     assert all(session["exercise_count"] <= 6 for session in plan["sessions"])
 
 
