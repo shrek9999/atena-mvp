@@ -292,6 +292,14 @@ def test_heel_lift_with_ankle_mobility_does_not_default_to_front_squat():
     assert "Ali imaš na voljo namensko stabilno klinasto podporo" in reply
 
 
+def test_system_prompt_prioritizes_bodyweight_across_equipment_profiles():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "BODYWEIGHT AS A DEFAULT TRAINING RESOURCE" in prompt
+    assert "regularly include suitable bodyweight movements" in prompt
+    assert "Do not drop push-ups, pull-ups, dips" in prompt
+    assert "retain appropriately loaded, specific main lifts" in prompt
+
+
 def test_system_prompt_covers_bodyweight_limits_and_ankle_biomechanics():
     prompt = coach_routes.SYSTEM_PROMPT
     assert "BODYWEIGHT-ONLY HYPERTROPHY LIMITS" in prompt
