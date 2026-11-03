@@ -37,4 +37,6 @@ def test_progress_endpoint_returns_authenticated_non_prescriptive_summary(monkey
     payload = response.get_json()
     assert payload["progress"]["completed_sessions"] == 2
     assert payload["progress"]["exercise_trends"][0]["status"] == "load_increased"
+    assert payload["longitudinal_progression"]["method"] == "last_five_comparable_exposures"
+    assert payload["longitudinal_progression"]["automatic_program_changes"] is False
     assert payload["automatic_load_changes"] is False
