@@ -12,6 +12,8 @@ on:
       - "requirements.txt"
       - "training/**"
       - ".github/workflows/atena-staging-quality.yml"
+      - ".github/workflows/atena_staging_endpoint_verification.yml"
+      - ".github/workflows/atena_phase_b_live_benchmark.yml"
   workflow_dispatch:
 permissions:
   contents: read
