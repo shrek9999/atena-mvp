@@ -56,16 +56,20 @@ def _exercise_observation(exercise, session, day):
         if isinstance(exercise.get("rir"), int):
             rirs = [exercise["rir"]]
 
+    catalogue_item = get_exercise(exercise["exercise_id"]) or {}
     return {
         "date": day.isoformat(),
         "exercise_id": exercise["exercise_id"],
+        "pattern": catalogue_item.get("pattern"),
         "reps": reps,
         "work_seconds": work,
         "loads": loads,
         "rirs": rirs,
-        # Only set-by-set RIR is sufficient for individual progression.
-        # Legacy session summaries cannot prove that every set had adequate reserve.
+        # Only set-by-set feedback is sufficient for individual progression.
+        # Legacy session summaries cannot prove that every set met the target.
         "rir_complete": bool(sets) and len(rirs) == len(sets),
+        "reps_complete": bool(sets) and len(reps) == len(sets),
+        "work_complete": bool(sets) and len(work) == len(sets),
         "sets_complete": (
             exercise.get("planned_sets") is None
             or (len(sets) if sets else exercise.get("sets_completed")) == exercise.get("planned_sets")
@@ -124,22 +128,58 @@ def _classify(history):
     if latest["recovery"] == "poor" or previous["recovery"] == "poor":
         return "hold", "Regeneracija ni bila ustrezna v obeh zadnjih izpostavitvah. Progresijo zadrži."
 
+    target_min = latest["target_reps_min"]
     target_max = latest["target_reps_max"]
-    if latest_reps and target_max and all(value >= target_max for value in latest_reps):
-        if latest["loads"] and previous["loads"]:
-            old_load = sum(previous["loads"]) / len(previous["loads"])
-            new_load = sum(latest["loads"]) / len(latest["loads"])
-            if new_load < old_load:
-                return "hold", "Obremenitev se je med zadnjima izvedbama spremenila. Najprej utrdi primerljivo izvedbo."
-            if new_load == old_load:
-                return "increase_load", "Zgornjo mejo ponovitev si dosegel v vseh serijah z najmanj 3 RIR v dveh zaporednih izvedbah. Naslednjič lahko poskusiš najmanjši razpoložljivi dvig obremenitve; serije in ponovitve ohrani."
-        return "progress_variation", "Zgornjo mejo ponovitev si dosegel z ustrezno rezervo. Če zunanja obremenitev ni na voljo, izberi le majhen korak zahtevnejše različice; ne spreminjaj hkrati tempa in obsega."
+    if target_min is not None and target_max is not None:
+        if not latest["reps_complete"] or not previous["reps_complete"]:
+            return "collect_data", "Manjkajo dejanske ponovitve za vsako serijo v eni od zadnjih izvedb."
+        if (
+            previous["target_reps_min"] != target_min
+            or previous["target_reps_max"] != target_max
+        ):
+            return "hold", "Ciljno območje ponovitev se je med izvedbama spremenilo. Najprej zberi dve primerljivi izvedbi."
+        previous_reps = previous["reps"]
+        if not latest_reps or not previous_reps:
+            return "collect_data", "Za primerjavo manjka dejansko število ponovitev v eni od zadnjih izvedb."
+        if (
+            not all(value >= target_min for value in previous_reps)
+            or not all(value >= target_min for value in latest_reps)
+        ):
+            return "hold", "Spodnja meja načrtovanega območja še ni bila dosežena v obeh zadnjih izvedbah. Ohrani trenutni odmerek."
+        latest_at_top = all(value >= target_max for value in latest_reps)
+        previous_at_top = all(value >= target_max for value in previous_reps)
+        if latest_at_top and not previous_at_top:
+            return "hold", "Zgornjo mejo si dosegel šele v zadnji izvedbi. Pred dvigom obremenitve jo potrdi še enkrat."
+        if latest_at_top and previous_at_top:
+            if latest["loads"] and previous["loads"]:
+                old_load = sum(previous["loads"]) / len(previous["loads"])
+                new_load = sum(latest["loads"]) / len(latest["loads"])
+                if new_load != old_load:
+                    return "hold", "Obremenitev se je že spremenila. Najprej utrdi novo obremenitev v dveh primerljivih izvedbah."
+                return "increase_load", "Zgornjo mejo ponovitev si dosegel v vseh serijah v dveh zaporednih izvedbah z najmanj 3 RIR. Naslednjič lahko poskusiš najmanjši razpoložljivi dvig obremenitve; serije in ponovitve ohrani."
+            if not latest["loads"] and not previous["loads"]:
+                return "progress_variation", "Zgornjo mejo ponovitev si dosegel v obeh izvedbah z ustrezno rezervo. Če zunanja obremenitev ni na voljo, izberi le majhen korak zahtevnejše različice."
+            return "collect_data", "Za primerjavo obremenitve manjka podatek iz ene od zadnjih izvedb."
+        if any(current < prior for current, prior in zip(latest_reps, previous_reps)):
+            return "hold", "Ponovitve v zadnji izvedbi še niso bile stabilne glede na prejšnjo. Ohrani trenutni odmerek."
+        return "add_repetitions", "Dve zaporedni kakovostni izvedbi z vsaj 3 RIR in doseženo spodnjo mejo dopuščata majhen korak: naslednjič dodaj eno ponovitev na serijo, obremenitev in število serij pa ohrani."
 
-    if latest_reps and latest["target_reps_min"] and all(value >= latest["target_reps_min"] for value in latest_reps):
-        return "add_repetitions", "Dve zaporedni kakovostni izvedbi z vsaj 3 RIR dopuščata majhen korak: naslednjič dodaj eno ponovitev na serijo, obremenitev in število serij pa ohrani."
-    if latest_work and latest["target_work_seconds"] and all(value >= latest["target_work_seconds"] for value in latest_work):
-        return "increase_work_time", "Trajanje ciljnega dela je bilo doseženo z ustrezno rezervo v dveh izvedbah. Naslednjič podaljšaj delo za majhen korak, ostale spremenljivke ohrani."
-    return "hold", "Odziv še ne dosega načrtovanega območja z zadostno rezervo. Ohrani odmerek in najprej utrdi kakovostne ponovitve."
+    target_work = latest["target_work_seconds"]
+    if target_work is not None:
+        if latest["pattern"] not in {"mobility", "mobility_stretch", "trunk_stability", "anti_rotation", "balance"}:
+            return "collect_data", "Časovni interval potrebuje še podatek o intenzivnosti oziroma tempu. Samo daljši čas ni dovolj za varno progresijo aerobne ali kondicijske naloge."
+        if not latest["work_complete"] or not previous["work_complete"]:
+            return "collect_data", "Manjka dejansko trajanje za vsako serijo v eni od zadnjih izvedb."
+        if previous["target_work_seconds"] != target_work:
+            return "hold", "Ciljno trajanje se je med izvedbama spremenilo. Najprej zberi dve primerljivi izvedbi."
+        if (
+            latest_work and previous["work_seconds"]
+            and all(value >= target_work for value in latest_work)
+            and all(value >= target_work for value in previous["work_seconds"])
+        ):
+            return "increase_work_time", "Načrtovano trajanje si dosegel v obeh izvedbah z ustrezno rezervo. Naslednjič podaljšaj delo za majhen korak, ostale spremenljivke ohrani."
+        return "hold", "Načrtovano trajanje še ni bilo doseženo v obeh zadnjih izvedbah. Ohrani trenutni odmerek."
+    return "collect_data", "Manjka primerljiv načrt ponovitev ali trajanja. Pred individualno progresijo zberi popolne podatke."
 
 
 def recommend_exercise_progression(sessions):
@@ -170,9 +210,11 @@ def recommend_exercise_progression(sessions):
         exercises = session.get("exercises", [])
         if not isinstance(exercises, list):
             continue
+        seen_in_session = set()
         for exercise in exercises:
             observation = _exercise_observation(exercise, session, day)
-            if observation:
+            if observation and observation["exercise_id"] not in seen_in_session:
+                seen_in_session.add(observation["exercise_id"])
                 by_exercise[observation["exercise_id"]].append(observation)
 
     recommendations = []
@@ -234,7 +276,9 @@ def apply_exercise_progression(program, recommendations):
                         prescription["rir"] = max(3, prescription["rir"])
                     prescription["rest_seconds"] = min(300, prescription.get("rest_seconds", 0) + 30)
             elif decision == "increase_work_time" and isinstance(prescription.get("work_seconds"), int):
-                prescription["work_seconds"] = min(1800, int(prescription["work_seconds"] * 1.05))
+                current_seconds = prescription["work_seconds"]
+                increment = max(5, int(round(current_seconds * 0.05)))
+                prescription["work_seconds"] = min(1800, current_seconds + increment)
             prescription["exercise_progression"] = {
                 "decision": decision,
                 "reason": note,
