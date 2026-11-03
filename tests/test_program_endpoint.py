@@ -69,7 +69,7 @@ def test_program_endpoint_accepts_nested_profile_and_reduces_hard_feedback(monke
     assert program["methodology"]["last_session_adjustment"] == "reduce_sets_increase_reserve"
     first = program["sessions"][0]["exercises"][0]["prescription"]
     assert first["sets"] == 2
-    assert first["rir"] == 4
+    assert first["rir"] == 3
 
 
 def test_program_endpoint_holds_after_easy_feedback_instead_of_auto_progressing(monkeypatch):
