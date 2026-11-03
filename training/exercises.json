@@ -225,7 +225,9 @@
     "movement_family": "single_leg_knee_dominant",
     "loading_mode": "mixed",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [
+      "balance"
+    ]
   },
   {
     "id": "reverse_lunge",
@@ -282,7 +284,9 @@
     "movement_family": "single_leg_knee_dominant",
     "loading_mode": "mixed",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [
+      "balance"
+    ]
   },
   {
     "id": "forward_lunge",
@@ -339,7 +343,9 @@
     "movement_family": "single_leg_knee_dominant",
     "loading_mode": "mixed",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [
+      "balance"
+    ]
   },
   {
     "id": "rear_foot_elevated_split_squat",
@@ -398,7 +404,9 @@
     "movement_family": "single_leg_knee_dominant",
     "loading_mode": "mixed",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [
+      "balance"
+    ]
   },
   {
     "id": "atg_split_squat",
@@ -456,7 +464,9 @@
     "movement_family": "single_leg_knee_dominant",
     "loading_mode": "mixed",
     "mobility_strength": true,
-    "functional_components": []
+    "functional_components": [
+      "balance"
+    ]
   },
   {
     "id": "romanian_deadlift",
@@ -975,7 +985,9 @@
     "movement_family": "upper_pull",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [
+      "balance"
+    ]
   },
   {
     "id": "farmer_carry",
@@ -1036,7 +1048,6 @@
     "loading_mode": "external_load",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "trunk_control"
     ]
   },
@@ -1099,7 +1110,6 @@
     "loading_mode": "external_load",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "trunk_control"
     ]
   },
@@ -1156,7 +1166,6 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "trunk_control"
     ]
   },
@@ -1363,7 +1372,6 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "explosiveness"
     ]
   },
@@ -1425,7 +1433,6 @@
     "loading_mode": "external_load",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "explosiveness"
     ]
   },
@@ -1932,7 +1939,8 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength"
+      "strength",
+      "balance"
     ]
   },
   {
@@ -2049,9 +2057,7 @@
     "movement_family": "knee_dominant",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": [
-      "strength"
-    ]
+    "functional_components": []
   },
   {
     "id": "dumbbell_squat_side",
@@ -2224,7 +2230,8 @@
     "loading_mode": "mixed",
     "mobility_strength": false,
     "functional_components": [
-      "strength"
+      "strength",
+      "balance"
     ]
   },
   {
@@ -2281,7 +2288,8 @@
     "loading_mode": "mixed",
     "mobility_strength": true,
     "functional_components": [
-      "strength"
+      "strength",
+      "balance"
     ]
   },
   {
@@ -2339,7 +2347,8 @@
     "loading_mode": "mixed",
     "mobility_strength": false,
     "functional_components": [
-      "strength"
+      "strength",
+      "balance"
     ]
   },
   {
@@ -2667,7 +2676,9 @@
     "movement_family": "upper_pull",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [
+      "balance"
+    ]
   },
   {
     "id": "chin_up",
@@ -2936,7 +2947,8 @@
     "loading_mode": "mixed",
     "mobility_strength": true,
     "functional_components": [
-      "strength"
+      "strength",
+      "balance"
     ]
   },
   {
@@ -3215,7 +3227,6 @@
     "loading_mode": "external_load",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "trunk_control"
     ]
   },
@@ -3275,7 +3286,6 @@
     "loading_mode": "external_load",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "trunk_control"
     ]
   },
@@ -3336,7 +3346,6 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "conditioning"
     ]
   },
@@ -3395,7 +3404,6 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "conditioning"
     ]
   },
@@ -3574,7 +3582,6 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "conditioning"
     ]
   },
@@ -3633,7 +3640,6 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "conditioning"
     ]
   },
@@ -3753,7 +3759,6 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "conditioning"
     ]
   },
@@ -3813,9 +3818,7 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": [
-      "strength"
-    ]
+    "functional_components": []
   },
   {
     "id": "ankle_knee_to_wall",
@@ -3867,9 +3870,7 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": [
-      "strength"
-    ]
+    "functional_components": []
   },
   {
     "id": "cossack_squat",
@@ -3925,7 +3926,8 @@
     "loading_mode": "mixed",
     "mobility_strength": true,
     "functional_components": [
-      "strength"
+      "strength",
+      "balance"
     ]
   },
   {
@@ -3990,7 +3992,8 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength"
+      "strength",
+      "balance"
     ]
   },
   {
@@ -4043,9 +4046,7 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": [
-      "strength"
-    ]
+    "functional_components": []
   },
   {
     "id": "shinbox_getup",
@@ -4099,9 +4100,7 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": [
-      "strength"
-    ]
+    "functional_components": []
   },
   {
     "id": "thoracic_rotation_quadruped",
@@ -4154,9 +4153,7 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": [
-      "strength"
-    ]
+    "functional_components": []
   },
   {
     "id": "shoulder_car",
@@ -4207,9 +4204,7 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": [
-      "strength"
-    ]
+    "functional_components": []
   },
   {
     "id": "loaded_deep_squat",
@@ -4423,7 +4418,6 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "trunk_control"
     ]
   },
@@ -4479,7 +4473,6 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "trunk_control"
     ]
   },
@@ -4536,7 +4529,8 @@
     "loading_mode": "mixed",
     "mobility_strength": false,
     "functional_components": [
-      "strength"
+      "strength",
+      "balance"
     ]
   },
   {
@@ -4752,9 +4746,7 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": [
-      "strength"
-    ]
+    "functional_components": []
   },
   {
     "id": "wall_slide",
@@ -4807,9 +4799,7 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": [
-      "strength"
-    ]
+    "functional_components": []
   },
   {
     "id": "ski_erg_intervals",
@@ -4869,7 +4859,6 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "conditioning"
     ]
   },
@@ -4930,7 +4919,6 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "conditioning"
     ]
   },
@@ -4988,7 +4976,6 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "conditioning"
     ]
   },
@@ -5050,7 +5037,6 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "conditioning"
     ]
   },
@@ -5110,7 +5096,6 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "conditioning"
     ]
   },
@@ -5275,7 +5260,7 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength"
+      "balance"
     ]
   },
   {
@@ -5327,7 +5312,7 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength"
+      "balance"
     ]
   },
   {
@@ -5379,7 +5364,7 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength"
+      "balance"
     ]
   },
   {
@@ -5432,7 +5417,7 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength"
+      "balance"
     ]
   },
   {
@@ -5645,9 +5630,7 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": [
-      "strength"
-    ]
+    "functional_components": []
   },
   {
     "id": "hip_90_90_ir_isometric",
@@ -5700,9 +5683,7 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": [
-      "strength"
-    ]
+    "functional_components": []
   },
   {
     "id": "crab_reach",
@@ -5759,9 +5740,7 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": [
-      "strength"
-    ]
+    "functional_components": []
   },
   {
     "id": "elevated_pigeon_hinge",
@@ -5817,9 +5796,7 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": [
-      "strength"
-    ]
+    "functional_components": []
   },
   {
     "id": "straight_leg_hip_hinge",
@@ -5874,9 +5851,7 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": [
-      "strength"
-    ]
+    "functional_components": []
   },
   {
     "id": "wall_butterfly",
@@ -5931,9 +5906,7 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": [
-      "strength"
-    ]
+    "functional_components": []
   },
   {
     "id": "patrick_step",
@@ -5996,7 +5969,8 @@
     "loading_mode": "mixed",
     "mobility_strength": true,
     "functional_components": [
-      "strength"
+      "strength",
+      "balance"
     ]
   },
   {
@@ -6112,7 +6086,6 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "conditioning"
     ]
   },
@@ -6177,7 +6150,6 @@
     "loading_mode": "external_load",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "trunk_control"
     ]
   },
@@ -6243,7 +6215,6 @@
     "loading_mode": "external_load",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "trunk_control"
     ]
   },
@@ -6301,7 +6272,6 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "explosiveness"
     ]
   },
@@ -6359,7 +6329,6 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "strength",
       "explosiveness"
     ]
   },
@@ -6547,7 +6516,6 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
     "functional_components": [
-      "strength",
       "trunk_control"
     ]
   },
@@ -6667,8 +6635,7 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
-      "coordination",
-      "conditioning"
+      "coordination"
     ]
   }
 ]
