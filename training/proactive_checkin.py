@@ -115,8 +115,10 @@ def build_proactive_checkin(sessions):
             continue
         sets = item.get("set_results")
         if isinstance(sets, list) and sets and any(
-            not isinstance(row, dict) or not isinstance(row.get("rir"), int)
+            not isinstance(row, dict)
+            or not isinstance(row.get("rir"), int)
             or isinstance(row.get("rir"), bool)
+            or not 0 <= row.get("rir") <= 10
             for row in sets
         ):
             missing_rir.append(item.get("exercise_id", "vaji"))
