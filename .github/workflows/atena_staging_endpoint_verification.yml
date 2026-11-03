@@ -11,6 +11,7 @@ on:
       - "training/exercises.json"
       - "coach_routes.py"
       - "coach_store.py"
+      - "tests/test_catalogue_goal_logic.py"
   workflow_dispatch:
 
 concurrency:
@@ -100,6 +101,36 @@ jobs:
                   return None, {}
 
           failures = []
+
+          # Verify that the exact deployed revision exposes the full curated catalogue.
+          status_request = urllib.request.Request(
+              BASE + "/coach/status",
+              headers={"X-Pilot-Token": TOKEN},
+              method="GET",
+          )
+          try:
+              with urllib.request.urlopen(status_request, timeout=30) as response:
+                  readiness_status = response.status
+                  readiness = json.loads(response.read().decode("utf-8"))
+          except urllib.error.HTTPError as exc:
+              readiness_status = exc.code
+              readiness = {}
+          catalogue_count = readiness.get("catalogue_count")
+          readiness_ok = (
+              readiness_status == 200
+              and catalogue_count == 120
+              and readiness.get("chat_available") is True
+              and readiness.get("program_available") is True
+          )
+          print(
+              "Deployed readiness: "
+              f"HTTP {readiness_status}; catalogue={catalogue_count}; "
+              f"chat={readiness.get('chat_available')}; "
+              f"program={readiness.get('program_available')}; "
+              f"{'PASS' if readiness_ok else 'FAIL'}"
+          )
+          if not readiness_ok:
+              failures.append("deployed catalogue must contain exactly 120 exercises and chat/program must be available")
 
           check_request = urllib.request.Request(
               BASE + "/coach/storage/check",
