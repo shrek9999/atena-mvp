@@ -408,8 +408,8 @@ def _display_exercise_reference(value: str, names: dict[str, str]) -> str:
 def generate_program(profile: object, feedback: object = None) -> dict:
     """Generate a repeatable catalogue plan, conservatively adapting to the last session."""
     p = validate_profile(profile)
-    planning_goal = planning_goal
-    if planning_goal == "strength_hypertrophy" and p["experience"] == "advanced":
+    planning_goal = p["goal"]
+    if p["goal"] == "strength_hypertrophy" and p["experience"] == "advanced":
         if p["training_emphasis"] in {"strength", "hypertrophy"}:
             planning_goal = p["training_emphasis"]
     response = _validate_feedback(feedback)
