@@ -270,7 +270,9 @@ def apply_exercise_progression(program, recommendations):
                         prescription["rir"] = max(3, prescription["rir"])
                     prescription["rest_seconds"] = min(300, prescription.get("rest_seconds", 0) + 30)
             elif decision == "increase_work_time" and isinstance(prescription.get("work_seconds"), int):
-                prescription["work_seconds"] = min(1800, int(prescription["work_seconds"] * 1.05))
+                current_seconds = prescription["work_seconds"]
+                increment = max(5, int(round(current_seconds * 0.05)))
+                prescription["work_seconds"] = min(1800, current_seconds + increment)
             prescription["exercise_progression"] = {
                 "decision": decision,
                 "reason": note,
