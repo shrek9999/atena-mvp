@@ -35,7 +35,11 @@ def _five(**overrides):
         ("2026-10-22", {}),
         ("2026-10-29", {}),
     ]
-    return [_record(day, **overrides.get(day, {})) for day, _ in defaults]
+    shared = {key: value for key, value in overrides.items() if key not in {day for day, _ in defaults}}
+    return [
+        _record(day, **shared, **overrides.get(day, {}))
+        for day, _ in defaults
+    ]
 
 
 def _trend(records):
@@ -98,9 +102,11 @@ def test_duplicate_same_day_entries_do_not_inflate_exposures():
         _record("2026-10-22"),
         _record("2026-10-22"),
     ]
-    trend = _trend(records)
-    assert trend["recorded_exposures"] == 4
-    assert trend["status"] == "building_baseline"
+    trends = summarize_conditioning_progress(records)["conditioning_trends"]
+    assert len(trends) == 2
+    counts = sorted(item["recorded_exposures"] for item in trends)
+    assert counts == [1, 4]
+    assert all(item["status"] == "building_baseline" for item in trends)
 
 
 def test_incomplete_or_invalid_conditioning_block_is_ignored():
