@@ -536,7 +536,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
 
             def selection_priority(item: dict) -> int:
                 if p["goal"] == "mobility" and pattern == "hinge":
-                    if item["id"] == "romanian_deadlift" and ({"dumbbell", "barbell"} & available_equipment):
+                    if item["id"] == "romanian_deadlift" and ({"dumbbell", "barbell", "kettlebell"} & available_equipment):
                         return -15
                     if item["id"] == "single_leg_rdl" and p["experience"] != "beginner":
                         return -10
