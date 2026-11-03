@@ -58,6 +58,9 @@ def _observation(exercise, session, day):
         rep = item.get("reps")
         reserve = item.get("rir")
         load = item.get("load_kg")
+        if rep is None and isinstance(item.get("work_seconds"), int):
+            observation["supported"] = False
+            return observation
         if not isinstance(rep, int) or isinstance(rep, bool) or rep < 1:
             return observation
         if not isinstance(reserve, int) or isinstance(reserve, bool) or not 0 <= reserve <= 10:
@@ -134,6 +137,15 @@ def summarize_longitudinal_progression(sessions):
             "review": "continue_collecting",
             "automatic_program_changes": False,
         }
+
+        if any(item.get("supported") is False for item in window):
+            result.update({
+                "status": "not_supported",
+                "review": "use_modality_specific_assessment",
+                "reason": "Časovne ali kondicijske naloge zahtevajo ločeno presojo intenzivnosti in odziva. Ta analiza je namenjena primerljivim serijam z uporom in ponovitvami.",
+            })
+            results.append(result)
+            continue
 
         if not all(item["complete"] for item in window):
             result.update({
