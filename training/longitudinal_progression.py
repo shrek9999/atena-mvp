@@ -162,6 +162,23 @@ def summarize_longitudinal_progression(sessions):
             results.append(result)
             continue
 
+        if any(item["execution_quality"] == "needs_attention" for item in window):
+            result.update({
+                "status": "technique_review",
+                "review": "coach_technique_review",
+                "reason": "V eni od zadnjih petih izvedb je bila označena slabša tehnika ali nadzor. Večtedenskega trenda ne uporabljam za progresijo, dokler kakovost izvedbe ni ponovno potrjena.",
+            })
+            results.append(result)
+            continue
+        if any(item["execution_quality"] != "controlled" for item in window):
+            result.update({
+                "status": "quality_unconfirmed",
+                "review": "confirm_execution_quality",
+                "reason": "Kakovost izvedbe ni bila potrjena kot nadzorovana v vseh petih izvedbah. Pred presojo trenda zberi zanesljivo oceno tehnike.",
+            })
+            results.append(result)
+            continue
+
         if len(window) < WINDOW_SIZE:
             result["reason"] = "Za večtedensko presojo potrebujem pet popolnih, zabeleženih izvedb iste vaje."
             results.append(result)
