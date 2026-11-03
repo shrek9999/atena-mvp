@@ -103,7 +103,6 @@ def _same_programming_window(window):
     keys = ("sets", "target_reps_min", "target_reps_max")
     return all(
         all(item.get(key) == first.get(key) for key in keys)
-        and item.get("average_load_kg") == first.get("average_load_kg")
         for item in window[1:]
     )
 
