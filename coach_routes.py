@@ -305,8 +305,15 @@ def _profile_contradiction_reply(messages):
         r"profil\s+(?:je\s+)?zastarel",
         latest,
     ))
-    if profile_confirmed or message_confirmed:
+    if profile_confirmed:
         return None
+    if message_confirmed:
+        return (
+            "Razumem, da so podatki v tvojem zadnjem sporočilu pravilni in da je shranjeni profil "
+            "zastarel. Klepet sam profila ne spremeni. Pred pripravo zahtevnejšega programa najprej "
+            "posodobi stopnjo izkušenj in razpoložljivo opremo v svojem profilu; nato lahko varno "
+            "nadaljujeva na podlagi usklajenih podatkov."
+        )
 
     conflicts = []
 
