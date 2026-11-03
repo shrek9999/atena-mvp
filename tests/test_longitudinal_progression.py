@@ -71,9 +71,10 @@ def test_load_improvement_with_repetitions_maintained_is_recognized():
     assert trend["status"] == "improving"
 
 
-def test_declining_repetitions_and_rir_trigger_review_not_automatic_deload():
+def test_sustained_declining_repetitions_and_rir_trigger_review_not_automatic_deload():
     records = _five()
-    records[-1] = _record("2026-10-29", reps=(9, 9, 9), rir=(2, 2, 2))
+    records[-2] = _record("2026-10-22", reps=(9, 9, 9), rir=(3, 3, 3))
+    records[-1] = _record("2026-10-29", reps=(8, 8, 8), rir=(2, 2, 2))
     trend = _trend(records)
     assert trend["status"] == "declining_performance"
     assert trend["review"] == "review_recovery_and_dose"
