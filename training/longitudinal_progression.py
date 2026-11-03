@@ -215,7 +215,7 @@ def summarize_longitudinal_progression(sessions):
                 "review": "coach_review_required",
                 "reason": "Pet primerljivih izvedb v najmanj treh tednih kaže enak rezultat. To je signal za strokovni pregled programa, ne samodejna diagnoza stagnacije ali ukaz za razbremenilni teden.",
             })
-        elif latest["total_reps"] <= first["total_reps"] - 2 and latest["minimum_rir"] <= first["minimum_rir"] - 2:
+        elif latest["total_reps"] <= first["total_reps"] - 2 and latest["minimum_rir"] <= first["minimum_rir"] - 1:
             result.update({
                 "status": "declining_performance",
                 "review": "review_recovery_and_dose",
