@@ -56,9 +56,11 @@ def _exercise_observation(exercise, session, day):
         if isinstance(exercise.get("rir"), int):
             rirs = [exercise["rir"]]
 
+    catalogue_item = get_exercise(exercise["exercise_id"]) or {}
     return {
         "date": day.isoformat(),
         "exercise_id": exercise["exercise_id"],
+        "pattern": catalogue_item.get("pattern"),
         "reps": reps,
         "work_seconds": work,
         "loads": loads,
@@ -164,6 +166,8 @@ def _classify(history):
 
     target_work = latest["target_work_seconds"]
     if target_work is not None:
+        if latest["pattern"] not in {"mobility", "mobility_stretch", "trunk_stability", "anti_rotation", "balance"}:
+            return "collect_data", "Časovni interval potrebuje še podatek o intenzivnosti oziroma tempu. Samo daljši čas ni dovolj za varno progresijo aerobne ali kondicijske naloge."
         if not latest["work_complete"] or not previous["work_complete"]:
             return "collect_data", "Manjka dejansko trajanje za vsako serijo v eni od zadnjih izvedb."
         if previous["target_work_seconds"] != target_work:
