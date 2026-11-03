@@ -149,6 +149,8 @@ def _verified_exercise_catalogue_context(messages):
         normalized_goal = goal_value.strip().casefold()
         if normalized_goal == "fat_loss":
             goals.update({"strength", "hypertrophy", "general_fitness", "endurance"})
+        elif normalized_goal == "strength_hypertrophy":
+            goals.update({"strength", "hypertrophy"})
         else:
             goals.add(normalized_goal)
     else:
