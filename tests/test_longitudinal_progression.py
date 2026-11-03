@@ -162,3 +162,20 @@ def test_duplicate_same_day_entries_do_not_count_as_separate_exposures():
     trend = _trend(records)
     assert trend["recorded_exposures"] == 4
     assert trend["status"] == "building_baseline"
+
+
+
+def test_unconfirmed_execution_quality_blocks_multi_week_trend_classification():
+    records = _five()
+    records[-1] = _record("2026-10-29", quality="unknown")
+    trend = _trend(records)
+    assert trend["status"] == "quality_unconfirmed"
+    assert trend["review"] == "confirm_execution_quality"
+
+
+def test_technique_concern_blocks_multi_week_trend_classification():
+    records = _five()
+    records[-1] = _record("2026-10-29", quality="needs_attention")
+    trend = _trend(records)
+    assert trend["status"] == "technique_review"
+    assert trend["review"] == "coach_technique_review"

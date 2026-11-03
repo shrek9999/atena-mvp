@@ -153,15 +153,6 @@ def summarize_longitudinal_progression(sessions):
             results.append(result)
             continue
 
-        if not all(item["complete"] for item in window):
-            result.update({
-                "status": "incomplete_data",
-                "review": "complete_set_by_set_logging",
-                "reason": "V zadnjih zabeleženih izvedbah manjkajo popolni podatki za vse serije, ponovitve ali RIR. Trenda zato ne ocenjujem.",
-            })
-            results.append(result)
-            continue
-
         if len(window) < WINDOW_SIZE:
             result["reason"] = "Za večtedensko presojo potrebujem pet popolnih, zabeleženih izvedb iste vaje."
             results.append(result)
@@ -174,11 +165,37 @@ def summarize_longitudinal_progression(sessions):
             results.append(result)
             continue
 
+        if not all(item["complete"] for item in window):
+            result.update({
+                "status": "incomplete_data",
+                "review": "complete_set_by_set_logging",
+                "reason": "V zadnjih zabeleženih izvedbah manjkajo popolni podatki za vse serije, ponovitve ali RIR. Trenda zato ne ocenjujem.",
+            })
+            results.append(result)
+            continue
+
         if not _same_programming_window(window):
             result.update({
                 "status": "not_comparable",
                 "review": "stabilize_programming",
-                "reason": "Število serij, ciljno območje ali obremenitev so se med izvedbami spreminjali. Pred presojo trenda je treba utrditi primerljiv odmerek.",
+                "reason": "Število serij ali ciljno območje so se med izvedbami spreminjali. Pred presojo trenda je treba utrditi primerljiv odmerek.",
+            })
+            results.append(result)
+            continue
+
+        if any(item["execution_quality"] == "needs_attention" for item in window):
+            result.update({
+                "status": "technique_review",
+                "review": "coach_technique_review",
+                "reason": "V eni od zadnjih petih izvedb je bila označena slabša tehnika ali nadzor. Večtedenskega trenda ne uporabljam za progresijo, dokler kakovost izvedbe ni ponovno potrjena.",
+            })
+            results.append(result)
+            continue
+        if any(item["execution_quality"] != "controlled" for item in window):
+            result.update({
+                "status": "quality_unconfirmed",
+                "review": "confirm_execution_quality",
+                "reason": "Kakovost izvedbe ni bila potrjena kot nadzorovana v vseh petih izvedbah. Pred presojo trenda zberi zanesljivo oceno tehnike.",
             })
             results.append(result)
             continue
