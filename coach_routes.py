@@ -1066,7 +1066,7 @@ def _validate_profile(value):
         raise ValueError("Cilj vadbe ni veljaven.")
     if experience not in PROFILE_EXPERIENCE:
         raise ValueError("Raven izkušenj ni veljavna.")
-    if not isinstance(equipment, list) or len(equipment) > 25 or any(
+    if not isinstance(equipment, list) or len(equipment) > 40 or any(
         not isinstance(item, str) or not item.strip() or len(item) > 40 for item in equipment
     ) or len(set(equipment)) != len(equipment) or not set(equipment).issubset(VALID_EQUIPMENT):
         raise ValueError("Seznam opreme vsebuje podvojeno ali nepodprto opremo.")
