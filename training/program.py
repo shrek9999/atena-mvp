@@ -443,7 +443,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
         by_pattern.setdefault(exercise["pattern"], []).append(exercise)
 
     # Never prescribe an unloaded hinge drill as the main hypertrophy stimulus.
-    if p["goal"] == "hypertrophy":
+    if p["goal"] in {"hypertrophy", "strength_hypertrophy"}:
         has_external_load = bool({"barbell", "dumbbell", "kettlebell"} & set(p["equipment"]))
         hinge_candidates = [
             item for item in by_pattern.get("hinge", [])
@@ -564,7 +564,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 if pattern == "hinge":
                     has_dumbbell = "dumbbell" in available_equipment
                     has_barbell = "barbell" in available_equipment
-                    if p["goal"] == "strength" and p["experience"] != "beginner" and item["id"] == "deadlift" and has_barbell:
+                    if p["goal"] in {"strength", "strength_hypertrophy"} and p["experience"] != "beginner" and item["id"] == "deadlift" and has_barbell:
                         return -15
                     if has_dumbbell and not has_barbell and item["id"] == "romanian_deadlift":
                         return -20
@@ -586,7 +586,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             target_level = level_rank[p["experience"]]
             candidate = min(candidates, key=lambda item: (
                 selection_priority(item),
-                0 if item.get("training_role") == "main" or p["goal"] != "hypertrophy" else 1,
+                0 if item.get("training_role") == "main" or p["goal"] not in {"hypertrophy", "strength_hypertrophy"} else 1,
                 used_counts[item["id"]],
                 abs(level_rank[item["level"]] - target_level),
                 {"high": 0, "moderate": 1, "low": 2}[effective_loading(item)] if p["goal"] in {"hypertrophy", "strength"} else 0,
@@ -863,7 +863,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "exercise_frequency": dict(used_counts),
             "primary_muscle_set_exposure": (
                 {key: value for key, value in exposure.items() if value > 0}
-                if p["goal"] in {"hypertrophy", "strength", "fat_loss"} else {}
+                if p["goal"] in {"hypertrophy", "strength", "strength_hypertrophy", "fat_loss"} else {}
             ),
             "time_based_work_seconds": timed_work_seconds,
             "endurance_type_work_seconds": dict(endurance_work_seconds),
@@ -881,7 +881,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             [
                 "Brez zunanjih bremen je dolgoročno povečevanje moči in mišične mase omejeno. Program zato uporablja zahtevnejše enonožne in tempo različice; za nadaljnjo progresijo bo sčasoma koristna dodatna obremenitev."
             ]
-            if p["goal"] in {"strength", "hypertrophy", "fat_loss"}
+            if p["goal"] in {"strength", "hypertrophy", "strength_hypertrophy", "fat_loss"}
             and not ({"barbell", "dumbbell", "kettlebell"} & available_equipment)
             else []
         ),
