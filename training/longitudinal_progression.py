@@ -113,16 +113,22 @@ def _same_programming_window(window):
 def summarize_longitudinal_progression(sessions):
     """Return conservative trend signals using the last five comparable exposures."""
     by_exercise = defaultdict(list)
+    seen_exercise_dates = defaultdict(set)
     for day, session in _session_rows(sessions):
         exercises = session.get("exercises", [])
         if not isinstance(exercises, list):
             continue
-        seen = set()
+        seen_in_session = set()
         for exercise in exercises:
             observation = _observation(exercise, session, day)
-            if observation and observation["exercise_id"] not in seen:
-                seen.add(observation["exercise_id"])
-                by_exercise[observation["exercise_id"]].append(observation)
+            if not observation:
+                continue
+            exercise_id = observation["exercise_id"]
+            if exercise_id in seen_in_session or day.isoformat() in seen_exercise_dates[exercise_id]:
+                continue
+            seen_in_session.add(exercise_id)
+            seen_exercise_dates[exercise_id].add(day.isoformat())
+            by_exercise[exercise_id].append(observation)
 
     results = []
     for exercise_id, observations in sorted(by_exercise.items()):

@@ -71,9 +71,10 @@ def test_load_improvement_with_repetitions_maintained_is_recognized():
     assert trend["status"] == "improving"
 
 
-def test_declining_repetitions_and_rir_trigger_review_not_automatic_deload():
+def test_sustained_declining_repetitions_and_rir_trigger_review_not_automatic_deload():
     records = _five()
-    records[-1] = _record("2026-10-29", reps=(9, 9, 9), rir=(2, 2, 2))
+    records[-2] = _record("2026-10-22", reps=(9, 9, 9), rir=(3, 3, 3))
+    records[-1] = _record("2026-10-29", reps=(8, 8, 8), rir=(2, 2, 2))
     trend = _trend(records)
     assert trend["status"] == "declining_performance"
     assert trend["review"] == "review_recovery_and_dose"
@@ -147,3 +148,17 @@ def test_time_based_conditioning_is_not_misclassified_as_resistance_progression(
     result = summarize_longitudinal_progression(sessions)
     assert result["exercise_trends"][0]["status"] == "not_supported"
     assert result["exercise_trends"][0]["review"] == "use_modality_specific_assessment"
+
+
+
+def test_duplicate_same_day_entries_do_not_count_as_separate_exposures():
+    records = [
+        _record("2026-10-01"),
+        _record("2026-10-08"),
+        _record("2026-10-15"),
+        _record("2026-10-22"),
+        _record("2026-10-22"),
+    ]
+    trend = _trend(records)
+    assert trend["recorded_exposures"] == 4
+    assert trend["status"] == "building_baseline"
