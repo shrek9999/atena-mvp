@@ -108,6 +108,13 @@ def validate_profile(profile: object) -> dict:
         raise ProgramValidationError("include_accessories mora biti true ali false.")
     if accessories and level != "advanced":
         raise ProgramValidationError("Enosklepne dopolnilne vaje so v tej fazi na voljo le naprednim vadečim.")
+    training_emphasis = profile.get("training_emphasis", "balanced")
+    if training_emphasis not in {"balanced", "strength", "hypertrophy"}:
+        raise ProgramValidationError("training_emphasis mora biti balanced, strength ali hypertrophy.")
+    # Specialisation is available only to advanced users whose primary goal is
+    # the combined strength-and-muscle-mass track.
+    if level != "advanced" or goal != "strength_hypertrophy":
+        training_emphasis = "balanced"
     pistol_squat_capable = profile.get("pistol_squat_capable", False)
     if not isinstance(pistol_squat_capable, bool):
         raise ProgramValidationError("pistol_squat_capable mora biti true ali false.")
@@ -120,6 +127,7 @@ def validate_profile(profile: object) -> dict:
         "excluded_exercise_ids": set(exclusions),
         "excluded_patterns": set(excluded_patterns),
         "include_accessories": accessories,
+        "training_emphasis": training_emphasis,
     }
 
 
@@ -400,6 +408,10 @@ def _display_exercise_reference(value: str, names: dict[str, str]) -> str:
 def generate_program(profile: object, feedback: object = None) -> dict:
     """Generate a repeatable catalogue plan, conservatively adapting to the last session."""
     p = validate_profile(profile)
+    planning_goal = planning_goal
+    if planning_goal == "strength_hypertrophy" and p["experience"] == "advanced":
+        if p["training_emphasis"] in {"strength", "hypertrophy"}:
+            planning_goal = p["training_emphasis"]
     response = _validate_feedback(feedback)
     reduce_load = bool(response and (
         response["difficulty"] == "hard" or not response["completed"] or response["recovery"] == "poor"
@@ -415,7 +427,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
         "power": ["power", "strength", "general_fitness"],
         "endurance": ["endurance", "general_fitness"],
         "mobility": ["mobility", "functional", "general_fitness"],
-    }.get(p["goal"], [p["goal"]])
+    }.get(planning_goal, [planning_goal])
     catalogue_by_id = {}
     for source_goal in goal_sources:
         for exercise in get_exercises(
@@ -499,7 +511,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
         by_pattern.setdefault(exercise["pattern"], []).append(exercise)
 
     # Never prescribe an unloaded hinge drill as the main hypertrophy stimulus.
-    if p["goal"] in {"hypertrophy", "strength_hypertrophy"}:
+    if planning_goal in {"hypertrophy", "strength_hypertrophy"}:
         has_external_load = bool({"barbell", "dumbbell", "kettlebell"} & set(p["equipment"]))
         hinge_candidates = [
             item for item in by_pattern.get("hinge", [])
@@ -518,18 +530,18 @@ def generate_program(profile: object, feedback: object = None) -> dict:
 
     for session_index in range(p["sessions_per_week"]):
         patterns = _session_patterns(
-            session_index, p["sessions_per_week"], p["goal"],
+            session_index, p["sessions_per_week"], planning_goal,
             p["include_accessories"] and p["session_minutes"] >= 75 and not include_stability, include_stability
         )
         warm_up_minutes = 5 if p["session_minutes"] <= 30 else (7 if p["session_minutes"] <= 60 else 10)
         selected = []
         seen_patterns = set()
         for pattern in patterns:
-            if pattern in seen_patterns and p["goal"] != "mobility":
+            if pattern in seen_patterns and planning_goal != "mobility":
                 continue
             seen_patterns.add(pattern)
             candidates = by_pattern.get(pattern, [])
-            if p["goal"] in {"endurance", "fat_loss"} and pattern == "locomotion":
+            if planning_goal in {"endurance", "fat_loss"} and pattern == "locomotion":
                 candidates = [item for item in candidates if item.get("endurance_type") == "aerobic"]
             if not candidates:
                 # A vertical pull is not mandatory when the available catalogue/equipment cannot support it.
@@ -550,17 +562,17 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 return potential
 
             def selection_priority(item: dict) -> int:
-                if p["goal"] == "mobility" and pattern == "hinge":
+                if planning_goal == "mobility" and pattern == "hinge":
                     if item["id"] == "romanian_deadlift" and ({"dumbbell", "barbell", "kettlebell"} & available_equipment):
                         return -15
                     if item["id"] == "single_leg_rdl" and p["experience"] != "beginner":
                         return -10
-                if p["goal"] == "mobility" and pattern == "squat":
+                if planning_goal == "mobility" and pattern == "squat":
                     if item["id"] == "loaded_deep_squat" and {"dumbbell", "kettlebell"} & available_equipment:
                         return -10
                     if item["id"] == "reaching_squat":
                         return -5
-                if pattern == "squat" and p["goal"] in {"hypertrophy", "strength"}:
+                if pattern == "squat" and planning_goal in {"hypertrophy", "strength"}:
                     weighted_squat_equipment = {"barbell", "dumbbell", "kettlebell"}
                     has_weighted_squat = bool(weighted_squat_equipment & available_equipment)
                     if not has_weighted_squat and p["experience"] == "advanced" and p["pistol_squat_capable"] and item["id"] == "pistol_squat":
@@ -570,7 +582,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                     if not has_weighted_squat and p["experience"] in {"intermediate", "advanced"} and item["id"] == "cossack_squat":
                         return -15
                     if item["id"] in {"back_squat", "front_squat"} and {"barbell", "rack"}.issubset(available_equipment):
-                        return -10 if p["goal"] == "strength" else -5
+                        return -10 if planning_goal == "strength" else -5
                     if item["id"] == "heel_elevated_squat" and {"weight_plate", "heel_wedge", "slant_board"} & available_equipment:
                         return -8
                     if item["id"] in {"dumbbell_squat_front_rack", "squat_goblet"} and {"dumbbell", "kettlebell"} & available_equipment:
@@ -581,12 +593,12 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                         return -5
                 if pattern == "horizontal_push":
                     if item["id"] == "barbell_bench_press":
-                        if p["goal"] in {"strength", "strength_hypertrophy"} and p["experience"] != "beginner":
+                        if planning_goal in {"strength", "strength_hypertrophy"} and p["experience"] != "beginner":
                             # Preserve a strength-specific barbell exposure, then rotate a
                             # suitable bodyweight push variation into the next session.
                             return -10 if session_index % 2 == 0 else 5
                         return 5
-                    if item["id"] == "dumbbell_bench_press" and p["goal"] in {"hypertrophy", "strength_hypertrophy"}:
+                    if item["id"] == "dumbbell_bench_press" and planning_goal in {"hypertrophy", "strength_hypertrophy"}:
                         return -10 if session_index % 2 == 0 else 5
                     if item["id"] == "bench_dip":
                         return 10
@@ -602,7 +614,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                         # Bodyweight work is a deliberate part of mixed-equipment plans,
                         # not something discarded merely because weights are available.
                         return -5 if session_index % 2 == 1 else 0
-                if pattern == "conditioning" and p["goal"] == "endurance":
+                if pattern == "conditioning" and planning_goal == "endurance":
                     if item["id"] == "box_jump_intervals":
                         return 100
                     if item["id"] in {"rower_intervals", "ski_erg_intervals", "air_bike_intervals", "sled_push", "sled_backward_drag"}:
@@ -615,12 +627,12 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                         return -25
                     if not has_loaded_hinge and item["id"] == "bodyweight_hip_hinge":
                         return -20
-                if pattern == "horizontal_pull" and p["goal"] in {"hypertrophy", "strength"}:
-                    if p["goal"] == "strength" and p["experience"] != "beginner" and item["id"] == "barbell_bent_over_row" and "barbell" in available_equipment:
+                if pattern == "horizontal_pull" and planning_goal in {"hypertrophy", "strength"}:
+                    if planning_goal == "strength" and p["experience"] != "beginner" and item["id"] == "barbell_bent_over_row" and "barbell" in available_equipment:
                         return -10
-                    if p["goal"] == "hypertrophy" and session_index % 2 == 0 and item["id"] in {"dumbbell_bent_over_row", "one_arm_row", "kettlebell_one_arm_row"}:
+                    if planning_goal == "hypertrophy" and session_index % 2 == 0 and item["id"] in {"dumbbell_bent_over_row", "one_arm_row", "kettlebell_one_arm_row"}:
                         return -10
-                    if p["goal"] == "hypertrophy" and session_index % 2 == 1 and item["id"] in {"band_row", "trx_row", "ring_row"}:
+                    if planning_goal == "hypertrophy" and session_index % 2 == 1 and item["id"] in {"band_row", "trx_row", "ring_row"}:
                         return -10
                     if session_index % 2 == 0 and item["id"] in {"dumbbell_bent_over_row", "one_arm_row", "kettlebell_one_arm_row"}:
                         return -5
@@ -629,7 +641,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 if pattern == "hinge":
                     has_dumbbell = "dumbbell" in available_equipment
                     has_barbell = "barbell" in available_equipment
-                    if p["goal"] in {"strength", "strength_hypertrophy"} and p["experience"] != "beginner" and item["id"] == "deadlift" and has_barbell:
+                    if planning_goal in {"strength", "strength_hypertrophy"} and p["experience"] != "beginner" and item["id"] == "deadlift" and has_barbell:
                         return -15
                     if has_dumbbell and not has_barbell and item["id"] == "romanian_deadlift":
                         return -20
@@ -637,30 +649,30 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                         return 35
                     if item["id"] == "bodyweight_hip_hinge" and (has_dumbbell or has_barbell or "kettlebell" in available_equipment):
                         return 25
-                    if p["goal"] == "hypertrophy" and item["id"] == "romanian_deadlift":
+                    if planning_goal == "hypertrophy" and item["id"] == "romanian_deadlift":
                         return -15
                     if item["id"] in {"romanian_deadlift", "deadlift"}:
                         return -5 if set(item["equipment"]).issubset(available_equipment) else 5
-                    if p["goal"] == "hypertrophy" and item["id"] in {"slider_leg_curl", "long_lever_glute_bridge", "elevated_heel_hip_lift"}:
+                    if planning_goal == "hypertrophy" and item["id"] in {"slider_leg_curl", "long_lever_glute_bridge", "elevated_heel_hip_lift"}:
                         return -5
                     if item["id"] == "bodyweight_hip_hinge":
-                        return 20 if p["goal"] == "hypertrophy" else 0
+                        return 20 if planning_goal == "hypertrophy" else 0
                 return 0
 
             level_rank = {"beginner": 0, "intermediate": 1, "advanced": 2}
             target_level = level_rank[p["experience"]]
             candidate = min(candidates, key=lambda item: (
                 selection_priority(item),
-                0 if item.get("training_role") == "main" or p["goal"] not in {"hypertrophy", "strength_hypertrophy"} else 1,
+                0 if item.get("training_role") == "main" or planning_goal not in {"hypertrophy", "strength_hypertrophy"} else 1,
                 used_counts[item["id"]],
                 abs(level_rank[item["level"]] - target_level),
-                {"high": 0, "moderate": 1, "low": 2}[effective_loading(item)] if p["goal"] in {"hypertrophy", "strength"} else 0,
+                {"high": 0, "moderate": 1, "low": 2}[effective_loading(item)] if planning_goal in {"hypertrophy", "strength"} else 0,
                 item["id"],
             ))
             effective_pattern = candidate["pattern"]
             used_counts[candidate["id"]] += 1
-            prescription = _prescription(p["goal"], p["experience"], effective_pattern, candidate)
-            if p["goal"] == "endurance" and effective_pattern == "locomotion":
+            prescription = _prescription(planning_goal, p["experience"], effective_pattern, candidate)
+            if planning_goal == "endurance" and effective_pattern == "locomotion":
                 # Reserve time for warm-up, transitions and interval work; locomotion is a flexible aerobic block.
                     prescription["work_seconds"] = max(600, int(p["session_minutes"] * 15))
             if reduce_load and response["recovery"] == "poor" and response["difficulty"] != "hard" and response["completed"]:
@@ -853,7 +865,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             )
         plans.append({
             "session": session_index + 1,
-            "title": (f"Trening {session_index + 1} – vzdržljivost" if p["goal"] == "endurance" else f"Trening {session_index + 1} – mobilnost in gibljivost" if p["goal"] == "mobility" else f"Trening {session_index + 1} – aerobna in kondicijska priprava" if p["goal"] == "fat_loss" and session_index >= 2 else f"Trening {session_index + 1} – celotno telo"),
+            "title": (f"Trening {session_index + 1} – vzdržljivost" if planning_goal == "endurance" else f"Trening {session_index + 1} – mobilnost in gibljivost" if planning_goal == "mobility" else f"Trening {session_index + 1} – aerobna in kondicijska priprava" if planning_goal == "fat_loss" and session_index >= 2 else f"Trening {session_index + 1} – celotno telo"),
             "warm_up_minutes": warm_up_minutes,
             "warm_up_range": "5–7 min" if p["session_minutes"] <= 30 else "5–10 min",
             "exercise_count": len(selected),
@@ -885,6 +897,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
     return {
         "program_version": "2.7.0",
         "goal": p["goal"],
+        "training_emphasis": p["training_emphasis"],
         "experience": p["experience"],
         "sessions_per_week": p["sessions_per_week"],
         "session_minutes": p["session_minutes"],
@@ -892,6 +905,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "exercise_source": "verified_catalogue_only",
             "compound_first": True,
             "single_joint_accessories": p["include_accessories"],
+            "training_emphasis": p["training_emphasis"],
             "exercise_scaling": "Vsaka vaja ima označen potencial obremenitve, vlogo, zahteve glede opreme in stopnjevanje. Nizko obremenljive učne vaje niso privzeta glavna izbira za hipertrofijo.",
             "equipment_policy": "Brez uteži ne pomeni brez običajnih stabilnih gospodinjskih opor. Stol, kavč, miza, stopnica, brisača ali palica so dovoljeni le, kadar jih profil izrecno vključuje in so varni za uporabo.",
             "endurance_policy": "Vzdržljivost je ločen cilj; aerobne aktivnosti, intervali in mišična vzdržljivost so označeni ločeno.",
@@ -899,11 +913,11 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "fat_loss_policy": "Pri uravnavanju telesne teže združi vadbo moči za ohranitev mišične mase s kratkimi, odmerjenimi kondicijskimi intervali v istem treningu; ob treh ali štirih treningih je lahko dodatna enota pretežno aerobna. MetCon naj bo nadzorovan, ne maksimalen in ne na račun tehnike ali regeneracije. Za zmanjšanje telesne maščobe je potreben vzdržen energijski primanjkljaj; vadba sama ga ne zagotavlja.",
             "experience_adaptation": (
                 "Vzdržljivost: začetnik gradi predvsem enakomeren aerobni obseg v pogovornem tempu; intervale uvajaj postopno. Naprednejši lahko kombinira daljše aerobne enote, intervale in mišično vzdržljivost, vendar ne vsega maksimalno v isti vadbi."
-                if p["goal"] == "endurance" else
+                if planning_goal == "endurance" else
                 "Hujšanje: ohrani kakovostna treninga moči kot osnovo, aerobno delo dodajaj glede na razpoložljiv čas in regeneracijo. Ne povečuj obsega vadbe zgolj zato, da bi porabil čim več kalorij."
-                if p["goal"] == "fat_loss" else
+                if planning_goal == "fat_loss" else
                 "Mobilnost: začetnik začne z aktivnimi, podprtimi in kontroliranimi gibi. Napredovanje temelji na kakovosti, postopnem povečevanju neboleče amplitude in sposobnosti ustvarjanja sile v novih položajih; ne na siljenju v končni obseg."
-                if p["goal"] == "mobility" else
+                if planning_goal == "mobility" else
                 "Začetnik: prednost imajo učenje osnovnih gibalnih vzorcev, nadzorovana amplituda in ponovljiva tehnika. Tudi pri cilju moč začni večinoma z 8–12 ponovitvami in približno 2–3 ponovitvami v rezervi; šele z napredovanjem postopno preidi na nižje razpone in večje obremenitve."
                 if p["experience"] == "beginner" else
                 "Intermediate: uporablja bolj specifične razpone glede na cilj; pri glavnih vajah za moč je običajen razpon 5–8 ponovitev, pri hipertrofiji večinoma 6–12. Advanced: pri glavnih vajah za moč lahko uporablja 3–6 ponovitev, ob večji obremenitvi pa zahteva ustrezno tehniko, regeneracijo in daljše odmore."
@@ -911,11 +925,11 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "tempo": "Tempo je določen glede na cilj: moč praviloma 2–0–X–0, hipertrofija 3–1–2–0, eksplozivna moč hiter koncentrični del, vzdržljivost ritmično delo, mobilnost pa počasno aktivno raziskovanje obsega. Stabilizacijsko delo se doda ciljno, ne avtomatično.",
             "range_of_motion": "Pri vsaki vaji uporabi največjo amplitudo, ki jo omogočata gibljivost in nadzor. Amplitudo postopno razvijaj; ne žrtvuj položaja, stabilnosti ali neboleče izvedbe. Pri mobilnosti kombiniraj aktivno gibanje in moč skozi razpoložljivo amplitudo.",
             "progression": ("Pri aerobni vzdržljivosti postopno povečuj trajanje ali obseg, nato po potrebi intenzivnost; pri intervalih spreminjaj le eno spremenljivko naenkrat. Ohraniti moraš ponovljivo tehniko in regeneracijo."
-                if p["goal"] == "endurance" else
+                if planning_goal == "endurance" else
                 "Pri hujšanju ohrani ali postopno izboljšuj delovne obremenitve pri vajah za moč, da podpreš ohranitev mišične mase. Kondicijski obseg povečuj postopno; ne kompenziraj prehrane z nenadnim povečanjem treninga."
-                if p["goal"] == "fat_loss" else
+                if planning_goal == "fat_loss" else
                 "Pri mobilnosti postopno povečuj nadzorovan obseg, kakovost končnega položaja in sposobnost ustvarjanja sile v njem. Ne sili v globino in ne napreduj skozi bolečino."
-                if p["goal"] == "mobility" else
+                if planning_goal == "mobility" else
                 "Ko pri vseh serijah dosežeš zgornjo mejo ponovitev in ohraniš predpisano rezervo ter tehniko, povečaj dražljaj: najprej obremenitev, če je na voljo; sicer težjo različico, daljši vzvod, večjo nadzorovano amplitudo ali enostransko izvedbo. Če tehnika ali regeneracija odstopata, obdrži ali zmanjša zahtevnost."
             ),
             "deload": "Razbremenitev se ne določa avtomatično po koledarju; uporabi jo ob vztrajnem slabšanju zmogljivosti, regeneracije ali kakovosti izvedbe.",
@@ -928,7 +942,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "exercise_frequency": dict(used_counts),
             "primary_muscle_set_exposure": (
                 {key: value for key, value in exposure.items() if value > 0}
-                if p["goal"] in {"hypertrophy", "strength", "strength_hypertrophy", "fat_loss"} else {}
+                if planning_goal in {"hypertrophy", "strength", "strength_hypertrophy", "fat_loss"} else {}
             ),
             "time_based_work_seconds": timed_work_seconds,
             "endurance_type_work_seconds": dict(endurance_work_seconds),
@@ -946,7 +960,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             [
                 "Brez zunanjih bremen je dolgoročno povečevanje moči in mišične mase omejeno. Program zato uporablja zahtevnejše enonožne in tempo različice; za nadaljnjo progresijo bo sčasoma koristna dodatna obremenitev."
             ]
-            if p["goal"] in {"strength", "hypertrophy", "strength_hypertrophy", "fat_loss"}
+            if planning_goal in {"strength", "hypertrophy", "strength_hypertrophy", "fat_loss"}
             and not ({"barbell", "dumbbell", "kettlebell"} & available_equipment)
             else []
         ),
