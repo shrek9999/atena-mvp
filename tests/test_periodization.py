@@ -129,11 +129,10 @@ def test_profile_frequency_controls_number_of_sessions_per_cycle_week():
 
 def test_duplicate_same_day_periodization_uses_newest_first_record():
     records = [
-        _session("2026-10-10", difficulty="hard", recovery="good"),
-        _session("2026-10-10", difficulty="easy", recovery="good"),
+        _session("2026-10-17", difficulty="hard", recovery="good"),
+        _session("2026-10-17", difficulty="easy", recovery="good"),
         _session("2026-10-15"),
-        _session("2026-10-17"),
     ]
     result = summarize_training_cycle(PROFILE, records)
-    assert result["completed_sessions_used"] == 3
+    assert result["completed_sessions_used"] == 2
     assert result["phase"] == "recovery_review"
