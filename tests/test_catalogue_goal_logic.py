@@ -197,3 +197,25 @@ def test_seated_leg_lift_is_prescribed_as_dynamic_unilateral_repetitions():
     assert prescription["rep_unit"] == "per_side"
     assert "work_seconds" not in prescription
     assert "s" not in prescription["reps"]
+
+
+
+def test_cossack_squat_uses_canonical_english_display_name():
+    exercise = next(item for item in load_catalogue() if item["id"] == "cossack_squat")
+    assert exercise["name"] == "Cossack squat"
+    assert exercise["name_en"] == "Cossack squat"
+    assert "kozaški" not in exercise["name"].casefold()
+
+
+def test_beginner_combined_strength_hypertrophy_uses_foundational_tempo():
+    from training.program import _prescription
+
+    patterns = [
+        "squat", "lunge", "hinge", "hip_extension",
+        "horizontal_push", "horizontal_pull", "vertical_push", "vertical_pull",
+    ]
+    for pattern in patterns:
+        exercise = {"id": f"test_{pattern}", "pattern": pattern, "unilateral": pattern == "lunge"}
+        prescription = _prescription("strength_hypertrophy", "beginner", pattern, exercise)
+        assert prescription["tempo"] == "2–1–1–0", pattern
+        assert prescription["tempo_seconds_per_rep"] == 4, pattern
