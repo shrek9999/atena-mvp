@@ -63,4 +63,7 @@ def test_progress_endpoint_returns_authenticated_non_prescriptive_summary(monkey
     assert payload["training_cycle"]["cycle_week"] == 3
     assert payload["training_cycle"]["phase"] == "progression_review"
     assert payload["training_cycle"]["automatic_program_changes"] is False
+    assert payload["proactive_checkin"]["status"] == "standard_follow_up"
+    assert payload["proactive_checkin"]["model_call_required"] is False
+    assert payload["proactive_checkin"]["reply_saved"] is False
     assert payload["automatic_load_changes"] is False
