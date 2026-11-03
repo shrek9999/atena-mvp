@@ -42,13 +42,14 @@ def test_fat_loss_sessions_combine_strength_and_conditioning():
     assert all("squat" in session and "hinge" in session and "conditioning" in session for session in week)
 
 
-def test_beginner_strength_and_hypertrophy_share_practical_dose():
+def test_less_experienced_strength_and_hypertrophy_share_practical_dose():
     squat = {"pattern": "squat", "unilateral": False}
-    strength = _prescription("strength", "beginner", "squat", squat)
-    hypertrophy = _prescription("hypertrophy", "beginner", "squat", squat)
-    combined = _prescription("strength_hypertrophy", "beginner", "squat", squat)
-    assert (strength["sets"], strength["reps"], strength["rir"]) == (hypertrophy["sets"], hypertrophy["reps"], hypertrophy["rir"])
-    assert (strength["sets"], strength["reps"], strength["rir"]) == (combined["sets"], combined["reps"], combined["rir"])
+    for level in ("beginner", "intermediate"):
+        strength = _prescription("strength", level, "squat", squat)
+        hypertrophy = _prescription("hypertrophy", level, "squat", squat)
+        combined = _prescription("strength_hypertrophy", level, "squat", squat)
+        assert (strength["sets"], strength["reps"], strength["rir"]) == (hypertrophy["sets"], hypertrophy["reps"], hypertrophy["rir"])
+        assert (strength["sets"], strength["reps"], strength["rir"]) == (combined["sets"], combined["reps"], combined["rir"])
 
 
 def test_advanced_strength_and_hypertrophy_are_differentiated():
