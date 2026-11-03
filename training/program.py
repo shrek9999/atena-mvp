@@ -340,6 +340,8 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     }
     if exercise.get("id") == "l_sit":
         prescription.update({"work_seconds": 12, "time_label": "zadržanja"})
+    elif exercise.get("time_based") and pattern in {"trunk_stability", "anti_rotation"}:
+        prescription.update({"reps": "8–15 s", "work_seconds": 10, "time_label": "zadržanja"})
     elif pattern == "coordination":
         prescription.update({"work_seconds": 12, "time_label": "koordinacijskega intervala"})
     if goal == "fat_loss" and pattern == "locomotion":
