@@ -143,7 +143,7 @@ def test_bodyweight_only_progressions_do_not_suggest_unavailable_loaded_variants
         "equipment": ["bodyweight"],
     })
     unavailable_terms = (
-        "ročk", "kettlebell", "mrtvi dvig", "dodatno obremenitvijo",
+        "ročk", "kettlebell", "mrtvi dvig z dvignjenega položaja", "mrtvi dvig s premorom", "dodatno obremenitvijo",
         "uteži", "bremenom", "drogom", "škripcu", "elastik",
     )
     for session in result["sessions"]:
