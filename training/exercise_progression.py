@@ -210,9 +210,11 @@ def recommend_exercise_progression(sessions):
         exercises = session.get("exercises", [])
         if not isinstance(exercises, list):
             continue
+        seen_in_session = set()
         for exercise in exercises:
             observation = _exercise_observation(exercise, session, day)
-            if observation:
+            if observation and observation["exercise_id"] not in seen_in_session:
+                seen_in_session.add(observation["exercise_id"])
                 by_exercise[observation["exercise_id"]].append(observation)
 
     recommendations = []
