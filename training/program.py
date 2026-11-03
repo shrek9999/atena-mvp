@@ -519,7 +519,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
     # but it is not a reliable main strength/hypertrophy stimulus. When no external
     # load is available, prefer a mechanically demanding hip-extension / knee-flexion
     # option that can actually approach the target effort reserve.
-    if planning_goal in {"strength", "hypertrophy", "strength_hypertrophy"}:
+    if planning_goal in {"hypertrophy", "strength_hypertrophy"}:
         has_external_load = bool({"barbell", "dumbbell", "kettlebell"} & set(p["equipment"]))
         hinge_candidates = [
             item for item in by_pattern.get("hinge", [])
@@ -528,7 +528,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 has_external_load
                 or (
                     p["experience"] != "beginner"
-                    and item["id"] not in {"single_leg_rdl", "supported_single_leg_rdl"}
+                    and item["id"] != "single_leg_rdl"
                 )
             )
         ]
