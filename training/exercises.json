@@ -6408,8 +6408,7 @@
     "joint_type": "single_joint",
     "goals": [
       "hypertrophy",
-      "strength",
-      "mobility"
+      "strength"
     ],
     "equipment": [],
     "equipment_any": [
@@ -6464,8 +6463,7 @@
     "goals": [
       "strength",
       "hypertrophy",
-      "functional",
-      "mobility"
+      "functional"
     ],
     "equipment": [],
     "equipment_any": [
