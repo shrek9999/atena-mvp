@@ -36,8 +36,26 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Wait for the staging deployment to settle
-        run: sleep 300
+      - name: Wait for staging health without fixed idle delay
+        run: |
+          python - <<'PY'
+          import time, urllib.error, urllib.request
+          url = "https://atena-ai-coach-pilot.onrender.com/health"
+          deadline = time.monotonic() + 300
+          last_error = "not checked"
+          while time.monotonic() < deadline:
+              try:
+                  with urllib.request.urlopen(url, timeout=20) as response:
+                      if response.status == 200:
+                          print("Staging backend health: PASS")
+                          break
+                      last_error = f"HTTP {response.status}"
+              except Exception as exc:
+                  last_error = type(exc).__name__
+              time.sleep(10)
+          else:
+              raise SystemExit(f"Staging did not become healthy within 5 minutes: {last_error}")
+          PY
       - name: Validate secure pilot access
         env:
           PILOT_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
