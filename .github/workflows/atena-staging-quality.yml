@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "pilot/website-ai-coach"
+      - "fix/phase-b-benchmark-cost-guard"
     paths:
       - "tests/**"
       - "coach_routes.py"
