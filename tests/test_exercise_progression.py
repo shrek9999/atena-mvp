@@ -78,6 +78,24 @@ def test_missing_rir_never_counts_as_readiness_to_progress():
     assert decision(recommend_exercise_progression(sessions), "goblet_squat")["decision"] == "collect_data"
 
 
+def test_rir_must_be_recorded_for_every_set():
+    partial = exercise("goblet_squat", rir=(4, None, 3))
+    sessions = [
+        record("2026-11-03", [partial]),
+        record("2026-10-30", [partial]),
+    ]
+    assert decision(recommend_exercise_progression(sessions), "goblet_squat")["decision"] == "collect_data"
+
+
+def test_missing_planned_set_is_not_treated_as_full_success():
+    partial = exercise("goblet_squat", reps=(12, 12), rir=(4, 4), sets=3)
+    sessions = [
+        record("2026-11-03", [partial]),
+        record("2026-10-30", [partial]),
+    ]
+    assert decision(recommend_exercise_progression(sessions), "goblet_squat")["decision"] == "hold"
+
+
 def test_technique_flag_holds_progression_for_that_exercise():
     sessions = [
         record("2026-11-03", [exercise("goblet_squat", quality="needs_attention")]),
