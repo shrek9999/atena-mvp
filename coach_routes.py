@@ -25,6 +25,7 @@ from training.progress import summarize_progress
 from training.adaptation import assess_next_step
 from training.exercise_progression import recommend_exercise_progression, apply_exercise_progression
 from training.longitudinal_progression import summarize_longitudinal_progression
+from training.longitudinal_response import summarize_longitudinal_response
 from training.conditioning_progression import summarize_conditioning_progress
 from training.periodization import summarize_training_cycle
 from training.proactive_checkin import build_proactive_checkin
@@ -1600,6 +1601,7 @@ def coach_training_progress(profile_id):
         sessions = store_list_sessions(profile_id, token, limit=50)
         exercise_progressions = recommend_exercise_progression(sessions)
         longitudinal_progression = summarize_longitudinal_progression(sessions)
+        longitudinal_response = summarize_longitudinal_response(sessions)
         conditioning_progression = summarize_conditioning_progress(sessions)
         training_cycle = summarize_training_cycle(
             profile["profile"], sessions, exercise_progressions,
@@ -1609,6 +1611,7 @@ def coach_training_progress(profile_id):
             "progress": summarize_progress(profile, sessions),
             "exercise_progressions": exercise_progressions,
             "longitudinal_progression": longitudinal_progression,
+            "longitudinal_response": longitudinal_response,
             "conditioning_progression": conditioning_progression,
             "training_cycle": training_cycle,
             "proactive_checkin": build_proactive_checkin(sessions),
