@@ -3,7 +3,7 @@ from coach_routes import _normalize_logged_exercise
 
 def test_exercise_log_preserves_planned_target_and_execution_quality():
     entry, error = _normalize_logged_exercise({
-        "exercise_id": "goblet_squat",
+        "exercise_id": "squat_goblet",
         "planned_sets": 3,
         "target_reps_min": 8,
         "target_reps_max": 12,
@@ -24,7 +24,7 @@ def test_exercise_log_preserves_planned_target_and_execution_quality():
 
 def test_exercise_log_rejects_unhashable_or_unknown_quality_value():
     entry, error = _normalize_logged_exercise({
-        "exercise_id": "goblet_squat",
+        "exercise_id": "squat_goblet",
         "sets_completed": 3,
         "reps_completed": 10,
         "execution_quality": [],
@@ -35,7 +35,7 @@ def test_exercise_log_rejects_unhashable_or_unknown_quality_value():
 
 def test_exercise_log_rejects_invalid_target_range():
     entry, error = _normalize_logged_exercise({
-        "exercise_id": "goblet_squat",
+        "exercise_id": "squat_goblet",
         "planned_sets": 3,
         "target_reps_min": 12,
         "target_reps_max": 8,
