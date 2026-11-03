@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-from training.catalogue import load_catalogue
+from training.catalogue import get_exercises, load_catalogue
 from training.program import _prescription, _session_patterns
 
 
@@ -57,3 +57,13 @@ def test_advanced_strength_and_hypertrophy_are_differentiated():
     hypertrophy = _prescription("hypertrophy", "advanced", "squat", squat)
     assert strength["reps"] != hypertrophy["reps"]
     assert strength["rest_seconds"] > hypertrophy["rest_seconds"]
+
+
+def test_equipment_gated_calisthenics_never_assume_bars_or_nordic_anchor():
+    bodyweight = {item["id"] for item in get_exercises(goal="strength", equipment=["bodyweight"], include_accessories=True)}
+    pullup_bar = {item["id"] for item in get_exercises(goal="strength", equipment=["bodyweight", "pull_up_bar"], include_accessories=True)}
+    dip_bars = {item["id"] for item in get_exercises(goal="strength", equipment=["bodyweight", "dip_bars"], include_accessories=True)}
+    nordic_anchor = {item["id"] for item in get_exercises(goal="strength", equipment=["bodyweight", "secure_ankle_anchor"], include_accessories=True)}
+    assert "pull_up" not in bodyweight and "pull_up" in pullup_bar
+    assert "parallel_bar_dip" not in bodyweight and "parallel_bar_dip" in dip_bars
+    assert "nordic_hamstring_curl" not in bodyweight and "nordic_hamstring_curl" in nordic_anchor
