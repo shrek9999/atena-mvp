@@ -49,7 +49,11 @@
     ],
     "training_role": "main",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "knee_dominant",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "back_squat",
@@ -102,7 +106,11 @@
     "equipment_any": [],
     "training_role": "main",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "knee_dominant",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "front_squat",
@@ -155,7 +163,11 @@
     "time_based": false,
     "target_regions": [
       "upper_back"
-    ]
+    ],
+    "movement_family": "knee_dominant",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "split_squat",
@@ -209,7 +221,11 @@
     "unilateral": true,
     "training_role": "main",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "single_leg_knee_dominant",
+    "loading_mode": "mixed",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "reverse_lunge",
@@ -262,7 +278,11 @@
     "unilateral": true,
     "training_role": "main",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "single_leg_knee_dominant",
+    "loading_mode": "mixed",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "forward_lunge",
@@ -315,7 +335,11 @@
     "unilateral": true,
     "training_role": "main",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "single_leg_knee_dominant",
+    "loading_mode": "mixed",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "rear_foot_elevated_split_squat",
@@ -370,7 +394,11 @@
     "unilateral": true,
     "training_role": "main",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "single_leg_knee_dominant",
+    "loading_mode": "mixed",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "atg_split_squat",
@@ -424,7 +452,11 @@
     "unilateral": true,
     "training_role": "main",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "single_leg_knee_dominant",
+    "loading_mode": "mixed",
+    "mobility_strength": true,
+    "functional_components": []
   },
   {
     "id": "romanian_deadlift",
@@ -435,7 +467,8 @@
     "goals": [
       "hypertrophy",
       "strength",
-      "general_fitness"
+      "general_fitness",
+      "mobility"
     ],
     "equipment": [],
     "level": "beginner",
@@ -484,7 +517,11 @@
     "time_based": false,
     "target_regions": [
       "forearm"
-    ]
+    ],
+    "movement_family": "hip_hinge",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "deadlift",
@@ -540,7 +577,11 @@
     "time_based": false,
     "target_regions": [
       "forearm"
-    ]
+    ],
+    "movement_family": "hip_hinge",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "hip_thrust",
@@ -590,7 +631,11 @@
     ],
     "training_role": "main",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "hip_extension",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "push_up",
@@ -643,7 +688,11 @@
     "range_of_motion": "Spusti prsni koš čim bližje tlom oziroma opori skozi polno kontrolirano amplitudo. Višino opore izberi glede na moč in nadzor; z napredovanjem jo postopno znižuj.",
     "training_role": "main",
     "loading_potential": "moderate",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_push",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "dumbbell_bench_press",
@@ -693,7 +742,11 @@
     "range_of_motion": "Ročki spuščaj do globine, pri kateri ohraniš nadzor lopatic in ramen. Uporabi polno nebolečo amplitudo, ne omejuj je po nepotrebnem.",
     "training_role": "main",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_push",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "barbell_bench_press",
@@ -749,7 +802,11 @@
     "unilateral": false,
     "loading_potential": "high",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_push",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "overhead_press",
@@ -804,7 +861,11 @@
     "time_based": false,
     "target_regions": [
       "upper_back"
-    ]
+    ],
+    "movement_family": "upper_push",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "pull_up",
@@ -855,7 +916,11 @@
     "equipment_any": [],
     "training_role": "main",
     "loading_potential": "moderate",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_pull",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "one_arm_row",
@@ -906,7 +971,11 @@
     "unilateral": true,
     "training_role": "main",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_pull",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "farmer_carry",
@@ -962,6 +1031,13 @@
     "time_based": false,
     "target_regions": [
       "forearm"
+    ],
+    "movement_family": "loaded_carry",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "trunk_control"
     ]
   },
   {
@@ -1018,6 +1094,13 @@
     "time_based": false,
     "target_regions": [
       "shoulder"
+    ],
+    "movement_family": "trunk_control",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "trunk_control"
     ]
   },
   {
@@ -1068,7 +1151,14 @@
     "equipment_any": [],
     "training_role": "stability",
     "loading_potential": "moderate",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "trunk_control",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "trunk_control"
+    ]
   },
   {
     "id": "lateral_raise",
@@ -1114,7 +1204,11 @@
     "equipment_any": [],
     "training_role": "accessory",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "accessory",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "biceps_curl",
@@ -1161,7 +1255,11 @@
     "equipment_any": [],
     "training_role": "accessory",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "accessory",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "triceps_pressdown",
@@ -1205,7 +1303,11 @@
     "equipment_any": [],
     "training_role": "accessory",
     "loading_potential": "moderate",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "accessory",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "box_jump",
@@ -1256,7 +1358,14 @@
     "equipment_any": [],
     "training_role": "power",
     "loading_potential": "moderate",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "power",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "explosiveness"
+    ]
   },
   {
     "id": "kettlebell_swing",
@@ -1311,6 +1420,13 @@
     "time_based": false,
     "target_regions": [
       "forearm"
+    ],
+    "movement_family": "power",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "explosiveness"
     ]
   },
   {
@@ -1360,7 +1476,11 @@
     "equipment_any": [],
     "training_role": "accessory",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "knee_dominant",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "glute_bridge",
@@ -1410,7 +1530,11 @@
     ],
     "training_role": "main",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "hip_extension",
+    "loading_mode": "mixed",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "dumbbell_floor_press",
@@ -1460,7 +1584,11 @@
     "range_of_motion": "Amplituda je omejena s stikom nadlakti s tlemi. Kadar oprema in sposobnosti dopuščajo, daj prednost skleci s prilagojeno višino opore ali potisku ročk na stabilni klopi.",
     "training_role": "main",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_push",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "band_row",
@@ -1512,7 +1640,13 @@
     "equipment_any": [],
     "training_role": "main",
     "loading_potential": "moderate",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_pull",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ]
   },
   {
     "id": "dumbbell_bent_over_row",
@@ -1565,7 +1699,11 @@
     "equipment_any": [],
     "training_role": "main",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_pull",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "band_lat_pulldown",
@@ -1616,7 +1754,11 @@
     "single_joint": false,
     "training_role": "main",
     "loading_potential": "moderate",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_pull",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "dumbbell_deadlift",
@@ -1667,7 +1809,11 @@
     "unilateral": false,
     "training_role": "accessory",
     "loading_potential": "high",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "hip_hinge",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "bodyweight_hip_hinge",
@@ -1719,7 +1865,13 @@
     "single_joint": false,
     "training_role": "main",
     "loading_potential": "low",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "hip_hinge",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ]
   },
   {
     "id": "supported_single_leg_rdl",
@@ -1775,7 +1927,13 @@
     "unilateral": true,
     "loading_potential": "moderate",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "hip_hinge",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ]
   },
   {
     "id": "air_squat",
@@ -1826,7 +1984,13 @@
     ],
     "loading_potential": "low",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "knee_dominant",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ]
   },
   {
     "id": "reaching_squat",
@@ -1881,6 +2045,12 @@
     "time_based": false,
     "target_regions": [
       "shoulder"
+    ],
+    "movement_family": "knee_dominant",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength"
     ]
   },
   {
@@ -1931,7 +2101,11 @@
     "time_based": false,
     "target_regions": [
       "forearm"
-    ]
+    ],
+    "movement_family": "knee_dominant",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "dumbbell_squat_front_rack",
@@ -1989,7 +2163,11 @@
     "time_based": false,
     "target_regions": [
       "upper_back"
-    ]
+    ],
+    "movement_family": "knee_dominant",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "walking_lunge",
@@ -2041,7 +2219,13 @@
     "unilateral": true,
     "loading_potential": "moderate",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "single_leg_knee_dominant",
+    "loading_mode": "mixed",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ]
   },
   {
     "id": "lateral_lunge",
@@ -2092,7 +2276,13 @@
     "unilateral": true,
     "loading_potential": "moderate",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "single_leg_knee_dominant",
+    "loading_mode": "mixed",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength"
+    ]
   },
   {
     "id": "step_up",
@@ -2144,7 +2334,13 @@
     "unilateral": true,
     "loading_potential": "moderate",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "single_leg_knee_dominant",
+    "loading_mode": "mixed",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ]
   },
   {
     "id": "bench_dip",
@@ -2191,7 +2387,11 @@
     ],
     "loading_potential": "low",
     "training_role": "accessory",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_push",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "parallel_bar_dip",
@@ -2242,7 +2442,11 @@
     ],
     "loading_potential": "high",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_push",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "trx_row",
@@ -2294,7 +2498,13 @@
     ],
     "loading_potential": "moderate",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_pull",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ]
   },
   {
     "id": "ring_row",
@@ -2345,7 +2555,13 @@
     ],
     "loading_potential": "moderate",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_pull",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ]
   },
   {
     "id": "inverted_row_table",
@@ -2393,7 +2609,13 @@
     "equipment_any": [],
     "loading_potential": "moderate",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_pull",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ]
   },
   {
     "id": "kettlebell_one_arm_row",
@@ -2441,7 +2663,11 @@
     "unilateral": true,
     "loading_potential": "high",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_pull",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "chin_up",
@@ -2490,7 +2716,11 @@
     ],
     "loading_potential": "high",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_pull",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "foot_assisted_pull_up",
@@ -2538,7 +2768,11 @@
     "equipment_any": [],
     "loading_potential": "moderate",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_pull",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "barbell_overhead_press",
@@ -2589,7 +2823,11 @@
     "time_based": false,
     "target_regions": [
       "upper_back"
-    ]
+    ],
+    "movement_family": "upper_push",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "band_overhead_press",
@@ -2635,7 +2873,11 @@
     "equipment_any": [],
     "loading_potential": "moderate",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_push",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "single_leg_rdl",
@@ -2689,7 +2931,13 @@
     "unilateral": true,
     "loading_potential": "moderate",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "hip_hinge",
+    "loading_mode": "mixed",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength"
+    ]
   },
   {
     "id": "long_lever_glute_bridge",
@@ -2739,7 +2987,11 @@
     "target_regions": [
       "hip",
       "posterior_chain"
-    ]
+    ],
+    "movement_family": "hip_extension",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "elevated_heel_hip_lift",
@@ -2792,7 +3044,11 @@
     "target_regions": [
       "hip",
       "posterior_chain"
-    ]
+    ],
+    "movement_family": "hip_extension",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "slider_leg_curl",
@@ -2843,7 +3099,11 @@
     "target_regions": [
       "knee",
       "posterior_chain"
-    ]
+    ],
+    "movement_family": "knee_flexion",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "nordic_hamstring_curl",
@@ -2891,7 +3151,11 @@
     ],
     "loading_potential": "high",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "knee_flexion",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "farmer_carry_bodyweight",
@@ -2946,6 +3210,13 @@
     "time_based": false,
     "target_regions": [
       "forearm"
+    ],
+    "movement_family": "loaded_carry",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "trunk_control"
     ]
   },
   {
@@ -2999,6 +3270,13 @@
     "time_based": false,
     "target_regions": [
       "forearm"
+    ],
+    "movement_family": "loaded_carry",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "trunk_control"
     ]
   },
   {
@@ -3053,6 +3331,13 @@
     "time_based": true,
     "target_systems": [
       "cardiorespiratory"
+    ],
+    "movement_family": "locomotion",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "conditioning"
     ]
   },
   {
@@ -3105,6 +3390,13 @@
     "time_based": true,
     "target_systems": [
       "cardiorespiratory"
+    ],
+    "movement_family": "locomotion",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "conditioning"
     ]
   },
   {
@@ -3155,6 +3447,12 @@
     "time_based": true,
     "target_systems": [
       "cardiorespiratory"
+    ],
+    "movement_family": "locomotion",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "conditioning"
     ]
   },
   {
@@ -3208,6 +3506,12 @@
     "time_based": true,
     "target_systems": [
       "cardiorespiratory"
+    ],
+    "movement_family": "conditioning",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "conditioning"
     ]
   },
   {
@@ -3265,6 +3569,13 @@
     ],
     "target_regions": [
       "shoulder"
+    ],
+    "movement_family": "conditioning",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "conditioning"
     ]
   },
   {
@@ -3317,6 +3628,13 @@
     "time_based": true,
     "target_systems": [
       "cardiorespiratory"
+    ],
+    "movement_family": "conditioning",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "conditioning"
     ]
   },
   {
@@ -3369,6 +3687,12 @@
     "time_based": true,
     "target_systems": [
       "cardiorespiratory"
+    ],
+    "movement_family": "conditioning",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "conditioning"
     ]
   },
   {
@@ -3424,6 +3748,13 @@
     ],
     "target_regions": [
       "shoulder"
+    ],
+    "movement_family": "conditioning",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "conditioning"
     ]
   },
   {
@@ -3478,6 +3809,12 @@
     "target_regions": [
       "ankle",
       "hip"
+    ],
+    "movement_family": "mobility",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength"
     ]
   },
   {
@@ -3526,6 +3863,12 @@
     "time_based": false,
     "target_regions": [
       "ankle"
+    ],
+    "movement_family": "mobility",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength"
     ]
   },
   {
@@ -3577,7 +3920,13 @@
     "unilateral": true,
     "loading_potential": "moderate",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "knee_dominant",
+    "loading_mode": "mixed",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength"
+    ]
   },
   {
     "id": "pistol_squat",
@@ -3636,7 +3985,13 @@
     "unilateral": true,
     "loading_potential": "high",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "knee_dominant",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ]
   },
   {
     "id": "hip_90_90_switch",
@@ -3684,6 +4039,12 @@
     "time_based": false,
     "target_regions": [
       "hip"
+    ],
+    "movement_family": "mobility",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength"
     ]
   },
   {
@@ -3734,6 +4095,12 @@
     "target_regions": [
       "hip",
       "shoulder"
+    ],
+    "movement_family": "mobility",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength"
     ]
   },
   {
@@ -3783,6 +4150,12 @@
     "target_regions": [
       "thoracic_spine",
       "shoulder"
+    ],
+    "movement_family": "mobility",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength"
     ]
   },
   {
@@ -3830,6 +4203,12 @@
     "time_based": false,
     "target_regions": [
       "shoulder"
+    ],
+    "movement_family": "mobility",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength"
     ]
   },
   {
@@ -3877,7 +4256,11 @@
     ],
     "loading_potential": "moderate",
     "training_role": "mobility",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "knee_dominant",
+    "loading_mode": "external_load",
+    "mobility_strength": true,
+    "functional_components": []
   },
   {
     "id": "calf_raise_full_rom",
@@ -3927,7 +4310,11 @@
     "time_based": false,
     "target_regions": [
       "ankle"
-    ]
+    ],
+    "movement_family": "accessory",
+    "loading_mode": "mixed",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "tibialis_raise",
@@ -3974,7 +4361,11 @@
     "time_based": false,
     "target_regions": [
       "ankle"
-    ]
+    ],
+    "movement_family": "accessory",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "copenhagen_plank",
@@ -4027,6 +4418,13 @@
     "time_based": false,
     "target_regions": [
       "shoulder"
+    ],
+    "movement_family": "trunk_control",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "trunk_control"
     ]
   },
   {
@@ -4076,6 +4474,13 @@
     "time_based": false,
     "target_regions": [
       "shoulder"
+    ],
+    "movement_family": "trunk_control",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "trunk_control"
     ]
   },
   {
@@ -4126,7 +4531,13 @@
     ],
     "loading_potential": "moderate",
     "training_role": "main",
-    "unilateral": true
+    "unilateral": true,
+    "movement_family": "knee_dominant",
+    "loading_mode": "mixed",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ]
   },
   {
     "id": "pike_push_up",
@@ -4176,6 +4587,12 @@
     "training_role": "main",
     "target_regions": [
       "upper_back"
+    ],
+    "movement_family": "upper_push",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
     ]
   },
   {
@@ -4224,7 +4641,11 @@
     "single_joint": false,
     "equipment_any": [],
     "loading_potential": "moderate",
-    "training_role": "main"
+    "training_role": "main",
+    "movement_family": "upper_pull",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "barbell_bent_over_row",
@@ -4273,7 +4694,11 @@
     "single_joint": false,
     "equipment_any": [],
     "loading_potential": "high",
-    "training_role": "main"
+    "training_role": "main",
+    "movement_family": "upper_pull",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "shoulder_pass_through_stick",
@@ -4323,6 +4748,12 @@
     "target_regions": [
       "shoulder",
       "upper_back"
+    ],
+    "movement_family": "mobility",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength"
     ]
   },
   {
@@ -4372,6 +4803,12 @@
     "time_based": false,
     "target_regions": [
       "shoulder"
+    ],
+    "movement_family": "mobility",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength"
     ]
   },
   {
@@ -4427,6 +4864,13 @@
     ],
     "target_regions": [
       "shoulder"
+    ],
+    "movement_family": "conditioning",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "conditioning"
     ]
   },
   {
@@ -4481,6 +4925,13 @@
     ],
     "target_regions": [
       "shoulder"
+    ],
+    "movement_family": "conditioning",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "conditioning"
     ]
   },
   {
@@ -4532,6 +4983,13 @@
     "time_based": true,
     "target_systems": [
       "cardiorespiratory"
+    ],
+    "movement_family": "conditioning",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "conditioning"
     ]
   },
   {
@@ -4587,6 +5045,13 @@
     ],
     "target_regions": [
       "shoulder"
+    ],
+    "movement_family": "locomotion",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "conditioning"
     ]
   },
   {
@@ -4640,6 +5105,13 @@
     "time_based": true,
     "target_systems": [
       "cardiorespiratory"
+    ],
+    "movement_family": "conditioning",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "conditioning"
     ]
   },
   {
@@ -4688,7 +5160,11 @@
     ],
     "single_joint": false,
     "loading_potential": "moderate",
-    "training_role": "main"
+    "training_role": "main",
+    "movement_family": "upper_push",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "box_jump_intervals",
@@ -4741,7 +5217,13 @@
     "loading_potential": "moderate",
     "training_role": "conditioning",
     "endurance_type": "anaerobic",
-    "time_based": true
+    "time_based": true,
+    "movement_family": "conditioning",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "conditioning"
+    ]
   },
   {
     "id": "couch_stretch",
@@ -4788,7 +5270,13 @@
     "loading_potential": "low",
     "training_role": "mobility",
     "time_based": true,
-    "unilateral": true
+    "unilateral": true,
+    "movement_family": "mobility",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ]
   },
   {
     "id": "supine_hamstring_stretch",
@@ -4834,7 +5322,13 @@
     "loading_potential": "low",
     "training_role": "mobility",
     "time_based": true,
-    "unilateral": true
+    "unilateral": true,
+    "movement_family": "mobility",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ]
   },
   {
     "id": "doorway_pec_stretch",
@@ -4880,7 +5374,13 @@
     "loading_potential": "low",
     "training_role": "mobility",
     "time_based": true,
-    "unilateral": true
+    "unilateral": true,
+    "movement_family": "mobility",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ]
   },
   {
     "id": "calf_wall_stretch",
@@ -4927,7 +5427,13 @@
     "loading_potential": "low",
     "training_role": "mobility",
     "time_based": true,
-    "unilateral": true
+    "unilateral": true,
+    "movement_family": "mobility",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ]
   },
   {
     "id": "push_up_incline",
@@ -4976,7 +5482,11 @@
     "single_joint": false,
     "training_role": "main",
     "loading_potential": "moderate",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_push",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "wall_push_up",
@@ -5024,7 +5534,11 @@
     "single_joint": false,
     "training_role": "main",
     "loading_potential": "low",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_push",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "push_up_decline",
@@ -5073,7 +5587,11 @@
     "single_joint": false,
     "training_role": "main",
     "loading_potential": "moderate",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "upper_push",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "dead_hang",
@@ -5123,6 +5641,12 @@
     "target_regions": [
       "shoulder",
       "upper_back"
+    ],
+    "movement_family": "mobility",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength"
     ]
   },
   {
@@ -5172,6 +5696,12 @@
     "time_based": false,
     "target_regions": [
       "hip"
+    ],
+    "movement_family": "mobility",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength"
     ]
   },
   {
@@ -5225,6 +5755,12 @@
     "target_regions": [
       "thoracic_spine",
       "shoulder"
+    ],
+    "movement_family": "mobility",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength"
     ]
   },
   {
@@ -5277,6 +5813,12 @@
     "time_based": false,
     "target_regions": [
       "hip"
+    ],
+    "movement_family": "mobility",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength"
     ]
   },
   {
@@ -5328,6 +5870,12 @@
     "target_regions": [
       "hip",
       "posterior_chain"
+    ],
+    "movement_family": "mobility",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength"
     ]
   },
   {
@@ -5379,6 +5927,12 @@
     "target_regions": [
       "shoulder",
       "thoracic_spine"
+    ],
+    "movement_family": "mobility",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength"
     ]
   },
   {
@@ -5437,6 +5991,12 @@
     "target_regions": [
       "knee",
       "ankle"
+    ],
+    "movement_family": "single_leg_knee_dominant",
+    "loading_mode": "mixed",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength"
     ]
   },
   {
@@ -5486,7 +6046,11 @@
     "time_based": false,
     "target_regions": [
       "knee"
-    ]
+    ],
+    "movement_family": "accessory",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
   },
   {
     "id": "sled_backward_drag",
@@ -5543,6 +6107,13 @@
     "target_regions": [
       "knee",
       "ankle"
+    ],
+    "movement_family": "conditioning",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "conditioning"
     ]
   },
   {
@@ -5601,6 +6172,13 @@
     "target_regions": [
       "trunk",
       "shoulder"
+    ],
+    "movement_family": "loaded_carry",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "trunk_control"
     ]
   },
   {
@@ -5660,6 +6238,13 @@
     "target_regions": [
       "shoulder",
       "trunk"
+    ],
+    "movement_family": "loaded_carry",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "trunk_control"
     ]
   },
   {
@@ -5711,6 +6296,13 @@
     "time_based": false,
     "target_regions": [
       "lower_body"
+    ],
+    "movement_family": "power",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "explosiveness"
     ]
   },
   {
@@ -5762,6 +6354,13 @@
     "time_based": false,
     "target_regions": [
       "lower_body"
+    ],
+    "movement_family": "power",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "explosiveness"
     ]
   },
   {
@@ -5824,6 +6423,252 @@
     "unilateral": false,
     "loading_potential": "high",
     "training_role": "main",
-    "time_based": false
+    "time_based": false,
+    "movement_family": "knee_dominant",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ]
+  },
+  {
+    "id": "sissy_squat",
+    "name": "Sissy počep",
+    "name_en": "Sissy squat",
+    "pattern": "accessory",
+    "joint_type": "single_joint",
+    "goals": [
+      "hypertrophy",
+      "strength",
+      "mobility"
+    ],
+    "equipment": [],
+    "equipment_any": [
+      "bodyweight",
+      "stable_support"
+    ],
+    "level": "advanced",
+    "primary_muscles": [
+      "quadriceps"
+    ],
+    "secondary_muscles": [
+      "trunk"
+    ],
+    "cues": [
+      "Z oporo se po potrebi stabiliziraj.",
+      "Kolena vodi naprej, trup in kolki pa ohrani v dogovorjenem položaju.",
+      "Uporabi samo obseg, ki ga nadzoruješ brez bolečine."
+    ],
+    "common_errors": [
+      "Prisiljevanje globine kljub izgubi nadzora.",
+      "Nenadzorovan padec v končni položaj."
+    ],
+    "regressions": [
+      "wall_sit",
+      "heel_elevated_squat"
+    ],
+    "progressions": [
+      "Sissy počep z večjim nadzorovanim obsegom"
+    ],
+    "alternatives": [
+      "heel_elevated_squat",
+      "reverse_nordic_curl"
+    ],
+    "warnings": [
+      "Napredna, izrazito kvadricepsno usmerjena vaja. Zahteva dobro toleranco kolena in postopno uvajanje; ob bolečini je ne izvajaj."
+    ],
+    "single_joint": true,
+    "training_role": "accessory",
+    "loading_potential": "moderate",
+    "time_based": false,
+    "movement_family": "accessory",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": []
+  },
+  {
+    "id": "l_sit",
+    "name": "L-sit",
+    "name_en": "L-sit",
+    "pattern": "trunk_stability",
+    "joint_type": "multi_joint",
+    "goals": [
+      "strength",
+      "hypertrophy",
+      "functional",
+      "mobility"
+    ],
+    "equipment": [],
+    "equipment_any": [
+      "bodyweight",
+      "parallettes",
+      "dip_bars"
+    ],
+    "level": "advanced",
+    "primary_muscles": [
+      "trunk",
+      "hip_flexors"
+    ],
+    "secondary_muscles": [
+      "triceps",
+      "shoulders",
+      "quadriceps"
+    ],
+    "cues": [
+      "Aktivno potisni oporo stran od telesa.",
+      "Ohrani iztegnjena kolena in dvignjene noge v obsegu, ki ga zmoreš.",
+      "Začni s kratkimi kakovostnimi zadržanji."
+    ],
+    "common_errors": [
+      "Sesedanje ramen.",
+      "Upogibanje kolen zaradi predolgega zadržanja.",
+      "Zadrževanje diha."
+    ],
+    "regressions": [
+      "tuck_sit",
+      "seated_leg_lift"
+    ],
+    "progressions": [
+      "Enonožni L-sit",
+      "Polni L-sit z daljšim zadržanjem"
+    ],
+    "alternatives": [
+      "dead_bug",
+      "hollow_body_hold"
+    ],
+    "warnings": [
+      "Napredna gimnastična spretnost; preveri oporo, moč ramen in aktivno kompresijo kolkov. Ne zahtevaj polne različice od začetnika."
+    ],
+    "single_joint": false,
+    "training_role": "stability",
+    "loading_potential": "moderate",
+    "time_based": true,
+    "movement_family": "trunk_control",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": true,
+    "functional_components": [
+      "strength",
+      "trunk_control"
+    ]
+  },
+  {
+    "id": "single_leg_balance_reach",
+    "name": "Enonožno ravnotežje z dotikom v smeri",
+    "name_en": "Single-leg balance reach",
+    "pattern": "balance",
+    "joint_type": "multi_joint",
+    "goals": [
+      "functional",
+      "general_fitness",
+      "mobility"
+    ],
+    "equipment": [],
+    "equipment_any": [
+      "bodyweight",
+      "stable_support"
+    ],
+    "level": "beginner",
+    "primary_muscles": [
+      "foot_intrinsics",
+      "gluteus_medius"
+    ],
+    "secondary_muscles": [
+      "quadriceps",
+      "trunk"
+    ],
+    "cues": [
+      "Stoj na eni nogi in ohrani stabilno oporo stopala.",
+      "Z drugo nogo kontrolirano sezi naprej ali diagonalno.",
+      "Težavnost povečuj z dosegom, ne z izgubo nadzora."
+    ],
+    "common_errors": [
+      "Sesedanje stopalnega loka.",
+      "Hiter dotik brez nadzora.",
+      "Kompenzacija z nagibom trupa."
+    ],
+    "regressions": [
+      "Stoja na eni nogi ob opori"
+    ],
+    "progressions": [
+      "Enonožni doseg v več smereh",
+      "Enonožni doseg z dodatno nalogo"
+    ],
+    "alternatives": [
+      "supported_single_leg_rdl"
+    ],
+    "warnings": [
+      "Izberi varno okolje in bližnjo stabilno oporo; ne uporabljaj nestabilnih pripomočkov kot samodejne progresije."
+    ],
+    "single_joint": false,
+    "training_role": "stability",
+    "loading_potential": "low",
+    "time_based": false,
+    "movement_family": "balance",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "balance"
+    ]
+  },
+  {
+    "id": "lateral_shuffle",
+    "name": "Bočno prestopanje (lateral shuffle)",
+    "name_en": "Lateral shuffle",
+    "pattern": "coordination",
+    "joint_type": "multi_joint",
+    "goals": [
+      "functional",
+      "general_fitness",
+      "conditioning",
+      "power"
+    ],
+    "equipment": [],
+    "equipment_any": [
+      "bodyweight"
+    ],
+    "level": "intermediate",
+    "primary_muscles": [
+      "quadriceps",
+      "gluteus_maximus"
+    ],
+    "secondary_muscles": [
+      "calves",
+      "trunk"
+    ],
+    "cues": [
+      "Ohrani nizek, atletski položaj, ki ga lahko nadzoruješ.",
+      "Premikaj se bočno z usklajenim delom stopal in rok.",
+      "Najprej obvladaj zaviranje in spremembo smeri, šele nato povečuj hitrost."
+    ],
+    "common_errors": [
+      "Križanje stopal pri hitri izvedbi.",
+      "Izguba nadzora pri zaviranju.",
+      "Prevelika hitrost glede na prostor in sposobnost."
+    ],
+    "regressions": [
+      "Počasni bočni koraki"
+    ],
+    "progressions": [
+      "Bočno prestopanje z nadzorovano spremembo smeri"
+    ],
+    "alternatives": [
+      "brisk_walking",
+      "shuttle_run"
+    ],
+    "warnings": [
+      "Zagotoviti je treba dovolj prostora in nedrsečo podlago; hitrost prilagodi nadzoru in stanju sklepov."
+    ],
+    "single_joint": false,
+    "training_role": "power",
+    "loading_potential": "moderate",
+    "time_based": true,
+    "endurance_type": "muscular",
+    "movement_family": "coordination",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "coordination",
+      "conditioning"
+    ]
   }
 ]
