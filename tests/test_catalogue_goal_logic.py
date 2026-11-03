@@ -133,3 +133,22 @@ def test_generated_mobility_program_contains_strength_through_range():
     items = [item for session in result["sessions"] for item in session["exercises"]]
     assert any(item["exercise_id"] in {"romanian_deadlift", "loaded_deep_squat", "atg_split_squat"}
                for item in items)
+
+
+def test_bodyweight_only_progressions_do_not_suggest_unavailable_loaded_variants():
+    from training.program import generate_program
+    result = generate_program({
+        "goal": "strength", "experience": "beginner",
+        "sessions_per_week": 2, "session_minutes": 60,
+        "equipment": ["bodyweight"],
+    })
+    unavailable_terms = (
+        "ročk", "kettlebell", "mrtvi dvig", "dodatno obremenitvijo",
+        "uteži", "bremenom", "drogom", "škripcu", "elastik",
+    )
+    for session in result["sessions"]:
+        for item in session["exercises"]:
+            for reference in item["progressions"] + item["regressions"] + item["alternatives"]:
+                assert not any(term in reference.casefold() for term in unavailable_terms), (
+                    item["exercise_id"], reference
+                )
