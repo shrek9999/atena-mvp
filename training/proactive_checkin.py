@@ -132,6 +132,77 @@ def build_proactive_checkin(sessions):
             "reason": "Zanesljiv RIR pomaga presoditi odmerek; neznana vrednost mora ostati neznana.",
         }
 
+    effort_by_exercise = []
+    for item in exercises:
+        if not isinstance(item, dict):
+            continue
+        sets = item.get("set_results")
+        reserves = []
+        if isinstance(sets, list) and sets:
+            if any(
+                not isinstance(row, dict)
+                or not isinstance(row.get("rir"), int)
+                or isinstance(row.get("rir"), bool)
+                or not 0 <= row.get("rir") <= 10
+                for row in sets
+            ):
+                continue
+            reserves = [row["rir"] for row in sets]
+        elif isinstance(item.get("rir"), int) and not isinstance(item.get("rir"), bool):
+            reserves = [item["rir"]]
+        if reserves:
+            effort_by_exercise.append({
+                "exercise_id": item.get("exercise_id", "vaji"),
+                "minimum_rir": min(reserves),
+            })
+
+    very_hard = [item for item in effort_by_exercise if item["minimum_rir"] <= 1]
+    if len(very_hard) >= 2:
+        return {
+            **base,
+            "status": "high_effort_multiple_exercises",
+            "priority": "training_dose",
+            "question": (
+                "Majhna rezerva se je pojavila pri več vajah. Si izrazito utrujen "
+                "na splošno ali je bila zahtevnost predvsem proti koncu treninga?"
+            ),
+            "reason": (
+                "Nizek RIR pri več vajah je signal za preverjanje celotnega odmerka, "
+                "ne dokaz preobremenitve."
+            ),
+        }
+    if len(very_hard) == 1:
+        return {
+            **base,
+            "status": "exercise_specific_high_effort",
+            "priority": "exercise_response",
+            "question": (
+                f"Pri vaji {very_hard[0]['exercise_id']} je bila rezerva majhna. "
+                "Je bila zahtevnost omejena predvsem na to vajo ali si občutil tudi splošno utrujenost?"
+            ),
+            "reason": (
+                "Odziv pri eni vaji ne upravičuje samodejnega zmanjšanja celotnega treninga."
+            ),
+        }
+    if (
+        session.get("difficulty") == "easy"
+        and effort_by_exercise
+        and all(item["minimum_rir"] >= 5 for item in effort_by_exercise)
+    ):
+        return {
+            **base,
+            "status": "low_effort_feedback",
+            "priority": "training_stimulus",
+            "question": (
+                "Tudi zabeleženi RIR kaže veliko rezerve. Je bil trening kot celota "
+                "prelahek ali je bilo več rezerve le pri posameznih vajah?"
+            ),
+            "reason": (
+                "Lahka splošna ocena in velika rezerva sta lahko znak premajhnega dražljaja, "
+                "vendar pred progresijo preveri odziv po posameznih vajah."
+            ),
+        }
+
     return {
         **base,
         "status": "standard_follow_up",
