@@ -27,6 +27,7 @@ from training.exercise_progression import recommend_exercise_progression, apply_
 from training.longitudinal_progression import summarize_longitudinal_progression
 from training.conditioning_progression import summarize_conditioning_progress
 from training.periodization import summarize_training_cycle
+from training.proactive_checkin import build_proactive_checkin
 from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL
 
 logger = logging.getLogger(__name__)
@@ -1504,6 +1505,7 @@ def coach_training_progress(profile_id):
             "longitudinal_progression": longitudinal_progression,
             "conditioning_progression": conditioning_progression,
             "training_cycle": training_cycle,
+            "proactive_checkin": build_proactive_checkin(sessions),
             "source": "recorded_training_history",
             "automatic_load_changes": False,
         }), 200
@@ -1625,6 +1627,7 @@ def coach_profile_program(profile_id):
             "adaptation_guidance": adaptation,
             "exercise_progressions": exercise_progressions,
             "training_cycle": training_cycle,
+            "proactive_checkin": build_proactive_checkin(sessions),
             "source": "saved_profile_and_exercise_level_training_feedback",
             "pilot": True,
         }), 200
