@@ -42,14 +42,23 @@ def test_fat_loss_sessions_combine_strength_and_conditioning():
     assert all("squat" in session and "hinge" in session and "conditioning" in session for session in week)
 
 
-def test_less_experienced_strength_and_hypertrophy_share_practical_dose():
+def test_beginner_and_intermediate_goal_doses_are_experience_specific():
     squat = {"pattern": "squat", "unilateral": False}
-    for level in ("beginner", "intermediate"):
-        strength = _prescription("strength", level, "squat", squat)
-        hypertrophy = _prescription("hypertrophy", level, "squat", squat)
-        combined = _prescription("strength_hypertrophy", level, "squat", squat)
-        assert (strength["sets"], strength["reps"], strength["rir"]) == (hypertrophy["sets"], hypertrophy["reps"], hypertrophy["rir"])
-        assert (strength["sets"], strength["reps"], strength["rir"]) == (combined["sets"], combined["reps"], combined["rir"])
+    beginner = {
+        goal: _prescription(goal, "beginner", "squat", squat)
+        for goal in ("strength", "hypertrophy", "strength_hypertrophy")
+    }
+    assert all(
+        (dose["sets"], dose["reps"], dose["rir"]) == (3, "8–12", 3)
+        for dose in beginner.values()
+    )
+
+    intermediate_strength = _prescription("strength", "intermediate", "squat", squat)
+    intermediate_hypertrophy = _prescription("hypertrophy", "intermediate", "squat", squat)
+    intermediate_combined = _prescription("strength_hypertrophy", "intermediate", "squat", squat)
+    assert (intermediate_strength["sets"], intermediate_strength["reps"], intermediate_strength["rir"]) == (3, "5–8", 2)
+    assert (intermediate_hypertrophy["sets"], intermediate_hypertrophy["reps"], intermediate_hypertrophy["rir"]) == (3, "6–10", 2)
+    assert (intermediate_combined["sets"], intermediate_combined["reps"], intermediate_combined["rir"]) == (3, "5–8", 2)
 
 
 def test_advanced_strength_and_hypertrophy_are_differentiated():
