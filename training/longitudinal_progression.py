@@ -194,7 +194,13 @@ def summarize_longitudinal_progression(sessions):
                 "review": "review_recovery_before_progression",
                 "reason": "Ena od zadnjih dveh izvedb je bila povezana s slabo regeneracijo ali visoko zahtevnostjo. Pred nadaljnjo progresijo preveri regeneracijo in skupno obremenitev.",
             })
-        elif latest["average_load_kg"] is not None and first["average_load_kg"] is not None and latest["average_load_kg"] > first["average_load_kg"] and latest["total_reps"] >= first["total_reps"]:
+        elif (
+            latest["average_load_kg"] is not None
+            and first["average_load_kg"] is not None
+            and latest["average_load_kg"] > first["average_load_kg"]
+            and latest["total_reps"] >= first["total_reps"]
+            and latest["minimum_rir"] >= first["minimum_rir"] - 1
+        ):
             result.update({
                 "status": "improving",
                 "review": "continue_current_progression",
@@ -215,7 +221,12 @@ def summarize_longitudinal_progression(sessions):
                 "review": "coach_review_required",
                 "reason": "Pet primerljivih izvedb v najmanj treh tednih kaže enak rezultat. To je signal za strokovni pregled programa, ne samodejna diagnoza stagnacije ali ukaz za razbremenilni teden.",
             })
-        elif latest["total_reps"] <= first["total_reps"] - 2 and latest["minimum_rir"] <= first["minimum_rir"] - 1:
+        elif (
+            all(item["average_load_kg"] == first["average_load_kg"] for item in window)
+            and all(item["total_reps"] < first["total_reps"] for item in window[-2:])
+            and latest["total_reps"] <= first["total_reps"] - 2
+            and latest["minimum_rir"] <= first["minimum_rir"] - 1
+        ):
             result.update({
                 "status": "declining_performance",
                 "review": "review_recovery_and_dose",
