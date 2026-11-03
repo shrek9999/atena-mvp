@@ -93,6 +93,17 @@ def test_one_positive_exposure_is_not_enough():
     assert decision(result, "squat_goblet")["decision"] == "collect_data"
 
 
+def test_duplicate_exercise_entries_in_one_session_count_as_one_exposure():
+    result = recommend_exercise_progression([
+        record("2026-11-03", [
+            exercise("squat_goblet", reps=(12, 12, 12)),
+            exercise("squat_goblet", reps=(12, 12, 12)),
+        ])
+    ])
+    assert decision(result, "squat_goblet")["decision"] == "collect_data"
+    assert decision(result, "squat_goblet")["exposures_recorded"] == 1
+
+
 def test_missing_rir_never_counts_as_readiness_to_progress():
     missing = exercise("squat_goblet", rir=(None, None, None))
     sessions = [
