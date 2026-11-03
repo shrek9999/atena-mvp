@@ -6,7 +6,7 @@ from typing import Any
 
 from training.catalogue import get_exercises
 
-SUPPORTED_GOALS = {"hypertrophy", "strength", "fat_loss", "general_fitness", "functional", "power", "endurance", "mobility"}
+SUPPORTED_GOALS = {"hypertrophy", "strength", "strength_hypertrophy", "fat_loss", "general_fitness", "functional", "power", "endurance", "mobility"}
 SUPPORTED_LEVELS = {"beginner", "intermediate", "advanced"}
 SUPPORTED_SESSIONS = {2, 3, 4}
 PATTERN_LABELS = {
@@ -221,7 +221,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
             else:
                 sets, reps, rir, rest = 3, "8–12", 3, 90
         rir_range = "2–3"
-    elif goal == "strength":
+    elif goal in {"strength", "strength_hypertrophy"}:
         if pattern in {"squat", "hinge"}:
             sets, reps, rir, rest = (4, "3–6", 2, 210) if level == "advanced" else (3, "5–8", 2, 180)
         elif is_stability:
@@ -230,7 +230,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
             sets, reps, rir, rest = 2, "8–12", 3, 75
         else:
             sets, reps, rir, rest = 3, ("6–8" if unilateral else "6–8"), 2, (120 if unilateral else 120)
-    elif goal in {"hypertrophy", "fat_loss"}:
+    elif goal in {"hypertrophy", "fat_loss", "strength_hypertrophy"}:
         if pattern in {"squat", "hinge"}:
             sets, reps, rir, rest = 3, "6–10", (2 if level != "beginner" else 3), 120 if level == "advanced" else 90
         elif pattern == "lunge" or unilateral:
@@ -260,7 +260,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         tempo, tempo_description, tempo_seconds = "1–0–X–0", "Nadzorovan začetni položaj; dvig oziroma odriv izvedi hitro in tehnično čisto; med ponovitvami se ponastavi.", 3
     elif is_stability:
         tempo, tempo_description, tempo_seconds = "2–1–2–1", "2 s izteg oziroma odmik · 1 s nadzor · 2 s vrnitev · 1 s ponastavitev.", 6
-    elif goal == "strength":
+    elif goal in {"strength", "strength_hypertrophy"}:
         tempo, tempo_description, tempo_seconds = "2–0–X–0", "2 s nadzorovan spust · brez premora v spodnjem položaju · koncentrično fazo izvedi z maksimalno namero hitrosti (X), vendar brez izgube tehnike · brez premora v vrhu.", 3
     elif goal in {"hypertrophy", "fat_loss"}:
         tempo, tempo_description, tempo_seconds = "3–1–2–0", "3 s ekscentrična faza · 1 s nadzor v spodnjem položaju · 2 s koncentrična faza · brez premora v vrhu.", 6
@@ -344,6 +344,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
     include_stability = bool(response and response.get("movement_control", "none") != "none")
     goal_sources = {
         "fat_loss": ["strength", "hypertrophy", "general_fitness", "endurance"],
+        "strength_hypertrophy": ["strength", "hypertrophy"],
         "functional": ["functional", "general_fitness", "strength", "mobility"],
         "general_fitness": ["general_fitness", "functional", "strength", "endurance"],
         "power": ["power", "strength", "general_fitness"],
