@@ -94,13 +94,16 @@ def test_explicit_profile_confirmation_resolves_profile_message_conflict():
     assert coach_routes._profile_contradiction_reply(messages) is None
 
 
-def test_explicit_message_confirmation_resolves_profile_message_conflict():
+def test_message_confirmation_requires_profile_update_before_prescription():
     messages = _user_messages(
         '{"goal":"strength","experience":"beginner","equipment":["bodyweight"]}',
         "Sem začetnik, treniram pa že deset let. V fitnesu imam olimpijsko palico.",
         "Potrjujem, da je moje zadnje sporočilo pravilno; profil je zastarel.",
     )
-    assert coach_routes._profile_contradiction_reply(messages) is None
+    reply = coach_routes._profile_contradiction_reply(messages)
+    assert reply is not None
+    assert "Klepet sam profila ne spremeni" in reply
+    assert "posodobi stopnjo izkušenj" in reply
 
 
 def test_equipment_conflict_alone_requires_confirmation():
