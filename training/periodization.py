@@ -24,7 +24,9 @@ def _completed_sessions(sessions):
         session = item["session"]
         if session.get("completed") is True:
             # At most one completed training exposure per calendar day.
-            by_day[day.isoformat()] = (day, session)
+            # Session history is newest-created first; preserve the latest same-day record.
+            if day.isoformat() not in by_day:
+                by_day[day.isoformat()] = (day, session)
     return [value for _, value in sorted(by_day.items())]
 
 
