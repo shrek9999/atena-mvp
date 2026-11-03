@@ -63,9 +63,11 @@ def _exercise_observation(exercise, session, day):
         "work_seconds": work,
         "loads": loads,
         "rirs": rirs,
-        # Only set-by-set RIR is sufficient for individual progression.
-        # Legacy session summaries cannot prove that every set had adequate reserve.
+        # Only set-by-set feedback is sufficient for individual progression.
+        # Legacy session summaries cannot prove that every set met the target.
         "rir_complete": bool(sets) and len(rirs) == len(sets),
+        "reps_complete": bool(sets) and len(reps) == len(sets),
+        "work_complete": bool(sets) and len(work) == len(sets),
         "sets_complete": (
             exercise.get("planned_sets") is None
             or (len(sets) if sets else exercise.get("sets_completed")) == exercise.get("planned_sets")
@@ -127,6 +129,8 @@ def _classify(history):
     target_min = latest["target_reps_min"]
     target_max = latest["target_reps_max"]
     if target_min is not None and target_max is not None:
+        if not latest["reps_complete"] or not previous["reps_complete"]:
+            return "collect_data", "Manjkajo dejanske ponovitve za vsako serijo v eni od zadnjih izvedb."
         if (
             previous["target_reps_min"] != target_min
             or previous["target_reps_max"] != target_max
@@ -160,6 +164,8 @@ def _classify(history):
 
     target_work = latest["target_work_seconds"]
     if target_work is not None:
+        if not latest["work_complete"] or not previous["work_complete"]:
+            return "collect_data", "Manjka dejansko trajanje za vsako serijo v eni od zadnjih izvedb."
         if previous["target_work_seconds"] != target_work:
             return "hold", "Ciljno trajanje se je med izvedbama spremenilo. Najprej zberi dve primerljivi izvedbi."
         if (
