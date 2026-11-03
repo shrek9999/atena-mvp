@@ -15,17 +15,36 @@ def test_progress_endpoint_returns_authenticated_non_prescriptive_summary(monkey
         return {"profile_id": profile_id, "profile": {"goal": "strength"}}
 
     monkeypatch.setattr(coach_routes, "store_get_profile", get_profile)
+    def logged_session(day):
+        return {
+            "session_date": day,
+            "session": {
+                "completed": True,
+                "difficulty": "moderate",
+                "recovery": "good",
+                "exercises": [{
+                    "exercise_id": "barbell_squat",
+                    "sets_completed": 3,
+                    "reps_completed": 10,
+                    "load_kg": 60.0,
+                    "rir": 3,
+                    "planned_sets": 3,
+                    "target_reps_min": 8,
+                    "target_reps_max": 12,
+                    "execution_quality": "controlled",
+                    "set_results": [
+                        {"reps": 10, "load_kg": 60.0, "rir": 3},
+                        {"reps": 10, "load_kg": 60.0, "rir": 3},
+                        {"reps": 10, "load_kg": 60.0, "rir": 3},
+                    ],
+                }],
+            },
+        }
+
     monkeypatch.setattr(coach_routes, "store_list_sessions", lambda profile_id, token, limit=50: [
-        {"session_date": "2026-10-30", "session": {
-            "completed": True, "difficulty": "moderate",
-            "exercises": [{"exercise_id": "barbell_squat", "sets_completed": 3,
-                           "reps_completed": 8, "load_kg": 60.0}],
-        }},
-        {"session_date": "2026-11-01", "session": {
-            "completed": True, "difficulty": "moderate",
-            "exercises": [{"exercise_id": "barbell_squat", "sets_completed": 3,
-                           "reps_completed": 8, "load_kg": 62.5}],
-        }},
+        logged_session(day) for day in (
+            "2026-10-01", "2026-10-08", "2026-10-15", "2026-10-22", "2026-10-29"
+        )
     ])
     denied = client.get("/coach/profile/example/progress")
     assert denied.status_code == 404
@@ -35,8 +54,10 @@ def test_progress_endpoint_returns_authenticated_non_prescriptive_summary(monkey
     )
     assert response.status_code == 200
     payload = response.get_json()
-    assert payload["progress"]["completed_sessions"] == 2
-    assert payload["progress"]["exercise_trends"][0]["status"] == "load_increased"
+    assert payload["progress"]["completed_sessions"] == 5
+    assert payload["progress"]["exercise_trends"][0]["status"] == "stable"
     assert payload["longitudinal_progression"]["method"] == "last_five_comparable_exposures"
     assert payload["longitudinal_progression"]["automatic_program_changes"] is False
+    assert payload["longitudinal_progression"]["exercise_trends"][0]["status"] == "plateau_candidate"
+    assert payload["longitudinal_progression"]["exercise_trends"][0]["review"] == "coach_review_required"
     assert payload["automatic_load_changes"] is False
