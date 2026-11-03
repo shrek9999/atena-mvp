@@ -744,3 +744,50 @@ def test_beginner_bodyweight_fat_loss_program_fits_short_sessions():
     assert len(plan["sessions"]) == 3
     assert all(session["estimated_minutes"] <= 30 for session in plan["sessions"])
     assert all(ex["prescription"]["rir"] >= 3 for session in plan["sessions"] for ex in session["exercises"] if ex["pattern"] not in {"locomotion", "conditioning"})
+
+
+def test_advanced_combined_goal_accepts_a_specific_training_emphasis():
+    base = {
+        "goal": "strength_hypertrophy", "experience": "advanced",
+        "sessions_per_week": 2, "session_minutes": 60, "equipment": ["barbell", "rack"],
+    }
+    assert validate_profile({**base, "training_emphasis": "strength"})["training_emphasis"] == "strength"
+    assert validate_profile({**base, "training_emphasis": "hypertrophy"})["training_emphasis"] == "hypertrophy"
+    assert validate_profile({**base})["training_emphasis"] == "balanced"
+
+
+def test_non_advanced_users_cannot_receive_advanced_specialisation():
+    base = {
+        "goal": "strength_hypertrophy", "experience": "beginner",
+        "sessions_per_week": 2, "session_minutes": 60, "equipment": ["bodyweight"],
+        "training_emphasis": "strength",
+    }
+    assert validate_profile(base)["training_emphasis"] == "balanced"
+
+
+def test_advanced_strength_emphasis_uses_strength_specific_main_lift_dose():
+    profile = {
+        "goal": "strength_hypertrophy", "experience": "advanced",
+        "training_emphasis": "strength", "sessions_per_week": 2,
+        "session_minutes": 90, "equipment": ["barbell", "rack", "weight_plate", "dumbbell", "bench", "pull_up_bar"],
+    }
+    result = generate_program(profile)
+    main = [item for session in result["sessions"] for item in session["exercises"]
+            if item["pattern"] in {"squat", "hinge"}]
+    assert result["goal"] == "strength_hypertrophy"
+    assert result["training_emphasis"] == "strength"
+    assert main and all(item["prescription"]["reps"] in {"3–6", "5–8"} for item in main)
+
+
+def test_advanced_hypertrophy_emphasis_uses_hypertrophy_specific_main_lift_dose():
+    profile = {
+        "goal": "strength_hypertrophy", "experience": "advanced",
+        "training_emphasis": "hypertrophy", "sessions_per_week": 2,
+        "session_minutes": 90, "equipment": ["barbell", "rack", "weight_plate", "dumbbell", "bench", "pull_up_bar"],
+    }
+    result = generate_program(profile)
+    main = [item for session in result["sessions"] for item in session["exercises"]
+            if item["pattern"] in {"squat", "hinge"}]
+    assert result["goal"] == "strength_hypertrophy"
+    assert result["training_emphasis"] == "hypertrophy"
+    assert main and all(item["prescription"]["reps"] == "6–10" for item in main)
