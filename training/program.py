@@ -740,7 +740,9 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             if planning_goal == "endurance" and effective_pattern == "locomotion":
                 # Reserve time for warm-up, transitions and interval work; keep the
                 # displayed duration synchronized with the actual timed prescription.
-                prescription["work_seconds"] = max(600, int(p["session_minutes"] * 15))
+                # A base block should be meaningful, not merely a short warm-up.
+                # Keep it proportional to the available session and cap it at 30 min.
+                prescription["work_seconds"] = min(1800, max(900, int(p["session_minutes"] * 20)))
                 minutes, seconds = divmod(prescription["work_seconds"], 60)
                 prescription["reps"] = (
                     f"{minutes} min" if seconds == 0 else f"{minutes} min {seconds} s"
@@ -809,6 +811,12 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                         "dodaj eno kakovostno ponovitev na serijo. Breme povečaj šele, ko "
                         "večkrat dosežeš zgornjo mejo z ustrezno rezervo in tehniko."
                     )
+            if planning_goal == "endurance" and effective_pattern in {"locomotion", "conditioning"} and prescription.get("work_seconds") is not None:
+                duration = prescription["work_seconds"]
+                minutes, seconds = divmod(duration, 60)
+                prescription["reps"] = (
+                    f"{minutes} min" if seconds == 0 else f"{minutes} min {seconds} s"
+                ) if minutes else f"{seconds} s"
             def equipment_priority(item: str) -> tuple[int, str]:
                 if item in {"dumbbell", "kettlebell", "barbell", "resistance_band"}:
                     return (0, item)
