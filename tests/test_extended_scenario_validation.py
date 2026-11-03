@@ -24,9 +24,10 @@ def test_extended_goal_and_experience_profiles(goal, experience):
             "kettlebell", "bench", "cable", "pull_up_bar", "resistance_band",
         ],
     }
+    if experience == "advanced":
+        profile["include_accessories"] = goal == "strength_hypertrophy"
     if experience == "advanced" and goal == "strength_hypertrophy":
         profile["training_emphasis"] = "strength"
-        profile["include_accessories"] = True
 
     plan = generate_program(profile)
     assert len(plan["sessions"]) == frequency
