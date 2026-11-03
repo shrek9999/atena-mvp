@@ -23,6 +23,7 @@ from flask import Blueprint, jsonify, request
 from training.program import ProgramSafetyBlock, ProgramValidationError, generate_program
 from training.progress import summarize_progress
 from training.adaptation import assess_next_step
+from training.exercise_progression import recommend_exercise_progression, apply_exercise_progression
 from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL
 
 logger = logging.getLogger(__name__)
@@ -1185,12 +1186,40 @@ def _normalize_logged_exercise(item):
     allowed = {
         "exercise_id", "sets_completed", "reps_completed",
         "work_seconds_completed", "load_kg", "rir", "set_results",
+        "planned_sets", "target_reps_min", "target_reps_max",
+        "target_work_seconds", "execution_quality",
     }
     if not isinstance(item, dict) or set(item) - allowed:
         return None, "Zapis vaje vsebuje neveljavna polja."
     exercise_id = item.get("exercise_id")
     if not isinstance(exercise_id, str) or get_exercise(exercise_id) is None:
         return None, "Vaja ni v preverjenem katalogu ATENA."
+
+    planned_sets = item.get("planned_sets")
+    if planned_sets is not None and (
+        not isinstance(planned_sets, int) or isinstance(planned_sets, bool) or not 1 <= planned_sets <= 20
+    ):
+        return None, "Načrtovano število serij ni veljavno."
+    target_min = item.get("target_reps_min")
+    target_max = item.get("target_reps_max")
+    if (target_min is None) != (target_max is None):
+        return None, "Ciljno območje ponovitev mora vsebovati spodnjo in zgornjo mejo."
+    if target_min is not None and (
+        not isinstance(target_min, int) or isinstance(target_min, bool)
+        or not isinstance(target_max, int) or isinstance(target_max, bool)
+        or not 1 <= target_min <= target_max <= 100
+    ):
+        return None, "Ciljno območje ponovitev ni veljavno."
+    target_work = item.get("target_work_seconds")
+    if target_work is not None and (
+        not isinstance(target_work, int) or isinstance(target_work, bool) or not 1 <= target_work <= 3600
+    ):
+        return None, "Ciljno trajanje dela ni veljavno."
+    if target_work is not None and target_min is not None:
+        return None, "Vaja ne more hkrati uporabljati cilja ponovitev in časa."
+    execution_quality = item.get("execution_quality", "unknown")
+    if execution_quality not in {"unknown", "controlled", "needs_attention"}:
+        return None, "Ocena kakovosti izvedbe ni veljavna."
 
     set_results = item.get("set_results")
     if set_results is not None:
@@ -1238,7 +1267,15 @@ def _normalize_logged_exercise(item):
             "exercise_id": exercise_id,
             "sets_completed": len(normalized_sets),
             "set_results": normalized_sets,
+            "execution_quality": execution_quality,
         }
+        if planned_sets is not None:
+            entry["planned_sets"] = planned_sets
+        if target_min is not None:
+            entry["target_reps_min"] = target_min
+            entry["target_reps_max"] = target_max
+        if target_work is not None:
+            entry["target_work_seconds"] = target_work
         if "reps" in set_kinds:
             entry["reps_completed"] = round(
                 sum(row["reps"] for row in normalized_sets) / len(normalized_sets)
@@ -1267,7 +1304,14 @@ def _normalize_logged_exercise(item):
         return None, "Trajanje delovne serije ni veljavno."
     if reps is None and work_seconds is None:
         return None, "Za vajo je treba navesti ponovitve ali trajanje delovne serije."
-    entry = {"exercise_id": exercise_id, "sets_completed": sets}
+    entry = {"exercise_id": exercise_id, "sets_completed": sets, "execution_quality": execution_quality}
+    if planned_sets is not None:
+        entry["planned_sets"] = planned_sets
+    if target_min is not None:
+        entry["target_reps_min"] = target_min
+        entry["target_reps_max"] = target_max
+    if target_work is not None:
+        entry["target_work_seconds"] = target_work
     if reps is not None:
         entry["reps_completed"] = reps
     if work_seconds is not None:
@@ -1388,6 +1432,7 @@ def coach_training_progress(profile_id):
         sessions = store_list_sessions(profile_id, token, limit=50)
         return jsonify({
             "progress": summarize_progress(profile, sessions),
+            "exercise_progressions": recommend_exercise_progression(sessions),
             "source": "recorded_training_history",
             "automatic_load_changes": False,
         }), 200
@@ -1491,11 +1536,14 @@ def coach_profile_program(profile_id):
         sessions = store_list_sessions(profile_id, token, limit=3)
         feedback, adaptation = _build_profile_adaptation(sessions)
         result = generate_program(profile["profile"], feedback=feedback)
+        exercise_progressions = recommend_exercise_progression(sessions)
+        result = apply_exercise_progression(result, exercise_progressions)
         return jsonify({
             "program": result,
             "profile": profile["profile"],
             "adaptation_guidance": adaptation,
-            "source": "saved_profile_and_recent_training_feedback",
+            "exercise_progressions": exercise_progressions,
+            "source": "saved_profile_and_exercise_level_training_feedback",
             "pilot": True,
         }), 200
     except ProgramSafetyBlock as exc:
