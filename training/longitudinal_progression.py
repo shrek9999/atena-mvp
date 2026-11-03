@@ -153,11 +153,32 @@ def summarize_longitudinal_progression(sessions):
             results.append(result)
             continue
 
+        if len(window) < WINDOW_SIZE:
+            result["reason"] = "Za večtedensko presojo potrebujem pet popolnih, zabeleženih izvedb iste vaje."
+            results.append(result)
+            continue
+
+        span_days = (date.fromisoformat(window[-1]["date"]) - date.fromisoformat(window[0]["date"])).days
+        if span_days < MIN_WINDOW_DAYS:
+            result["status"] = "building_baseline"
+            result["reason"] = "Pet izvedb je zabeleženih v prekratkem obdobju za zanesljivo večtedensko presojo."
+            results.append(result)
+            continue
+
         if not all(item["complete"] for item in window):
             result.update({
                 "status": "incomplete_data",
                 "review": "complete_set_by_set_logging",
                 "reason": "V zadnjih zabeleženih izvedbah manjkajo popolni podatki za vse serije, ponovitve ali RIR. Trenda zato ne ocenjujem.",
+            })
+            results.append(result)
+            continue
+
+        if not _same_programming_window(window):
+            result.update({
+                "status": "not_comparable",
+                "review": "stabilize_programming",
+                "reason": "Število serij ali ciljno območje so se med izvedbami spreminjali. Pred presojo trenda je treba utrditi primerljiv odmerek.",
             })
             results.append(result)
             continue
@@ -175,27 +196,6 @@ def summarize_longitudinal_progression(sessions):
                 "status": "quality_unconfirmed",
                 "review": "confirm_execution_quality",
                 "reason": "Kakovost izvedbe ni bila potrjena kot nadzorovana v vseh petih izvedbah. Pred presojo trenda zberi zanesljivo oceno tehnike.",
-            })
-            results.append(result)
-            continue
-
-        if len(window) < WINDOW_SIZE:
-            result["reason"] = "Za večtedensko presojo potrebujem pet popolnih, zabeleženih izvedb iste vaje."
-            results.append(result)
-            continue
-
-        span_days = (date.fromisoformat(window[-1]["date"]) - date.fromisoformat(window[0]["date"])).days
-        if span_days < MIN_WINDOW_DAYS:
-            result["status"] = "building_baseline"
-            result["reason"] = "Pet izvedb je zabeleženih v prekratkem obdobju za zanesljivo večtedensko presojo."
-            results.append(result)
-            continue
-
-        if not _same_programming_window(window):
-            result.update({
-                "status": "not_comparable",
-                "review": "stabilize_programming",
-                "reason": "Število serij, ciljno območje ali obremenitev so se med izvedbami spreminjali. Pred presojo trenda je treba utrditi primerljiv odmerek.",
             })
             results.append(result)
             continue
