@@ -458,6 +458,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                     (("sani",), {"sled"}),
                     (("kolebn",), {"jump_rope"}),
                     (("vesla",), {"rowing_machine"}),
+                    (("enoročno veslanje", "veslanje z eno roko"), {"dumbbell", "kettlebell", "barbell"}),
                     (("skierg",), {"ski_erg"}),
                     (("škrip", "napravi"), {"cable"}),
                     (("trap",), {"trap_bar"}),
