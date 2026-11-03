@@ -206,9 +206,7 @@ def _verified_exercise_catalogue_context(messages):
         # Prefer bodyweight-capable options in the catalogue context even when
         # the user has weights; loaded strength-specific lifts remain available.
         required = set(item["equipment"])
-        optional = set(item["equipment_any"])
-        has_bodyweight_option = "bodyweight" in required or "bodyweight" in optional
-        return 0 if has_bodyweight_option and not (required & external_load) else 1
+        return 0 if not (required & external_load) else 1
     records.sort(key=lambda item: (
         priority.get(item["training_role"], 9),
         bodyweight_option_rank(item),
