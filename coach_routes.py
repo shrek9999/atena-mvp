@@ -1438,7 +1438,8 @@ def coach_training_sessions(profile_id):
         return jsonify({"error": "discomfort_reported mora biti true ali false."}), 400
     session = {
         "duration_minutes": duration, "difficulty": difficulty,
-        "recovery": recovery, "completed": payload["completed"], "exercises": clean_exercises,\n        "conditioning": clean_conditioning,
+        "recovery": recovery, "completed": payload["completed"], "exercises": clean_exercises,
+        "conditioning": clean_conditioning,
     }
     try:
         profile = store_get_profile(profile_id, token)
@@ -1492,7 +1493,8 @@ def coach_training_progress(profile_id):
         return jsonify({
             "progress": summarize_progress(profile, sessions),
             "exercise_progressions": recommend_exercise_progression(sessions),
-            "longitudinal_progression": summarize_longitudinal_progression(sessions),\n            "conditioning_progression": summarize_conditioning_progress(sessions),
+            "longitudinal_progression": summarize_longitudinal_progression(sessions),
+            "conditioning_progression": summarize_conditioning_progress(sessions),
             "source": "recorded_training_history",
             "automatic_load_changes": False,
         }), 200
