@@ -168,3 +168,23 @@ def test_full_gym_strength_plan_keeps_loaded_main_lifts_and_bodyweight_upper_bod
     assert ids.intersection({"pull_up", "chin_up", "foot_assisted_pull_up"})
     assert ids.intersection({"back_squat", "front_squat", "squat_goblet", "dumbbell_squat_front_rack"})
     assert ids.intersection({"deadlift", "romanian_deadlift"})
+
+
+def test_l_sit_progressions_and_regressions_resolve_to_real_catalogue_exercises():
+    by_id = {item["id"]: item for item in load_catalogue()}
+    l_sit = by_id["l_sit"]
+    assert all(reference in by_id for reference in l_sit["regressions"] + l_sit["alternatives"])
+    assert by_id["seated_leg_lift"]["level"] == "beginner"
+    assert by_id["tuck_sit"]["level"] == "intermediate"
+    assert by_id["hollow_body_hold"]["level"] == "intermediate"
+
+
+def test_timed_trunk_skills_receive_seconds_not_repetition_counts():
+    from training.program import _prescription
+    for exercise_id in ("l_sit", "tuck_sit", "hollow_body_hold"):
+        exercise = next(item for item in load_catalogue() if item["id"] == exercise_id)
+        prescription = _prescription("functional", "advanced", exercise["pattern"], exercise)
+        assert prescription["work_seconds"] > 0
+        assert prescription["time_label"] == "zadržanja"
+        assert "s" in prescription["reps"]
+        assert "rir" not in prescription
