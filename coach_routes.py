@@ -1043,7 +1043,7 @@ def coach_storage_status():
 # Longitudinal profile storage is opt-in and disabled by default. Hosted use
 # requires a persistent PostgreSQL database and an operator-approved notice.
 PROFILE_FIELDS = {"goal", "experience", "equipment", "sessions_per_week", "session_minutes", "available_days", "pistol_squat_capable"}
-PROFILE_GOALS = {"strength", "hypertrophy", "fat_loss", "general_fitness", "functional", "power", "endurance", "mobility"}
+PROFILE_GOALS = {"strength", "hypertrophy", "strength_hypertrophy", "fat_loss", "general_fitness", "functional", "power", "endurance", "mobility"}
 PROFILE_EXPERIENCE = {"beginner", "intermediate", "advanced"}
 PROFILE_DAYS = {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}
 VALID_EQUIPMENT = {item for exercise in load_catalogue() for item in (exercise["equipment"] + exercise["equipment_any"])}
