@@ -316,8 +316,8 @@ def _profile_contradiction_reply(messages):
         history,
     ))
     says_advanced = bool(re.search(
-        r"\b(?:sem\s+napreden|napredni\s+vadbenec|treniram.{0,25}(?:več|deset|devet|osem|sedem|šest|pet|štiri|tri|dve|\d{1,2})\s+let|imam\s+(?:že\s+)?(?:več|deset|devet|osem|sedem|šest|pet|štiri|tri|dve|\d{1,2})\s+(?:trening|vadb))|"
-        r"imam\s+(?:že\s+)?(?:več\s+let|\d{1,2}\s+let)\s+(?:trening|vadb))",
+        r"\b(?:sem\s+napreden|napredni\s+vadbenec|treniram.{0,25}(?:več|deset|devet|osem|sedem|šest|pet|štiri|tri|dve|\d{1,2})\s+let|"
+        r"imam\s+(?:že\s+)?(?:več|deset|devet|osem|sedem|šest|pet|štiri|tri|dve|\d{1,2})\s+(?:trening|vadb))\b",
         history,
     ))
     if experience in {"beginner", "začetnik", "začetna"} and says_advanced:
