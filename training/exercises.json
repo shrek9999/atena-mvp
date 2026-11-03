@@ -6493,8 +6493,8 @@
       "Zadrževanje diha."
     ],
     "regressions": [
-      "dead_bug",
-      "dead_bug_band"
+      "tuck_sit",
+      "seated_leg_lift"
     ],
     "progressions": [
       "Enonožni L-sit",
@@ -6635,6 +6635,175 @@
     "mobility_strength": false,
     "functional_components": [
       "coordination"
+    ]
+  },
+  {
+    "pattern": "trunk_stability",
+    "joint_type": "multi_joint",
+    "goals": [
+      "strength",
+      "hypertrophy",
+      "functional"
+    ],
+    "equipment": [],
+    "equipment_any": [
+      "bodyweight"
+    ],
+    "primary_muscles": [
+      "trunk",
+      "hip_flexors"
+    ],
+    "secondary_muscles": [
+      "quadriceps"
+    ],
+    "common_errors": [
+      "Izguba nadzora položaja medenice.",
+      "Zadrževanje diha."
+    ],
+    "training_role": "stability",
+    "loading_potential": "low",
+    "time_based": true,
+    "movement_family": "trunk_control",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "trunk_control"
+    ],
+    "id": "seated_leg_lift",
+    "name": "Sedeči dvig iztegnjene noge",
+    "name_en": "Seated straight-leg lift",
+    "level": "beginner",
+    "cues": [
+      "Sedi vzravnano in aktivno iztegni koleno.",
+      "Dvigni peto od tal brez nagibanja trupa.",
+      "Izvedi počasi in v nadzorovanem obsegu."
+    ],
+    "regressions": [
+      "Seated knee lift"
+    ],
+    "progressions": [
+      "Sedeči dvig iztegnjene noge z daljšim zadržanjem"
+    ],
+    "alternatives": [
+      "dead_bug"
+    ],
+    "warnings": [
+      "Občutek naj ostane v mejah nadzorovanega mišičnega napora; ob bolečini prilagodi obseg."
+    ]
+  },
+  {
+    "pattern": "trunk_stability",
+    "joint_type": "multi_joint",
+    "goals": [
+      "strength",
+      "hypertrophy",
+      "functional"
+    ],
+    "equipment": [],
+    "equipment_any": [
+      "bodyweight",
+      "parallettes",
+      "dip_bars"
+    ],
+    "primary_muscles": [
+      "trunk",
+      "hip_flexors"
+    ],
+    "secondary_muscles": [
+      "quadriceps"
+    ],
+    "common_errors": [
+      "Izguba nadzora položaja medenice.",
+      "Zadrževanje diha."
+    ],
+    "training_role": "stability",
+    "loading_potential": "low",
+    "time_based": true,
+    "movement_family": "trunk_control",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "trunk_control"
+    ],
+    "id": "tuck_sit",
+    "name": "Tuck sit (skrčeni sed v opori)",
+    "name_en": "Tuck sit",
+    "level": "intermediate",
+    "cues": [
+      "Postavi dlani ob boke in aktivno potisni podlago stran od sebe.",
+      "Dvigni boke in skrči kolena proti prsnemu košu.",
+      "Ohrani ramena aktivna in položaj zadrži le, dokler ostaja nadzorovan."
+    ],
+    "regressions": [
+      "seated_leg_lift",
+      "dead_bug"
+    ],
+    "progressions": [
+      "L-sit"
+    ],
+    "alternatives": [
+      "hollow_body_hold"
+    ],
+    "warnings": [
+      "Zahteva dobro toleranco zapestij in ramen; uporabi stabilno podlago ali ustrezne ročaje."
+    ]
+  },
+  {
+    "pattern": "trunk_stability",
+    "joint_type": "multi_joint",
+    "goals": [
+      "strength",
+      "hypertrophy",
+      "functional"
+    ],
+    "equipment": [],
+    "equipment_any": [
+      "bodyweight"
+    ],
+    "primary_muscles": [
+      "trunk",
+      "hip_flexors"
+    ],
+    "secondary_muscles": [
+      "quadriceps"
+    ],
+    "common_errors": [
+      "Izguba nadzora položaja medenice.",
+      "Zadrževanje diha."
+    ],
+    "training_role": "stability",
+    "loading_potential": "low",
+    "time_based": true,
+    "movement_family": "trunk_control",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength",
+      "trunk_control"
+    ],
+    "id": "hollow_body_hold",
+    "name": "Hollow body hold (votli položaj)",
+    "name_en": "Hollow body hold",
+    "level": "intermediate",
+    "cues": [
+      "Lezi na hrbet in nežno približaj spodnja rebra medenici.",
+      "Ohrani spodnji del hrbta v stiku s podlago.",
+      "Roke in noge iztegni samo toliko, da ohraniš položaj."
+    ],
+    "regressions": [
+      "dead_bug",
+      "Bent-knee hollow hold"
+    ],
+    "progressions": [
+      "Hollow body hold z daljšim vzvodom"
+    ],
+    "alternatives": [
+      "dead_bug"
+    ],
+    "warnings": [
+      "Če se spodnji del hrbta odlepi od podlage, skrajšaj vzvod ali izberi lažjo različico."
     ]
   }
 ]
