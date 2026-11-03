@@ -207,7 +207,6 @@ def _verified_exercise_catalogue_context(messages):
         # the user has weights; loaded strength-specific lifts remain available.
         required = set(item["equipment"])
         optional = set(item["equipment_any"])
-        uses_external_load = bool((required | optional) & external_load)
         has_bodyweight_option = "bodyweight" in required or "bodyweight" in optional
         return 0 if has_bodyweight_option and not (required & external_load) else 1
     records.sort(key=lambda item: (
