@@ -538,6 +538,27 @@ def test_endurance_goal_generates_timed_aerobic_and_interval_work():
     assert plan["weekly_summary"]["primary_muscle_set_exposure"] == {}
 
 
+def test_endurance_locomotion_display_matches_actual_timed_duration():
+    profile = {
+        **BASE,
+        "goal": "endurance",
+        "experience": "beginner",
+        "equipment": ["bodyweight", "chair", "household_support", "household_load"],
+        "session_minutes": 45,
+    }
+    plan = generate_program(profile)
+    locomotion = [
+        exercise for session in plan["sessions"] for exercise in session["exercises"]
+        if exercise["pattern"] == "locomotion"
+    ]
+    assert locomotion
+    for exercise in locomotion:
+        prescription = exercise["prescription"]
+        minutes, seconds = divmod(prescription["work_seconds"], 60)
+        expected = f"{minutes} min" if seconds == 0 else f"{minutes} min {seconds} s"
+        assert prescription["reps"] == expected
+
+
 def test_mobility_goal_includes_active_mobility_and_loaded_range_options():
     profile = {
         **BASE,
