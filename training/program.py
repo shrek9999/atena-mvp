@@ -694,8 +694,13 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             used_counts[candidate["id"]] += 1
             prescription = _prescription(planning_goal, p["experience"], effective_pattern, candidate)
             if planning_goal == "endurance" and effective_pattern == "locomotion":
-                # Reserve time for warm-up, transitions and interval work; locomotion is a flexible aerobic block.
-                    prescription["work_seconds"] = max(600, int(p["session_minutes"] * 15))
+                # Reserve time for warm-up, transitions and interval work; keep the
+                # displayed duration synchronized with the actual timed prescription.
+                prescription["work_seconds"] = max(600, int(p["session_minutes"] * 15))
+                minutes, seconds = divmod(prescription["work_seconds"], 60)
+                prescription["reps"] = (
+                    f"{minutes} min" if seconds == 0 else f"{minutes} min {seconds} s"
+                )
             if reduce_load and response["recovery"] == "poor" and response["difficulty"] != "hard" and response["completed"]:
                 # Poor recovery alone trims only optional training cost; preserve
                 # accessory and non-compound work unless the session was also hard.
