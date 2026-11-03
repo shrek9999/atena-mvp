@@ -319,6 +319,10 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         "tempo_description": tempo_description,
         "tempo_seconds_per_rep": tempo_seconds,
     }
+    if exercise.get("id") == "l_sit":
+        prescription.update({"work_seconds": 12, "time_label": "zadržanja"})
+    elif pattern == "coordination":
+        prescription.update({"work_seconds": 12, "time_label": "koordinacijskega intervala"})
     if goal == "fat_loss" and pattern == "locomotion":
         prescription.update({"work_seconds": 480, "time_label": "kratka aerobna aktivnost", "effort_target": "Lahkoten do zmeren pogovorni tempo; izvedba naj ostane sproščena in ponovljiva."})
     elif goal == "fat_loss" and pattern == "conditioning":
