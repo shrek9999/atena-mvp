@@ -44,13 +44,24 @@ def test_beginner_receives_lower_effort_and_volume():
                 assert exercise["prescription"]["rir"] >= 3
 
 
-def test_intermediate_strength_program_uses_shared_strength_hypertrophy_rep_ranges():
+def test_intermediate_strength_program_uses_goal_specific_compound_loading():
     profile = {**BASE, "goal": "strength", "experience": "intermediate"}
     plan = generate_program(profile)
     main = [ex for s in plan["sessions"] for ex in s["exercises"] if ex["pattern"] in {"squat", "hinge"}]
     assert main
-    assert all(ex["prescription"]["reps"] == "8–12" for ex in main)
-    assert all(ex["prescription"]["rir"] == 3 for ex in main)
+    assert all(ex["prescription"]["reps"] == "5–8" for ex in main)
+    assert all(ex["prescription"]["rir"] == 2 for ex in main)
+
+
+def test_beginner_and_intermediate_strength_doses_are_experience_specific():
+    beginner = generate_program({**BASE, "goal": "strength", "experience": "beginner"})
+    intermediate = generate_program({**BASE, "goal": "strength", "experience": "intermediate"})
+    beginner_squat = next(ex for s in beginner["sessions"] for ex in s["exercises"] if ex["pattern"] == "squat")
+    intermediate_squat = next(ex for s in intermediate["sessions"] for ex in s["exercises"] if ex["pattern"] == "squat")
+    assert beginner_squat["prescription"]["reps"] == "8–12"
+    assert beginner_squat["prescription"]["rir"] == 3
+    assert intermediate_squat["prescription"]["reps"] == "5–8"
+    assert intermediate_squat["prescription"]["rir"] == 2
 
 
 def test_beginner_strength_prioritizes_skill_and_8_to_12_reps():
