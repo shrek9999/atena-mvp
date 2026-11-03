@@ -520,11 +520,13 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                         return -5
                 if pattern == "horizontal_push":
                     if item["id"] == "barbell_bench_press":
-                        if p["goal"] == "strength" and p["experience"] != "beginner":
-                            return -10
+                        if p["goal"] in {"strength", "strength_hypertrophy"} and p["experience"] != "beginner":
+                            # Preserve a strength-specific barbell exposure, then rotate a
+                            # suitable bodyweight push variation into the next session.
+                            return -10 if session_index % 2 == 0 else 5
                         return 5
-                    if item["id"] == "dumbbell_bench_press" and p["goal"] == "hypertrophy":
-                        return -10
+                    if item["id"] == "dumbbell_bench_press" and p["goal"] in {"hypertrophy", "strength_hypertrophy"}:
+                        return -10 if session_index % 2 == 0 else 5
                     if item["id"] == "bench_dip":
                         return 10
                     if item["id"] == "parallel_bar_dip":
@@ -536,7 +538,9 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                     if item["id"] == "dumbbell_bench_press":
                         return 0 if {"dumbbell", "bench"}.issubset(available_equipment) else 5
                     if item["id"] == "push_up":
-                        return 0
+                        # Bodyweight work is a deliberate part of mixed-equipment plans,
+                        # not something discarded merely because weights are available.
+                        return -5 if session_index % 2 == 1 else 0
                 if pattern == "conditioning" and p["goal"] == "endurance":
                     if item["id"] == "box_jump_intervals":
                         return 100
