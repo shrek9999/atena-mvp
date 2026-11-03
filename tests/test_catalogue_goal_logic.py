@@ -152,3 +152,18 @@ def test_bodyweight_only_progressions_do_not_suggest_unavailable_loaded_variants
                 assert not any(term in reference.casefold() for term in unavailable_terms), (
                     item["exercise_id"], reference
                 )
+
+
+def test_full_gym_strength_plan_keeps_loaded_main_lifts_and_bodyweight_upper_body():
+    from training.program import generate_program
+    result = generate_program({
+        "goal": "strength_hypertrophy", "experience": "advanced",
+        "sessions_per_week": 2, "session_minutes": 90,
+        "equipment": ["barbell", "rack", "plates", "dumbbell", "kettlebell",
+                      "bench", "cable", "pull_up_bar"],
+    })
+    ids = {item["exercise_id"] for session in result["sessions"] for item in session["exercises"]}
+    assert "push_up" in ids
+    assert ids.intersection({"pull_up", "chin_up", "foot_assisted_pull_up"})
+    assert ids.intersection({"back_squat", "front_squat", "squat_goblet", "dumbbell_squat_front_rack"})
+    assert ids.intersection({"deadlift", "romanian_deadlift"})
