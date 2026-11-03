@@ -64,3 +64,70 @@ def test_missing_rir_does_not_create_progression_candidate():
         record("2026-10-29", difficulty="easy", rir=4),
     ])
     assert result["decision"] == "maintain_and_monitor"
+
+
+
+def test_two_easy_sessions_use_set_level_rir_for_progression_gate():
+    def set_record(day, reserves):
+        return {
+            "session_date": day,
+            "session": {
+                "difficulty": "easy",
+                "completed": True,
+                "exercises": [{
+                    "exercise_id": "barbell_squat",
+                    "set_results": [{"reps": 10, "rir": value} for value in reserves],
+                }],
+            },
+        }
+
+    result = assess_next_step([
+        set_record("2026-11-01", [4, 3, 3]),
+        set_record("2026-10-29", [4, 4, 3]),
+    ])
+    assert result["decision"] == "progression_candidate"
+    assert result["progression_allowed"] is True
+
+
+def test_one_missing_set_level_rir_blocks_progression_candidate():
+    def set_record(day, reserves):
+        return {
+            "session_date": day,
+            "session": {
+                "difficulty": "easy",
+                "completed": True,
+                "exercises": [{
+                    "exercise_id": "barbell_squat",
+                    "set_results": [{"reps": 10, "rir": value} for value in reserves],
+                }],
+            },
+        }
+
+    result = assess_next_step([
+        set_record("2026-11-01", [4, None, 3]),
+        set_record("2026-10-29", [4, 4, 3]),
+    ])
+    assert result["decision"] == "maintain_and_monitor"
+    assert result["progression_allowed"] is False
+
+
+def test_invalid_set_level_rir_blocks_progression_candidate():
+    def set_record(day, reserves):
+        return {
+            "session_date": day,
+            "session": {
+                "difficulty": "easy",
+                "completed": True,
+                "exercises": [{
+                    "exercise_id": "barbell_squat",
+                    "set_results": [{"reps": 10, "rir": value} for value in reserves],
+                }],
+            },
+        }
+
+    result = assess_next_step([
+        set_record("2026-11-01", [4, 11, 3]),
+        set_record("2026-10-29", [4, 4, 3]),
+    ])
+    assert result["decision"] == "maintain_and_monitor"
+    assert result["progression_allowed"] is False
