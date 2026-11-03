@@ -588,6 +588,7 @@ def test_endurance_locomotion_display_matches_actual_timed_duration():
     assert locomotion
     for exercise in locomotion:
         prescription = exercise["prescription"]
+        assert prescription["work_seconds"] >= 900
         minutes, seconds = divmod(prescription["work_seconds"], 60)
         expected = f"{minutes} min" if seconds == 0 else f"{minutes} min {seconds} s"
         assert prescription["reps"] == expected
