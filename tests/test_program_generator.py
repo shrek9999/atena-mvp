@@ -259,7 +259,7 @@ def test_hypertrophy_defaults_to_compound_work_without_stability_exercises():
     plan = generate_program({**BASE, "session_minutes": 75})
     exercises = [ex for session in plan["sessions"] for ex in session["exercises"]]
     assert all(ex["pattern"] not in {"trunk_stability", "anti_rotation"} for ex in exercises)
-    assert any(ex["pattern"] == "squat" and ex["prescription"]["reps"] == "8–12" for ex in exercises)
+    assert any(ex["pattern"] == "squat" and ex["prescription"]["reps"] == "6–10" for ex in exercises)
     assert all(session["exercise_count"] <= 6 for session in plan["sessions"])
 
 
