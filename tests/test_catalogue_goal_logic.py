@@ -188,3 +188,12 @@ def test_timed_trunk_skills_receive_seconds_not_repetition_counts():
         assert prescription["time_label"] == "zadržanja"
         assert "s" in prescription["reps"]
         assert "rir" not in prescription
+
+
+def test_seated_leg_lift_is_prescribed_as_dynamic_unilateral_repetitions():
+    from training.program import _prescription
+    exercise = next(item for item in load_catalogue() if item["id"] == "seated_leg_lift")
+    prescription = _prescription("functional", "beginner", exercise["pattern"], exercise)
+    assert prescription["rep_unit"] == "per_side"
+    assert "work_seconds" not in prescription
+    assert "s" not in prescription["reps"]
