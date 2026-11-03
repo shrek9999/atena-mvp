@@ -218,9 +218,9 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         sets, reps, rir, rest = 2, "5–8", None, 45
     elif pattern == "coordination":
         sets, reps, rir, rest = 3, "10–15 s", None, 45
-    elif level in {"beginner", "intermediate"} and goal in {"strength", "hypertrophy", "strength_hypertrophy"}:
-        # Early training age: keep strength and hypertrophy prescription practically
-        # aligned across all foundational multi-joint patterns.
+    elif level == "beginner" and goal in {"strength", "hypertrophy", "strength_hypertrophy"}:
+        # Beginners build repeatable technique with moderate reps and a conservative
+        # effort reserve; intermediate users progress to more goal-specific loading.
         if pattern in {"lunge"} or unilateral:
             sets, reps, rir, rest = 2, "8–12", 3, 90
         elif pattern in {"vertical_push", "vertical_pull"}:
