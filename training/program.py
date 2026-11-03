@@ -358,7 +358,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         target = "Zadrži blag do zmeren razteg brez bolečine, mravljinčenja ali prisiljevanja." if pattern == "mobility_stretch" else "Deluj v kontrolirani neboleči amplitudi; brez siljenja v končni položaj."
         prescription.update({"work_seconds": duration, "time_label": "zadržanja" if pattern == "mobility_stretch" else "aktivnega zadržanja", "effort_target": target})
     if exercise.get("id") == "l_sit":
-        prescription["effort_target"] = "Zadrži kakovosten položaj z aktivnim potiskom v oporo; končaj pred sesedanjem ramen ali izgubo položaja medenice."
+        prescription["effort_target"] = "Zadrži kakovosten položaj z aktivnim potiskom v oporo; končaj, preden izgubiš stabilen položaj ramen ali medenice."
     elif pattern == "balance":
         prescription["effort_target"] = "Ohrani stabilno oporo in nadzor; končaj serijo, ko se kakovost izvedbe poslabša."
     elif pattern == "coordination":
