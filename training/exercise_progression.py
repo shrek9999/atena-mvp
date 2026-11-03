@@ -8,6 +8,8 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import date
 
+from training.catalogue import get_exercise
+
 
 def _ordered_sessions(sessions):
     valid = []
@@ -84,6 +86,8 @@ def _classify(history):
 
     if latest["execution_quality"] == "needs_attention":
         return "technique_review", "Tehnika oziroma nadzor izvedbe potrebuje pozornost. Za zdaj ne povečuj obremenitve; najprej utrdi kakovost izvedbe."
+    if latest["execution_quality"] != "controlled":
+        return "collect_data", "Kakovost izvedbe še ni bila potrjena kot nadzorovana. Pred progresijo zberi zanesljivo oceno izvedbe."
     if latest["difficulty"] == "hard" or latest["recovery"] == "poor":
         if latest_rir is not None and latest_rir <= 1:
             return "reduce_dose", "Zadnja izvedba je bila zelo zahtevna. Naslednjič ohrani vajo, vendar zmanjšaj obremenitev ali ciljne ponovitve za majhen korak."
@@ -93,7 +97,11 @@ def _classify(history):
     if len(history) < 2:
         return "collect_data", "Za individualno progresijo je za zdaj premalo primerljivih izvedb. Ohrani načrt in zabeleži še naslednji odziv."
     previous = history[1]
-    if previous["execution_quality"] == "needs_attention" or previous["difficulty"] == "hard" or previous["recovery"] == "poor":
+    if previous["execution_quality"] == "needs_attention":
+        return "technique_review", "Prejšnja izvedba je zahtevala več nadzora. Najprej potrdi kakovostno izvedbo, nato ponovno oceni progresijo."
+    if previous["execution_quality"] != "controlled":
+        return "collect_data", "V prejšnjem treningu kakovost izvedbe ni bila potrjena. Potrebna je še ena zanesljivo ocenjena izpostavitev."
+    if previous["difficulty"] == "hard" or previous["recovery"] == "poor":
         return "hold", "Prejšnji odziv ni bil dovolj stabilen za progresijo. Ohrani odmerek in preveri naslednjo kakovostno izvedbo."
     if not latest["rirs"] or not previous["rirs"]:
         return "collect_data", "Manjka zanesljiva ocena RIR v obeh zadnjih izvedbah. Brez nje ne bom sklepal, da je progresija upravičena."
@@ -165,6 +173,9 @@ def recommend_exercise_progression(sessions):
             "recent_reps": latest["reps"],
             "reason": reason,
         })
+    for item in recommendations:
+        exercise = get_exercise(item["exercise_id"])
+        item["exercise_name"] = exercise.get("name") if isinstance(exercise, dict) else item["exercise_id"]
     return recommendations
 
 
