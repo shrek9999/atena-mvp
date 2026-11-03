@@ -102,3 +102,60 @@ def test_duplicate_same_day_uses_newest_first_record_without_fabricating_history
     ])
     # The storage API returns the newest-created record first for the same date.
     assert result["status"] == "hard_session"
+
+
+def test_set_level_rir_distinguishes_effort_limited_to_one_exercise():
+    result = build_proactive_checkin([
+        _session(exercises=[
+            {
+                "exercise_id": "goblet_squat",
+                "execution_quality": "controlled",
+                "set_results": [
+                    {"reps": 10, "rir": 4},
+                    {"reps": 10, "rir": 1},
+                    {"reps": 10, "rir": 3},
+                ],
+            },
+            {
+                "exercise_id": "push_up",
+                "execution_quality": "controlled",
+                "set_results": [{"reps": 10, "rir": 4}],
+            },
+        ])
+    ])
+    assert result["status"] == "exercise_specific_high_effort"
+    assert "splošno utrujenost" in result["question"]
+
+
+def test_low_rir_across_multiple_exercises_prompts_global_fatigue_check():
+    result = build_proactive_checkin([
+        _session(exercises=[
+            {"exercise_id": "goblet_squat", "execution_quality": "controlled",
+             "set_results": [{"reps": 10, "rir": 1}, {"reps": 10, "rir": 2}]},
+            {"exercise_id": "push_up", "execution_quality": "controlled",
+             "set_results": [{"reps": 8, "rir": 1}]},
+        ])
+    ])
+    assert result["status"] == "high_effort_multiple_exercises"
+    assert "splošno" in result["question"]
+
+
+def test_easy_session_with_large_set_level_rir_prompts_stimulus_clarification():
+    result = build_proactive_checkin([
+        _session(difficulty="easy", exercises=[
+            {"exercise_id": "goblet_squat", "execution_quality": "controlled",
+             "set_results": [{"reps": 10, "rir": 6}, {"reps": 10, "rir": 5}]},
+        ])
+    ])
+    assert result["status"] == "low_effort_feedback"
+    assert "prelahek" in result["question"]
+
+
+def test_invalid_or_missing_set_level_rir_is_not_guessed():
+    result = build_proactive_checkin([
+        _session(exercises=[
+            {"exercise_id": "goblet_squat", "execution_quality": "controlled",
+             "set_results": [{"reps": 10, "rir": 4}, {"reps": 10, "rir": 11}]},
+        ])
+    ])
+    assert result["status"] == "missing_effort_feedback"
