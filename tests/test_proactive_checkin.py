@@ -95,10 +95,10 @@ def test_latest_session_is_used():
     assert result["status"] == "standard_follow_up"
 
 
-def test_duplicate_same_day_does_not_create_additional_checkin():
+def test_duplicate_same_day_uses_newest_first_record_without_fabricating_history():
     result = build_proactive_checkin([
-        _session(difficulty="easy"),
         _session(difficulty="hard"),
+        _session(difficulty="easy"),
     ])
-    # The latest same-day entry wins, and no extra history is fabricated.
-    assert result["status"] in {"hard_session", "standard_follow_up"}
+    # The storage API returns the newest-created record first for the same date.
+    assert result["status"] == "hard_session"
