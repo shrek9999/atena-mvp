@@ -290,19 +290,19 @@ def _profile_contradiction_reply(messages):
         return None
 
     latest = user_texts[-1].casefold()
-    history = "\\n".join(user_texts).casefold()
+    history = "\n".join(user_texts).casefold()
 
     # A deliberate source-of-truth confirmation resolves the conflict. Merely
     # confirming pain/safety status does not silently overwrite profile data.
     profile_confirmed = bool(re.search(
-        r"(?:profil|podatki v profilu).{0,45}(?:je|so)\\s+(?:pravilen|pravilni|točni)|"
-        r"upoštevaj\\s+(?:obstoječi\\s+)?profil",
+        r"(?:profil|podatki v profilu).{0,45}(?:je|so)\s+(?:pravilen|pravilni|točni)|"
+        r"upoštevaj\s+(?:obstoječi\s+)?profil",
         latest,
     ))
     message_confirmed = bool(re.search(
-        r"(?:zadnje\\s+)?sporočil(?:o|a).{0,45}(?:je|so)\\s+(?:pravilno|pravilna|točno)|"
-        r"upoštevaj\\s+(?:moje\\s+)?zadnje\\s+sporočilo|"
-        r"profil\\s+(?:je\\s+)?zastarel",
+        r"(?:zadnje\s+)?sporočil(?:o|a).{0,45}(?:je|so)\s+(?:pravilno|pravilna|točno)|"
+        r"upoštevaj\s+(?:moje\s+)?zadnje\s+sporočilo|"
+        r"profil\s+(?:je\s+)?zastarel",
         latest,
     ))
     if profile_confirmed or message_confirmed:
@@ -312,12 +312,12 @@ def _profile_contradiction_reply(messages):
 
     experience = str(profile.get("experience", "")).casefold()
     says_beginner = bool(re.search(
-        r"\\b(?:sem\\s+začetnik|začetniški\\s+sem|moja\\s+stopnja\\s+je\\s+začetniška)\\b",
+        r"\b(?:sem\s+začetnik|začetniški\s+sem|moja\s+stopnja\s+je\s+začetniška)\b",
         history,
     ))
     says_advanced = bool(re.search(
-        r"\\b(?:sem\\s+napreden|napredni\\s+vadbenec|treniram\\s+(?:že\\s+)?(?:več\\s+let|\\d{1,2}\\s+let)|"
-        r"imam\\s+(?:že\\s+)?(?:več\\s+let|\\d{1,2}\\s+let)\\s+(?:trening|vadb))",
+        r"\b(?:sem\s+napreden|napredni\s+vadbenec|treniram.{0,25}(?:več|deset|devet|osem|sedem|šest|pet|štiri|tri|dve|\d{1,2})\s+let|imam\s+(?:že\s+)?(?:več|deset|devet|osem|sedem|šest|pet|štiri|tri|dve|\d{1,2})\s+(?:trening|vadb))|"
+        r"imam\s+(?:že\s+)?(?:več\s+let|\d{1,2}\s+let)\s+(?:trening|vadb))",
         history,
     ))
     if experience in {"beginner", "začetnik", "začetna"} and says_advanced:
@@ -332,13 +332,13 @@ def _profile_contradiction_reply(messages):
             if isinstance(value, str) and value.strip()
         }
         aliases = {
-            "barbell": r"olimpijsk\\w*\\s+palic|utežn\\w*\\s+palic|\\bbarbell\\b",
-            "dumbbell": r"ročk\\w*|\\bdumbbell\\w*",
-            "kettlebell": r"girj\\w*|\\bkettlebell\\w*",
-            "cable": r"kabelsk\\w*\\s+naprav|\\bcable\\b",
-            "pull_up_bar": r"drog\\w*\\s+za\\s+zgib|\\bpull[- ]?up\\s+bar\\b",
-            "rack": r"stojal\\w*\\s+za\\s+počep|\\brack\\b",
-            "bench": r"vadben\\w*\\s+klop|\\bbench\\b",
+            "barbell": r"olimpijsk\w*\s+palic|utežn\w*\s+palic|\bbarbell\b",
+            "dumbbell": r"ročk\w*|\bdumbbell\w*",
+            "kettlebell": r"girj\w*|\bkettlebell\w*",
+            "cable": r"kabelsk\w*\s+naprav|\bcable\b",
+            "pull_up_bar": r"drog\w*\s+za\s+zgib|\bpull[- ]?up\s+bar\b",
+            "rack": r"stojal\w*\s+za\s+počep|\brack\b",
+            "bench": r"vadben\w*\s+klop|\bbench\b",
         }
         mentioned = {
             equipment_id for equipment_id, pattern in aliases.items()
