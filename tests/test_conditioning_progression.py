@@ -102,11 +102,9 @@ def test_duplicate_same_day_entries_do_not_inflate_exposures():
         _record("2026-10-22"),
         _record("2026-10-22"),
     ]
-    trends = summarize_conditioning_progress(records)["conditioning_trends"]
-    assert len(trends) == 2
-    counts = sorted(item["recorded_exposures"] for item in trends)
-    assert counts == [1, 4]
-    assert all(item["status"] == "building_baseline" for item in trends)
+    trend = _trend(records)
+    assert trend["recorded_exposures"] == 4
+    assert trend["status"] == "building_baseline"
 
 
 def test_incomplete_or_invalid_conditioning_block_is_ignored():
@@ -124,9 +122,11 @@ def test_uncompleted_sessions_do_not_count():
 def test_different_protocols_are_not_combined():
     records = _five()
     records[-1] = _record("2026-10-29", protocol_id="different-interval")
-    trend = _trend(records)
-    assert trend["recorded_exposures"] == 4
-    assert trend["status"] == "building_baseline"
+    trends = summarize_conditioning_progress(records)["conditioning_trends"]
+    by_protocol = {item["protocol_id"]: item for item in trends}
+    assert by_protocol["easy-run-30"]["recorded_exposures"] == 4
+    assert by_protocol["different-interval"]["recorded_exposures"] == 1
+    assert all(item["status"] == "building_baseline" for item in trends)
 
 
 def test_metcon_is_kept_as_its_own_modality():
