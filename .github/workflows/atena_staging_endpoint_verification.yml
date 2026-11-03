@@ -26,24 +26,15 @@ jobs:
     steps:
       - name: Wait for staging health without a fixed idle delay
         run: |
-          python - <<'PY'
-          import time, urllib.request
-          url = "https://atena-ai-coach-pilot.onrender.com/health"
-          deadline = time.monotonic() + 300
-          last_error = "not checked"
-          while time.monotonic() < deadline:
-              try:
-                  with urllib.request.urlopen(url, timeout=20) as response:
-                      if response.status == 200:
-                          print("Staging backend health: PASS")
-                          break
-                      last_error = f"HTTP {response.status}"
-              except Exception as exc:
-                  last_error = type(exc).__name__
-              time.sleep(10)
-          else:
-              raise SystemExit(f"Staging did not become healthy within 5 minutes: {last_error}")
-          PY
+          for attempt in $(seq 1 30); do
+            if curl -fsS https://atena-ai-coach-pilot.onrender.com/health >/dev/null; then
+              echo "Staging backend health: PASS"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::Staging did not become healthy within 5 minutes."
+          exit 1
 
       - name: Validate secret is available (without revealing it)
         env:
@@ -54,37 +45,6 @@ jobs:
             exit 1
           fi
           echo "Staging test token is available."
-
-      - name: Verify staging authentication and storage before integration checks
-        env:
-          PILOT_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
-        run: |
-          python - <<'PY'
-          import json, os, urllib.error, urllib.request
-          request = urllib.request.Request(
-              "https://atena-ai-coach-pilot.onrender.com/coach/storage/status",
-              headers={"X-Pilot-Token": os.environ["PILOT_TOKEN"]},
-              method="GET",
-          )
-          try:
-              with urllib.request.urlopen(request, timeout=30) as response:
-                  status = response.status
-                  body = json.loads(response.read().decode("utf-8"))
-          except urllib.error.HTTPError as exc:
-              status = exc.code
-              body = {}
-          if status != 200:
-              raise SystemExit(
-                  f"Staging authentication preflight failed (HTTP {status}); "
-                  "no chat or profile integration calls were sent."
-              )
-          if not isinstance(body.get("storage_enabled"), bool) or not body.get("privacy_notice_version"):
-              raise SystemExit(
-                  "Staging storage/privacy preflight failed; no chat or profile integration calls were sent."
-              )
-          print("Staging authentication and storage preflight: PASS")
-          PY
-
 
       - name: Test authenticated staging endpoints and coaching behavior
         env:
@@ -100,6 +60,34 @@ jobs:
 
           BASE = "https://atena-ai-coach-pilot.onrender.com"
           TOKEN = os.environ["PILOT_TOKEN"]
+
+          # Authenticate and verify storage/privacy state before any chat or
+          # synthetic profile/session integration request can be sent.
+          preflight_request = urllib.request.Request(
+              BASE + "/coach/storage/status",
+              headers={"X-Pilot-Token": TOKEN},
+              method="GET",
+          )
+          try:
+              with urllib.request.urlopen(preflight_request, timeout=30) as response:
+                  preflight_status = response.status
+                  preflight_body = json.loads(response.read().decode("utf-8"))
+          except urllib.error.HTTPError as exc:
+              preflight_status = exc.code
+              preflight_body = {}
+          if preflight_status != 200:
+              raise SystemExit(
+                  f"Staging authentication preflight failed (HTTP {preflight_status}); "
+                  "no chat or profile integration calls were sent."
+              )
+          if (
+              not isinstance(preflight_body.get("storage_enabled"), bool)
+              or not preflight_body.get("privacy_notice_version")
+          ):
+              raise SystemExit(
+                  "Staging storage/privacy preflight failed; no chat or profile integration calls were sent."
+              )
+          print("Staging authentication and storage preflight: PASS")
 
           def post(path, payload):
               data = json.dumps(payload).encode("utf-8")
