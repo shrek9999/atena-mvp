@@ -103,6 +103,7 @@ def test_advanced_accessories_remain_opt_in_and_goal_specific():
         "sessions_per_week": 2,
         "session_minutes": 90,
         "equipment": ["bodyweight", "barbell", "rack", "weight_plate", "dumbbell", "bench"],
+        "include_accessories": False,
     }
     without = generate_program(base)
     with_accessories = generate_program({**base, "include_accessories": True})
