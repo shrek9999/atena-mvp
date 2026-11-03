@@ -130,11 +130,13 @@ jobs:
               "B16": "Nimam bolečin, poškodb ali gibalnih omejitev. V trenutnem programu želim zamenjati vajo, vendar je še nisem navedel. Kaj potrebuješ?",
               "B17": "Nimam bolečin, poškodb ali gibalnih omejitev. Regeneracija je slaba in zadnja treninga sta bila pretežka. Kako naj prilagodiva obremenitev?",
               "B18": "Nimam bolečin, poškodb ali gibalnih omejitev. Tehnika je bila dobra, regeneracija dobra in vse serije so bile lahke. Kaj je naslednji majhen korak?",
+              "B24": "Nimam bolečin, poškodb ali gibalnih omejitev. Varnost sva razjasnila; prosim, nadaljuj, vendar ne ugibaj glede stopnje izkušenj ali opreme.",
           }
 
           SECOND_FOLLOWUPS = {
               "B10": "Pri počepu z lastno težo je izvedba stabilna; nestabilnost se pojavi samo z dodatno obremenitvijo. Nimam bolečin ali poškodb. Kako naj varno nadaljujeva?",
               "B11": "Pri počepu se mi peta dvigne od tal. Ne boli me in nimam poškodb. Na voljo imam samo drog, stojalo in ročke. Kako naj nadaljujeva brez predpostavke, da imam dodatne podložke?",
+              "B24": "Potrjujem, da je moje zadnje sporočilo pravilno; profil je zastarel. Prosim, povej, kaj moram najprej posodobiti.",
           }
 
           def post_chat(messages):
