@@ -67,3 +67,69 @@ def test_equipment_gated_calisthenics_never_assume_bars_or_nordic_anchor():
     assert "pull_up" not in bodyweight and "pull_up" in pullup_bar
     assert "parallel_bar_dip" not in bodyweight and "parallel_bar_dip" in dip_bars
     assert "nordic_hamstring_curl" not in bodyweight and "nordic_hamstring_curl" in nordic_anchor
+
+
+def test_beginner_strength_and_hypertrophy_share_dose_across_main_patterns():
+    exercise_patterns = [
+        "squat", "hinge", "lunge", "horizontal_push", "horizontal_pull",
+        "vertical_push", "vertical_pull",
+    ]
+    for pattern in exercise_patterns:
+        exercise = {"pattern": pattern, "unilateral": pattern == "lunge"}
+        strength = _prescription("strength", "beginner", pattern, exercise)
+        hypertrophy = _prescription("hypertrophy", "beginner", pattern, exercise)
+        assert (strength["sets"], strength["reps"], strength["rir"]) == (
+            hypertrophy["sets"], hypertrophy["reps"], hypertrophy["rir"]
+        ), pattern
+
+
+def test_functional_sessions_are_compact_and_distribute_all_capacities():
+    week = [_session_patterns(i, 2, "functional") for i in range(2)]
+    assert all(len(session) <= 6 for session in week)
+    patterns = {pattern for session in week for pattern in session}
+    assert {"squat", "hinge", "horizontal_push", "horizontal_pull",
+            "balance", "coordination", "jump", "conditioning"} <= patterns
+
+
+def test_dips_are_classified_as_vertical_push_not_horizontal_push():
+    dips = next(item for item in load_catalogue() if item["id"] == "parallel_bar_dip")
+    assert dips["pattern"] == "vertical_push"
+
+
+def test_generated_functional_program_fits_a_normal_session():
+    from training.program import generate_program
+    result = generate_program({
+        "goal": "functional", "experience": "intermediate",
+        "sessions_per_week": 2, "session_minutes": 60,
+        "equipment": ["barbell", "rack", "plates", "dumbbell", "kettlebell",
+                      "bench", "cable", "pull_up_bar"],
+    })
+    assert len(result["sessions"]) == 2
+    assert all(session["estimated_minutes"] <= 60 for session in result["sessions"])
+    patterns = {item["pattern"] for session in result["sessions"] for item in session["exercises"]}
+    assert {"balance", "coordination", "jump", "conditioning"} <= patterns
+
+
+def test_generated_fat_loss_program_keeps_strength_and_conditioning_together():
+    from training.program import generate_program
+    result = generate_program({
+        "goal": "fat_loss", "experience": "intermediate",
+        "sessions_per_week": 2, "session_minutes": 60,
+        "equipment": ["barbell", "rack", "plates", "dumbbell", "kettlebell",
+                      "bench", "cable", "pull_up_bar"],
+    })
+    for session in result["sessions"]:
+        patterns = {item["pattern"] for item in session["exercises"]}
+        assert "squat" in patterns and "hinge" in patterns and "conditioning" in patterns
+
+
+def test_generated_mobility_program_contains_strength_through_range():
+    from training.program import generate_program
+    result = generate_program({
+        "goal": "mobility", "experience": "intermediate",
+        "sessions_per_week": 2, "session_minutes": 60,
+        "equipment": ["dumbbell", "kettlebell"],
+    })
+    items = [item for session in result["sessions"] for item in session["exercises"]]
+    assert any(item["exercise_id"] in {"romanian_deadlift", "loaded_deep_squat", "atg_split_squat"}
+               for item in items)
