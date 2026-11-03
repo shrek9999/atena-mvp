@@ -201,7 +201,21 @@ def _verified_exercise_catalogue_context(messages):
     if not records:
         return ""
     priority = {"main": 0, "power": 1, "conditioning": 2, "accessory": 3, "mobility": 4, "stability": 5}
-    records.sort(key=lambda item: (priority.get(item["training_role"], 9), item["single_joint"], item["name"]))
+    external_load = {"barbell", "dumbbell", "kettlebell", "weight_plate", "cable", "household_load", "backpack"}
+    def bodyweight_option_rank(item):
+        # Prefer bodyweight-capable options in the catalogue context even when
+        # the user has weights; loaded strength-specific lifts remain available.
+        required = set(item["equipment"])
+        optional = set(item["equipment_any"])
+        uses_external_load = bool((required | optional) & external_load)
+        has_bodyweight_option = "bodyweight" in required or "bodyweight" in optional
+        return 0 if has_bodyweight_option and not (required & external_load) else 1
+    records.sort(key=lambda item: (
+        priority.get(item["training_role"], 9),
+        bodyweight_option_rank(item),
+        item["single_joint"],
+        item["name"],
+    ))
     lines = [
         f"- {('Predklon z ravnim hrbtom (RDL)' if item['id'] == 'romanian_deadlift' else item['name'])} [{item['pattern']}; {item['level']}; oprema: "
         + (", ".join(item["equipment"] + item["equipment_any"]) or "lastna teža")
