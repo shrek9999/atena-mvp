@@ -38,25 +38,25 @@ def decision(items, exercise_id):
 def test_two_positive_exposures_progress_only_the_exercise_that_responded_well():
     sessions = [
         record("2026-11-03", [
-            exercise("goblet_squat", reps=(11, 11, 10), rir=(4, 4, 3)),
+            exercise("squat_goblet", reps=(11, 11, 10), rir=(4, 4, 3)),
             exercise("push_up", reps=(8, 8, 7), rir=(1, 1, 2)),
         ]),
         record("2026-10-30", [
-            exercise("goblet_squat", reps=(10, 10, 10), rir=(4, 4, 3)),
+            exercise("squat_goblet", reps=(10, 10, 10), rir=(4, 4, 3)),
             exercise("push_up", reps=(8, 8, 8), rir=(2, 2, 2)),
         ]),
     ]
     result = recommend_exercise_progression(sessions)
-    assert decision(result, "goblet_squat")["decision"] == "add_repetitions"
+    assert decision(result, "squat_goblet")["decision"] == "add_repetitions"
     assert decision(result, "push_up")["decision"] == "reduce_dose"
 
 
 def test_upper_rep_limit_in_two_exposures_suggests_small_load_step_not_automatic_load_change():
     sessions = [
-        record("2026-11-03", [exercise("goblet_squat", reps=(12, 12, 12), load=20, rir=(4, 4, 3))]),
-        record("2026-10-30", [exercise("goblet_squat", reps=(12, 12, 12), load=20, rir=(4, 3, 3))]),
+        record("2026-11-03", [exercise("squat_goblet", reps=(12, 12, 12), load=20, rir=(4, 4, 3))]),
+        record("2026-10-30", [exercise("squat_goblet", reps=(12, 12, 12), load=20, rir=(4, 3, 3))]),
     ]
-    result = decision(recommend_exercise_progression(sessions), "goblet_squat")
+    result = decision(recommend_exercise_progression(sessions), "squat_goblet")
     assert result["decision"] == "increase_load"
     assert result["recent_load_kg"] == 20
     assert "najmanjši razpoložljivi dvig" in result["reason"]
@@ -64,32 +64,32 @@ def test_upper_rep_limit_in_two_exposures_suggests_small_load_step_not_automatic
 
 def test_one_positive_exposure_is_not_enough():
     result = recommend_exercise_progression([
-        record("2026-11-03", [exercise("goblet_squat")])
+        record("2026-11-03", [exercise("squat_goblet")])
     ])
-    assert decision(result, "goblet_squat")["decision"] == "collect_data"
+    assert decision(result, "squat_goblet")["decision"] == "collect_data"
 
 
 def test_missing_rir_never_counts_as_readiness_to_progress():
-    missing = exercise("goblet_squat", rir=(None, None, None))
+    missing = exercise("squat_goblet", rir=(None, None, None))
     sessions = [
         record("2026-11-03", [missing]),
         record("2026-10-30", [missing]),
     ]
-    assert decision(recommend_exercise_progression(sessions), "goblet_squat")["decision"] == "collect_data"
+    assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "collect_data"
 
 
 def test_rir_must_be_recorded_for_every_set():
-    partial = exercise("goblet_squat", rir=(4, None, 3))
+    partial = exercise("squat_goblet", rir=(4, None, 3))
     sessions = [
         record("2026-11-03", [partial]),
         record("2026-10-30", [partial]),
     ]
-    assert decision(recommend_exercise_progression(sessions), "goblet_squat")["decision"] == "collect_data"
+    assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "collect_data"
 
 
 def test_legacy_aggregated_rir_does_not_substitute_for_set_by_set_data():
     legacy = {
-        "exercise_id": "goblet_squat",
+        "exercise_id": "squat_goblet",
         "sets_completed": 3,
         "reps_completed": 12,
         "load_kg": 20,
@@ -103,69 +103,69 @@ def test_legacy_aggregated_rir_does_not_substitute_for_set_by_set_data():
         record("2026-11-03", [legacy]),
         record("2026-10-30", [legacy]),
     ]
-    assert decision(recommend_exercise_progression(sessions), "goblet_squat")["decision"] == "collect_data"
+    assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "collect_data"
 
 
 def test_missing_planned_set_is_not_treated_as_full_success():
-    partial = exercise("goblet_squat", reps=(12, 12), rir=(4, 4), sets=3)
+    partial = exercise("squat_goblet", reps=(12, 12), rir=(4, 4), sets=3)
     sessions = [
         record("2026-11-03", [partial]),
         record("2026-10-30", [partial]),
     ]
-    assert decision(recommend_exercise_progression(sessions), "goblet_squat")["decision"] == "hold"
+    assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "hold"
 
 
 def test_technique_flag_holds_progression_for_that_exercise():
     sessions = [
-        record("2026-11-03", [exercise("goblet_squat", quality="needs_attention")]),
-        record("2026-10-30", [exercise("goblet_squat")]),
+        record("2026-11-03", [exercise("squat_goblet", quality="needs_attention")]),
+        record("2026-10-30", [exercise("squat_goblet")]),
     ]
-    assert decision(recommend_exercise_progression(sessions), "goblet_squat")["decision"] == "technique_review"
+    assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "technique_review"
 
 
 def test_unknown_execution_quality_does_not_count_as_controlled():
     sessions = [
-        record("2026-11-03", [exercise("goblet_squat", quality="unknown")]),
-        record("2026-10-30", [exercise("goblet_squat")]),
+        record("2026-11-03", [exercise("squat_goblet", quality="unknown")]),
+        record("2026-10-30", [exercise("squat_goblet")]),
     ]
-    assert decision(recommend_exercise_progression(sessions), "goblet_squat")["decision"] == "collect_data"
+    assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "collect_data"
 
 
 def test_hard_effort_or_low_rir_reduces_only_the_relevant_dose():
     sessions = [
-        record("2026-11-03", [exercise("goblet_squat", rir=(1, 2, 2))]),
-        record("2026-10-30", [exercise("goblet_squat", rir=(3, 3, 3))]),
+        record("2026-11-03", [exercise("squat_goblet", rir=(1, 2, 2))]),
+        record("2026-10-30", [exercise("squat_goblet", rir=(3, 3, 3))]),
     ]
-    assert decision(recommend_exercise_progression(sessions), "goblet_squat")["decision"] == "reduce_dose"
+    assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "reduce_dose"
 
 
 def test_poor_recovery_holds_progression_even_when_rir_is_high():
     sessions = [
-        record("2026-11-03", [exercise("goblet_squat")], recovery="poor"),
-        record("2026-10-30", [exercise("goblet_squat")]),
+        record("2026-11-03", [exercise("squat_goblet")], recovery="poor"),
+        record("2026-10-30", [exercise("squat_goblet")]),
     ]
-    assert decision(recommend_exercise_progression(sessions), "goblet_squat")["decision"] == "hold"
+    assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "hold"
 
 
 def test_discomfort_stops_all_exercise_progression():
     sessions = [
-        record("2026-11-03", [exercise("goblet_squat")], discomfort=True),
-        record("2026-10-30", [exercise("goblet_squat")]),
+        record("2026-11-03", [exercise("squat_goblet")], discomfort=True),
+        record("2026-10-30", [exercise("squat_goblet")]),
     ]
-    assert decision(recommend_exercise_progression(sessions), "goblet_squat")["decision"] == "pause_and_review"
+    assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "pause_and_review"
 
 
 def test_recommendations_are_applied_to_matching_exercises_only():
     program = {
         "sessions": [{
             "exercises": [
-                {"exercise_id": "goblet_squat", "prescription": {"sets": 3, "reps": "8–12", "rir": 3, "rest_seconds": 90}},
+                {"exercise_id": "squat_goblet", "prescription": {"sets": 3, "reps": "8–12", "rir": 3, "rest_seconds": 90}},
                 {"exercise_id": "push_up", "prescription": {"sets": 3, "reps": "8–12", "rir": 3, "rest_seconds": 90}},
             ]
         }]
     }
     recommendations = [
-        {"exercise_id": "goblet_squat", "decision": "add_repetitions", "reason": "positive response"},
+        {"exercise_id": "squat_goblet", "decision": "add_repetitions", "reason": "positive response"},
         {"exercise_id": "push_up", "decision": "reduce_dose", "reason": "low RIR"},
     ]
     result = apply_exercise_progression(program, recommendations)
@@ -179,7 +179,7 @@ def test_recommendations_are_applied_to_matching_exercises_only():
 
 def test_incomplete_sessions_are_not_used_as_progression_exposures():
     sessions = [
-        record("2026-11-03", [exercise("goblet_squat")], completed=False),
-        record("2026-10-30", [exercise("goblet_squat")]),
+        record("2026-11-03", [exercise("squat_goblet")], completed=False),
+        record("2026-10-30", [exercise("squat_goblet")]),
     ]
-    assert decision(recommend_exercise_progression(sessions), "goblet_squat")["decision"] == "collect_data"
+    assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "collect_data"
