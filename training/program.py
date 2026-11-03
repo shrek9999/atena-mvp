@@ -167,6 +167,8 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     rir_range = None
     if goal == "mobility" and pattern == "mobility_stretch":
         sets, reps, rir, rest = 2, "20–30 s", None, 30
+    elif goal == "mobility" and exercise.get("mobility_strength"):
+        sets, reps, rir, rest = (3, "6–10", 3, 90) if level == "advanced" else (2, "8–12", 3, 75)
     elif goal == "mobility" or pattern in {"mobility", "mobility_stretch"}:
         sets, reps, rir, rest = 2, "5–8", None, 30
     elif goal == "fat_loss" and pattern == "locomotion":
@@ -533,6 +535,11 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 return potential
 
             def selection_priority(item: dict) -> int:
+                if p["goal"] == "mobility" and pattern == "hinge":
+                    if item["id"] == "romanian_deadlift" and ({"dumbbell", "barbell"} & available_equipment):
+                        return -15
+                    if item["id"] == "single_leg_rdl" and p["experience"] != "beginner":
+                        return -10
                 if p["goal"] == "mobility" and pattern == "squat":
                     if item["id"] == "loaded_deep_squat" and {"dumbbell", "kettlebell"} & available_equipment:
                         return -10
