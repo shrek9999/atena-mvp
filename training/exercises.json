@@ -520,7 +520,7 @@
     ],
     "movement_family": "hip_hinge",
     "loading_mode": "external_load",
-    "mobility_strength": false,
+    "mobility_strength": true,
     "functional_components": []
   },
   {
@@ -6464,7 +6464,7 @@
       "Nenadzorovan padec v končni položaj."
     ],
     "regressions": [
-      "wall_sit",
+      "air_squat",
       "heel_elevated_squat"
     ],
     "progressions": [
@@ -6525,8 +6525,8 @@
       "Zadrževanje diha."
     ],
     "regressions": [
-      "tuck_sit",
-      "seated_leg_lift"
+      "dead_bug",
+      "dead_bug_band"
     ],
     "progressions": [
       "Enonožni L-sit",
