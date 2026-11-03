@@ -520,7 +520,8 @@
     "single_joint": false,
     "equipment_any": [
       "barbell",
-      "dumbbell"
+      "dumbbell",
+      "kettlebell"
     ],
     "training_role": "main",
     "loading_potential": "high",
