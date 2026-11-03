@@ -126,6 +126,8 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     assert progress_data["source"] == "recorded_training_history"
     assert progress_data["automatic_load_changes"] is False
     assert progress_data["proactive_checkin"]["status"] == "symptom_follow_up"
+    assert progress_data["longitudinal_response"]["status"] == "building_baseline"
+    assert progress_data["longitudinal_response"]["automatic_program_changes"] is False
     assert progress_data["conditioning_progression"]
 
     adaptation = client.get(f"/coach/profile/{profile_id}/adaptation", headers=headers)
