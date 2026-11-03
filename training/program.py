@@ -319,6 +319,9 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         tempo, tempo_description, tempo_seconds = "kontrolirano", "Najprej kakovost in nadzor; hitrost ali doseg povečuj šele, ko je izvedba ponovljiva.", 0
     elif is_stability:
         tempo, tempo_description, tempo_seconds = "2–1–2–1", "2 s izteg oziroma odmik · 1 s nadzor · 2 s vrnitev · 1 s ponastavitev.", 6
+    elif goal == "strength_hypertrophy" and level == "beginner":
+        # A simple, consistent foundational tempo for beginners combining strength and hypertrophy.
+        tempo, tempo_description, tempo_seconds = "2–1–1–0", "2 s nadzorovan spust · 1 s nadzor v spodnjem položaju · 1 s dvig · brez premora v vrhu.", 4
     elif goal == "strength_hypertrophy" and pattern in {"squat", "hinge"}:
         tempo, tempo_description, tempo_seconds = "2–0–X–0", "2 s nadzorovan spust · brez premora v spodnjem položaju · koncentrično fazo izvedi z maksimalno namero hitrosti (X), vendar brez izgube tehnike · brez premora v vrhu.", 3
     elif goal == "strength_hypertrophy":
@@ -918,7 +921,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "exercise_scaling": "Vsaka vaja ima označen potencial obremenitve, vlogo, zahteve glede opreme in stopnjevanje. Nizko obremenljive učne vaje niso privzeta glavna izbira za hipertrofijo.",
             "equipment_policy": "Brez uteži ne pomeni brez običajnih stabilnih gospodinjskih opor. Stol, kavč, miza, stopnica, brisača ali palica so dovoljeni le, kadar jih profil izrecno vključuje in so varni za uporabo.",
             "endurance_policy": "Vzdržljivost je ločen cilj; aerobne aktivnosti, intervali in mišična vzdržljivost so označeni ločeno.",
-            "mobility_policy": "Mobilnost vključuje aktivne gibalne vaje, kontrolirano gibanje v končnih amplitudah in razvoj moči skozi čim večji nadzorovan in toleriran obseg (npr. predklon z ravnim hrbtom/RDL, ATG izpadni počep, kozaški počep in obremenjeni globoki počep), ne samo pasivnega raztezanja.",
+            "mobility_policy": "Mobilnost vključuje aktivne gibalne vaje, kontrolirano gibanje v končnih amplitudah in razvoj moči skozi čim večji nadzorovan in toleriran obseg (npr. predklon z ravnim hrbtom/RDL, ATG izpadni počep, Cossack squat in obremenjeni globoki počep), ne samo pasivnega raztezanja.",
             "fat_loss_policy": "Pri uravnavanju telesne teže združi vadbo moči za ohranitev mišične mase s kratkimi, odmerjenimi kondicijskimi intervali v istem treningu; ob treh ali štirih treningih je lahko dodatna enota pretežno aerobna. MetCon naj bo nadzorovan, ne maksimalen in ne na račun tehnike ali regeneracije. Za zmanjšanje telesne maščobe je potreben vzdržen energijski primanjkljaj; vadba sama ga ne zagotavlja.",
             "experience_adaptation": (
                 "Vzdržljivost: začetnik gradi predvsem enakomeren aerobni obseg v pogovornem tempu; intervale uvajaj postopno. Naprednejši lahko kombinira daljše aerobne enote, intervale in mišično vzdržljivost, vendar ne vsega maksimalno v isti vadbi."
