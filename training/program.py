@@ -221,7 +221,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
             else:
                 sets, reps, rir, rest = 3, "8–12", 3, 90
         rir_range = "2–3"
-    elif goal in {"strength", "strength_hypertrophy"}:
+    elif goal == "strength":
         if pattern in {"squat", "hinge"}:
             sets, reps, rir, rest = (4, "3–6", 2, 210) if level == "advanced" else (3, "5–8", 2, 180)
         elif is_stability:
@@ -229,8 +229,19 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         elif pattern in {"carry", "hip_extension"}:
             sets, reps, rir, rest = 2, "8–12", 3, 75
         else:
-            sets, reps, rir, rest = 3, ("6–8" if unilateral else "6–8"), 2, (120 if unilateral else 120)
-    elif goal in {"hypertrophy", "fat_loss", "strength_hypertrophy"}:
+            sets, reps, rir, rest = 3, "6–8", 2, 120
+    elif goal == "strength_hypertrophy":
+        if pattern in {"squat", "hinge"}:
+            sets, reps, rir, rest = 3, "5–8", 2, 180
+        elif is_stability:
+            sets, reps, rir, rest = 2, "10–15", 3, 60
+        elif pattern in {"lunge", "horizontal_push", "horizontal_pull", "vertical_push", "vertical_pull"} or unilateral:
+            sets, reps, rir, rest = 3, "8–12", 2, 90
+        elif pattern in {"carry", "hip_extension"}:
+            sets, reps, rir, rest = 2, "10–15", 2, 75
+        else:
+            sets, reps, rir, rest = 2, "10–15", 2, 75
+    elif goal in {"hypertrophy", "fat_loss"}:
         if pattern in {"squat", "hinge"}:
             sets, reps, rir, rest = 3, "6–10", (2 if level != "beginner" else 3), 120 if level == "advanced" else 90
         elif pattern == "lunge" or unilateral:
