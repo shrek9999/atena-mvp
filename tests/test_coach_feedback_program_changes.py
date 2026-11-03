@@ -23,7 +23,7 @@ def exercises(plan):
     return [item for session in plan["sessions"] for item in session["exercises"]]
 
 
-def test_beginner_strength_and_hypertrophy_have_distinct_dosing():
+def test_beginner_strength_and_hypertrophy_share_reps_and_effort_reserve():
     strength = generate_program(profile("strength", "beginner"))
     hypertrophy = generate_program(profile("hypertrophy", "beginner"))
     strength_squat = next(x for x in exercises(strength) if x["pattern"] == "squat")
@@ -31,7 +31,8 @@ def test_beginner_strength_and_hypertrophy_have_distinct_dosing():
 
     assert strength_squat["prescription"]["reps"] == "8–12"
     assert hypertrophy_squat["prescription"]["reps"] == "8–12"
-    assert strength_squat["prescription"]["rest_seconds"] > hypertrophy_squat["prescription"]["rest_seconds"]
+    assert strength_squat["prescription"]["rir"] == hypertrophy_squat["prescription"]["rir"] == 3
+    assert strength_squat["prescription"]["rest_seconds"] == hypertrophy_squat["prescription"]["rest_seconds"]
     assert strength_squat["prescription"]["tempo"] == "2–0–X–0"
     assert hypertrophy_squat["prescription"]["tempo"] == "3–1–2–0"
 
