@@ -564,6 +564,13 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 return potential
 
             def selection_priority(item: dict) -> int:
+                if pattern in {"trunk_stability", "anti_rotation"}:
+                    # Use foundational trunk control when a stability need is flagged;
+                    # advanced static calisthenics remain skill options, not default rehab-like drills.
+                    if item["id"] == "dead_bug":
+                        return -30
+                    if item["id"] in {"l_sit", "tuck_sit", "hollow_body_hold"}:
+                        return 30
                 if planning_goal == "mobility" and pattern == "hinge":
                     if item["id"] == "romanian_deadlift" and ({"dumbbell", "barbell", "kettlebell"} & available_equipment):
                         return -15
