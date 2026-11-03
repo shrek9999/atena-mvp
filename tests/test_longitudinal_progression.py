@@ -124,3 +124,26 @@ def test_uncompleted_sessions_do_not_count_as_exposures():
     records[-1] = _record("2026-10-29", completed=False)
     trend = _trend(records)
     assert trend["status"] == "building_baseline"
+
+
+
+def test_time_based_conditioning_is_not_misclassified_as_resistance_progression():
+    sessions = []
+    for day in ("2026-10-01", "2026-10-08", "2026-10-15", "2026-10-22", "2026-10-29"):
+        sessions.append({
+            "session_date": day,
+            "session": {
+                "completed": True,
+                "difficulty": "moderate",
+                "recovery": "good",
+                "exercises": [{
+                    "exercise_id": "running_easy",
+                    "planned_sets": 1,
+                    "execution_quality": "controlled",
+                    "set_results": [{"work_seconds": 1200, "rir": 4}],
+                }],
+            },
+        })
+    result = summarize_longitudinal_progression(sessions)
+    assert result["exercise_trends"][0]["status"] == "not_supported"
+    assert result["exercise_trends"][0]["review"] == "use_modality_specific_assessment"
