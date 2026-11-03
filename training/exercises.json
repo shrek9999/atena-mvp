@@ -6690,7 +6690,8 @@
     ],
     "warnings": [
       "Občutek naj ostane v mejah nadzorovanega mišičnega napora; ob bolečini prilagodi obseg."
-    ]
+    ],
+    "single_joint": false
   },
   {
     "pattern": "trunk_stability",
@@ -6748,7 +6749,8 @@
     ],
     "warnings": [
       "Zahteva dobro toleranco zapestij in ramen; uporabi stabilno podlago ali ustrezne ročaje."
-    ]
+    ],
+    "single_joint": false
   },
   {
     "pattern": "trunk_stability",
@@ -6804,6 +6806,7 @@
     ],
     "warnings": [
       "Če se spodnji del hrbta odlepi od podlage, skrajšaj vzvod ali izberi lažjo različico."
-    ]
+    ],
+    "single_joint": false
   }
 ]
