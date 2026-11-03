@@ -176,6 +176,36 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
     return patterns
 
 
+def _endurance_protocol(level: str, sessions: int, session_index: int, pattern: str, endurance_type: str | None) -> dict | None:
+    """Select the training stimulus independently from the exercise modality."""
+    if pattern == "locomotion":
+        return {"id": "aerobic_base", "label": "Aerobna baza (cona 2)", "intensity_rpe": "3–4/10",
+                "effort_target": "Lahkoten do zmeren, enakomeren napor. Govoriš lahko v celih stavkih; dihanje je pospešeno, vendar nadzorovano.",
+                "progression": "Najprej postopno podaljšuj čas ob nespremenjenem pogovornem tempu."}
+    if pattern != "conditioning":
+        return None
+    if endurance_type == "muscular":
+        return {"id": "local_muscular_endurance", "label": "Lokalna mišična vzdržljivost", "intensity_rpe": "6–7/10",
+                "effort_target": "Ohrani enakomerno mišično delo in tehnično čisto izvedbo. Serijo končaj, preden se položaj ali amplituda poslabšata.",
+                "progression": "Najprej izboljšaj kakovost in enakomernost intervalov; šele nato podaljšuj delo."}
+    if endurance_type == "anaerobic":
+        return {"id": "mixed_modal_metcon", "label": "Mešana kondicijska vadba (MetCon)", "intensity_rpe": "6–7/10",
+                "effort_target": "Nadzorovan, ponovljiv napor. Ne izvajaj maksimalno; ohrani dihanje, tehniko in enakomeren tempo skozi vse intervale.",
+                "progression": "Povečuj ponovljivost in kakovost, ne maksimalne hitrosti ali izčrpanosti."}
+    if endurance_type == "aerobic":
+        if level == "advanced" and sessions >= 3 and session_index == 0:
+            return {"id": "vo2max_intervals", "label": "Intervali za razvoj VO₂max", "intensity_rpe": "8–9/10",
+                    "effort_target": "Zelo zahteven, vendar nadzorovan interval. Ohrani stabilno tehniko in približno enako zmogljivost v vseh ponovitvah; ne začni s sprintom.",
+                    "progression": "Najprej dosezi enakomerno kakovost vseh intervalov; ob slabši regeneraciji intervale izpusti."}
+        if level in {"intermediate", "advanced"} and session_index == 0:
+            return {"id": "threshold_intervals", "label": "Pragovni intervali", "intensity_rpe": "7–8/10",
+                    "effort_target": "Močan, enakomeren napor blizu praga. Govoriš le v kratkih frazah; tempo mora ostati nadzorovan in ponovljiv.",
+                    "progression": "Najprej izboljšuj enakomernost intervalov; ne povečuj hkrati trajanja in intenzivnosti."}
+        return {"id": "aerobic_intervals", "label": "Nadzorovani aerobni intervali", "intensity_rpe": "5–6/10",
+                "effort_target": "Zmeren aerobni napor. Dihanje je pospešeno, vendar ostaja nadzorovano; intenzivnost omogoča ponovitev vseh intervalov brez izrazitega padca kakovosti.",
+                "progression": "Postopno podaljšuj delovni čas ali skrajšuj odmor, nikoli oboje hkrati."}
+    return None
+
 def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     """Prescribe by goal, training age and movement class; beginners build skill first."""
     unilateral = bool(exercise.get("unilateral"))
@@ -693,6 +723,20 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             effective_pattern = candidate["pattern"]
             used_counts[candidate["id"]] += 1
             prescription = _prescription(planning_goal, p["experience"], effective_pattern, candidate)
+            endurance_protocol = (
+                _endurance_protocol(p["experience"], p["sessions_per_week"], session_index, effective_pattern, candidate.get("endurance_type"))
+                if planning_goal == "endurance" else None
+            )
+            if endurance_protocol:
+                prescription["training_protocol"] = {key: value for key, value in endurance_protocol.items() if key != "progression"}
+                prescription["protocol_progression"] = endurance_protocol["progression"]
+                prescription["effort_target"] = endurance_protocol["effort_target"]
+                if endurance_protocol["id"] == "vo2max_intervals":
+                    prescription.update({"sets": 4, "work_seconds": 120, "reps": "2 min", "rest_seconds": 120})
+                elif endurance_protocol["id"] == "threshold_intervals":
+                    prescription.update({"sets": 4, "work_seconds": 180, "reps": "3 min", "rest_seconds": 90})
+                elif endurance_protocol["id"] == "aerobic_intervals":
+                    prescription.update({"sets": 4, "work_seconds": 120, "reps": "2 min", "rest_seconds": 90})
             if planning_goal == "endurance" and effective_pattern == "locomotion":
                 # Reserve time for warm-up, transitions and interval work; keep the
                 # displayed duration synchronized with the actual timed prescription.
