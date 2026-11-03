@@ -515,13 +515,22 @@ def generate_program(profile: object, feedback: object = None) -> dict:
     for exercise in catalogue:
         by_pattern.setdefault(exercise["pattern"], []).append(exercise)
 
-    # Never prescribe an unloaded hinge drill as the main hypertrophy stimulus.
-    if planning_goal in {"hypertrophy", "strength_hypertrophy"}:
+    # A beginner's unsupported bodyweight hinge drill is useful for learning,
+    # but it is not a reliable main strength/hypertrophy stimulus. When no external
+    # load is available, prefer a mechanically demanding hip-extension / knee-flexion
+    # option that can actually approach the target effort reserve.
+    if planning_goal in {"strength", "hypertrophy", "strength_hypertrophy"}:
         has_external_load = bool({"barbell", "dumbbell", "kettlebell"} & set(p["equipment"]))
         hinge_candidates = [
             item for item in by_pattern.get("hinge", [])
             if item.get("loading_potential") in {"moderate", "high"}
-            and (has_external_load or item["id"] != "single_leg_rdl")
+            and (
+                has_external_load
+                or (
+                    p["experience"] != "beginner"
+                    and item["id"] not in {"single_leg_rdl", "supported_single_leg_rdl"}
+                )
+            )
         ]
         if not hinge_candidates:
             hinge_candidates = by_pattern.get("hip_extension", []) + by_pattern.get("knee_flexion", [])
@@ -969,6 +978,12 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "Katalog ne ocenjuje zdravstvenih stanj. Omejitve in simptome mora pred izbiro vaj pregledati trener oziroma ustrezen zdravstveni strokovnjak.",
             "Tedenska izpostavljenost mišičnih skupin pri večsklepnih vajah ni enaka številu neposrednih delovnih serij za posamezno mišico.",
         ] + (
+            [
+                "Brez ustrezne opreme ni mogoče zagotoviti učinkovitega horizontalnega potega (npr. veslanja). Program tega ne nadomešča z neustreznimi samoupornimi vajami; za uravnotežen razvoj hrbtnih mišic dodaj varno oporo, elastiko, drog ali utež."
+            ]
+            if "horizontal_pull" in missing_patterns
+            else []
+        ) + (
             [
                 "Brez zunanjih bremen je dolgoročno povečevanje moči in mišične mase omejeno. Program zato uporablja zahtevnejše enonožne in tempo različice; za nadaljnjo progresijo bo sčasoma koristna dodatna obremenitev."
             ]
