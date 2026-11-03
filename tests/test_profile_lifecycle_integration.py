@@ -195,3 +195,100 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     conn.close()
     assert remaining_profiles == 0
     assert remaining_sessions == 0
+
+
+def test_two_recorded_training_exposures_flow_into_progress_review_and_next_program(monkeypatch, tmp_path):
+    client, _database = _app(monkeypatch, tmp_path)
+    pilot_headers = {"X-Pilot-Token": "pilot-lifecycle-test-secret"}
+    created = client.post(
+        "/coach/profile",
+        headers=pilot_headers,
+        json={
+            "privacy_notice_acknowledged": True,
+            "privacy_notice_version": "lifecycle-v1",
+            "health_data_consent": False,
+            "profile": {
+                "goal": "strength_hypertrophy",
+                "experience": "beginner",
+                "equipment": ["dumbbell"],
+                "sessions_per_week": 2,
+                "session_minutes": 60,
+                "available_days": ["monday", "thursday"],
+            },
+        },
+    )
+    assert created.status_code == 201
+    profile_id = created.get_json()["profile"]["profile_id"]
+    headers = {"X-Profile-Token": created.get_json()["profile_access_token"]}
+
+    def log_exposure(day, reps):
+        return client.post(
+            f"/coach/profile/{profile_id}/sessions",
+            headers=headers,
+            json={
+                "session_date": day,
+                "duration_minutes": 55,
+                "difficulty": "moderate",
+                "recovery": "good",
+                "completed": True,
+                "exercises": [{
+                    "exercise_id": "squat_goblet",
+                    "planned_sets": 3,
+                    "target_reps_min": 8,
+                    "target_reps_max": 12,
+                    "execution_quality": "controlled",
+                    "set_results": [
+                        {"reps": value, "load_kg": 20, "rir": reserve}
+                        for value, reserve in zip(reps, (4, 4, 3))
+                    ],
+                }],
+            },
+        )
+
+    first = log_exposure("2026-10-29", (12, 12, 12))
+    second = log_exposure("2026-11-02", (12, 12, 12))
+    assert first.status_code == 201
+    assert second.status_code == 201
+
+    history = client.get(f"/coach/profile/{profile_id}/sessions", headers=headers)
+    assert history.status_code == 200
+    assert [row["session_date"] for row in history.get_json()["sessions"]] == [
+        "2026-11-02", "2026-10-29"
+    ]
+
+    progress = client.get(f"/coach/profile/{profile_id}/progress", headers=headers)
+    assert progress.status_code == 200
+    progress_data = progress.get_json()
+    squat_progression = next(
+        item for item in progress_data["exercise_progressions"]
+        if item["exercise_id"] == "squat_goblet"
+    )
+    assert squat_progression["decision"] == "increase_load"
+    assert squat_progression["recent_load_kg"] == 20
+    assert progress_data["automatic_load_changes"] is False
+
+    # A new programme is generated only after explicit current-safety confirmation.
+    next_program = client.post(
+        f"/coach/profile/{profile_id}/program",
+        headers=headers,
+        json={"no_current_pain_or_restrictions": True},
+    )
+    assert next_program.status_code == 200
+    result = next_program.get_json()
+    assert result["source"] == "saved_profile_and_exercise_level_training_feedback"
+    assert result["pilot"] is True
+    assert result["exercise_progressions"] == progress_data["exercise_progressions"]
+    assert result["training_cycle"]["automatic_program_changes"] is False
+
+    # The recorded exercise recommendation is carried into the next plan when
+    # that same exercise is selected; no external load is invented or applied.
+    planned = [
+        exercise
+        for session in result["program"]["sessions"]
+        for exercise in session["exercises"]
+        if exercise["exercise_id"] == "squat_goblet"
+    ]
+    if planned:
+        progression = planned[0]["prescription"].get("exercise_progression", {})
+        assert progression.get("decision") == "increase_load"
+        assert progression.get("automatic_load_change") is False
