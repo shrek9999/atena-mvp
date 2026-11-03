@@ -60,4 +60,7 @@ def test_progress_endpoint_returns_authenticated_non_prescriptive_summary(monkey
     assert payload["longitudinal_progression"]["automatic_program_changes"] is False
     assert payload["longitudinal_progression"]["exercise_trends"][0]["status"] == "plateau_candidate"
     assert payload["longitudinal_progression"]["exercise_trends"][0]["review"] == "coach_review_required"
+    assert payload["training_cycle"]["cycle_week"] == 3
+    assert payload["training_cycle"]["phase"] == "progression_review"
+    assert payload["training_cycle"]["automatic_program_changes"] is False
     assert payload["automatic_load_changes"] is False

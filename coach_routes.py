@@ -26,6 +26,7 @@ from training.adaptation import assess_next_step
 from training.exercise_progression import recommend_exercise_progression, apply_exercise_progression
 from training.longitudinal_progression import summarize_longitudinal_progression
 from training.conditioning_progression import summarize_conditioning_progress
+from training.periodization import summarize_training_cycle
 from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL
 
 logger = logging.getLogger(__name__)
@@ -1490,11 +1491,19 @@ def coach_training_progress(profile_id):
     try:
         profile = store_get_profile(profile_id, token)
         sessions = store_list_sessions(profile_id, token, limit=50)
+        exercise_progressions = recommend_exercise_progression(sessions)
+        longitudinal_progression = summarize_longitudinal_progression(sessions)
+        conditioning_progression = summarize_conditioning_progress(sessions)
+        training_cycle = summarize_training_cycle(
+            profile["profile"], sessions, exercise_progressions,
+            longitudinal_progression, conditioning_progression,
+        )
         return jsonify({
             "progress": summarize_progress(profile, sessions),
-            "exercise_progressions": recommend_exercise_progression(sessions),
-            "longitudinal_progression": summarize_longitudinal_progression(sessions),
-            "conditioning_progression": summarize_conditioning_progress(sessions),
+            "exercise_progressions": exercise_progressions,
+            "longitudinal_progression": longitudinal_progression,
+            "conditioning_progression": conditioning_progression,
+            "training_cycle": training_cycle,
             "source": "recorded_training_history",
             "automatic_load_changes": False,
         }), 200
@@ -1595,9 +1604,15 @@ def coach_profile_program(profile_id):
         profile = store_get_profile(profile_id, token)
         # Use enough history to enforce the same progression gate shown in the
         # adaptation endpoint: two completed, easy sessions with RIR >= 3.
-        sessions = store_list_sessions(profile_id, token, limit=3)
+        sessions = store_list_sessions(profile_id, token, limit=50)
         feedback, adaptation = _build_profile_adaptation(sessions)
         exercise_progressions = recommend_exercise_progression(sessions)
+        longitudinal_progression = summarize_longitudinal_progression(sessions)
+        conditioning_progression = summarize_conditioning_progress(sessions)
+        training_cycle = summarize_training_cycle(
+            profile["profile"], sessions, exercise_progressions,
+            longitudinal_progression, conditioning_progression,
+        )
         # A global "easy" rating must not progress every exercise. The
         # exercise-level engine owns positive progression from this point.
         if feedback and feedback.get("difficulty") == "easy":
@@ -1609,6 +1624,7 @@ def coach_profile_program(profile_id):
             "profile": profile["profile"],
             "adaptation_guidance": adaptation,
             "exercise_progressions": exercise_progressions,
+            "training_cycle": training_cycle,
             "source": "saved_profile_and_exercise_level_training_feedback",
             "pilot": True,
         }), 200
