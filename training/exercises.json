@@ -3875,7 +3875,7 @@
   },
   {
     "id": "cossack_squat",
-    "name": "Kozaški počep (Cossack squat)",
+    "name": "Cossack squat",
     "name_en": "Cossack squat",
     "pattern": "squat",
     "joint_type": "multi_joint",
