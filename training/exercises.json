@@ -6462,8 +6462,6 @@
     "pattern": "trunk_stability",
     "joint_type": "multi_joint",
     "goals": [
-      "strength",
-      "hypertrophy",
       "functional"
     ],
     "equipment": [],
@@ -6697,8 +6695,6 @@
     "pattern": "trunk_stability",
     "joint_type": "multi_joint",
     "goals": [
-      "strength",
-      "hypertrophy",
       "functional"
     ],
     "equipment": [],
@@ -6756,8 +6752,6 @@
     "pattern": "trunk_stability",
     "joint_type": "multi_joint",
     "goals": [
-      "strength",
-      "hypertrophy",
       "functional"
     ],
     "equipment": [],
