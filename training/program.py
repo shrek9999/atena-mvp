@@ -462,7 +462,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                     (("škrip", "napravi"), {"cable"}),
                     (("trap",), {"trap_bar"}),
                     (("medicink",), {"medicine_ball"}),
-                    (("romunski mrtvi dvig", "mrtvi dvig", "sprednji počep", "počep zadaj"), {"dumbbell", "kettlebell", "barbell", "trap_bar"}),
+                    (("mrtvi dvig z dvignjenega položaja", "mrtvi dvig s premorom", "sprednji počep", "počep zadaj"), {"dumbbell", "kettlebell", "barbell", "trap_bar"}),
                     (("večjo obremenitvijo", "dodatno obremenitvijo", "dodatno obtežitvijo", "lažjim bremenom", "enoročne uteži", "uteži"), {"dumbbell", "kettlebell", "barbell", "weight_plate", "household_load", "backpack"}),
                     (("odrivom nog",), {"dumbbell", "kettlebell", "barbell"}),
                     (("nahrbtnik",), {"household_load", "backpack"}),
