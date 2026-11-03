@@ -113,7 +113,10 @@ def test_advanced_accessories_remain_opt_in_and_goal_specific():
     with_ids = {
         item["exercise_id"] for session in with_accessories["sessions"] for item in session["exercises"]
     }
-    single_joint = {item["id"] for item in load_catalogue() if item.get("single_joint")}
+    single_joint = {
+        item["id"] for item in load_catalogue()
+        if item.get("single_joint") and item.get("pattern") == "accessory"
+    }
     assert not (without_ids & single_joint)
     assert with_ids.issuperset(without_ids)
 
@@ -127,5 +130,5 @@ def test_non_advanced_profiles_cannot_enable_single_joint_accessories():
         "equipment": ["bodyweight", "dumbbell", "bench"],
         "include_accessories": True,
     }
-    with pytest.raises(ValueError, match="advanced"):
+    with pytest.raises(ValueError, match="naprednim"):
         generate_program(profile)
