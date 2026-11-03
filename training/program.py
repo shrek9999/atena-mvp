@@ -130,10 +130,19 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # add a short aerobic/conditioning session rather than more lifting volume.
         return ["locomotion", "lunge", "conditioning"]
     if goal == "functional":
+        # Keep sessions compact: the full set of capacities is distributed over
+        # the week rather than cramming every quality into every workout.
         base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
-        extras = [["lunge", "vertical_push"], ["lunge", "vertical_pull"], ["lunge", "vertical_push"], ["lunge", "vertical_pull"]]
-        functional_additions = [["balance", "jump"], ["coordination", "conditioning"], ["balance", "conditioning"], ["coordination", "jump"]]
-        return base + extras[session_index] + functional_additions[session_index]
+        functional_additions = [
+            ["balance", "jump"],
+            ["coordination", "conditioning"],
+            ["balance", "conditioning"],
+            ["coordination", "jump"],
+        ]
+        patterns = base + functional_additions[session_index]
+        if sessions >= 3:
+            patterns.append("lunge" if session_index % 2 == 0 else ("vertical_push" if session_index % 4 == 1 else "vertical_pull"))
+        return patterns
     if goal == "endurance":
         # Keep a minimum viable session even when no loaded carry equipment exists.
         # Carry is an optional fourth pattern and is omitted when no safe load is available.
@@ -202,8 +211,8 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     elif pattern == "coordination":
         sets, reps, rir, rest = 3, "10–15 s", None, 45
     elif level == "beginner" and goal in {"strength", "hypertrophy", "strength_hypertrophy"}:
-        # Early training age: use one shared strength-and-muscle-development dose.
-        # Exercise quality, repeatable technique and gradual loading matter more than a narrow goal split.
+        # Early training age: keep strength and hypertrophy prescription practically
+        # aligned across all foundational multi-joint patterns.
         if pattern in {"lunge"} or unilateral:
             sets, reps, rir, rest = 2, "8–12", 3, 90
         elif pattern in {"vertical_push", "vertical_pull"}:
