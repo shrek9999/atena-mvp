@@ -69,6 +69,52 @@ def _user_messages(*contents):
     return [{"role": "user", "content": content} for content in contents]
 
 
+def test_profile_contradictions_remain_blocked_after_safety_confirmation():
+    messages = _user_messages(
+        '{"goal":"strength","experience":"beginner","equipment":["bodyweight"],"sessions_per_week":2,"session_minutes":45}',
+        "Sem začetnik, treniram pa že deset let. V fitnesu imam samo lastno težo in olimpijsko palico. Pripravi mi težek program.",
+        "Nimam bolečin, poškodb ali gibalnih omejitev.",
+    )
+    reply = coach_routes._coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "neskladje med shranjenim profilom in tvojim sporočilom" in reply
+    assert "stopnja izkušenj" in reply
+    assert "oprema" in reply
+    assert "Kateri podatek naj upoštevam" in reply
+    assert "težek program" not in reply
+
+
+def test_explicit_profile_confirmation_resolves_profile_message_conflict():
+    messages = _user_messages(
+        '{"goal":"strength","experience":"beginner","equipment":["bodyweight"]}',
+        "Sem začetnik, treniram pa že deset let. V fitnesu imam olimpijsko palico.",
+        "Nimam bolečin, poškodb ali gibalnih omejitev.",
+        "Potrjujem, da je obstoječi profil pravilen; upoštevaj profil.",
+    )
+    assert coach_routes._profile_contradiction_reply(messages) is None
+
+
+def test_explicit_message_confirmation_resolves_profile_message_conflict():
+    messages = _user_messages(
+        '{"goal":"strength","experience":"beginner","equipment":["bodyweight"]}',
+        "Sem začetnik, treniram pa že deset let. V fitnesu imam olimpijsko palico.",
+        "Potrjujem, da je moje zadnje sporočilo pravilno; profil je zastarel.",
+    )
+    assert coach_routes._profile_contradiction_reply(messages) is None
+
+
+def test_equipment_conflict_alone_requires_confirmation():
+    messages = _user_messages(
+        '{"goal":"strength","experience":"intermediate","equipment":["bodyweight"]}',
+        "V fitnesu imam tudi olimpijsko palico. Pripravi mi trening.",
+        "Nimam bolečin, poškodb ali gibalnih omejitev.",
+    )
+    reply = coach_routes._coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "oprema" in reply
+    assert "olimpijska/utežna palica" in reply
+
+
 def test_server_guardrail_stops_individual_program_until_safety_is_confirmed():
     reply = coach_routes._coaching_guardrail_reply(_user_messages(
         'Profil: {"goal":"hypertrophy","limitations":"none reported"}',
