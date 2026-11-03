@@ -6514,7 +6514,7 @@
     "time_based": true,
     "movement_family": "trunk_control",
     "loading_mode": "bodyweight_or_fixed_environment",
-    "mobility_strength": true,
+    "mobility_strength": false,
     "functional_components": [
       "trunk_control"
     ]
