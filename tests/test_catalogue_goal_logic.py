@@ -261,3 +261,19 @@ def test_bodyweight_only_program_discloses_horizontal_pull_equipment_limit():
     })
     assert "horizontal_pull" in result["weekly_summary"]["unfilled_patterns"]
     assert any("horizontalnega potega" in note for note in result["limitations"])
+
+
+
+def test_beginner_combined_goal_methodology_summary_matches_exercise_tempo():
+    from training.program import generate_program
+
+    result = generate_program({
+        "goal": "strength_hypertrophy",
+        "experience": "beginner",
+        "sessions_per_week": 2,
+        "session_minutes": 60,
+        "equipment": ["bodyweight", "dumbbell", "bench"],
+    })
+    assert "2–1–1–0" in result["methodology"]["tempo"]
+    assert "3–1–2–0" not in result["methodology"]["tempo"]
+    assert result["program_version"] == "2.8.0"
