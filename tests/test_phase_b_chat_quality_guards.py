@@ -587,3 +587,21 @@ def test_authenticated_history_context_preserves_set_by_set_details():
     }])
     assert "set 1: 10 reps, 20 kg, RIR 3" in context
     assert "set 2: 8 reps, 22 kg, RIR 1" in context
+
+
+def test_weight_regulation_prompt_contains_general_nutrition_framework_and_boundaries():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "lower energy density" in prompt
+    assert "fibre-rich foods" in prompt
+    assert "lean protein sources" in prompt
+    assert "1.5 g/kg/day" in prompt
+    assert "10–20% below estimated maintenance" in prompt
+    assert "do not calculate or prescribe a personal diet without adequate context" in prompt
+
+
+def test_mobility_programming_includes_strength_through_controlled_range():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "Do not reduce a mobility goal to passive stretching" in prompt
+    assert "strength through the largest controlled, tolerated range" in prompt
+    assert "ATG split squat" in prompt
+    assert "never force end range" in prompt
