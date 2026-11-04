@@ -138,9 +138,9 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # add a short aerobic/conditioning session rather than more lifting volume.
         return ["locomotion", "lunge", "conditioning"]
     if goal == "functional":
-        # Keep sessions compact: the full set of capacities is distributed over
-        # the week rather than cramming every quality into every workout.
-        base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
+        # Keep sessions compact: distribute horizontal push and pull across the
+        # week while preserving squat, hinge and the functional capacities.
+        base = ["squat", "hinge", "horizontal_push" if session_index % 2 == 0 else "horizontal_pull"]
         # Training history is not a movement-readiness screen. Do not prescribe
         # plyometrics or rapid change-of-direction drills by default at any level.
         # Carry work, balance and controlled low-speed coordination preserve the
