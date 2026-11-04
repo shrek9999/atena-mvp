@@ -134,6 +134,36 @@ def decide_adaptation(sessions, *, exercise_progressions=None,
         )
 
     latest_day, latest = recent[0]
+    latest_day, latest = recent[0]
+    # A failed previous adjustment takes precedence over routine progression.
+    feedback = prior_adaptation if isinstance(prior_adaptation, dict) else {}
+    outcome = feedback.get("outcome")
+    adaptation_id = feedback.get("adaptation_id")
+    if outcome in {"worse", "no_change"}:
+        return _decision(
+            "reassess_previous_change", "affected_exercise_or_session",
+            "previous_adjustment_not_successful",
+            "Prejšnja prilagoditev ni prinesla pričakovanega učinka. ATENA je ne bo ponovila; najprej mora preveriti, kaj se je dejansko spremenilo in zakaj.",
+            "Razumeti odziv na prejšnji ukrep in izbrati drugačen ali noben ukrep.",
+            question="Kaj se je po prejšnji prilagoditvi spremenilo: izvedba, zahtevnost, regeneracija ali rezultat?",
+        ) | {"previous_adaptation_id": adaptation_id, "previous_outcome": outcome}
+    if outcome == "not_tried":
+        return _decision(
+            "confirm_previous_change", "none", "previous_adjustment_not_tried",
+            "Prejšnji predlog še ni bil preizkušen. Nove spremembe bi onemogočile presojo, ali je prvi predlog deloval.",
+            "Najprej preveriti izvedbo že predlaganega ukrepa.",
+            question="Ali si prejšnjo prilagoditev preizkusil vsaj enkrat?",
+        ) | {"previous_adaptation_id": adaptation_id, "previous_outcome": outcome}
+
+    # Reconcile recent global feedback with exercise-specific and multi-week signals.
+    if any(s.get("recovery") == "poor" for _, s in recent[:2]):
+        return _decision(
+            "recovery_review", "session", "recent_poor_recovery",
+            "Slaba regeneracija je zabeležena v eni od zadnjih dveh vadb. Pred progresijo je treba preveriti spanec, stres, razmik med vadbami in skupno obremenitev.",
+            "Preprečiti kopičenje utrujenosti in potrditi, ali je potreben poseg v celoten trening.",
+            question="Je bila regeneracija slabša tudi izven treninga ali predvsem po zadnji vadbi?",
+        )
+
     if latest.get("completed") is not True:
         reason = latest.get("completion_reason", "unknown")
         if reason == "time_constraint":
@@ -170,35 +200,6 @@ def decide_adaptation(sessions, *, exercise_progressions=None,
             "Manjkajoči zaključek sam po sebi ne pove, ali je bil vzrok čas, zahtevnost, regeneracija ali zunanja okoliščina.",
             "Pridobiti razlog, preden ATENA poseže v program.",
             question="Kaj je preprečilo zaključek: premalo časa, previsoka zahtevnost, slaba regeneracija ali zunanja okoliščina?",
-        )
-
-    # A failed previous adjustment takes precedence over routine progression.
-    feedback = prior_adaptation if isinstance(prior_adaptation, dict) else {}
-    outcome = feedback.get("outcome")
-    adaptation_id = feedback.get("adaptation_id")
-    if outcome in {"worse", "no_change"}:
-        return _decision(
-            "reassess_previous_change", "affected_exercise_or_session",
-            "previous_adjustment_not_successful",
-            "Prejšnja prilagoditev ni prinesla pričakovanega učinka. ATENA je ne bo ponovila; najprej mora preveriti, kaj se je dejansko spremenilo in zakaj.",
-            "Razumeti odziv na prejšnji ukrep in izbrati drugačen ali noben ukrep.",
-            question="Kaj se je po prejšnji prilagoditvi spremenilo: izvedba, zahtevnost, regeneracija ali rezultat?",
-        ) | {"previous_adaptation_id": adaptation_id, "previous_outcome": outcome}
-    if outcome == "not_tried":
-        return _decision(
-            "confirm_previous_change", "none", "previous_adjustment_not_tried",
-            "Prejšnji predlog še ni bil preizkušen. Nove spremembe bi onemogočile presojo, ali je prvi predlog deloval.",
-            "Najprej preveriti izvedbo že predlaganega ukrepa.",
-            question="Ali si prejšnjo prilagoditev preizkusil vsaj enkrat?",
-        ) | {"previous_adaptation_id": adaptation_id, "previous_outcome": outcome}
-
-    # Reconcile recent global feedback with exercise-specific and multi-week signals.
-    if any(s.get("recovery") == "poor" for _, s in recent[:2]):
-        return _decision(
-            "recovery_review", "session", "recent_poor_recovery",
-            "Slaba regeneracija je zabeležena v eni od zadnjih dveh vadb. Pred progresijo je treba preveriti spanec, stres, razmik med vadbami in skupno obremenitev.",
-            "Preprečiti kopičenje utrujenosti in potrditi, ali je potreben poseg v celoten trening.",
-            question="Je bila regeneracija slabša tudi izven treninga ali predvsem po zadnji vadbi?",
         )
 
     trends = longitudinal_progression.get("exercise_trends", []) if isinstance(longitudinal_progression, dict) else []
