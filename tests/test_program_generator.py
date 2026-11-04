@@ -820,7 +820,7 @@ def test_session_set_volume_uses_flexible_time_bands():
             assert 7 <= session["work_sets"] <= maximum
             assert session["work_sets"] == sum(ex["prescription"]["sets"] for ex in session["exercises"])
     longer = generate_program({**BASE, "experience": "beginner", "goal": "strength",
-                               "equipment": ["dumbbell", "bench"], "session_minutes": 60})
+                               "equipment": ["barbell", "rack", "dumbbell", "bench", "pull_up_bar", "kettlebell", "cable", "resistance_band", "box"], "session_minutes": 60})
     assert all(session["work_sets"] >= 15 for session in longer["sessions"])
 
 
