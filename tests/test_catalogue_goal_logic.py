@@ -276,4 +276,4 @@ def test_beginner_combined_goal_methodology_summary_matches_exercise_tempo():
     })
     assert "3–1–1–0" in result["methodology"]["tempo"]
     assert "3–1–2–0" not in result["methodology"]["tempo"]
-    assert result["program_version"] == "2.8.0"
+    assert result["program_version"] == "2.9.0"
