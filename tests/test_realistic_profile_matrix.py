@@ -32,7 +32,7 @@ EQUIPMENT_PROFILES = {
 @pytest.mark.parametrize(
     "goal,experience,equipment_name,equipment,sessions,duration",
     [
-        (goal, experience, equipment_name, equipment, duration)
+        (goal, experience, equipment_name, equipment, sessions, duration)
         for goal, experience, (equipment_name, equipment), sessions, duration in product(
             VISIBLE_GOALS,
             EXPERIENCE_LEVELS,
