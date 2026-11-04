@@ -141,23 +141,16 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # Keep sessions compact: the full set of capacities is distributed over
         # the week rather than cramming every quality into every workout.
         base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
-        if experience == "beginner":
-            # Do not prescribe plyometrics or intermediate change-of-direction drills
-            # by default before a beginner's landing/braking competency is established.
-            # Carry work and a low-speed coordination drill preserve the functional intent.
-            functional_additions = [
-                ["balance", "carry"],
-                ["coordination", "conditioning"],
-                ["balance", "carry"],
-                ["coordination", "conditioning"],
-            ]
-        else:
-            functional_additions = [
-                ["balance", "jump"],
-                ["coordination", "conditioning"],
-                ["balance", "conditioning"],
-                ["coordination", "jump"],
-            ]
+        # Training history is not a movement-readiness screen. Do not prescribe
+        # plyometrics or rapid change-of-direction drills by default at any level.
+        # Carry work, balance and controlled low-speed coordination preserve the
+        # functional intent until landing/braking readiness can be assessed explicitly.
+        functional_additions = [
+            ["balance", "carry"],
+            ["coordination", "conditioning"],
+            ["balance", "carry"],
+            ["coordination", "conditioning"],
+        ]
         patterns = base + functional_additions[session_index]
         if include_stability:
             patterns.insert(0, "trunk_stability")
@@ -613,6 +606,10 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             candidates = by_pattern.get(pattern, [])
             if planning_goal in {"endurance", "fat_loss"} and pattern == "locomotion":
                 candidates = [item for item in candidates if item.get("endurance_type") == "aerobic"]
+            if planning_goal == "functional" and pattern == "coordination":
+                # Lateral shuffle requires braking/change-of-direction competence;
+                # it is not inferred from the user's training-experience label.
+                candidates = [item for item in candidates if item["id"] != "lateral_shuffle"]
             if not candidates:
                 # A vertical pull is not mandatory when the available catalogue/equipment cannot support it.
                 if pattern in {"vertical_pull", "vertical_push", "carry", "anti_rotation", "trunk_stability"}:
