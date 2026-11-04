@@ -134,7 +134,6 @@ def decide_adaptation(sessions, *, exercise_progressions=None,
         )
 
     latest_day, latest = recent[0]
-    latest_day, latest = recent[0]
     # A failed previous adjustment takes precedence over routine progression.
     feedback = prior_adaptation if isinstance(prior_adaptation, dict) else {}
     outcome = feedback.get("outcome")
@@ -221,7 +220,10 @@ def decide_adaptation(sessions, *, exercise_progressions=None,
     progressions = exercise_progressions if isinstance(exercise_progressions, list) else []
     candidates = [
         item for item in progressions
-        if isinstance(item, dict) and item.get("decision") in {
+        if isinstance(item, dict)
+        and isinstance(item.get("exercise_id"), str)
+        and item["exercise_id"].strip()
+        and item.get("decision") in {
             "add_repetitions", "increase_load", "progress_variation", "increase_work_time"
         }
     ]
@@ -232,7 +234,7 @@ def decide_adaptation(sessions, *, exercise_progressions=None,
             "Spremeniti največ eno spremenljivko pri potrjeni vaji, ostale dele programa pa ohraniti.",
             progression_allowed=True,
             adjustment="apply_only_confirmed_exercise_recommendations",
-        ) | {"eligible_exercises": [x.get("exercise_id") for x in candidates]}
+        ) | {"eligible_exercises": list(dict.fromkeys(x["exercise_id"] for x in candidates))}
 
     if any(isinstance(x, dict) and x.get("decision") in {"hold", "collect_data", "technique_review", "reduce_dose", "pause_and_review"} for x in progressions):
         return _decision(
