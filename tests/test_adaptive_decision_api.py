@@ -1,6 +1,7 @@
 from flask import Flask
 
 from coach_routes import coach_bp
+from training.catalogue import load_catalogue
 
 
 def client(monkeypatch):
@@ -84,6 +85,33 @@ def test_adaptive_decision_endpoint_accepts_valid_previous_outcome(monkeypatch):
     decision = response.get_json()["adaptive_decision"]
     assert decision["decision"] == "reassess_previous_change"
     assert decision["previous_adaptation_id"] == first["adaptation_id"]
+
+
+def test_adaptive_decision_endpoint_accepts_set_by_set_exercise_evidence(monkeypatch):
+    exercise_id = load_catalogue()[0]["id"]
+    response = post(client(monkeypatch), [{
+        "session_date": "2026-11-03",
+        "session": {
+            "completed": True,
+            "difficulty": "moderate",
+            "recovery": "good",
+            "exercises": [{
+                "exercise_id": exercise_id,
+                "planned_sets": 2,
+                "target_reps_min": 8,
+                "target_reps_max": 12,
+                "execution_quality": "controlled",
+                "set_results": [
+                    {"reps": 10, "load_kg": 30, "rir": 3},
+                    {"reps": 10, "load_kg": 30, "rir": 3},
+                ],
+            }],
+        },
+    }])
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["history_sessions_analyzed"] == 1
+    assert any(item["exercise_id"] == exercise_id for item in data["exercise_progressions"])
 
 
 def test_adaptive_decision_endpoint_rejects_forged_previous_outcome_id(monkeypatch):
