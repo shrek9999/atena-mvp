@@ -89,6 +89,28 @@ def test_regressing_repetitions_do_not_trigger_an_increase():
     assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "hold"
 
 
+def test_changed_planned_set_count_is_not_a_comparable_exposure():
+    sessions = [
+        record("2026-11-03", [exercise("squat_goblet", reps=(12, 12), rir=(4, 4), sets=2)]),
+        record("2026-10-30", [exercise("squat_goblet", reps=(12, 12, 12), rir=(4, 4, 3), sets=3)]),
+    ]
+    result = decision(recommend_exercise_progression(sessions), "squat_goblet")
+    assert result["decision"] == "hold"
+    assert "število serij" in result["reason"]
+
+
+def test_missing_planned_set_count_requests_more_data():
+    missing = exercise("squat_goblet", reps=(12, 12, 12), rir=(4, 4, 3))
+    missing.pop("planned_sets")
+    sessions = [
+        record("2026-11-03", [missing]),
+        record("2026-10-30", [missing]),
+    ]
+    result = decision(recommend_exercise_progression(sessions), "squat_goblet")
+    assert result["decision"] == "collect_data"
+    assert "načrtovanem številu serij" in result["reason"]
+
+
 def test_one_positive_exposure_is_not_enough():
     result = recommend_exercise_progression([
         record("2026-11-03", [exercise("squat_goblet")])
