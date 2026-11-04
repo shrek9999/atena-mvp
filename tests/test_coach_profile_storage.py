@@ -461,7 +461,7 @@ def test_profile_program_requires_current_safety_confirmation(monkeypatch, tmp_p
     assert response.get_json()["blocked"] is True
 
 
-def test_profile_program_uses_latest_training_feedback(monkeypatch, tmp_path):
+def test_profile_program_keeps_global_feedback_out_of_generator_and_exposes_adaptive_decision(monkeypatch, tmp_path):
     client = _client(monkeypatch, tmp_path)
     created = _create(client)
     profile_id = created["profile"]["profile_id"]
@@ -499,13 +499,14 @@ def test_profile_program_uses_latest_training_feedback(monkeypatch, tmp_path):
     )
     assert response.status_code == 200
     assert captured["profile"]["goal"] == "hypertrophy"
-    assert captured["feedback"] == {
-        "difficulty": "hard",
-        "completed": False,
-        "discomfort": "no",
-        "recovery": "poor",
-        "movement_control": "none",
-    }
+    # Session feedback is consumed by the explainable decision layer, not
+    # applied globally to every exercise by the programme generator.
+    assert captured["feedback"] is None
+    data = response.get_json()
+    # Poor recovery is a higher-priority signal than an unspecified
+    # incomplete-session reason, so the engine requests a recovery review.
+    assert data["adaptive_decision"]["decision"] == "recovery_review"
+    assert data["adaptive_decision"]["clarifying_question"]
 
 
 def test_profile_program_holds_progression_after_logged_discomfort_and_fresh_safety_recheck(monkeypatch, tmp_path):
@@ -538,7 +539,9 @@ def test_profile_program_holds_progression_after_logged_discomfort_and_fresh_saf
     assert response.status_code == 200
     data = response.get_json()
     assert data["adaptation_guidance"]["decision"] == "pause_and_review"
-    assert data["program"]["feedback_applied"]["difficulty"] == "right"
+    assert data["adaptive_decision"]["decision"] == "pause_and_review"
+    assert data["adaptive_decision"]["automatic_program_changes"] is False
+    assert data["program"]["feedback_applied"] is None
 
 
 

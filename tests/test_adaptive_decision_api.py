@@ -1,0 +1,184 @@
+from flask import Flask
+
+from coach_routes import coach_bp
+from training.catalogue import load_catalogue
+
+
+def client(monkeypatch):
+    monkeypatch.setenv("AI_COACH_TEST_TOKEN", "pilot-test-secret")
+    app = Flask(__name__)
+    app.register_blueprint(coach_bp)
+    return app.test_client()
+
+
+def session(day, *, completed=True, difficulty="moderate", recovery="normal",
+            completion_reason=None, adaptation_response=None):
+    value = {
+        "completed": completed,
+        "difficulty": difficulty,
+        "recovery": recovery,
+        "exercises": [],
+    }
+    if completion_reason is not None:
+        value["completion_reason"] = completion_reason
+    if adaptation_response is not None:
+        value["adaptation_response"] = adaptation_response
+    return {"session_date": day, "session": value}
+
+
+def post(client, sessions, token="pilot-test-secret"):
+    return client.post(
+        "/coach/adaptive-decision",
+        headers={"X-Pilot-Token": token},
+        json={"sessions": sessions},
+    )
+
+
+def test_adaptive_decision_endpoint_requires_pilot_token(monkeypatch):
+    response = post(client(monkeypatch), [], token="")
+    assert response.status_code == 403
+
+
+def test_baseline_decision_does_not_ask_user_to_rate_a_nonexistent_adjustment(monkeypatch):
+    response = post(client(monkeypatch), [])
+    assert response.status_code == 200
+    decision = response.get_json()["adaptive_decision"]
+    assert decision["decision"] == "collect_baseline"
+    assert "feedback_contract" not in decision
+
+
+def test_adaptive_decision_endpoint_distinguishes_time_shortage(monkeypatch):
+    response = post(client(monkeypatch), [
+        session("2026-11-03", completed=False, difficulty="unknown",
+                completion_reason="time_constraint")
+    ])
+    assert response.status_code == 200
+    result = response.get_json()["adaptive_decision"]
+    assert result["decision"] == "restructure_session"
+    assert result["scope"] == "session_structure"
+    assert result["automatic_program_changes"] is False
+    assert result["adaptation_id"]
+
+
+def test_adaptive_decision_endpoint_distinguishes_poor_recovery(monkeypatch):
+    response = post(client(monkeypatch), [
+        session("2026-11-03", completed=False, difficulty="hard",
+                recovery="poor", completion_reason="poor_recovery")
+    ])
+    assert response.status_code == 200
+    assert response.get_json()["adaptive_decision"]["decision"] == "recovery_review"
+
+
+def test_adaptive_decision_endpoint_rejects_unstructured_or_health_fields(monkeypatch):
+    response = post(client(monkeypatch), [{
+        "session_date": "2026-11-03",
+        "session": {"completed": True, "difficulty": "moderate",
+                    "recovery": "normal", "exercises": [],
+                    "free_text": "some note"}
+    }])
+    assert response.status_code == 400
+
+
+def test_adaptive_decision_endpoint_accepts_valid_previous_outcome(monkeypatch):
+    api = client(monkeypatch)
+    previous = session("2026-11-02", completed=False, difficulty="unknown",
+                       completion_reason="time_constraint")
+    first = post(api, [previous]).get_json()["adaptive_decision"]
+    latest = session(
+        "2026-11-03",
+        adaptation_response={"adaptation_id": first["adaptation_id"], "outcome": "worse"},
+    )
+    response = post(api, [latest, previous])
+    assert response.status_code == 200
+    decision = response.get_json()["adaptive_decision"]
+    assert decision["decision"] == "reassess_previous_change"
+    assert decision["previous_adaptation_id"] == first["adaptation_id"]
+
+
+def test_adaptive_decision_endpoint_accepts_structured_movement_control_signal(monkeypatch):
+    response = post(client(monkeypatch), [{
+        "session_date": "2026-11-03",
+        "session": {
+            "completed": True,
+            "difficulty": "moderate",
+            "recovery": "good",
+            "movement_control": "bracing",
+            "exercises": [],
+        },
+    }])
+    assert response.status_code == 200
+    decision = response.get_json()["adaptive_decision"]
+    assert decision["decision"] == "technique_review"
+    assert decision["reason_codes"] == ["movement_control_issue"]
+
+
+def test_adaptive_decision_endpoint_accepts_set_by_set_exercise_evidence(monkeypatch):
+    exercise_id = load_catalogue()[0]["id"]
+    response = post(client(monkeypatch), [{
+        "session_date": "2026-11-03",
+        "session": {
+            "completed": True,
+            "difficulty": "moderate",
+            "recovery": "good",
+            "exercises": [{
+                "exercise_id": exercise_id,
+                "planned_sets": 2,
+                "target_reps_min": 8,
+                "target_reps_max": 12,
+                "execution_quality": "controlled",
+                "set_results": [
+                    {"reps": 10, "load_kg": 30, "rir": 3},
+                    {"reps": 10, "load_kg": 30, "rir": 3},
+                ],
+            }],
+        },
+    }])
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["history_sessions_analyzed"] == 1
+    assert any(item["exercise_id"] == exercise_id for item in data["exercise_progressions"])
+
+
+def test_untried_adaptation_keeps_the_original_decision_id(monkeypatch):
+    api = client(monkeypatch)
+    previous = session("2026-11-02", completed=False, difficulty="unknown",
+                       completion_reason="time_constraint")
+    first = post(api, [previous]).get_json()["adaptive_decision"]
+    latest = session(
+        "2026-11-03",
+        adaptation_response={"adaptation_id": first["adaptation_id"], "outcome": "not_tried"},
+    )
+    response = post(api, [latest, previous])
+    assert response.status_code == 200
+    decision = response.get_json()["adaptive_decision"]
+    assert decision["decision"] == "confirm_previous_change"
+    assert decision["adaptation_id"] == first["adaptation_id"]
+
+
+def test_adaptive_decision_endpoint_rejects_forged_previous_outcome_id(monkeypatch):
+    api = client(monkeypatch)
+    previous = session("2026-11-02")
+    latest = session(
+        "2026-11-03",
+        adaptation_response={"adaptation_id": "forged-adaptation-id", "outcome": "worse"},
+    )
+    response = post(api, [latest, previous])
+    assert response.status_code == 409
+    assert response.get_json()["code"] == "adaptation_id_mismatch"
+
+
+def test_distinct_same_day_workout_keys_produce_distinct_decision_ids(monkeypatch):
+    api = client(monkeypatch)
+    first_session = session("2026-11-03")
+    first_session["session"]["session_key"] = "program-a:1:2026-11-03T08:00:00Z"
+    second_session = session("2026-11-03")
+    second_session["session"]["session_key"] = "program-a:2:2026-11-03T18:00:00Z"
+    first = post(api, [first_session]).get_json()["adaptive_decision"]
+    second = post(api, [second_session]).get_json()["adaptive_decision"]
+    assert first["adaptation_id"] != second["adaptation_id"]
+
+
+def test_adaptive_decision_endpoint_bounds_history_size(monkeypatch):
+    sessions = [session(f"2026-10-{(i % 28) + 1:02d}") for i in range(51)]
+    response = post(client(monkeypatch), sessions)
+    assert response.status_code == 400

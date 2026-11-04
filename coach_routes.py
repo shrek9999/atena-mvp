@@ -23,6 +23,7 @@ from flask import Blueprint, jsonify, request
 from training.program import ProgramSafetyBlock, ProgramValidationError, generate_program
 from training.progress import summarize_progress
 from training.adaptation import assess_next_step
+from training.adaptive_decision import decide_adaptation
 from training.exercise_progression import recommend_exercise_progression, apply_exercise_progression
 from training.longitudinal_progression import summarize_longitudinal_progression
 from training.conditioning_progression import summarize_conditioning_progress
@@ -1396,7 +1397,7 @@ def coach_training_sessions(profile_id):
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return jsonify({"error": "Pričakovan je JSON objekt."}), 400
-    allowed = {"session_date", "duration_minutes", "difficulty", "completed", "exercises", "conditioning", "discomfort_reported", "recovery"}
+    allowed = {"session_date", "duration_minutes", "difficulty", "completed", "exercises", "conditioning", "discomfort_reported", "recovery", "completion_reason", "adaptation_response"}
     if set(payload) - allowed:
         return jsonify({"error": "Vadbeni zapis vsebuje nepodprta polja; prosto besedilo ni dovoljeno."}), 400
     session_date = payload.get("session_date")
@@ -1415,6 +1416,25 @@ def coach_training_sessions(profile_id):
         return jsonify({"error": "Regeneracija mora biti good, normal ali poor."}), 400
     if not isinstance(payload.get("completed"), bool):
         return jsonify({"error": "Polje completed mora biti true ali false."}), 400
+    completion_reason = payload.get("completion_reason")
+    valid_completion_reasons = {
+        "time_constraint", "high_difficulty", "poor_recovery",
+        "external_interruption", "other", "unknown",
+    }
+    if completion_reason is not None and completion_reason not in valid_completion_reasons:
+        return jsonify({"error": "Razlog nedokončanega treninga ni veljaven."}), 400
+    if payload.get("completed") is False and completion_reason is None:
+        completion_reason = "unknown"
+    adaptation_response = payload.get("adaptation_response")
+    if adaptation_response is not None:
+        if (
+            not isinstance(adaptation_response, dict)
+            or set(adaptation_response) != {"adaptation_id", "outcome"}
+            or not isinstance(adaptation_response.get("adaptation_id"), str)
+            or not 8 <= len(adaptation_response["adaptation_id"]) <= 64
+            or adaptation_response.get("outcome") not in {"helped", "no_change", "worse", "not_tried"}
+        ):
+            return jsonify({"error": "Odziv na prejšnjo prilagoditev ni veljaven."}), 400
     exercises = payload.get("exercises")
     if not isinstance(exercises, list) or len(exercises) > 20:
         return jsonify({"error": "Vadbeni zapis lahko vsebuje največ 20 vaj."}), 400
@@ -1443,12 +1463,24 @@ def coach_training_sessions(profile_id):
         "recovery": recovery, "completed": payload["completed"], "exercises": clean_exercises,
         "conditioning": clean_conditioning,
     }
+    if completion_reason is not None:
+        session["completion_reason"] = completion_reason
+    if adaptation_response is not None:
+        session["adaptation_response"] = adaptation_response
     try:
         profile = store_get_profile(profile_id, token)
         if discomfort is not None:
             if not profile["health_data_consent"]:
                 return jsonify({"error": "Za shranjevanje podatka o nelagodju je potrebna ločena privolitev za zdravstvene podatke."}), 403
             session["discomfort_reported"] = discomfort
+        if adaptation_response is not None:
+            prior_sessions = store_list_sessions(profile_id, token, limit=50)
+            expected_adaptation_id = _build_adaptive_decision(prior_sessions)["adaptation_id"]
+            if adaptation_response["adaptation_id"] != expected_adaptation_id:
+                return jsonify({
+                    "error": "Odziv se ne nanaša na zadnjo prilagoditev, ki jo je izdala ATENA.",
+                    "code": "adaptation_id_mismatch",
+                }), 409
         saved = store_add_session(profile_id, token, str(uuid.uuid4()), session_date, session)
         return jsonify({"session": saved}), 201
     except ProfileNotFound:
@@ -1483,6 +1515,50 @@ def update_coach_health_consent(profile_id):
 
 
 
+def _build_adaptive_decision(sessions, exercise_progressions=None,
+                             longitudinal_progression=None,
+                             conditioning_progression=None):
+    """Combine the independent evidence streams into one narrow, explainable decision."""
+    if exercise_progressions is None:
+        exercise_progressions = recommend_exercise_progression(sessions)
+    if longitudinal_progression is None:
+        longitudinal_progression = summarize_longitudinal_progression(sessions)
+    if conditioning_progression is None:
+        conditioning_progression = summarize_conditioning_progress(sessions)
+    latest = next((
+        item for item in sessions
+        if isinstance(item, dict) and isinstance(item.get("session"), dict)
+    ), {})
+    prior = latest.get("session", {}).get("adaptation_response")
+    decision = decide_adaptation(
+        sessions,
+        exercise_progressions=exercise_progressions,
+        longitudinal_progression=longitudinal_progression,
+        conditioning_progression=conditioning_progression,
+        prior_adaptation=prior,
+    )
+    if decision.get("decision") == "confirm_previous_change" and isinstance(prior, dict):
+        # Keep the original ID while a recommendation remains untried. This
+        # prevents ATENA from creating a new, endlessly repeatable proposal.
+        decision["adaptation_id"] = prior.get("adaptation_id")
+    else:
+        latest_date = latest.get("session_date", "no-date")
+        latest_session = latest.get("session", {})
+        seed = "|".join([
+            str(latest_date), str(latest_session.get("session_key", "")),
+            str(decision.get("decision")), str(decision.get("scope")),
+            ",".join(decision.get("reason_codes", [])),
+        ])
+        decision["adaptation_id"] = uuid.uuid5(uuid.NAMESPACE_URL, "atena:" + seed).hex[:24]
+    if decision.get("decision") not in {"collect_baseline", "collect_context", "collect_data"}:
+        decision["feedback_contract"] = {
+            "field": "adaptation_response",
+            "outcomes": ["helped", "no_change", "worse", "not_tried"],
+            "instruction": "V naslednjem zapisu treninga pošlji adaptation_id in izbrani outcome.",
+        }
+    return decision
+
+
 @coach_bp.route("/coach/profile/<profile_id>/progress", methods=["GET", "OPTIONS"])
 def coach_training_progress(profile_id):
     """Return descriptive training trends; never prescribe automatic load increases."""
@@ -1495,12 +1571,17 @@ def coach_training_progress(profile_id):
         exercise_progressions = recommend_exercise_progression(sessions)
         longitudinal_progression = summarize_longitudinal_progression(sessions)
         conditioning_progression = summarize_conditioning_progress(sessions)
+        adaptive_decision = _build_adaptive_decision(
+            sessions, exercise_progressions, longitudinal_progression,
+            conditioning_progression,
+        )
         training_cycle = summarize_training_cycle(
             profile["profile"], sessions, exercise_progressions,
             longitudinal_progression, conditioning_progression,
         )
         return jsonify({
             "progress": summarize_progress(profile, sessions),
+            "adaptive_decision": adaptive_decision,
             "exercise_progressions": exercise_progressions,
             "longitudinal_progression": longitudinal_progression,
             "conditioning_progression": conditioning_progression,
@@ -1611,20 +1692,26 @@ def coach_profile_program(profile_id):
         exercise_progressions = recommend_exercise_progression(sessions)
         longitudinal_progression = summarize_longitudinal_progression(sessions)
         conditioning_progression = summarize_conditioning_progress(sessions)
+        adaptive_decision = _build_adaptive_decision(
+            sessions, exercise_progressions, longitudinal_progression,
+            conditioning_progression,
+        )
         training_cycle = summarize_training_cycle(
             profile["profile"], sessions, exercise_progressions,
             longitudinal_progression, conditioning_progression,
         )
-        # A global "easy" rating must not progress every exercise. The
-        # exercise-level engine owns positive progression from this point.
-        if feedback and feedback.get("difficulty") == "easy":
-            feedback = {**feedback, "difficulty": "right"}
-        result = generate_program(profile["profile"], feedback=feedback)
+        # Global session feedback is now advisory only. It must not silently
+        # reduce or increase every exercise: the adaptive decision explains the
+        # scope, while the exercise engine applies only independently justified
+        # exercise-level rep guidance. A future user-confirmed session-level
+        # adjustment can be applied through an explicit programme revision.
+        result = generate_program(profile["profile"])
         result = apply_exercise_progression(result, exercise_progressions)
         return jsonify({
             "program": result,
             "profile": profile["profile"],
             "adaptation_guidance": adaptation,
+            "adaptive_decision": adaptive_decision,
             "exercise_progressions": exercise_progressions,
             "training_cycle": training_cycle,
             "proactive_checkin": build_proactive_checkin(sessions),
@@ -1649,14 +1736,133 @@ def coach_training_adaptation(profile_id):
     token = _profile_token()
     try:
         profile = store_get_profile(profile_id, token)
-        sessions = store_list_sessions(profile_id, token, limit=3)
+        sessions = store_list_sessions(profile_id, token, limit=50)
         _feedback, adaptation = _build_profile_adaptation(sessions)
+        adaptive_decision = _build_adaptive_decision(sessions)
         return jsonify({
             "adaptation": adaptation,
-            "source": "recent_recorded_training_feedback",
+            "adaptive_decision": adaptive_decision,
+            "source": "recent_recorded_training_feedback_and_longitudinal_history",
             "automatic_program_changes": False,
         }), 200
     except ProfileNotFound:
         return _profile_auth_error()
     except StorageUnavailable as exc:
         return _storage_error(exc)
+
+
+def _normalize_decision_history(value):
+    """Validate a bounded, structured history snapshot supplied by the first-party UI."""
+    if not isinstance(value, list) or len(value) > 50:
+        raise ValueError("Zgodovina mora vsebovati največ 50 strukturiranih treningov.")
+    normalized = []
+    valid_reasons = {
+        "time_constraint", "high_difficulty", "poor_recovery",
+        "external_interruption", "other", "unknown",
+    }
+    for item in value:
+        if not isinstance(item, dict) or set(item) - {"session_date", "session"}:
+            raise ValueError("Zapis zgodovine vsebuje nepodprta polja.")
+        session_date = item.get("session_date")
+        try:
+            date.fromisoformat(session_date)
+        except (TypeError, ValueError):
+            raise ValueError("Datum treninga mora biti v obliki YYYY-MM-DD.")
+        raw = item.get("session")
+        allowed_session = {
+            "completed", "difficulty", "recovery", "exercises",
+            "completion_reason", "adaptation_response", "movement_control", "session_key",
+        }
+        if not isinstance(raw, dict) or set(raw) - allowed_session:
+            raise ValueError("Zapis treninga vsebuje nepodprta polja.")
+        if not isinstance(raw.get("completed"), bool):
+            raise ValueError("completed mora biti true ali false.")
+        if raw.get("difficulty") not in {"easy", "moderate", "hard", "unknown"}:
+            raise ValueError("Težavnost treninga ni veljavna.")
+        if raw.get("recovery") not in {"good", "normal", "poor", "unknown"}:
+            raise ValueError("Ocena regeneracije ni veljavna.")
+        movement_control = raw.get("movement_control", "none")
+        if movement_control not in {"none", "spinal_flexion", "bracing", "both"}:
+            raise ValueError("Ocena nadzora trupa ni veljavna.")
+        reason = raw.get("completion_reason")
+        if reason is not None and reason not in valid_reasons:
+            raise ValueError("Razlog nedokončanega treninga ni veljaven.")
+        response = raw.get("adaptation_response")
+        if response is not None and (
+            not isinstance(response, dict)
+            or set(response) != {"adaptation_id", "outcome"}
+            or not isinstance(response.get("adaptation_id"), str)
+            or not 8 <= len(response["adaptation_id"]) <= 64
+            or response.get("outcome") not in {"helped", "no_change", "worse", "not_tried"}
+        ):
+            raise ValueError("Odziv na prejšnjo prilagoditev ni veljaven.")
+        exercises = raw.get("exercises", [])
+        if not isinstance(exercises, list) or len(exercises) > 20:
+            raise ValueError("Trening lahko vsebuje največ 20 vaj.")
+        clean_exercises = []
+        for exercise in exercises:
+            clean, error = _normalize_logged_exercise(exercise)
+            if error:
+                raise ValueError(error)
+            clean_exercises.append(clean)
+        session_key = raw.get("session_key")
+        if session_key is not None and (
+            not isinstance(session_key, str) or not 8 <= len(session_key) <= 180
+        ):
+            raise ValueError("Identifikator treninga ni veljaven.")
+        session = {
+            "completed": raw["completed"],
+            "difficulty": raw["difficulty"],
+            "recovery": raw["recovery"],
+            "movement_control": movement_control,
+            "exercises": clean_exercises,
+        }
+        if session_key is not None:
+            session["session_key"] = session_key
+        if reason is not None:
+            session["completion_reason"] = reason
+        if response is not None:
+            session["adaptation_response"] = response
+        normalized.append({"session_date": session_date, "session": session})
+    return sorted(normalized, key=lambda row: row["session_date"], reverse=True)
+
+
+@coach_bp.route("/coach/adaptive-decision", methods=["POST", "OPTIONS"])
+def coach_adaptive_decision():
+    """Evaluate a privacy-minimised history snapshot without persisting it on Render."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    expected = os.getenv("AI_COACH_TEST_TOKEN", "").strip()
+    supplied = request.headers.get("X-Pilot-Token", "").strip()
+    if not expected or not supplied or not hmac.compare_digest(supplied, expected):
+        return jsonify({"error": "Testni dostopni ključ ni pravilen."}), 403
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict) or set(payload) != {"sessions"}:
+        return jsonify({"error": "Pošlji samo strukturirano polje sessions."}), 400
+    try:
+        sessions = _normalize_decision_history(payload["sessions"])
+        latest_response = sessions[0]["session"].get("adaptation_response") if sessions else None
+        if latest_response is not None:
+            if len(sessions) < 2:
+                return jsonify({"error": "Odziv na prilagoditev nima predhodnega treninga.", "code": "adaptation_id_mismatch"}), 409
+            expected_id = _build_adaptive_decision(sessions[1:])["adaptation_id"]
+            if not hmac.compare_digest(latest_response["adaptation_id"], expected_id):
+                return jsonify({"error": "Odziv se ne nanaša na zadnjo prilagoditev, ki jo je izdala ATENA.", "code": "adaptation_id_mismatch"}), 409
+        exercise_progressions = recommend_exercise_progression(sessions)
+        longitudinal_progression = summarize_longitudinal_progression(sessions)
+        conditioning_progression = summarize_conditioning_progress(sessions)
+        decision = _build_adaptive_decision(
+            sessions, exercise_progressions, longitudinal_progression,
+            conditioning_progression,
+        )
+        return jsonify({
+            "adaptive_decision": decision,
+            "exercise_progressions": exercise_progressions,
+            "longitudinal_progression": longitudinal_progression,
+            "conditioning_progression": conditioning_progression,
+            "source": "privacy_minimised_training_history_snapshot",
+            "history_sessions_analyzed": len(sessions),
+            "automatic_program_changes": False,
+        }), 200
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
