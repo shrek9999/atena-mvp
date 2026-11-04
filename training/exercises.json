@@ -1295,8 +1295,7 @@
     "training_purposes": [
       "general_fitness",
       "functional_fitness",
-      "strength",
-      "hypertrophy"
+      "strength"
     ],
     "stability_role": "primary",
     "stability_focus": [
@@ -1361,9 +1360,7 @@
     "movement_pattern": "trunk_control",
     "training_purposes": [
       "general_fitness",
-      "functional_fitness",
-      "mobility",
-      "hypertrophy"
+      "functional_fitness"
     ],
     "stability_role": "primary",
     "stability_focus": [
@@ -3658,7 +3655,7 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [],
-    "movement_pattern": "hinge",
+    "movement_pattern": "accessory",
     "training_purposes": [
       "hypertrophy",
       "strength"
@@ -3719,7 +3716,7 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [],
-    "movement_pattern": "hinge",
+    "movement_pattern": "accessory",
     "training_purposes": [
       "hypertrophy",
       "strength"
@@ -4470,7 +4467,6 @@
     "movement_pattern": "mobility",
     "training_purposes": [
       "mobility",
-      "functional_fitness",
       "general_fitness"
     ],
     "stability_role": "incidental",
@@ -4531,8 +4527,7 @@
     "functional_components": [],
     "movement_pattern": "mobility",
     "training_purposes": [
-      "mobility",
-      "functional_fitness"
+      "mobility"
     ],
     "stability_role": "none",
     "stability_focus": []
@@ -4739,8 +4734,7 @@
     "functional_components": [],
     "movement_pattern": "mobility",
     "training_purposes": [
-      "mobility",
-      "functional_fitness"
+      "mobility"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -4802,8 +4796,7 @@
     "functional_components": [],
     "movement_pattern": "mobility",
     "training_purposes": [
-      "mobility",
-      "functional_fitness"
+      "mobility"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -4864,8 +4857,7 @@
     "functional_components": [],
     "movement_pattern": "mobility",
     "training_purposes": [
-      "mobility",
-      "functional_fitness"
+      "mobility"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -4924,8 +4916,7 @@
     "functional_components": [],
     "movement_pattern": "mobility",
     "training_purposes": [
-      "mobility",
-      "functional_fitness"
+      "mobility"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -5562,8 +5553,7 @@
     "functional_components": [],
     "movement_pattern": "mobility",
     "training_purposes": [
-      "mobility",
-      "functional_fitness"
+      "mobility"
     ],
     "stability_role": "none",
     "stability_focus": []
@@ -5622,8 +5612,7 @@
     "functional_components": [],
     "movement_pattern": "mobility",
     "training_purposes": [
-      "mobility",
-      "functional_fitness"
+      "mobility"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -6158,15 +6147,10 @@
     ],
     "movement_pattern": "mobility",
     "training_purposes": [
-      "mobility",
-      "functional_fitness",
-      "balance"
+      "mobility"
     ],
-    "stability_role": "incidental",
-    "stability_focus": [
-      "trunk_control",
-      "balance"
-    ]
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "supine_hamstring_stretch",
@@ -6221,15 +6205,10 @@
     ],
     "movement_pattern": "mobility",
     "training_purposes": [
-      "mobility",
-      "functional_fitness",
-      "balance"
+      "mobility"
     ],
-    "stability_role": "incidental",
-    "stability_focus": [
-      "trunk_control",
-      "balance"
-    ]
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "doorway_pec_stretch",
@@ -6284,15 +6263,10 @@
     ],
     "movement_pattern": "mobility",
     "training_purposes": [
-      "mobility",
-      "functional_fitness",
-      "balance"
+      "mobility"
     ],
-    "stability_role": "incidental",
-    "stability_focus": [
-      "trunk_control",
-      "balance"
-    ]
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "calf_wall_stretch",
@@ -6348,15 +6322,10 @@
     ],
     "movement_pattern": "mobility",
     "training_purposes": [
-      "mobility",
-      "functional_fitness",
-      "balance"
+      "mobility"
     ],
-    "stability_role": "incidental",
-    "stability_focus": [
-      "trunk_control",
-      "balance"
-    ]
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "push_up_incline",
@@ -6601,8 +6570,7 @@
     "functional_components": [],
     "movement_pattern": "mobility",
     "training_purposes": [
-      "mobility",
-      "functional_fitness"
+      "mobility"
     ],
     "stability_role": "none",
     "stability_focus": []
@@ -6661,8 +6629,7 @@
     "functional_components": [],
     "movement_pattern": "mobility",
     "training_purposes": [
-      "mobility",
-      "functional_fitness"
+      "mobility"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -6727,8 +6694,7 @@
     "functional_components": [],
     "movement_pattern": "mobility",
     "training_purposes": [
-      "mobility",
-      "functional_fitness"
+      "mobility"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -6792,8 +6758,7 @@
     "functional_components": [],
     "movement_pattern": "mobility",
     "training_purposes": [
-      "mobility",
-      "functional_fitness"
+      "mobility"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -6856,8 +6821,7 @@
     "functional_components": [],
     "movement_pattern": "mobility",
     "training_purposes": [
-      "mobility",
-      "functional_fitness"
+      "mobility"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -6920,8 +6884,7 @@
     "functional_components": [],
     "movement_pattern": "mobility",
     "training_purposes": [
-      "mobility",
-      "functional_fitness"
+      "mobility"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -7837,7 +7800,6 @@
     "movement_pattern": "trunk_control",
     "training_purposes": [
       "strength",
-      "hypertrophy",
       "functional_fitness"
     ],
     "stability_role": "primary",
