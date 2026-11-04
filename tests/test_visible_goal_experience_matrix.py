@@ -67,10 +67,9 @@ def test_all_fifteen_visible_goal_experience_profiles_generate_valid_distinct_pl
         "endurance": {"locomotion", "conditioning"},
         "fat_loss": {"squat", "hinge", "conditioning"},
     }[goal]
-    if goal == "functional" and experience == "beginner":
+    if goal == "functional":
         expected.add("carry")
-    if goal == "functional" and experience != "beginner":
-        expected.add("jump")
+        assert "jump" not in patterns
     assert expected.issubset(patterns), (goal, experience, patterns)
 
 
@@ -229,3 +228,18 @@ def test_endurance_interval_duration_scales_with_experience():
         for interval in intervals:
             endurance_type = interval["endurance_type"]
             assert interval["prescription"]["work_seconds"] == expected_seconds[endurance_type][level_index]
+
+@pytest.mark.parametrize("experience", EXPERIENCE_LEVELS)
+def test_functional_profiles_do_not_assume_landing_or_braking_readiness(experience):
+    plan = _matrix_plan("functional", experience)
+    exercises = [
+        exercise
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+    ]
+
+    assert all(exercise["pattern"] != "jump" for exercise in exercises)
+    assert all(exercise["exercise_id"] != "lateral_shuffle" for exercise in exercises)
+    assert any(exercise["pattern"] == "balance" for exercise in exercises)
+    assert any(exercise["pattern"] == "carry" for exercise in exercises)
+    assert any(exercise["exercise_id"] == "controlled_lateral_step" for exercise in exercises)
