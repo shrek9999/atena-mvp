@@ -69,6 +69,7 @@ def _exercise_observation(exercise, session, day):
         # Legacy session summaries cannot prove that every set met the target.
         "rir_complete": bool(sets) and len(rirs) == len(sets),
         "reps_complete": bool(sets) and len(reps) == len(sets),
+        "loads_complete": bool(sets) and len(loads) == len(sets),
         "work_complete": bool(sets) and len(work) == len(sets),
         "sets_complete": (
             exercise.get("planned_sets") is None
@@ -173,11 +174,13 @@ def _classify(history):
         if latest_at_top and not previous_at_top:
             return "hold", "Zgornjo mejo si dosegel šele v zadnji izvedbi. Pred dvigom obremenitve jo potrdi še enkrat."
         if latest_at_top and previous_at_top:
-            if latest["loads"] and previous["loads"]:
-                old_load = sum(previous["loads"]) / len(previous["loads"])
-                new_load = sum(latest["loads"]) / len(latest["loads"])
-                if new_load != old_load:
-                    return "hold", "Obremenitev se je že spremenila. Najprej utrdi novo obremenitev v dveh primerljivih izvedbah."
+            if latest["loads"] or previous["loads"]:
+                if not latest["loads_complete"] or not previous["loads_complete"]:
+                    return "collect_data", "Obremenitev ni zabeležena za vsako serijo v obeh izvedbah. Pred dvigom bremena potrebujeva popolne podatke."
+                if len(latest["loads"]) != len(previous["loads"]) or any(
+                    current != prior for current, prior in zip(latest["loads"], previous["loads"])
+                ):
+                    return "hold", "Obremenitev v posameznih serijah se je spremenila. Najprej utrdi enako obremenitev v dveh primerljivih izvedbah."
                 return "increase_load", "Zgornjo mejo ponovitev si dosegel v vseh serijah v dveh zaporednih izvedbah z najmanj 3 RIR. Naslednjič lahko poskusiš najmanjši razpoložljivi dvig obremenitve; serije in ponovitve ohrani."
             if not latest["loads"] and not previous["loads"]:
                 return "progress_variation", "Zgornjo mejo ponovitev si dosegel v obeh izvedbah z ustrezno rezervo. Če zunanja obremenitev ni na voljo, izberi le majhen korak zahtevnejše različice."
