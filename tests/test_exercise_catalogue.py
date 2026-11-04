@@ -177,3 +177,34 @@ def test_added_strength_side_and_atg_variants_are_available():
         "patrick_step", "reverse_nordic_curl", "sled_backward_drag",
         "front_rack_carry", "overhead_carry",
     } <= records
+
+
+def test_every_exercise_has_valid_taxonomy_and_stability_metadata():
+    valid_patterns = {
+        "squat", "lunge", "hinge", "push", "pull", "carry", "trunk_control",
+        "locomotion", "conditioning", "mobility", "balance", "coordination", "accessory",
+    }
+    valid_stability_roles = {"primary", "supporting", "incidental", "none"}
+    valid_stability_focus = {"trunk_control", "trunk_bracing", "balance", "joint_control"}
+    for item in load_catalogue():
+        assert item["movement_pattern"] in valid_patterns, item["id"]
+        assert item["training_purposes"], item["id"]
+        assert item["stability_role"] in valid_stability_roles, item["id"]
+        assert set(item["stability_focus"]) <= valid_stability_focus, item["id"]
+        assert (item["stability_role"] == "none") == (not item["stability_focus"]), item["id"]
+
+
+def test_reaching_squat_is_an_accessible_squat_with_supporting_stability_role():
+    item = get_exercise("reaching_squat")
+    assert item["movement_pattern"] == "squat"
+    assert item["stability_role"] == "supporting"
+    assert {"trunk_bracing", "balance", "coordination"} <= set(item["stability_focus"])
+    assert {"stability", "trunk_bracing", "balance", "coordination"} <= set(item["training_purposes"])
+    assert "weight_plate" in item["equipment_any"]
+    assert any("5 kg" in cue for cue in item["cues"])
+
+
+def test_unloaded_hinge_uses_neutral_back_forward_bend_user_facing_name():
+    item = get_exercise("bodyweight_hip_hinge")
+    assert item["name"] == "Predklon z nevtralnim hrbtom (lastna teža)"
+    assert any("nevtralni položaj hrbtenice" in cue for cue in item["cues"])
