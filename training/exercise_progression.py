@@ -69,6 +69,7 @@ def _exercise_observation(exercise, session, day):
         # Legacy session summaries cannot prove that every set met the target.
         "rir_complete": bool(sets) and len(rirs) == len(sets),
         "reps_complete": bool(sets) and len(reps) == len(sets),
+        "loads_complete": bool(sets) and len(loads) == len(sets),
         "work_complete": bool(sets) and len(work) == len(sets),
         "sets_complete": (
             exercise.get("planned_sets") is None
@@ -135,6 +136,12 @@ def _classify(history):
         or not latest["rir_complete"] or not previous["rir_complete"]
     ):
         return "collect_data", "Manjka zanesljiva ocena RIR za vsako serijo v obeh zadnjih izvedbah. Brez popolnih podatkov ne bom sklepal, da je progresija upravičena."
+    if not isinstance(latest["planned_sets"], int) or isinstance(latest["planned_sets"], bool) or latest["planned_sets"] < 1:
+        return "collect_data", "Manjka zanesljiv podatek o načrtovanem številu serij. Pred progresijo ga je treba potrditi."
+    if not isinstance(previous["planned_sets"], int) or isinstance(previous["planned_sets"], bool) or previous["planned_sets"] < 1:
+        return "collect_data", "V prejšnji izvedbi manjka podatek o načrtovanem številu serij. Potrebna je še ena primerljiva izvedba."
+    if latest["planned_sets"] != previous["planned_sets"]:
+        return "hold", "Načrtovano število serij se je med zadnjima izvedbama spremenilo. Najprej utrdi enak obseg v dveh primerljivih izvedbah."
     if not latest["sets_complete"] or not previous["sets_complete"]:
         return "hold", "V eni od zadnjih izvedb ni bilo zabeleženih vseh načrtovanih serij. Najprej preveri razlog in utrdi načrtovani odmerek."
     if min(latest["rirs"]) < 3 or min(previous["rirs"]) < 3:
@@ -143,6 +150,16 @@ def _classify(history):
         return "hold", "Splošna zahtevnost treninga ne potrjuje še dveh stabilnih izpostavitev. Ohrani trenutno dozo."
     if latest["recovery"] == "poor" or previous["recovery"] == "poor":
         return "hold", "Regeneracija ni bila ustrezna v obeh zadnjih izpostavitvah. Progresijo zadrži."
+
+    # Load must remain comparable for every rep-based progression, not only
+    # when the user reaches the top of the rep range.
+    if latest["loads"] or previous["loads"]:
+        if not latest["loads_complete"] or not previous["loads_complete"]:
+            return "collect_data", "Obremenitev ni zabeležena za vsako serijo v obeh izvedbah. Pred progresijo potrebujeva popolne podatke."
+        if len(latest["loads"]) != len(previous["loads"]) or any(
+            current != prior for current, prior in zip(latest["loads"], previous["loads"])
+        ):
+            return "hold", "Obremenitev v posameznih serijah se je spremenila. Najprej utrdi enako obremenitev v dveh primerljivih izvedbah."
 
     target_min = latest["target_reps_min"]
     target_max = latest["target_reps_max"]
@@ -168,10 +185,6 @@ def _classify(history):
             return "hold", "Zgornjo mejo si dosegel šele v zadnji izvedbi. Pred dvigom obremenitve jo potrdi še enkrat."
         if latest_at_top and previous_at_top:
             if latest["loads"] and previous["loads"]:
-                old_load = sum(previous["loads"]) / len(previous["loads"])
-                new_load = sum(latest["loads"]) / len(latest["loads"])
-                if new_load != old_load:
-                    return "hold", "Obremenitev se je že spremenila. Najprej utrdi novo obremenitev v dveh primerljivih izvedbah."
                 return "increase_load", "Zgornjo mejo ponovitev si dosegel v vseh serijah v dveh zaporednih izvedbah z najmanj 3 RIR. Naslednjič lahko poskusiš najmanjši razpoložljivi dvig obremenitve; serije in ponovitve ohrani."
             if not latest["loads"] and not previous["loads"]:
                 return "progress_variation", "Zgornjo mejo ponovitev si dosegel v obeh izvedbah z ustrezno rezervo. Če zunanja obremenitev ni na voljo, izberi le majhen korak zahtevnejše različice."
