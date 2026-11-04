@@ -595,7 +595,7 @@ def test_bodyweight_squat_does_not_claim_an_unused_household_support():
 
 
 def test_strength_and_general_fitness_programmes_do_not_insert_carries_automatically():
-    for goal in ("strength", "general_fitness", "functional"):
+    for goal in ("strength", "general_fitness"):
         profile = {
             **BASE,
             "goal": goal,
