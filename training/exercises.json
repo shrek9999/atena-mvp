@@ -470,7 +470,7 @@
   },
   {
     "id": "romanian_deadlift",
-    "name": "Predklon z ravnim hrbtom",
+    "name": "Romunski mrtvi dvig (RDL)",
     "name_en": "Romanian deadlift",
     "pattern": "hinge",
     "joint_type": "multi_joint",
@@ -492,11 +492,9 @@
       "forearms"
     ],
     "cues": [
-      "Ročki ali drog drži blizu nog.",
-      "Gib začni s pomikom medenice nazaj; kolena ostanejo rahlo pokrčena.",
-      "Trup nagni naprej ob ohranjanju nadzorovanega položaja hrbtenice.",
-      "Spuščaj breme ob nogah do obsega, kjer ohraniš položaj in napetost zadnjih stegenskih mišic.",
-      "Vrnitev izvedi z iztegom kolkov, brez pretiranega usločenja ledvenega dela."
+      "Breme drži blizu nog.",
+      "Medenico pomakni nazaj; kolena naj ostanejo rahlo pokrčena.",
+      "Trup nagni naprej ob nadzorovanem položaju hrbtenice; vrni se z iztegom kolkov."
     ],
     "common_errors": [
       "Pretirano spreminjanje kota kolen.",
