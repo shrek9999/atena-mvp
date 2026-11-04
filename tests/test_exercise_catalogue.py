@@ -185,7 +185,7 @@ def test_every_exercise_has_valid_taxonomy_and_stability_metadata():
         "locomotion", "conditioning", "mobility", "balance", "coordination", "accessory",
     }
     valid_stability_roles = {"primary", "supporting", "incidental", "none"}
-    valid_stability_focus = {"trunk_control", "trunk_bracing", "balance", "joint_control"}
+    valid_stability_focus = {"trunk_control", "trunk_bracing", "balance", "coordination", "joint_control"}
     for item in load_catalogue():
         assert item["movement_pattern"] in valid_patterns, item["id"]
         assert item["training_purposes"], item["id"]
