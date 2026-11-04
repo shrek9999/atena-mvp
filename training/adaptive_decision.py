@@ -32,12 +32,59 @@ def _rows(sessions):
 
 def _decision(decision, scope, reason_code, explanation, objective, *,
               question=None, progression_allowed=False, adjustment=None):
+    success_signals = {
+        "collect_baseline": [
+            "Zabeleženi so vsaj trije primerljivi treningi z dejanskimi serijami, ponovitvami in RIR."
+        ],
+        "collect_context": [
+            "Vzrok nedokončanega treninga je jasno opredeljen, preden se spremeni vadbeni odmerek."
+        ],
+        "restructure_session": [
+            "Glavne vaje so opravljene v razpoložljivem času, brez hitenja in brez izpuščanja ključne kakovosti izvedbe."
+        ],
+        "recovery_review": [
+            "Pred naslednjo zahtevno vadbo je regeneracija spet običajna in zmogljivost se ne slabša."
+        ],
+        "reduce_session_dose_review": [
+            "Pri naslednji primerljivi izvedbi so načrtovane serije izvedljive s kontrolirano tehniko in ustreznim RIR."
+        ],
+        "maintain_and_reschedule": [
+            "Naslednji primerljivi trening je izveden normalno; izpuščenega obsega ni treba nadomeščati."
+        ],
+        "maintain_and_monitor": [
+            "V naslednjih primerljivih izvedbah ostanejo kakovost tehnike, RIR, zmogljivost in regeneracija stabilni."
+        ],
+        "reassess_previous_change": [
+            "Naslednji drugačen ukrep izboljša vsaj en vnaprej določen znak, ne da bi poslabšal tehniko ali regeneracijo."
+        ],
+        "confirm_previous_change": [
+            "Prejšnji predlog je dejansko preizkušen vsaj enkrat, preden se sprejme nova odločitev."
+        ],
+        "review_declining_exercise": [
+            "Pri prizadeti vaji se zmogljivost stabilizira ali izboljša, medtem ko ostale vaje ostanejo nespremenjene."
+        ],
+        "review_conditioning_dose": [
+            "Kondicijska zmogljivost se stabilizira brez slabšanja regeneracije ali kakovosti vadbe za moč."
+        ],
+        "exercise_specific_progression_review": [
+            "Izbrana vaja doseže ciljni obseg ponovitev z nadzorovano izvedbo in predpisanim RIR."
+        ],
+        "review_session_dose": [
+            "Naslednji trening je izvedljiv brez ponovitve previsoke zahtevnosti."
+        ],
+        "pause_and_review": [
+            "Pred nadaljevanjem ni novih ali poslabšanih opozorilnih znakov; progresija ostane ustavljena do ponovne presoje."
+        ],
+    }
     result = {
         "decision": decision,
         "scope": scope,
         "reason_codes": [reason_code],
         "explanation": explanation,
         "objective": objective,
+        "success_signals": success_signals.get(decision, [
+            "Naslednja primerljiva vadba potrdi kakovost izvedbe, ustrezen RIR in normalno regeneracijo."
+        ]),
         "progression_allowed": progression_allowed,
         "automatic_program_changes": False,
         "adjustment": adjustment,
