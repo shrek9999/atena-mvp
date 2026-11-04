@@ -53,7 +53,17 @@
     "movement_family": "knee_dominant",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "squat",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "back_squat",
@@ -110,7 +120,17 @@
     "movement_family": "knee_dominant",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "squat",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "front_squat",
@@ -167,7 +187,16 @@
     "movement_family": "knee_dominant",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "squat",
+    "training_purposes": [
+      "hypertrophy",
+      "strength"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "split_squat",
@@ -226,6 +255,18 @@
     "loading_mode": "mixed",
     "mobility_strength": false,
     "functional_components": [
+      "balance"
+    ],
+    "movement_pattern": "lunge",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
       "balance"
     ]
   },
@@ -286,6 +327,18 @@
     "mobility_strength": false,
     "functional_components": [
       "balance"
+    ],
+    "movement_pattern": "lunge",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
+      "balance"
     ]
   },
   {
@@ -344,6 +397,18 @@
     "loading_mode": "mixed",
     "mobility_strength": false,
     "functional_components": [
+      "balance"
+    ],
+    "movement_pattern": "lunge",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
       "balance"
     ]
   },
@@ -406,6 +471,17 @@
     "mobility_strength": false,
     "functional_components": [
       "balance"
+    ],
+    "movement_pattern": "lunge",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
+      "balance"
     ]
   },
   {
@@ -465,6 +541,18 @@
     "loading_mode": "mixed",
     "mobility_strength": true,
     "functional_components": [
+      "balance"
+    ],
+    "movement_pattern": "lunge",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "mobility",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
       "balance"
     ]
   },
@@ -530,7 +618,18 @@
     "movement_family": "hip_hinge",
     "loading_mode": "external_load",
     "mobility_strength": true,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "hinge",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness",
+      "mobility"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "deadlift",
@@ -590,7 +689,16 @@
     "movement_family": "hip_hinge",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "hinge",
+    "training_purposes": [
+      "strength",
+      "hypertrophy"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "hip_thrust",
@@ -644,7 +752,16 @@
     "movement_family": "hip_extension",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "hinge",
+    "training_purposes": [
+      "hypertrophy",
+      "strength"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "push_up",
@@ -701,7 +818,17 @@
     "movement_family": "upper_push",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "push",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "dumbbell_bench_press",
@@ -755,7 +882,14 @@
     "movement_family": "upper_push",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "push",
+    "training_purposes": [
+      "hypertrophy",
+      "strength"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "barbell_bench_press",
@@ -815,7 +949,14 @@
     "movement_family": "upper_push",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "push",
+    "training_purposes": [
+      "strength",
+      "hypertrophy"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "overhead_press",
@@ -874,7 +1015,16 @@
     "movement_family": "upper_push",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "push",
+    "training_purposes": [
+      "hypertrophy",
+      "strength"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "pull_up",
@@ -929,7 +1079,16 @@
     "movement_family": "upper_pull",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "pull",
+    "training_purposes": [
+      "hypertrophy",
+      "strength"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "one_arm_row",
@@ -985,6 +1144,17 @@
     "loading_mode": "external_load",
     "mobility_strength": false,
     "functional_components": [
+      "balance"
+    ],
+    "movement_pattern": "pull",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
       "balance"
     ]
   },
@@ -1048,6 +1218,16 @@
     "mobility_strength": false,
     "functional_components": [
       "trunk_control"
+    ],
+    "movement_pattern": "carry",
+    "training_purposes": [
+      "strength",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "primary",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -1110,6 +1290,17 @@
     "mobility_strength": false,
     "functional_components": [
       "trunk_control"
+    ],
+    "movement_pattern": "trunk_control",
+    "training_purposes": [
+      "general_fitness",
+      "functional_fitness",
+      "strength",
+      "hypertrophy"
+    ],
+    "stability_role": "primary",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -1166,6 +1357,17 @@
     "mobility_strength": false,
     "functional_components": [
       "trunk_control"
+    ],
+    "movement_pattern": "trunk_control",
+    "training_purposes": [
+      "general_fitness",
+      "functional_fitness",
+      "mobility",
+      "hypertrophy"
+    ],
+    "stability_role": "primary",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -1216,7 +1418,13 @@
     "movement_family": "accessory",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "accessory",
+    "training_purposes": [
+      "hypertrophy"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "biceps_curl",
@@ -1267,7 +1475,13 @@
     "movement_family": "accessory",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "accessory",
+    "training_purposes": [
+      "hypertrophy"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "triceps_pressdown",
@@ -1315,7 +1529,13 @@
     "movement_family": "accessory",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "accessory",
+    "training_purposes": [
+      "hypertrophy"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "box_jump",
@@ -1372,6 +1592,16 @@
     "mobility_strength": false,
     "functional_components": [
       "explosiveness"
+    ],
+    "movement_pattern": "locomotion",
+    "training_purposes": [
+      "functional_fitness",
+      "general_fitness",
+      "power"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -1433,6 +1663,16 @@
     "mobility_strength": false,
     "functional_components": [
       "explosiveness"
+    ],
+    "movement_pattern": "hinge",
+    "training_purposes": [
+      "functional_fitness",
+      "general_fitness",
+      "power"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -1486,7 +1726,15 @@
     "movement_family": "knee_dominant",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "squat",
+    "training_purposes": [
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "glute_bridge",
@@ -1540,7 +1788,17 @@
     "movement_family": "hip_extension",
     "loading_mode": "mixed",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "hinge",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "dumbbell_floor_press",
@@ -1594,7 +1852,14 @@
     "movement_family": "upper_push",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "push",
+    "training_purposes": [
+      "hypertrophy",
+      "strength"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "band_row",
@@ -1652,6 +1917,17 @@
     "mobility_strength": false,
     "functional_components": [
       "strength"
+    ],
+    "movement_pattern": "pull",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -1709,7 +1985,16 @@
     "movement_family": "upper_pull",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "pull",
+    "training_purposes": [
+      "hypertrophy",
+      "strength"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "band_lat_pulldown",
@@ -1764,7 +2049,17 @@
     "movement_family": "upper_pull",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "pull",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "dumbbell_deadlift",
@@ -1819,11 +2114,19 @@
     "movement_family": "hip_hinge",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "hinge",
+    "training_purposes": [
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "bodyweight_hip_hinge",
-    "name": "Predklon z ravnim hrbtom z lastno težo",
+    "name": "Predklon z nevtralnim hrbtom (lastna teža)",
     "name_en": "Bodyweight hip hinge",
     "pattern": "hinge",
     "joint_type": "multi_joint",
@@ -1848,15 +2151,15 @@
     ],
     "cues": [
       "Stopala postavi v širino kolkov in kolena rahlo pokrči.",
-      "Kolke pomikaj nazaj, trup se nagiba naprej kot celota.",
-      "Ustavi se, ko začutiš mejo gibljivosti ali bi izgubil stabilen položaj hrbtenice; nato se vrni z iztegom kolkov."
+      "Medenico pomikaj nazaj, trup pa nagibaj naprej ob ohranjanju nevtralnega položaja hrbtenice.",
+      "Ustavi se pri meji gibljivosti, ki jo lahko nadzoruješ; nato se vrni v začetni položaj."
     ],
     "common_errors": [
       "Gibanje predvsem s počepanjem kolen.",
-      "Zaokroževanje ledvenega dela pri spuščanju."
+      "Izguba nevtralnega položaja hrbtenice pri spuščanju."
     ],
     "regressions": [
-      "Predklon z ravnim hrbtom ob steni"
+      "Predklon ob steni z nevtralnim hrbtom"
     ],
     "progressions": [
       "Mrtvi dvig z ročkama",
@@ -1877,6 +2180,17 @@
     "mobility_strength": false,
     "functional_components": [
       "strength"
+    ],
+    "movement_pattern": "hinge",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -1940,6 +2254,17 @@
     "functional_components": [
       "strength",
       "balance"
+    ],
+    "movement_pattern": "hinge",
+    "training_purposes": [
+      "strength",
+      "functional_fitness",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
+      "balance"
     ]
   },
   {
@@ -1997,6 +2322,17 @@
     "mobility_strength": false,
     "functional_components": [
       "strength"
+    ],
+    "movement_pattern": "squat",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -2023,13 +2359,16 @@
       "deltoids"
     ],
     "cues": [
-      "Roke iztegni naprej ali nad glavo glede na gibljivost.",
-      "Uporabi oporo, če pomaga ohraniti ravnotežje.",
-      "Razvijaj globino postopno."
+      "Roke iztegni naprej ali nad glavo glede na gibljivost in nadzor.",
+      "Po potrebi drži lahek kolut (npr. 5 kg bumper kolut) pred telesom kot protiutež; obremenitev ni cilj vaje.",
+      "Izteg rok in lahek kolut lahko olajšata ravnotežje ter pomagata vzpostaviti napetost in stabilizacijo trupa.",
+      "Uporabi oporo, če pomaga ohraniti varen in nadzorovan položaj.",
+      "Razvijaj globino postopno; ohrani stopala stabilna."
     ],
     "common_errors": [
       "Dvig pet brez ustrezne kontrole.",
-      "Sesedanje trupa."
+      "Sesedanje trupa.",
+      "Uporaba pretežkega koluta, zaradi katerega se izgubi nadzor trupa ali položaja."
     ],
     "regressions": [
       "Počep do stola"
@@ -2040,12 +2379,13 @@
     ],
     "alternatives": [],
     "warnings": [
-      "Ne sili v globino ali položaj rok, ki povzroča bolečino."
+      "Lahek kolut je pripomoček za protiutež in lažjo organizacijo položaja, ne za tekmovanje v obremenitvi. Ne sili v globino ali položaj rok, ki povzroča bolečino."
     ],
     "single_joint": false,
     "equipment_any": [
       "bodyweight",
-      "household_support"
+      "household_support",
+      "weight_plate"
     ],
     "loading_potential": "low",
     "training_role": "mobility",
@@ -2056,7 +2396,24 @@
     "movement_family": "knee_dominant",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "squat",
+    "training_purposes": [
+      "hypertrophy",
+      "mobility",
+      "general_fitness",
+      "functional_fitness",
+      "stability",
+      "trunk_bracing",
+      "balance",
+      "coordination"
+    ],
+    "stability_role": "supporting",
+    "stability_focus": [
+      "trunk_bracing",
+      "balance",
+      "coordination"
+    ]
   },
   {
     "id": "dumbbell_squat_side",
@@ -2110,7 +2467,15 @@
     "movement_family": "knee_dominant",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "squat",
+    "training_purposes": [
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "dumbbell_squat_front_rack",
@@ -2172,7 +2537,17 @@
     "movement_family": "knee_dominant",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "squat",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "walking_lunge",
@@ -2231,6 +2606,19 @@
     "functional_components": [
       "strength",
       "balance"
+    ],
+    "movement_pattern": "lunge",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness",
+      "functional_fitness",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
+      "balance"
     ]
   },
   {
@@ -2288,6 +2676,19 @@
     "mobility_strength": true,
     "functional_components": [
       "strength",
+      "balance"
+    ],
+    "movement_pattern": "lunge",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "mobility",
+      "functional_fitness",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
       "balance"
     ]
   },
@@ -2348,6 +2749,19 @@
     "functional_components": [
       "strength",
       "balance"
+    ],
+    "movement_pattern": "lunge",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness",
+      "functional_fitness",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
+      "balance"
     ]
   },
   {
@@ -2399,7 +2813,14 @@
     "movement_family": "upper_push",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "push",
+    "training_purposes": [
+      "strength",
+      "general_fitness"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "parallel_bar_dip",
@@ -2454,7 +2875,16 @@
     "movement_family": "upper_push",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "push",
+    "training_purposes": [
+      "hypertrophy",
+      "strength"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "trx_row",
@@ -2512,6 +2942,17 @@
     "mobility_strength": false,
     "functional_components": [
       "strength"
+    ],
+    "movement_pattern": "pull",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -2569,6 +3010,16 @@
     "mobility_strength": false,
     "functional_components": [
       "strength"
+    ],
+    "movement_pattern": "pull",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -2623,6 +3074,16 @@
     "mobility_strength": false,
     "functional_components": [
       "strength"
+    ],
+    "movement_pattern": "pull",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -2677,6 +3138,17 @@
     "mobility_strength": false,
     "functional_components": [
       "balance"
+    ],
+    "movement_pattern": "pull",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
+      "balance"
     ]
   },
   {
@@ -2730,7 +3202,16 @@
     "movement_family": "upper_pull",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "pull",
+    "training_purposes": [
+      "hypertrophy",
+      "strength"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "foot_assisted_pull_up",
@@ -2782,7 +3263,17 @@
     "movement_family": "upper_pull",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "pull",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "barbell_overhead_press",
@@ -2837,7 +3328,16 @@
     "movement_family": "upper_push",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "push",
+    "training_purposes": [
+      "hypertrophy",
+      "strength"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "band_overhead_press",
@@ -2887,7 +3387,17 @@
     "movement_family": "upper_push",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "push",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "single_leg_rdl",
@@ -2948,6 +3458,19 @@
     "functional_components": [
       "strength",
       "balance"
+    ],
+    "movement_pattern": "hinge",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "mobility",
+      "functional_fitness",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
+      "balance"
     ]
   },
   {
@@ -3002,7 +3525,17 @@
     "movement_family": "hip_extension",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "hinge",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "elevated_heel_hip_lift",
@@ -3059,7 +3592,17 @@
     "movement_family": "hip_extension",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "hinge",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "slider_leg_curl",
@@ -3114,7 +3657,16 @@
     "movement_family": "knee_flexion",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "hinge",
+    "training_purposes": [
+      "hypertrophy",
+      "strength"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "nordic_hamstring_curl",
@@ -3166,7 +3718,14 @@
     "movement_family": "knee_flexion",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "hinge",
+    "training_purposes": [
+      "hypertrophy",
+      "strength"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "farmer_carry_bodyweight",
@@ -3227,6 +3786,17 @@
     "mobility_strength": false,
     "functional_components": [
       "trunk_control"
+    ],
+    "movement_pattern": "carry",
+    "training_purposes": [
+      "strength",
+      "hypertrophy",
+      "functional_fitness",
+      "general_fitness"
+    ],
+    "stability_role": "primary",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -3285,6 +3855,16 @@
     "loading_mode": "external_load",
     "mobility_strength": false,
     "functional_components": [
+      "trunk_control"
+    ],
+    "movement_pattern": "carry",
+    "training_purposes": [
+      "strength",
+      "hypertrophy",
+      "functional_fitness"
+    ],
+    "stability_role": "primary",
+    "stability_focus": [
       "trunk_control"
     ]
   },
@@ -3346,7 +3926,15 @@
     "mobility_strength": false,
     "functional_components": [
       "conditioning"
-    ]
+    ],
+    "movement_pattern": "locomotion",
+    "training_purposes": [
+      "cardiorespiratory_conditioning",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "brisk_walking",
@@ -3404,7 +3992,16 @@
     "mobility_strength": false,
     "functional_components": [
       "conditioning"
-    ]
+    ],
+    "movement_pattern": "locomotion",
+    "training_purposes": [
+      "cardiorespiratory_conditioning",
+      "general_fitness",
+      "functional_fitness",
+      "mobility"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "cycling",
@@ -3460,7 +4057,14 @@
     "mobility_strength": false,
     "functional_components": [
       "conditioning"
-    ]
+    ],
+    "movement_pattern": "locomotion",
+    "training_purposes": [
+      "cardiorespiratory_conditioning",
+      "general_fitness"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "jump_rope",
@@ -3519,6 +4123,15 @@
     "mobility_strength": false,
     "functional_components": [
       "conditioning"
+    ],
+    "movement_pattern": "conditioning",
+    "training_purposes": [
+      "cardiorespiratory_conditioning",
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -3582,6 +4195,16 @@
     "mobility_strength": false,
     "functional_components": [
       "conditioning"
+    ],
+    "movement_pattern": "conditioning",
+    "training_purposes": [
+      "cardiorespiratory_conditioning",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -3640,6 +4263,17 @@
     "mobility_strength": false,
     "functional_components": [
       "conditioning"
+    ],
+    "movement_pattern": "conditioning",
+    "training_purposes": [
+      "cardiorespiratory_conditioning",
+      "strength",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -3698,7 +4332,14 @@
     "mobility_strength": false,
     "functional_components": [
       "conditioning"
-    ]
+    ],
+    "movement_pattern": "conditioning",
+    "training_purposes": [
+      "cardiorespiratory_conditioning",
+      "general_fitness"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "mountain_climber",
@@ -3759,7 +4400,15 @@
     "mobility_strength": false,
     "functional_components": [
       "conditioning"
-    ]
+    ],
+    "movement_pattern": "conditioning",
+    "training_purposes": [
+      "cardiorespiratory_conditioning",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "deep_squat_hold",
@@ -3817,7 +4466,17 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "mobility",
+    "training_purposes": [
+      "mobility",
+      "functional_fitness",
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "ankle_knee_to_wall",
@@ -3869,7 +4528,14 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "mobility",
+    "training_purposes": [
+      "mobility",
+      "functional_fitness"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "cossack_squat",
@@ -3926,6 +4592,19 @@
     "mobility_strength": true,
     "functional_components": [
       "strength",
+      "balance"
+    ],
+    "movement_pattern": "squat",
+    "training_purposes": [
+      "mobility",
+      "strength",
+      "hypertrophy",
+      "functional_fitness",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
       "balance"
     ]
   },
@@ -3993,6 +4672,18 @@
     "functional_components": [
       "strength",
       "balance"
+    ],
+    "movement_pattern": "squat",
+    "training_purposes": [
+      "strength",
+      "hypertrophy",
+      "functional_fitness",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
+      "balance"
     ]
   },
   {
@@ -4045,7 +4736,16 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "mobility",
+    "training_purposes": [
+      "mobility",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "shinbox_getup",
@@ -4099,7 +4799,16 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "mobility",
+    "training_purposes": [
+      "mobility",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "thoracic_rotation_quadruped",
@@ -4152,7 +4861,16 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "mobility",
+    "training_purposes": [
+      "mobility",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "shoulder_car",
@@ -4203,7 +4921,16 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "mobility",
+    "training_purposes": [
+      "mobility",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "loaded_deep_squat",
@@ -4254,7 +4981,17 @@
     "movement_family": "knee_dominant",
     "loading_mode": "external_load",
     "mobility_strength": true,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "squat",
+    "training_purposes": [
+      "mobility",
+      "strength",
+      "hypertrophy"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "calf_raise_full_rom",
@@ -4308,7 +5045,15 @@
     "movement_family": "accessory",
     "loading_mode": "mixed",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "accessory",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "mobility"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "tibialis_raise",
@@ -4359,7 +5104,15 @@
     "movement_family": "accessory",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "accessory",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "mobility"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "copenhagen_plank",
@@ -4418,6 +5171,16 @@
     "mobility_strength": false,
     "functional_components": [
       "trunk_control"
+    ],
+    "movement_pattern": "trunk_control",
+    "training_purposes": [
+      "strength",
+      "functional_fitness",
+      "general_fitness"
+    ],
+    "stability_role": "primary",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -4472,6 +5235,16 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
+      "trunk_control"
+    ],
+    "movement_pattern": "trunk_control",
+    "training_purposes": [
+      "strength",
+      "functional_fitness",
+      "general_fitness"
+    ],
+    "stability_role": "primary",
+    "stability_focus": [
       "trunk_control"
     ]
   },
@@ -4530,6 +5303,18 @@
     "functional_components": [
       "strength",
       "balance"
+    ],
+    "movement_pattern": "squat",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "functional_fitness",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
+      "balance"
     ]
   },
   {
@@ -4586,6 +5371,16 @@
     "mobility_strength": false,
     "functional_components": [
       "strength"
+    ],
+    "movement_pattern": "push",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -4638,7 +5433,17 @@
     "movement_family": "upper_pull",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "pull",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "barbell_bent_over_row",
@@ -4691,7 +5496,16 @@
     "movement_family": "upper_pull",
     "loading_mode": "external_load",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "pull",
+    "training_purposes": [
+      "hypertrophy",
+      "strength"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "shoulder_pass_through_stick",
@@ -4745,7 +5559,14 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "mobility",
+    "training_purposes": [
+      "mobility",
+      "functional_fitness"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "wall_slide",
@@ -4798,7 +5619,16 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "mobility",
+    "training_purposes": [
+      "mobility",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "ski_erg_intervals",
@@ -4859,7 +5689,15 @@
     "mobility_strength": false,
     "functional_components": [
       "conditioning"
-    ]
+    ],
+    "movement_pattern": "conditioning",
+    "training_purposes": [
+      "cardiorespiratory_conditioning",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "air_bike_intervals",
@@ -4919,6 +5757,16 @@
     "mobility_strength": false,
     "functional_components": [
       "conditioning"
+    ],
+    "movement_pattern": "conditioning",
+    "training_purposes": [
+      "cardiorespiratory_conditioning",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -4976,6 +5824,16 @@
     "mobility_strength": false,
     "functional_components": [
       "conditioning"
+    ],
+    "movement_pattern": "conditioning",
+    "training_purposes": [
+      "cardiorespiratory_conditioning",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -5037,7 +5895,15 @@
     "mobility_strength": false,
     "functional_components": [
       "conditioning"
-    ]
+    ],
+    "movement_pattern": "locomotion",
+    "training_purposes": [
+      "cardiorespiratory_conditioning",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "step_up_intervals",
@@ -5096,6 +5962,16 @@
     "mobility_strength": false,
     "functional_components": [
       "conditioning"
+    ],
+    "movement_pattern": "conditioning",
+    "training_purposes": [
+      "cardiorespiratory_conditioning",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -5148,7 +6024,17 @@
     "movement_family": "upper_push",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "push",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "box_jump_intervals",
@@ -5207,6 +6093,15 @@
     "mobility_strength": false,
     "functional_components": [
       "conditioning"
+    ],
+    "movement_pattern": "conditioning",
+    "training_purposes": [
+      "cardiorespiratory_conditioning",
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -5260,6 +6155,17 @@
     "mobility_strength": false,
     "functional_components": [
       "balance"
+    ],
+    "movement_pattern": "mobility",
+    "training_purposes": [
+      "mobility",
+      "functional_fitness",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
+      "balance"
     ]
   },
   {
@@ -5312,6 +6218,17 @@
     "mobility_strength": false,
     "functional_components": [
       "balance"
+    ],
+    "movement_pattern": "mobility",
+    "training_purposes": [
+      "mobility",
+      "functional_fitness",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
+      "balance"
     ]
   },
   {
@@ -5363,6 +6280,17 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [
+      "balance"
+    ],
+    "movement_pattern": "mobility",
+    "training_purposes": [
+      "mobility",
+      "functional_fitness",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
       "balance"
     ]
   },
@@ -5417,6 +6345,17 @@
     "mobility_strength": false,
     "functional_components": [
       "balance"
+    ],
+    "movement_pattern": "mobility",
+    "training_purposes": [
+      "mobility",
+      "functional_fitness",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
+      "balance"
     ]
   },
   {
@@ -5470,7 +6409,17 @@
     "movement_family": "upper_push",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "push",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "wall_push_up",
@@ -5522,7 +6471,17 @@
     "movement_family": "upper_push",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "push",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "push_up_decline",
@@ -5575,7 +6534,17 @@
     "movement_family": "upper_push",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "push",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "dead_hang",
@@ -5629,7 +6598,14 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "mobility",
+    "training_purposes": [
+      "mobility",
+      "functional_fitness"
+    ],
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "hip_90_90_ir_isometric",
@@ -5682,7 +6658,16 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "mobility",
+    "training_purposes": [
+      "mobility",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "crab_reach",
@@ -5739,7 +6724,16 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "mobility",
+    "training_purposes": [
+      "mobility",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "elevated_pigeon_hinge",
@@ -5795,7 +6789,16 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "mobility",
+    "training_purposes": [
+      "mobility",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "straight_leg_hip_hinge",
@@ -5850,7 +6853,16 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "mobility",
+    "training_purposes": [
+      "mobility",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "wall_butterfly",
@@ -5905,7 +6917,16 @@
     "movement_family": "mobility",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": true,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "mobility",
+    "training_purposes": [
+      "mobility",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "patrick_step",
@@ -5970,6 +6991,19 @@
     "functional_components": [
       "strength",
       "balance"
+    ],
+    "movement_pattern": "lunge",
+    "training_purposes": [
+      "strength",
+      "hypertrophy",
+      "mobility",
+      "functional_fitness",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
+      "balance"
     ]
   },
   {
@@ -6023,7 +7057,16 @@
     "movement_family": "accessory",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "accessory",
+    "training_purposes": [
+      "hypertrophy",
+      "strength"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "sled_backward_drag",
@@ -6086,6 +7129,17 @@
     "mobility_strength": false,
     "functional_components": [
       "conditioning"
+    ],
+    "movement_pattern": "conditioning",
+    "training_purposes": [
+      "cardiorespiratory_conditioning",
+      "strength",
+      "functional_fitness",
+      "general_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -6149,6 +7203,16 @@
     "loading_mode": "external_load",
     "mobility_strength": false,
     "functional_components": [
+      "trunk_control"
+    ],
+    "movement_pattern": "carry",
+    "training_purposes": [
+      "strength",
+      "functional_fitness",
+      "general_fitness"
+    ],
+    "stability_role": "primary",
+    "stability_focus": [
       "trunk_control"
     ]
   },
@@ -6215,6 +7279,16 @@
     "mobility_strength": false,
     "functional_components": [
       "trunk_control"
+    ],
+    "movement_pattern": "carry",
+    "training_purposes": [
+      "strength",
+      "functional_fitness",
+      "general_fitness"
+    ],
+    "stability_role": "primary",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -6272,6 +7346,16 @@
     "mobility_strength": false,
     "functional_components": [
       "explosiveness"
+    ],
+    "movement_pattern": "locomotion",
+    "training_purposes": [
+      "functional_fitness",
+      "general_fitness",
+      "power"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -6329,6 +7413,16 @@
     "mobility_strength": false,
     "functional_components": [
       "explosiveness"
+    ],
+    "movement_pattern": "locomotion",
+    "training_purposes": [
+      "functional_fitness",
+      "general_fitness",
+      "power"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -6397,6 +7491,17 @@
     "mobility_strength": false,
     "functional_components": [
       "strength"
+    ],
+    "movement_pattern": "squat",
+    "training_purposes": [
+      "strength",
+      "hypertrophy",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -6451,7 +7556,16 @@
     "movement_family": "accessory",
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
-    "functional_components": []
+    "functional_components": [],
+    "movement_pattern": "accessory",
+    "training_purposes": [
+      "hypertrophy",
+      "strength"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "l_sit",
@@ -6512,6 +7626,14 @@
     "mobility_strength": false,
     "functional_components": [
       "trunk_control"
+    ],
+    "movement_pattern": "trunk_control",
+    "training_purposes": [
+      "functional_fitness"
+    ],
+    "stability_role": "primary",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -6571,6 +7693,17 @@
     "mobility_strength": false,
     "functional_components": [
       "balance"
+    ],
+    "movement_pattern": "balance",
+    "training_purposes": [
+      "functional_fitness",
+      "general_fitness",
+      "mobility",
+      "balance"
+    ],
+    "stability_role": "primary",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -6631,6 +7764,17 @@
     "mobility_strength": false,
     "functional_components": [
       "coordination"
+    ],
+    "movement_pattern": "coordination",
+    "training_purposes": [
+      "functional_fitness",
+      "general_fitness",
+      "power",
+      "coordination"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   },
   {
@@ -6689,7 +7833,17 @@
     ],
     "single_joint": false,
     "unilateral": true,
-    "reps_per_side": true
+    "reps_per_side": true,
+    "movement_pattern": "trunk_control",
+    "training_purposes": [
+      "strength",
+      "hypertrophy",
+      "functional_fitness"
+    ],
+    "stability_role": "primary",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "pattern": "trunk_stability",
@@ -6746,7 +7900,15 @@
     "warnings": [
       "Zahteva dobro toleranco zapestij in ramen; uporabi stabilno podlago ali ustrezne ročaje."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "movement_pattern": "trunk_control",
+    "training_purposes": [
+      "functional_fitness"
+    ],
+    "stability_role": "primary",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "pattern": "trunk_stability",
@@ -6801,7 +7963,15 @@
     "warnings": [
       "Če se spodnji del hrbta odlepi od podlage, skrajšaj vzvod ali izberi lažjo različico."
     ],
-    "single_joint": false
+    "single_joint": false,
+    "movement_pattern": "trunk_control",
+    "training_purposes": [
+      "functional_fitness"
+    ],
+    "stability_role": "primary",
+    "stability_focus": [
+      "trunk_control"
+    ]
   },
   {
     "id": "controlled_lateral_step",
@@ -6866,6 +8036,17 @@
     ],
     "target_systems": [
       "neuromuscular"
+    ],
+    "movement_pattern": "coordination",
+    "training_purposes": [
+      "functional_fitness",
+      "general_fitness",
+      "power",
+      "coordination"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
     ]
   }
 ]
