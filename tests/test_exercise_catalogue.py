@@ -242,3 +242,10 @@ def test_programme_hinge_label_uses_neutral_back_predklon_wording():
     from training.program import PATTERN_LABELS
 
     assert PATTERN_LABELS["hinge"] == "predklon z nevtralnim hrbtom"
+
+
+
+def test_single_leg_balance_reach_uses_balance_and_joint_control_stability_focus():
+    item = get_exercise("single_leg_balance_reach")
+    assert item["stability_role"] == "primary"
+    assert set(item["stability_focus"]) == {"balance", "joint_control"}
