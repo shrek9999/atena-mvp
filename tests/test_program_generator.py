@@ -839,3 +839,67 @@ def test_romania_deadlift_has_correct_name_and_concise_cues():
     assert exercise["name"] == "Romunski mrtvi dvig (RDL)"
     assert len(exercise["cues"]) <= 3
     assert exercise["pattern"] == "hinge"
+
+
+
+def test_programme_selection_respects_goal_specific_training_purposes():
+    hypertrophy = generate_program({**BASE, "goal": "hypertrophy"})
+    mobility = generate_program({**BASE, "goal": "mobility", "equipment": ["bodyweight", "chair", "wall", "household_support"]})
+    hypertrophy_items = [ex for session in hypertrophy["sessions"] for ex in session["exercises"]]
+    mobility_items = [ex for session in mobility["sessions"] for ex in session["exercises"]]
+
+    assert all("hypertrophy" in ex["training_purposes"] for ex in hypertrophy_items)
+    assert not any(ex["exercise_id"] == "reaching_squat" for ex in hypertrophy_items)
+    assert any(ex["exercise_id"] == "reaching_squat" for ex in mobility_items)
+
+
+def test_functional_programme_uses_functional_capacity_purpose_tags():
+    plan = generate_program({**BASE, "goal": "functional", "experience": "beginner"})
+    exercises = [ex for session in plan["sessions"] for ex in session["exercises"]]
+    allowed = {
+        "functional_fitness", "general_fitness", "strength",
+        "cardiorespiratory_conditioning", "mobility", "balance",
+        "coordination", "power",
+    }
+    assert exercises
+    assert all(set(ex["training_purposes"]) & allowed for ex in exercises)
+    assert any(ex["movement_pattern"] == "carry" for ex in exercises)
+    assert any(ex["movement_pattern"] == "coordination" for ex in exercises)
+
+
+def test_conditioning_programme_uses_cardiorespiratory_purpose_tags():
+    plan = generate_program({**BASE, "goal": "endurance", "experience": "beginner"})
+    exercises = [ex for session in plan["sessions"] for ex in session["exercises"]]
+    timed = [ex for ex in exercises if ex["pattern"] in {"locomotion", "conditioning"}]
+    assert timed
+    assert all(
+        "cardiorespiratory_conditioning" in ex["training_purposes"]
+        or "muscular_endurance" in ex["training_purposes"]
+        or "general_fitness" in ex["training_purposes"]
+        for ex in timed
+    )
+
+
+def test_movement_control_feedback_adds_primary_stability_purpose_and_explains_it():
+    plan = generate_program(
+        BASE,
+        feedback={
+            "difficulty": "right", "completed": True, "discomfort": "no",
+            "movement_control": "bracing",
+        },
+    )
+    exercises = [ex for session in plan["sessions"] for ex in session["exercises"]]
+    stability = [ex for ex in exercises if ex["stability_role"] == "primary"]
+    assert stability
+    assert all("stability" in ex["training_purposes"] for ex in stability)
+    assert all(ex["stability_focus"] for ex in stability)
+
+
+def test_every_programme_exercise_exposes_the_new_semantic_taxonomy():
+    plan = generate_program(BASE)
+    exercises = [ex for session in plan["sessions"] for ex in session["exercises"]]
+    assert exercises
+    assert all(ex["movement_pattern"] for ex in exercises)
+    assert all(ex["training_purposes"] for ex in exercises)
+    assert all(ex["stability_role"] in {"primary", "supporting", "incidental", "none"} for ex in exercises)
+    assert all(isinstance(ex["stability_focus"], list) for ex in exercises)
