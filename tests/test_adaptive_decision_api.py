@@ -87,6 +87,23 @@ def test_adaptive_decision_endpoint_accepts_valid_previous_outcome(monkeypatch):
     assert decision["previous_adaptation_id"] == first["adaptation_id"]
 
 
+def test_adaptive_decision_endpoint_accepts_structured_movement_control_signal(monkeypatch):
+    response = post(client(monkeypatch), [{
+        "session_date": "2026-11-03",
+        "session": {
+            "completed": True,
+            "difficulty": "moderate",
+            "recovery": "good",
+            "movement_control": "bracing",
+            "exercises": [],
+        },
+    }])
+    assert response.status_code == 200
+    decision = response.get_json()["adaptive_decision"]
+    assert decision["decision"] == "technique_review"
+    assert decision["reason_codes"] == ["movement_control_issue"]
+
+
 def test_adaptive_decision_endpoint_accepts_set_by_set_exercise_evidence(monkeypatch):
     exercise_id = load_catalogue()[0]["id"]
     response = post(client(monkeypatch), [{
