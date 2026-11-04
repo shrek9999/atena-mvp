@@ -8,6 +8,6 @@ Pri splošni populaciji in predvsem začetnikih je predpisani tempo pomemben uč
 - `unknown`: ni ocene; ATENA zbira podatke in ne predlaga progresije.
 - `not_applicable`: vaja nima predpisanega tempa in se lahko obravnava po drugih merilih.
 
-Progresija zahteva dve zaporedni primerljivi izpostavitvi z enakim predpisanim tempom in oceno `followed`, ob hkratnem izpolnjevanju obstoječih pogojev: nadzorovana izvedba, popolne serije, dovolj RIR, ustrezna zahtevnost in regeneracija.
+Progresija zahteva dve zaporedni primerljivi izpostavitvi z enakim predpisanim tempom in oceno `followed`, ob hkratnem izpolnjevanju obstoječih pogojev: nadzorovana izvedba, popolne serije, dovolj RIR, ustrezna zahtevnost in regeneracija. Primerljivost vključuje tudi enako načrtovano število serij. Če se obseg serij spremeni ali podatek manjka, ATENA ne sklepa o napredku; najprej zahteva dve primerljivi izvedbi z znanim in enakim številom serij.
 
 To je samoocena uporabnika, ne objektivna biomehanska analiza. Sistem ne sklepa o kakovosti gibanja iz neobstoječega videoposnetka.
