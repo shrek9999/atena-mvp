@@ -131,6 +131,22 @@ def test_adaptive_decision_endpoint_accepts_set_by_set_exercise_evidence(monkeyp
     assert any(item["exercise_id"] == exercise_id for item in data["exercise_progressions"])
 
 
+def test_untried_adaptation_keeps_the_original_decision_id(monkeypatch):
+    api = client(monkeypatch)
+    previous = session("2026-11-02", completed=False, difficulty="unknown",
+                       completion_reason="time_constraint")
+    first = post(api, [previous]).get_json()["adaptive_decision"]
+    latest = session(
+        "2026-11-03",
+        adaptation_response={"adaptation_id": first["adaptation_id"], "outcome": "not_tried"},
+    )
+    response = post(api, [latest, previous])
+    assert response.status_code == 200
+    decision = response.get_json()["adaptive_decision"]
+    assert decision["decision"] == "confirm_previous_change"
+    assert decision["adaptation_id"] == first["adaptation_id"]
+
+
 def test_adaptive_decision_endpoint_rejects_forged_previous_outcome_id(monkeypatch):
     api = client(monkeypatch)
     previous = session("2026-11-02")
