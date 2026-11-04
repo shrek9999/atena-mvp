@@ -131,7 +131,7 @@ def validate_profile(profile: object) -> dict:
     }
 
 
-def _session_patterns(session_index: int, sessions: int, goal: str, include_accessories: bool = False, include_stability: bool = False) -> list[str]:
+def _session_patterns(session_index: int, sessions: int, goal: str, include_accessories: bool = False, include_stability: bool = False, experience: str = "intermediate") -> list[str]:
     """Compact full-body templates; trunk-control work is added only when feedback supports it."""
     if goal == "fat_loss" and sessions >= 3 and session_index >= 2:
         # Two resistance-focused full-body days remain the foundation. Additional days
@@ -141,13 +141,26 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # Keep sessions compact: the full set of capacities is distributed over
         # the week rather than cramming every quality into every workout.
         base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
-        functional_additions = [
-            ["balance", "jump"],
-            ["coordination", "conditioning"],
-            ["balance", "conditioning"],
-            ["coordination", "jump"],
-        ]
+        if experience == "beginner":
+            # Do not prescribe plyometrics or intermediate change-of-direction drills
+            # by default before a beginner's landing/braking competency is established.
+            # Carry work and a low-speed coordination drill preserve the functional intent.
+            functional_additions = [
+                ["balance", "carry"],
+                ["coordination", "conditioning"],
+                ["balance", "carry"],
+                ["coordination", "conditioning"],
+            ]
+        else:
+            functional_additions = [
+                ["balance", "jump"],
+                ["coordination", "conditioning"],
+                ["balance", "conditioning"],
+                ["coordination", "jump"],
+            ]
         patterns = base + functional_additions[session_index]
+        if include_stability:
+            patterns.insert(0, "trunk_stability")
         if sessions >= 3:
             patterns.append("lunge" if session_index % 2 == 0 else ("vertical_push" if session_index % 4 == 1 else "vertical_pull"))
         return patterns
@@ -548,7 +561,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
     for session_index in range(p["sessions_per_week"]):
         patterns = _session_patterns(
             session_index, p["sessions_per_week"], planning_goal,
-            p["include_accessories"] and p["session_minutes"] >= 75 and not include_stability, include_stability
+            p["include_accessories"] and p["session_minutes"] >= 75 and not include_stability, include_stability,
+            p["experience"]
         )
         warm_up_minutes = 5 if p["session_minutes"] <= 30 else (7 if p["session_minutes"] <= 60 else 10)
         selected = []
