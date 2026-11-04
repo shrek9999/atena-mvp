@@ -32,6 +32,26 @@ PATTERN_LABELS = {
     "balance": "ravnotežje",
     "coordination": "koordinacija",
 }
+GOAL_PRIMARY_PURPOSE = {
+    "strength": "strength",
+    "hypertrophy": "hypertrophy",
+    "general_fitness": "general_fitness",
+    "functional": "functional_fitness",
+    "power": "power",
+    "endurance": "cardiorespiratory_conditioning",
+    "mobility": "mobility",
+}
+GOAL_PURPOSES = {
+    "strength": {"strength"},
+    "hypertrophy": {"hypertrophy"},
+    "strength_hypertrophy": {"strength", "hypertrophy"},
+    "fat_loss": {"strength", "hypertrophy", "general_fitness", "cardiorespiratory_conditioning"},
+    "general_fitness": {"general_fitness", "functional_fitness", "strength", "cardiorespiratory_conditioning", "mobility", "balance", "coordination"},
+    "functional": {"functional_fitness", "general_fitness", "strength", "cardiorespiratory_conditioning", "mobility", "balance", "coordination", "power"},
+    "power": {"power", "strength"},
+    "endurance": {"cardiorespiratory_conditioning", "muscular_endurance", "general_fitness"},
+    "mobility": {"mobility", "strength", "general_fitness", "functional_fitness", "balance", "coordination"},
+}
 PATTERN_ORDER = [
     "squat", "lunge", "hinge", "hip_extension", "horizontal_push", "horizontal_pull",
     "vertical_push", "vertical_pull", "carry", "anti_rotation",
@@ -499,11 +519,25 @@ def generate_program(profile: object, feedback: object = None) -> dict:
         "mobility": ["mobility", "functional", "general_fitness"],
     }.get(planning_goal, [planning_goal])
     catalogue_by_id = {}
+    allowed_purposes = set(GOAL_PURPOSES.get(planning_goal, {planning_goal}))
+    if include_stability:
+        allowed_purposes.add("stability")
     for source_goal in goal_sources:
         for exercise in get_exercises(
             goal=source_goal,
             equipment=p["equipment"],
             include_accessories=p["include_accessories"],
+            purposes=allowed_purposes,
+        ):
+            catalogue_by_id[exercise["id"]] = exercise
+    # Stability is an explicit coaching need, not an automatic accessory.
+    # When feedback flags it, bring compatible stability-purpose options into
+    # the candidate pool even if their legacy goal tags would otherwise omit them.
+    if include_stability:
+        for exercise in get_exercises(
+            equipment=p["equipment"],
+            include_accessories=p["include_accessories"],
+            purposes={"stability"},
         ):
             catalogue_by_id[exercise["id"]] = exercise
     catalogue = list(catalogue_by_id.values())
@@ -752,8 +786,10 @@ def generate_program(profile: object, feedback: object = None) -> dict:
 
             level_rank = {"beginner": 0, "intermediate": 1, "advanced": 2}
             target_level = level_rank[p["experience"]]
+            primary_purpose = GOAL_PRIMARY_PURPOSE.get(planning_goal)
             candidate = min(candidates, key=lambda item: (
                 selection_priority(item),
+                0 if primary_purpose and primary_purpose in item["training_purposes"] else 1,
                 0 if item.get("training_role") == "main" or planning_goal not in {"hypertrophy", "strength_hypertrophy"} else 1,
                 used_counts[item["id"]],
                 abs(level_rank[item["level"]] - target_level),
@@ -866,6 +902,10 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 "exercise_category": exercise_category,
                 "name": candidate["name"],
                 "pattern": effective_pattern,
+                "movement_pattern": candidate["movement_pattern"],
+                "training_purposes": candidate["training_purposes"],
+                "stability_role": candidate["stability_role"],
+                "stability_focus": candidate["stability_focus"],
                 "pattern_label": PATTERN_LABELS.get(effective_pattern, effective_pattern),
                 "joint_type": candidate["joint_type"],
                 "loading_potential": effective_loading(candidate),

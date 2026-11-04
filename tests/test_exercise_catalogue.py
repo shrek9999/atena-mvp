@@ -249,3 +249,25 @@ def test_single_leg_balance_reach_uses_balance_and_joint_control_stability_focus
     item = get_exercise("single_leg_balance_reach")
     assert item["stability_role"] == "primary"
     assert set(item["stability_focus"]) == {"balance", "joint_control"}
+
+
+
+def test_purpose_filter_returns_only_exercises_with_requested_training_purpose():
+    records = get_exercises(purposes={"cardiorespiratory_conditioning"})
+    assert records
+    assert all("cardiorespiratory_conditioning" in item["training_purposes"] for item in records)
+
+
+def test_primary_and_supporting_stability_roles_are_tagged_as_stability_purpose():
+    for item in load_catalogue():
+        if item["stability_role"] in {"primary", "supporting"}:
+            assert "stability" in item["training_purposes"], item["id"]
+        else:
+            assert "stability" not in item["training_purposes"], item["id"]
+
+
+def test_reaching_squat_is_not_eligible_as_a_hypertrophy_stimulus_by_purpose():
+    mobility = {item["id"] for item in get_exercises(goal="mobility", purposes={"mobility"})}
+    hypertrophy = {item["id"] for item in get_exercises(goal="hypertrophy", purposes={"hypertrophy"})}
+    assert "reaching_squat" in mobility
+    assert "reaching_squat" not in hypertrophy

@@ -114,6 +114,7 @@ def get_exercises(
     include_accessories: bool = False,
     level: str | None = None,
     path: Path | str = CATALOGUE_PATH,
+    purposes: Iterable[str] | None = None,
 ) -> list[dict]:
     """Return deterministic matches; accessory work is opt-in by design.
 
@@ -123,11 +124,14 @@ def get_exercises(
     records = load_catalogue(path)
     available = set(equipment or [])
     wanted_patterns = set(patterns or [])
+    wanted_purposes = set(purposes or [])
     result = []
     for exercise in records:
         if goal and goal not in exercise["goals"]:
             continue
         if wanted_patterns and exercise["pattern"] not in wanted_patterns:
+            continue
+        if wanted_purposes and not (wanted_purposes & set(exercise["training_purposes"])):
             continue
         if level and exercise["level"] != level:
             continue
