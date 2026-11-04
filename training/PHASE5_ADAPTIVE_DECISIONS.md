@@ -11,6 +11,7 @@ Every decision returns:
 - a stable decision code and scope;
 - reason codes and a plain-language explanation;
 - the intended objective;
+- measurable success signals that explain how the next comparable training will validate the decision;
 - whether progression is allowed;
 - an explicit statement that no programme mutation happened;
 - a clarifying question when the available evidence cannot distinguish causes.
