@@ -136,6 +136,15 @@ def test_advanced_accessory_option_adds_single_joint_exercise():
     assert any(ex["joint_type"] == "single_joint" for s in plan["sessions"] for ex in s["exercises"])
 
 
+def test_functional_program_has_a_distinct_user_facing_session_title():
+    functional = generate_program({**BASE, "goal": "functional", "experience": "beginner"})
+    strength = generate_program({**BASE, "goal": "strength", "experience": "beginner"})
+    assert all("funkcionalna pripravljenost" in session["title"].lower()
+               for session in functional["sessions"])
+    assert all("funkcionalna pripravljenost" not in session["title"].lower()
+               for session in strength["sessions"])
+
+
 def test_functional_goal_uses_supported_general_fitness_catalogue_pool():
     plan = generate_program({**BASE, "goal": "functional"})
     assert len(plan["sessions"]) == 2
