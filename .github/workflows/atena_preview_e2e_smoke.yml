@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: atena-cloudflare-preview-smoke
+  group: atena-cloudflare-preview-smoke-${{ github.event_name }}
   cancel-in-progress: true
 
 permissions:
