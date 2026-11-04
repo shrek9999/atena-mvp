@@ -1,3 +1,5 @@
+import pytest
+
 from flask import Flask
 
 from coach_routes import coach_bp
@@ -182,3 +184,41 @@ def test_adaptive_decision_endpoint_bounds_history_size(monkeypatch):
     sessions = [session(f"2026-10-{(i % 28) + 1:02d}") for i in range(51)]
     response = post(client(monkeypatch), sessions)
     assert response.status_code == 400
+
+
+
+@pytest.mark.parametrize(
+    ("outcome", "expected_decision"),
+    [
+        ("helped", "maintain_and_monitor"),
+        ("no_change", "reassess_previous_change"),
+    ],
+)
+def test_adaptive_decision_endpoint_interprets_positive_and_neutral_feedback(
+    monkeypatch, outcome, expected_decision
+):
+    api = client(monkeypatch)
+    previous = session(
+        "2026-11-02",
+        completed=False,
+        difficulty="unknown",
+        completion_reason="time_constraint",
+    )
+    first = post(api, [previous]).get_json()["adaptive_decision"]
+    latest = session(
+        "2026-11-03",
+        adaptation_response={
+            "adaptation_id": first["adaptation_id"],
+            "outcome": outcome,
+        },
+    )
+
+    response = post(api, [latest, previous])
+
+    assert response.status_code == 200
+    decision = response.get_json()["adaptive_decision"]
+    assert decision["decision"] == expected_decision
+    if outcome == "no_change":
+        assert decision["previous_adaptation_id"] == first["adaptation_id"]
+    else:
+        assert decision["adaptation_id"] != first["adaptation_id"]
