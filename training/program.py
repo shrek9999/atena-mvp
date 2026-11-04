@@ -138,9 +138,9 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # add a short aerobic/conditioning session rather than more lifting volume.
         return ["locomotion", "lunge", "conditioning"]
     if goal == "functional":
-        # Keep sessions compact: the full set of capacities is distributed over
-        # the week rather than cramming every quality into every workout.
-        base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
+        # Keep sessions compact: distribute horizontal push and pull across the
+        # week while preserving squat, hinge and the functional capacities.
+        base = ["squat", "hinge", "horizontal_push" if session_index % 2 == 0 else "horizontal_pull"]
         # Training history is not a movement-readiness screen. Do not prescribe
         # plyometrics or rapid change-of-direction drills by default at any level.
         # Carry work, balance and controlled low-speed coordination preserve the
@@ -162,8 +162,25 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # Carry is an optional fourth pattern and is omitted when no safe load is available.
         return ["locomotion", "lunge", "conditioning"]
     if goal == "mobility":
-        return ["mobility", "mobility", "mobility", "mobility_stretch", "squat", "lunge", "hinge", "horizontal_push", "accessory"]
+        # Mobility sessions stay compact and combine active range work with
+        # foundational loaded patterns. Rotate emphasis across the week instead
+        # of placing every mobility and strength pattern into one long session.
+        mobility_templates = [
+            ["mobility", "mobility", "mobility_stretch", "squat", "lunge", "horizontal_push"],
+            ["mobility", "mobility", "mobility_stretch", "hinge", "horizontal_pull", "accessory"],
+        ]
+        patterns = mobility_templates[session_index % len(mobility_templates)]
+        if include_stability:
+            patterns = ["trunk_stability"] + patterns[:-1]
+        return patterns
     base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
+    if goal == "fat_loss":
+        # Preserve two resistance-focused full-body sessions plus a controlled
+        # conditioning element without stacking both vertical patterns as well.
+        patterns = base + ["lunge", "conditioning"]
+        if include_stability:
+            patterns.insert(0, "trunk_stability")
+        return patterns
     if sessions == 2:
         extras = [["lunge", "vertical_push"], ["lunge", "vertical_pull"]]
     elif sessions == 3:
