@@ -83,6 +83,15 @@ def test_pain_safety_gate_precedes_all_other_signals():
     assert result["scope"] == "all_progression"
 
 
+def test_movement_control_issue_holds_progression_for_technique_review():
+    result = decide_adaptation([
+        row("2026-11-02", movement_control="bracing")
+    ], exercise_progressions=[{"exercise_id": "squat", "decision": "increase_load"}])
+    assert result["decision"] == "technique_review"
+    assert result["scope"] == "session"
+    assert result["success_signals"]
+
+
 def test_multiweek_decline_limits_review_to_affected_exercise():
     result = decide_adaptation(
         [row("2026-11-02")],
