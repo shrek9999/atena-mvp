@@ -28,7 +28,7 @@ VALID_TRAINING_PURPOSES = {
     "weight_management", "skill",
 }
 VALID_STABILITY_ROLES = {"primary", "supporting", "incidental", "none"}
-VALID_STABILITY_FOCUS = {"trunk_control", "trunk_bracing", "balance", "joint_control"}
+VALID_STABILITY_FOCUS = {"trunk_control", "trunk_bracing", "balance", "coordination", "joint_control"}
 
 
 class CatalogueValidationError(ValueError):
