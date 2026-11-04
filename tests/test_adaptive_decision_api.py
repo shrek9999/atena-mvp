@@ -39,6 +39,14 @@ def test_adaptive_decision_endpoint_requires_pilot_token(monkeypatch):
     assert response.status_code == 403
 
 
+def test_baseline_decision_does_not_ask_user_to_rate_a_nonexistent_adjustment(monkeypatch):
+    response = post(client(monkeypatch), [])
+    assert response.status_code == 200
+    decision = response.get_json()["adaptive_decision"]
+    assert decision["decision"] == "collect_baseline"
+    assert "feedback_contract" not in decision
+
+
 def test_adaptive_decision_endpoint_distinguishes_time_shortage(monkeypatch):
     response = post(client(monkeypatch), [
         session("2026-11-03", completed=False, difficulty="unknown",
