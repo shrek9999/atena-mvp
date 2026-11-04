@@ -36,6 +36,35 @@ jobs:
                   raise SystemExit("Render health check failed.")
           PY
 
+      - name: Verify GitHub Actions token matches the Render pilot token
+        env:
+          PILOT_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.request
+
+          token = os.environ.get("PILOT_TOKEN", "").strip()
+          if len(token) < 16:
+              print("GitHub Actions secret AI_COACH_TEST_TOKEN is missing or too short.")
+              sys.exit(1)
+          request = urllib.request.Request(
+              "https://atena-ai-coach-pilot.onrender.com/coach/status",
+              headers={"X-Pilot-Token": token},
+              method="GET"
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  body = json.loads(response.read().decode("utf-8"))
+                  print(f"GitHub → Render token: PASS (HTTP {response.status}; programme_available={body.get('program_available')}; chat_available={body.get('chat_available')})")
+          except urllib.error.HTTPError as exc:
+              print(f"GitHub → Render token: FAIL (HTTP {exc.code}); the repository secret does not match the Render pilot token or the endpoint is not configured.")
+              sys.exit(1)
+          PY
+
       - name: Verify Cloudflare Preview securely calls the Render programme generator
         run: |
           python - <<'PY'
