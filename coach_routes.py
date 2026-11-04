@@ -1768,7 +1768,7 @@ def _normalize_decision_history(value):
         raw = item.get("session")
         allowed_session = {
             "completed", "difficulty", "recovery", "exercises",
-            "completion_reason", "adaptation_response", "movement_control",
+            "completion_reason", "adaptation_response", "movement_control", "session_key",
         }
         if not isinstance(raw, dict) or set(raw) - allowed_session:
             raise ValueError("Zapis treninga vsebuje nepodprta polja.")
@@ -1802,6 +1802,11 @@ def _normalize_decision_history(value):
             if error:
                 raise ValueError(error)
             clean_exercises.append(clean)
+        session_key = raw.get("session_key")
+        if session_key is not None and (
+            not isinstance(session_key, str) or not 8 <= len(session_key) <= 180
+        ):
+            raise ValueError("Identifikator treninga ni veljaven.")
         session = {
             "completed": raw["completed"],
             "difficulty": raw["difficulty"],
@@ -1809,6 +1814,8 @@ def _normalize_decision_history(value):
             "movement_control": movement_control,
             "exercises": clean_exercises,
         }
+        if session_key is not None:
+            session["session_key"] = session_key
         if reason is not None:
             session["completion_reason"] = reason
         if response is not None:
