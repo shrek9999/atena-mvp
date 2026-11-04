@@ -219,6 +219,7 @@ def test_aerobic_time_is_not_progressed_from_duration_and_rir_alone():
         "planned_sets": 1,
         "target_work_seconds": 1200,
         "execution_quality": "controlled",
+        "tempo_control": "not_applicable",
         "set_results": [{"work_seconds": 1200, "rir": 4}],
     }
     sessions = [
@@ -236,6 +237,7 @@ def test_two_successful_timed_exposures_increase_work_by_a_meaningful_step():
         "planned_sets": 3,
         "target_work_seconds": 30,
         "execution_quality": "controlled",
+        "tempo_control": "not_applicable",
         "set_results": [
             {"work_seconds": 30, "rir": 4},
             {"work_seconds": 30, "rir": 4},
@@ -293,7 +295,7 @@ def test_progression_is_blocked_when_latest_tempo_was_not_followed():
     ]
     result = decision(recommend_exercise_progression(sessions), "squat_goblet")
     assert result["decision"] == "technique_review"
-    assert "predpisanega tempa" in result["reason"]
+    assert "predpisanega tempa" in result["reason"].lower()
 
 
 def test_inconsistent_tempo_holds_progression_without_increasing_the_dose():
