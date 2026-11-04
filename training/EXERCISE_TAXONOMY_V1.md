@@ -8,7 +8,7 @@ The existing catalogue fields remain backward compatible. This taxonomy adds a s
 
 Every exercise receives `movement_pattern`, one of:
 
-- `squat`, `lunge`, `hinge`: lower-body foundational patterns. A hinge exercise is described in Slovenian as **predklon** or **predklon z nevtralnim hrbtom** where appropriate; avoid the phrase “kolčni pregib” as the user-facing name.
+- `squat`, `lunge`, `hinge`, `hip_extension`: lower-body patterns. `hinge` identifies the predklon pattern; use **predklon** or **predklon z nevtralnim hrbtom** in Slovenian rather than “kolčni pregib”. `hip_extension` is kept distinct for bridge and hip-thrust variations, which are hip-dominant but are not themselves a standing predklon.
 - `push`, `pull`: upper-body push/pull patterns, independent of horizontal or vertical direction (the existing `pattern` retains that detail).
 - `carry`: loaded carries and object transport.
 - `trunk_control`: direct trunk-control patterns, including anti-rotation and trunk-stability work.
