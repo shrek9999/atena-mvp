@@ -1741,3 +1741,109 @@ def coach_training_adaptation(profile_id):
         return _profile_auth_error()
     except StorageUnavailable as exc:
         return _storage_error(exc)
+
+
+def _normalize_decision_history(value):
+    """Validate a bounded, structured history snapshot supplied by the first-party UI."""
+    if not isinstance(value, list) or len(value) > 50:
+        raise ValueError("Zgodovina mora vsebovati največ 50 strukturiranih treningov.")
+    normalized = []
+    valid_reasons = {
+        "time_constraint", "high_difficulty", "poor_recovery",
+        "external_interruption", "other", "unknown",
+    }
+    for item in value:
+        if not isinstance(item, dict) or set(item) - {"session_date", "session"}:
+            raise ValueError("Zapis zgodovine vsebuje nepodprta polja.")
+        session_date = item.get("session_date")
+        try:
+            date.fromisoformat(session_date)
+        except (TypeError, ValueError):
+            raise ValueError("Datum treninga mora biti v obliki YYYY-MM-DD.")
+        raw = item.get("session")
+        allowed_session = {
+            "completed", "difficulty", "recovery", "exercises",
+            "completion_reason", "adaptation_response",
+        }
+        if not isinstance(raw, dict) or set(raw) - allowed_session:
+            raise ValueError("Zapis treninga vsebuje nepodprta polja.")
+        if not isinstance(raw.get("completed"), bool):
+            raise ValueError("completed mora biti true ali false.")
+        if raw.get("difficulty") not in {"easy", "moderate", "hard", "unknown"}:
+            raise ValueError("Težavnost treninga ni veljavna.")
+        if raw.get("recovery") not in {"good", "normal", "poor", "unknown"}:
+            raise ValueError("Ocena regeneracije ni veljavna.")
+        reason = raw.get("completion_reason")
+        if reason is not None and reason not in valid_reasons:
+            raise ValueError("Razlog nedokončanega treninga ni veljaven.")
+        response = raw.get("adaptation_response")
+        if response is not None and (
+            not isinstance(response, dict)
+            or set(response) != {"adaptation_id", "outcome"}
+            or not isinstance(response.get("adaptation_id"), str)
+            or not 8 <= len(response["adaptation_id"]) <= 64
+            or response.get("outcome") not in {"helped", "no_change", "worse", "not_tried"}
+        ):
+            raise ValueError("Odziv na prejšnjo prilagoditev ni veljaven.")
+        exercises = raw.get("exercises", [])
+        if not isinstance(exercises, list) or len(exercises) > 20:
+            raise ValueError("Trening lahko vsebuje največ 20 vaj.")
+        clean_exercises = []
+        for exercise in exercises:
+            clean, error = _normalize_logged_exercise(exercise)
+            if error:
+                raise ValueError(error)
+            clean_exercises.append(clean)
+        session = {
+            "completed": raw["completed"],
+            "difficulty": raw["difficulty"],
+            "recovery": raw["recovery"],
+            "exercises": clean_exercises,
+        }
+        if reason is not None:
+            session["completion_reason"] = reason
+        if response is not None:
+            session["adaptation_response"] = response
+        normalized.append({"session_date": session_date, "session": session})
+    return sorted(normalized, key=lambda row: row["session_date"], reverse=True)
+
+
+@coach_bp.route("/coach/adaptive-decision", methods=["POST", "OPTIONS"])
+def coach_adaptive_decision():
+    """Evaluate a privacy-minimised history snapshot without persisting it on Render."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    expected = os.getenv("AI_COACH_TEST_TOKEN", "").strip()
+    supplied = request.headers.get("X-Pilot-Token", "").strip()
+    if not expected or not supplied or not hmac.compare_digest(supplied, expected):
+        return jsonify({"error": "Testni dostopni ključ ni pravilen."}), 403
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict) or set(payload) != {"sessions"}:
+        return jsonify({"error": "Pošlji samo strukturirano polje sessions."}), 400
+    try:
+        sessions = _normalize_decision_history(payload["sessions"])
+        latest_response = sessions[0]["session"].get("adaptation_response") if sessions else None
+        if latest_response is not None:
+            if len(sessions) < 2:
+                return jsonify({"error": "Odziv na prilagoditev nima predhodnega treninga.", "code": "adaptation_id_mismatch"}), 409
+            expected_id = _build_adaptive_decision(sessions[1:])["adaptation_id"]
+            if not hmac.compare_digest(latest_response["adaptation_id"], expected_id):
+                return jsonify({"error": "Odziv se ne nanaša na zadnjo prilagoditev, ki jo je izdala ATENA.", "code": "adaptation_id_mismatch"}), 409
+        exercise_progressions = recommend_exercise_progression(sessions)
+        longitudinal_progression = summarize_longitudinal_progression(sessions)
+        conditioning_progression = summarize_conditioning_progress(sessions)
+        decision = _build_adaptive_decision(
+            sessions, exercise_progressions, longitudinal_progression,
+            conditioning_progression,
+        )
+        return jsonify({
+            "adaptive_decision": decision,
+            "exercise_progressions": exercise_progressions,
+            "longitudinal_progression": longitudinal_progression,
+            "conditioning_progression": conditioning_progression,
+            "source": "privacy_minimised_training_history_snapshot",
+            "history_sessions_analyzed": len(sessions),
+            "automatic_program_changes": False,
+        }), 200
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
