@@ -235,3 +235,10 @@ def test_hip_extension_variants_are_distinct_from_the_predklon_pattern():
     for exercise_id in ("hip_thrust", "glute_bridge", "long_lever_glute_bridge", "elevated_heel_hip_lift"):
         assert get_exercise(exercise_id)["movement_pattern"] == "hip_extension"
     assert get_exercise("bodyweight_hip_hinge")["movement_pattern"] == "hinge"
+
+
+
+def test_programme_hinge_label_uses_neutral_back_predklon_wording():
+    from training.program import PATTERN_LABELS
+
+    assert PATTERN_LABELS["hinge"] == "predklon z nevtralnim hrbtom"
