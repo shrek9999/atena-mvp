@@ -181,7 +181,7 @@ def test_added_strength_side_and_atg_variants_are_available():
 
 def test_every_exercise_has_valid_taxonomy_and_stability_metadata():
     valid_patterns = {
-        "squat", "lunge", "hinge", "push", "pull", "carry", "trunk_control",
+        "squat", "lunge", "hinge", "hip_extension", "push", "pull", "carry", "trunk_control",
         "locomotion", "conditioning", "mobility", "balance", "coordination", "accessory",
     }
     valid_stability_roles = {"primary", "supporting", "incidental", "none"}
@@ -228,3 +228,10 @@ def test_static_stretches_do_not_claim_balance_or_stability_training():
 def test_low_load_trunk_control_drills_are_not_tagged_as_hypertrophy_exercises():
     for exercise_id in ("pallof_press", "dead_bug", "seated_leg_lift"):
         assert "hypertrophy" not in get_exercise(exercise_id)["training_purposes"]
+
+
+
+def test_hip_extension_variants_are_distinct_from_the_predklon_pattern():
+    for exercise_id in ("hip_thrust", "glute_bridge", "long_lever_glute_bridge", "elevated_heel_hip_lift"):
+        assert get_exercise(exercise_id)["movement_pattern"] == "hip_extension"
+    assert get_exercise("bodyweight_hip_hinge")["movement_pattern"] == "hinge"
