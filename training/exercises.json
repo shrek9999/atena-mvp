@@ -2399,14 +2399,14 @@
     "functional_components": [],
     "movement_pattern": "squat",
     "training_purposes": [
-      "hypertrophy",
       "mobility",
       "general_fitness",
       "functional_fitness",
       "stability",
       "trunk_bracing",
       "balance",
-      "coordination"
+      "coordination",
+      "skill"
     ],
     "stability_role": "supporting",
     "stability_focus": [
