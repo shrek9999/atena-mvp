@@ -1280,7 +1280,7 @@ def _normalize_logged_exercise(item):
     tempo_target = item.get("tempo_target")
     if tempo_target is not None and (
         not isinstance(tempo_target, str) or
-        not re.fullmatch(r"\\d{1,2}[–-]\\d{1,2}[–-](?:\\d{1,2}|[Xx])[–-]\\d{1,2}", tempo_target)
+        not re.fullmatch(r"\d{1,2}[–-]\d{1,2}[–-](?:\d{1,2}|[Xx])[–-]\d{1,2}", tempo_target)
     ):
         return None, "Predpisani tempo ni veljaven."
     if tempo_control == "not_applicable" and tempo_target is not None:
