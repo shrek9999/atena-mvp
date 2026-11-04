@@ -1,4 +1,4 @@
-"""Deterministic, catalogue-backed training-program generator for ATENA Phase 2."""
+"""Deterministic, catalogue-backed training-program generator with Phase 5 quality rules."""
 from __future__ import annotations
 
 from collections import Counter
