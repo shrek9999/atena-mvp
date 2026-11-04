@@ -13,6 +13,7 @@ def test_no_history_requests_baseline_not_program_change():
     result = decide_adaptation([])
     assert result["decision"] == "collect_baseline"
     assert result["automatic_program_changes"] is False
+    assert result["success_signals"]
 
 
 def test_time_shortage_restructures_session_without_reducing_training_dose():
