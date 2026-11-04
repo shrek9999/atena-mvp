@@ -14,7 +14,7 @@ BASE = {
 
 def test_generates_two_day_hypertrophy_program_from_catalogue_only():
     plan = generate_program(BASE)
-    assert plan["program_version"] == "2.8.0"
+    assert plan["program_version"] == "2.9.0"
     assert len(plan["sessions"]) == 2
     assert all(len(session["exercises"]) >= 3 for session in plan["sessions"])
     assert all(ex["joint_type"] == "multi_joint" for session in plan["sessions"] for ex in session["exercises"])
@@ -791,3 +791,42 @@ def test_advanced_hypertrophy_emphasis_uses_hypertrophy_specific_main_lift_dose(
     assert result["goal"] == "strength_hypertrophy"
     assert result["training_emphasis"] == "hypertrophy"
     assert main and all(item["prescription"]["reps"] == "6–10" for item in main)
+
+
+def test_beginner_foundational_exercises_use_learning_tempo_for_strength():
+    plan = generate_program({
+        **BASE,
+        "goal": "strength",
+        "experience": "beginner",
+        "equipment": ["dumbbell", "bench"],
+        "session_minutes": 75,
+    })
+    exercises = [ex for session in plan["sessions"] for ex in session["exercises"]]
+    foundational = [
+        ex for ex in exercises
+        if ex["pattern"] not in {"trunk_stability", "anti_rotation", "mobility", "mobility_stretch", "jump", "hinge_power"}
+    ]
+    assert foundational
+    assert all(ex["prescription"]["tempo"] == "3–1–1–0" for ex in foundational)
+    assert all(ex["prescription"]["tempo_seconds_per_rep"] == 5 for ex in foundational)
+    assert all("3 s nadzorovan spust" in ex["prescription"]["tempo_description"] for ex in foundational)
+
+
+def test_session_set_volume_uses_flexible_time_bands():
+    for duration, minimum, maximum in ((30, 7, 10), (45, 10, 15)):
+        plan = generate_program({**BASE, "experience": "beginner", "goal": "strength",
+                                 "equipment": ["dumbbell", "bench"], "session_minutes": duration})
+        for session in plan["sessions"]:
+            assert minimum <= session["work_sets"] <= maximum
+            assert session["work_sets"] == sum(ex["prescription"]["sets"] for ex in session["exercises"])
+    longer = generate_program({**BASE, "experience": "beginner", "goal": "strength",
+                               "equipment": ["barbell", "rack", "dumbbell", "bench", "pull_up_bar", "kettlebell", "cable", "resistance_band", "box"], "session_minutes": 60})
+    assert all(session["work_sets"] >= 15 for session in longer["sessions"])
+
+
+def test_romania_deadlift_has_correct_name_and_concise_cues():
+    from training.catalogue import get_exercise
+    exercise = get_exercise("romanian_deadlift")
+    assert exercise["name"] == "Romunski mrtvi dvig (RDL)"
+    assert len(exercise["cues"]) <= 3
+    assert exercise["pattern"] == "hinge"

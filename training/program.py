@@ -1,4 +1,4 @@
-"""Deterministic, catalogue-backed training-program generator for ATENA Phase 2."""
+"""Deterministic, catalogue-backed training-program generator with Phase 5 quality rules."""
 from __future__ import annotations
 
 from collections import Counter
@@ -320,8 +320,11 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     elif is_stability:
         tempo, tempo_description, tempo_seconds = "2–1–2–1", "2 s izteg oziroma odmik · 1 s nadzor · 2 s vrnitev · 1 s ponastavitev.", 6
     elif goal == "strength_hypertrophy" and level == "beginner":
-        # A simple, consistent foundational tempo for beginners combining strength and hypertrophy.
-        tempo, tempo_description, tempo_seconds = "2–1–1–0", "2 s nadzorovan spust · 1 s nadzor v spodnjem položaju · 1 s dvig · brez premora v vrhu.", 4
+        # Beginners learn repeatable positions with a deliberately controlled eccentric phase.
+        tempo, tempo_description, tempo_seconds = "3–1–1–0", "3 s nadzorovan spust · 1 s nadzor v spodnjem položaju · 1 s dvig · brez premora v vrhu.", 5
+    elif level == "beginner":
+        # Foundational exercises use the same learning tempo across strength and hypertrophy goals.
+        tempo, tempo_description, tempo_seconds = "3–1–1–0", "3 s nadzorovan spust · 1 s nadzor v spodnjem položaju · 1 s dvig · brez premora v vrhu.", 5
     elif goal == "strength_hypertrophy" and pattern in {"squat", "hinge"}:
         tempo, tempo_description, tempo_seconds = "2–0–X–0", "2 s nadzorovan spust · brez premora v spodnjem položaju · koncentrično fazo izvedi z maksimalno namero hitrosti (X), vendar brez izgube tehnike · brez premora v vrhu.", 3
     elif goal == "strength_hypertrophy":
@@ -875,6 +878,38 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             for muscle in removed["primary_muscles"]:
                 exposure[muscle] -= removed["prescription"]["sets"]
 
+        # Approximate set-volume bands are a planning guide, not a target to chase.
+        # Keep the foundational patterns; trim excess sets before removing a secondary pattern.
+        session_set_cap = 10 if p["session_minutes"] <= 30 else (15 if p["session_minutes"] <= 45 else None)
+        if session_set_cap is not None:
+            while sum(item["prescription"]["sets"] for item in selected) > session_set_cap:
+                reducible = next(
+                    (item for item in selected
+                     if item["pattern"] in {"squat", "hinge", "hip_extension", "knee_flexion", "horizontal_push", "horizontal_pull"}
+                     and item["prescription"]["sets"] > 2),
+                    None,
+                )
+                if reducible is not None:
+                    reducible["prescription"]["sets"] -= 1
+                    for muscle in reducible["primary_muscles"]:
+                        exposure[muscle] -= 1
+                    volume_adjustments.append(reducible["name"])
+                    continue
+
+                removal_priority = ("vertical_push", "vertical_pull", "lunge", "carry")
+                removal_index = next(
+                    (i for pattern in removal_priority
+                     for i, item in enumerate(selected) if item["pattern"] == pattern),
+                    None,
+                )
+                if removal_index is None:
+                    break
+                removed = selected.pop(removal_index)
+                missing_patterns.add(removed["pattern"])
+                used_counts[removed["exercise_id"]] -= 1
+                for muscle in removed["primary_muscles"]:
+                    exposure[muscle] -= removed["prescription"]["sets"]
+
         estimated = _estimated_minutes(selected, warm_up_minutes)
         if estimated > p["session_minutes"]:
             raise ProgramValidationError(
@@ -890,6 +925,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             "warm_up_minutes": warm_up_minutes,
             "warm_up_range": "5–7 min" if p["session_minutes"] <= 30 else "5–10 min",
             "exercise_count": len(selected),
+            "work_sets": sum(item["prescription"]["sets"] for item in selected),
             "estimated_minutes": estimated,
             "available_minutes": p["session_minutes"],
             "volume_adjustments": volume_adjustments,
@@ -916,7 +952,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 session_patterns_seen.add(item["pattern"])
             pattern_work_sets[item["pattern"]] += item["prescription"]["sets"]
     return {
-        "program_version": "2.8.0",
+        "program_version": "2.9.0",
         "goal": p["goal"],
         "training_emphasis": p["training_emphasis"],
         "experience": p["experience"],
@@ -943,7 +979,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 if p["experience"] == "beginner" else
                 "Intermediate: uporablja bolj specifične razpone glede na cilj; pri glavnih vajah za moč je običajen razpon 5–8 ponovitev, pri hipertrofiji večinoma 6–12. Advanced: pri glavnih vajah za moč lahko uporablja 3–6 ponovitev, ob večji obremenitvi pa zahteva ustrezno tehniko, regeneracijo in daljše odmore."
             ),
-            "tempo": ("Za začetnika s kombiniranim ciljem moči in mišične mase je pri osnovnih vajah privzeti tempo 2–1–1–0: 2 s nadzorovan spust, 1 s nadzor v spodnjem položaju, 1 s dvig in brez premora v vrhu. Eksplozivne, časovno določene in mobilnostne vaje imajo ustrezno specifičen tempo." if planning_goal == "strength_hypertrophy" and p["experience"] == "beginner" else "Tempo je določen glede na cilj: moč praviloma 2–0–X–0, hipertrofija 3–1–2–0, eksplozivna moč hiter koncentrični del, vzdržljivost ritmično delo, mobilnost pa počasno aktivno raziskovanje obsega. Stabilizacijsko delo se doda ciljno, ne avtomatično."),
+            "tempo": ("Začetnik: pri osnovnih vajah je privzeti tempo 3–1–1–0 (3 s nadzorovan spust, 1 s nadzor v spodnjem položaju, 1 s dvig, brez premora v vrhu). Eksplozivne, časovno določene, stabilizacijske in mobilnostne vaje imajo ustrezno specifičen tempo." if p["experience"] == "beginner" else "Tempo je določen glede na cilj in vrsto vaje: moč uporablja nadzorovano ekscentrično fazo ter hitro koncentrično namero, hipertrofija daljšo nadzorovano izvedbo, eksplozivne vaje hiter koncentrični del, vzdržljivost ritmično delo, mobilnost pa počasno aktivno raziskovanje obsega. Stabilizacijsko delo se doda ciljno, ne avtomatično."),
             "range_of_motion": "Pri vsaki vaji uporabi največjo amplitudo, ki jo omogočata gibljivost in nadzor. Amplitudo postopno razvijaj; ne žrtvuj položaja, stabilnosti ali neboleče izvedbe. Pri mobilnosti kombiniraj aktivno gibanje in moč skozi razpoložljivo amplitudo.",
             "progression": ("Pri aerobni vzdržljivosti postopno povečuj trajanje ali obseg, nato po potrebi intenzivnost; pri intervalih spreminjaj le eno spremenljivko naenkrat. Ohraniti moraš ponovljivo tehniko in regeneracijo."
                 if planning_goal == "endurance" else
