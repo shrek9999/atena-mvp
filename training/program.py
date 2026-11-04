@@ -166,8 +166,8 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # foundational loaded patterns. Rotate emphasis across the week instead
         # of placing every mobility and strength pattern into one long session.
         mobility_templates = [
-            ["mobility", "mobility", "mobility_stretch", "squat", "lunge", "hinge"],
-            ["mobility", "mobility", "mobility_stretch", "hinge", "horizontal_push", "horizontal_pull"],
+            ["mobility", "mobility", "mobility_stretch", "squat", "lunge", "horizontal_push"],
+            ["mobility", "mobility", "mobility_stretch", "hinge", "horizontal_pull", "accessory"],
         ]
         patterns = mobility_templates[session_index % len(mobility_templates)]
         if include_stability:
