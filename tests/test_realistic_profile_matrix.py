@@ -32,7 +32,7 @@ EQUIPMENT_PROFILES = {
     "goal,experience,equipment_name,equipment,duration",
     [
         (goal, experience, equipment_name, equipment, duration)
-        for goal, experience, equipment_name, equipment, duration in product(
+        for goal, experience, (equipment_name, equipment), duration in product(
             VISIBLE_GOALS,
             EXPERIENCE_LEVELS,
             EQUIPMENT_PROFILES.items(),
