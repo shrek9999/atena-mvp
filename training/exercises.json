@@ -753,7 +753,7 @@
     "loading_mode": "external_load",
     "mobility_strength": false,
     "functional_components": [],
-    "movement_pattern": "hinge",
+    "movement_pattern": "hip_extension",
     "training_purposes": [
       "hypertrophy",
       "strength"
@@ -1786,7 +1786,7 @@
     "loading_mode": "mixed",
     "mobility_strength": false,
     "functional_components": [],
-    "movement_pattern": "hinge",
+    "movement_pattern": "hip_extension",
     "training_purposes": [
       "hypertrophy",
       "strength",
@@ -3523,7 +3523,7 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [],
-    "movement_pattern": "hinge",
+    "movement_pattern": "hip_extension",
     "training_purposes": [
       "hypertrophy",
       "strength",
@@ -3590,7 +3590,7 @@
     "loading_mode": "bodyweight_or_fixed_environment",
     "mobility_strength": false,
     "functional_components": [],
-    "movement_pattern": "hinge",
+    "movement_pattern": "hip_extension",
     "training_purposes": [
       "hypertrophy",
       "strength",
