@@ -199,7 +199,8 @@ def test_reaching_squat_is_an_accessible_squat_with_supporting_stability_role():
     assert item["movement_pattern"] == "squat"
     assert item["stability_role"] == "supporting"
     assert {"trunk_bracing", "balance", "coordination"} <= set(item["stability_focus"])
-    assert {"stability", "trunk_bracing", "balance", "coordination"} <= set(item["training_purposes"])
+    assert {"stability", "trunk_bracing", "balance", "coordination", "skill"} <= set(item["training_purposes"])
+    assert "hypertrophy" not in item["training_purposes"]
     assert "weight_plate" in item["equipment_any"]
     assert any("5 kg" in cue for cue in item["cues"])
 
