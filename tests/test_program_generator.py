@@ -844,7 +844,7 @@ def test_romania_deadlift_has_correct_name_and_concise_cues():
 
 def test_programme_selection_respects_goal_specific_training_purposes():
     hypertrophy = generate_program({**BASE, "goal": "hypertrophy"})
-    mobility = generate_program({**BASE, "goal": "mobility"})
+    mobility = generate_program({**BASE, "goal": "mobility", "equipment": ["bodyweight", "chair", "wall", "household_support"]})
     hypertrophy_items = [ex for session in hypertrophy["sessions"] for ex in session["exercises"]]
     mobility_items = [ex for session in mobility["sessions"] for ex in session["exercises"]]
 
