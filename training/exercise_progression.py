@@ -79,6 +79,8 @@ def _exercise_observation(exercise, session, day):
         "target_reps_max": exercise.get("target_reps_max"),
         "target_work_seconds": exercise.get("target_work_seconds"),
         "execution_quality": exercise.get("execution_quality", "unknown"),
+        "tempo_control": exercise.get("tempo_control", "unknown"),
+        "tempo_target": exercise.get("tempo_target"),
         "difficulty": session.get("difficulty", "unknown"),
         "recovery": session.get("recovery", "unknown"),
         "completed": session.get("completed") is True,
@@ -95,6 +97,12 @@ def _classify(history):
     latest_reps = latest["reps"]
     latest_work = latest["work_seconds"]
 
+    if latest["tempo_control"] == "not_followed":
+        return "technique_review", "Predpisanega tempa nisi mogel ohraniti. Ne stopnjuj obremenitve; najprej izberi breme, pri katerem lahko nadzoruješ celoten predpisani tempo."
+    if latest["tempo_control"] == "inconsistent":
+        return "hold", "Tempo je bil v delu ponovitev neenakomeren. Ohrani trenutni odmerek in najprej utrdi predpisani ritem."
+    if latest["tempo_control"] not in {"followed", "not_applicable"}:
+        return "collect_data", "Nadzor predpisanega tempa še ni ocenjen. Pred progresijo zberi vsaj dve primerljivi izvedbi z zabeleženim tempom."
     if latest["execution_quality"] == "needs_attention":
         return "technique_review", "Tehnika oziroma nadzor izvedbe potrebuje pozornost. Za zdaj ne povečuj obremenitve; najprej utrdi kakovost izvedbe."
     if latest["execution_quality"] != "controlled":
@@ -108,6 +116,14 @@ def _classify(history):
     if len(history) < 2:
         return "collect_data", "Za individualno progresijo je za zdaj premalo primerljivih izvedb. Ohrani načrt in zabeleži še naslednji odziv."
     previous = history[1]
+    if previous["tempo_control"] == "not_followed":
+        return "technique_review", "V prejšnji izvedbi predpisan tempo ni bil ohranjen. Pred progresijo ga potrdi v naslednjem treningu."
+    if previous["tempo_control"] == "inconsistent":
+        return "hold", "V prejšnji izvedbi je bil tempo neenakomeren. Najprej potrdi dve zaporedni enakomerni izvedbi."
+    if previous["tempo_control"] not in {"followed", "not_applicable"}:
+        return "collect_data", "V prejšnji izvedbi manjka ocena nadzora tempa. Potrebna je še ena primerljiva, ocenjena izvedba."
+    if latest["tempo_control"] != previous["tempo_control"] or latest["tempo_target"] != previous["tempo_target"]:
+        return "hold", "Predpisani tempo se je med zadnjima izvedbama spremenil. Najprej zberi dve primerljivi izvedbi z enakim tempom."
     if previous["execution_quality"] == "needs_attention":
         return "technique_review", "Prejšnja izvedba je zahtevala več nadzora. Najprej potrdi kakovostno izvedbo, nato ponovno oceni progresijo."
     if previous["execution_quality"] != "controlled":
