@@ -208,4 +208,4 @@ def test_reaching_squat_is_an_accessible_squat_with_supporting_stability_role():
 def test_unloaded_hinge_uses_neutral_back_forward_bend_user_facing_name():
     item = get_exercise("bodyweight_hip_hinge")
     assert item["name"] == "Predklon z nevtralnim hrbtom (lastna teža)"
-    assert any("nevtralni položaj hrbtenice" in cue for cue in item["cues"])
+    assert any("nevtralnega položaja hrbtenice" in cue for cue in item["cues"])
