@@ -151,6 +151,16 @@ def _classify(history):
     if latest["recovery"] == "poor" or previous["recovery"] == "poor":
         return "hold", "Regeneracija ni bila ustrezna v obeh zadnjih izpostavitvah. Progresijo zadrži."
 
+    # Load must remain comparable for every rep-based progression, not only
+    # when the user reaches the top of the rep range.
+    if latest["loads"] or previous["loads"]:
+        if not latest["loads_complete"] or not previous["loads_complete"]:
+            return "collect_data", "Obremenitev ni zabeležena za vsako serijo v obeh izvedbah. Pred progresijo potrebujeva popolne podatke."
+        if len(latest["loads"]) != len(previous["loads"]) or any(
+            current != prior for current, prior in zip(latest["loads"], previous["loads"])
+        ):
+            return "hold", "Obremenitev v posameznih serijah se je spremenila. Najprej utrdi enako obremenitev v dveh primerljivih izvedbah."
+
     target_min = latest["target_reps_min"]
     target_max = latest["target_reps_max"]
     if target_min is not None and target_max is not None:
@@ -174,13 +184,7 @@ def _classify(history):
         if latest_at_top and not previous_at_top:
             return "hold", "Zgornjo mejo si dosegel šele v zadnji izvedbi. Pred dvigom obremenitve jo potrdi še enkrat."
         if latest_at_top and previous_at_top:
-            if latest["loads"] or previous["loads"]:
-                if not latest["loads_complete"] or not previous["loads_complete"]:
-                    return "collect_data", "Obremenitev ni zabeležena za vsako serijo v obeh izvedbah. Pred dvigom bremena potrebujeva popolne podatke."
-                if len(latest["loads"]) != len(previous["loads"]) or any(
-                    current != prior for current, prior in zip(latest["loads"], previous["loads"])
-                ):
-                    return "hold", "Obremenitev v posameznih serijah se je spremenila. Najprej utrdi enako obremenitev v dveh primerljivih izvedbah."
+            if latest["loads"] and previous["loads"]:
                 return "increase_load", "Zgornjo mejo ponovitev si dosegel v vseh serijah v dveh zaporednih izvedbah z najmanj 3 RIR. Naslednjič lahko poskusiš najmanjši razpoložljivi dvig obremenitve; serije in ponovitve ohrani."
             if not latest["loads"] and not previous["loads"]:
                 return "progress_variation", "Zgornjo mejo ponovitev si dosegel v obeh izvedbah z ustrezno rezervo. Če zunanja obremenitev ni na voljo, izberi le majhen korak zahtevnejše različice."
