@@ -18,7 +18,7 @@ VALID_LOADING_POTENTIALS = {"low", "moderate", "high"}
 VALID_TRAINING_ROLES = {"main", "accessory", "mobility", "conditioning", "stability", "power"}
 VALID_ENDURANCE_TYPES = {"aerobic", "anaerobic", "muscular"}
 VALID_MOVEMENT_PATTERNS = {
-    "squat", "lunge", "hinge", "push", "pull", "carry", "trunk_control",
+    "squat", "lunge", "hinge", "hip_extension", "push", "pull", "carry", "trunk_control",
     "locomotion", "conditioning", "mobility", "balance", "coordination", "accessory",
 }
 VALID_TRAINING_PURPOSES = {
