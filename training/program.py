@@ -32,6 +32,15 @@ PATTERN_LABELS = {
     "balance": "ravnotežje",
     "coordination": "koordinacija",
 }
+GOAL_PRIMARY_PURPOSE = {
+    "strength": "strength",
+    "hypertrophy": "hypertrophy",
+    "general_fitness": "general_fitness",
+    "functional": "functional_fitness",
+    "power": "power",
+    "endurance": "cardiorespiratory_conditioning",
+    "mobility": "mobility",
+}
 GOAL_PURPOSES = {
     "strength": {"strength"},
     "hypertrophy": {"hypertrophy"},
@@ -777,8 +786,10 @@ def generate_program(profile: object, feedback: object = None) -> dict:
 
             level_rank = {"beginner": 0, "intermediate": 1, "advanced": 2}
             target_level = level_rank[p["experience"]]
+            primary_purpose = GOAL_PRIMARY_PURPOSE.get(planning_goal)
             candidate = min(candidates, key=lambda item: (
                 selection_priority(item),
+                0 if primary_purpose and primary_purpose in item["training_purposes"] else 1,
                 0 if item.get("training_role") == "main" or planning_goal not in {"hypertrophy", "strength_hypertrophy"} else 1,
                 used_counts[item["id"]],
                 abs(level_rank[item["level"]] - target_level),
