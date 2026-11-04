@@ -113,8 +113,8 @@ def get_exercises(
     patterns: Iterable[str] | None = None,
     include_accessories: bool = False,
     level: str | None = None,
-    purposes: Iterable[str] | None = None,
     path: Path | str = CATALOGUE_PATH,
+    purposes: Iterable[str] | None = None,
 ) -> list[dict]:
     """Return deterministic matches; accessory work is opt-in by design.
 
