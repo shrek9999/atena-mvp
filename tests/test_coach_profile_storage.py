@@ -539,7 +539,7 @@ def test_profile_program_holds_progression_after_logged_discomfort_and_fresh_saf
     assert data["adaptation_guidance"]["decision"] == "pause_and_review"
     assert data["adaptive_decision"]["decision"] == "pause_and_review"
     assert data["adaptive_decision"]["automatic_program_changes"] is False
-    assert "feedback_applied" not in data["program"]
+    assert data["program"]["feedback_applied"] is None
 
 
 
