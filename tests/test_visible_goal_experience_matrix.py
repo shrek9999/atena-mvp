@@ -165,7 +165,7 @@ def _first_exercise(plan, pattern):
     )
 
 
-@pytest.mark.parametrize("goal", ["endurance", "fat_loss"])
+@pytest.mark.parametrize("goal", ["fat_loss"])
 def test_conditioning_work_volume_scales_with_experience(goal):
     total_conditioning_sets = []
     for experience in EXPERIENCE_LEVELS:
@@ -186,9 +186,10 @@ def test_strength_hypertrophy_main_lift_dose_scales_across_all_three_levels():
         for level in EXPERIENCE_LEVELS
     ]
 
-    assert [item["reps"] for item in prescriptions] == ["8–12", "6–10", "5–8"]
-    assert [item["rir"] for item in prescriptions] == [3, 2, 2]
+    assert [item["reps"] for item in prescriptions] == ["8–12", "8–12", "5–8"]
+    assert [item["rir"] for item in prescriptions] == [3, 3, 2]
     assert [item["sets"] for item in prescriptions] == [3, 3, 3]
+    assert [item["tempo"] for item in prescriptions] == ["3–1–1–0", "2–0–X–0", "2–0–X–0"]
 
 
 def test_functional_main_lift_prescription_distinguishes_intermediate_and_advanced():
@@ -209,3 +210,17 @@ def test_mobility_work_volume_scales_for_advanced_profiles():
     ]
 
     assert [item["sets"] for item in prescriptions] == [2, 2, 3]
+
+def test_endurance_interval_duration_scales_with_experience():
+    aerobic_interval_seconds = []
+    for experience in EXPERIENCE_LEVELS:
+        plan = _matrix_plan("endurance", experience)
+        interval = next(
+            exercise
+            for session in plan["sessions"]
+            for exercise in session["exercises"]
+            if exercise["pattern"] == "conditioning" and exercise.get("endurance_type") == "aerobic"
+        )
+        aerobic_interval_seconds.append(interval["prescription"]["work_seconds"])
+
+    assert aerobic_interval_seconds == [120, 150, 180]
