@@ -36,10 +36,16 @@ next-program API responses on the isolated phase-5 branch. The session API
 accepts structured completion reasons and adaptation outcomes. Feedback is
 bound to the deterministic ID of the latest decision ATENA issued.
 
-The website still needs UI controls to collect these fields and display the
-decision's scope, explanation, objective and clarifying question. The new path
-is not active in production until the draft PR is reviewed, merged and
-separately deployed.
+The companion website integration is prepared in PR #53 of
+shrek9999/tiny-figolla-016703. It adds structured workout logging, a first-party
+proxy and a decision panel. The stateless POST /coach/adaptive-decision endpoint
+accepts a bounded history snapshot (up to 50 sessions), validates its structure,
+verifies feedback IDs against the preceding history and does not persist the
+snapshot on Render.
+
+The end-to-end path is not active until both draft PRs are reviewed and merged,
+the backend is deployed to the closed Render pilot, and the Cloudflare Pages
+preview is tested against that deployment.
 
 ## Safety and cost
 
