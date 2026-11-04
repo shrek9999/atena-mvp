@@ -212,15 +212,20 @@ def test_mobility_work_volume_scales_for_advanced_profiles():
     assert [item["sets"] for item in prescriptions] == [2, 2, 3]
 
 def test_endurance_interval_duration_scales_with_experience():
-    aerobic_interval_seconds = []
-    for experience in EXPERIENCE_LEVELS:
+    expected_seconds = {
+        "aerobic": [120, 150, 180],
+        "anaerobic": [15, 18, 20],
+        "muscular": [20, 25, 30],
+    }
+    for level_index, experience in enumerate(EXPERIENCE_LEVELS):
         plan = _matrix_plan("endurance", experience)
-        interval = next(
+        intervals = [
             exercise
             for session in plan["sessions"]
             for exercise in session["exercises"]
-            if exercise["pattern"] == "conditioning" and exercise.get("endurance_type") == "aerobic"
-        )
-        aerobic_interval_seconds.append(interval["prescription"]["work_seconds"])
-
-    assert aerobic_interval_seconds == [120, 150, 180]
+            if exercise["pattern"] == "conditioning"
+        ]
+        assert intervals
+        for interval in intervals:
+            endurance_type = interval["endurance_type"]
+            assert interval["prescription"]["work_seconds"] == expected_seconds[endurance_type][level_index]
