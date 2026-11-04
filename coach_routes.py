@@ -1763,7 +1763,7 @@ def _normalize_decision_history(value):
         raw = item.get("session")
         allowed_session = {
             "completed", "difficulty", "recovery", "exercises",
-            "completion_reason", "adaptation_response",
+            "completion_reason", "adaptation_response", "movement_control",
         }
         if not isinstance(raw, dict) or set(raw) - allowed_session:
             raise ValueError("Zapis treninga vsebuje nepodprta polja.")
@@ -1773,6 +1773,9 @@ def _normalize_decision_history(value):
             raise ValueError("Težavnost treninga ni veljavna.")
         if raw.get("recovery") not in {"good", "normal", "poor", "unknown"}:
             raise ValueError("Ocena regeneracije ni veljavna.")
+        movement_control = raw.get("movement_control", "none")
+        if movement_control not in {"none", "spinal_flexion", "bracing", "both"}:
+            raise ValueError("Ocena nadzora trupa ni veljavna.")
         reason = raw.get("completion_reason")
         if reason is not None and reason not in valid_reasons:
             raise ValueError("Razlog nedokončanega treninga ni veljaven.")
@@ -1798,6 +1801,7 @@ def _normalize_decision_history(value):
             "completed": raw["completed"],
             "difficulty": raw["difficulty"],
             "recovery": raw["recovery"],
+            "movement_control": movement_control,
             "exercises": clean_exercises,
         }
         if reason is not None:
