@@ -159,6 +159,17 @@ def test_adaptive_decision_endpoint_rejects_forged_previous_outcome_id(monkeypat
     assert response.get_json()["code"] == "adaptation_id_mismatch"
 
 
+def test_distinct_same_day_workout_keys_produce_distinct_decision_ids(monkeypatch):
+    api = client(monkeypatch)
+    first_session = session("2026-11-03")
+    first_session["session"]["session_key"] = "program-a:1:2026-11-03T08:00:00Z"
+    second_session = session("2026-11-03")
+    second_session["session"]["session_key"] = "program-a:2:2026-11-03T18:00:00Z"
+    first = post(api, [first_session]).get_json()["adaptive_decision"]
+    second = post(api, [second_session]).get_json()["adaptive_decision"]
+    assert first["adaptation_id"] != second["adaptation_id"]
+
+
 def test_adaptive_decision_endpoint_bounds_history_size(monkeypatch):
     sessions = [session(f"2026-10-{(i % 28) + 1:02d}") for i in range(51)]
     response = post(client(monkeypatch), sessions)
