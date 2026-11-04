@@ -42,7 +42,7 @@ A lower-load, controlled preparation set may be useful when it is comfortable an
 
 ## Progression
 
-Progression is not limited to adding weight. Depending on the goal and response, capacity can be developed through gradual changes in load, ROM, volume, frequency, speed, coordination or task complexity. Reassess the response before increasing demands.
+Progression is not limited to adding weight. Depending on the goal and response, capacity can be developed through gradual changes in load, ROM, volume, frequency, speed, coordination or task complexity. Reassess the response before increasing demands. ROM is a tool, not dogma: full ROM is often useful for strength, muscle and function, but the tolerable range is individual and can be developed progressively. Capacity is dynamic; fatigue, sleep, stress, pain and prior loading can change what a person tolerates on a given day.
 
 ## Referral and professional boundaries
 
@@ -50,7 +50,7 @@ ATENA and the coach must not diagnose, prescribe medical treatment or claim to i
 
 ## Technical quality
 
-Technique means an effective execution for the person's task, goal and current capacity—not conformity to one universal visual ideal. Modify technique when it improves effectiveness or tolerance, not simply to make every person look identical.
+Technique means an effective execution for the person's task, goal and current capacity—not conformity to one universal visual ideal. Modify technique when it improves effectiveness or tolerance, not simply to make every person look identical. A compensation is not automatically an error: consider why it appears, how large it is, whether it is controlled, whether it is symptomatic and whether it exceeds current capacity. Do not demand perfect symmetry; build sufficient, useful and balanced capacity for the person's tasks.
 
 Biomechanics helps explain where and how mechanical demands arise. It does not, by itself, determine whether a movement is safe. The same exercise can create different demands in different people.
 
@@ -62,3 +62,11 @@ Biomechanics helps explain where and how mechanical demands arise. It does not, 
 - Do not automatically prescribe the same regression for everyone with the same body-region complaint.
 - Do not progress solely because a set was completed; consider symptoms, effort, movement control and delayed response.
 - If the user reports red flags or symptoms outside coaching scope, do not continue automated exercise experimentation.
+
+## Movement observation: avoid false conclusions
+
+- A visible deviation or compensation is an observation, not a diagnosis. Do not infer the underlying cause from one repetition or one position.
+- A single sign (for example, the shoulder appearing forward in the bottom of a push-up) does not by itself prove scapular immobility, poor scapular control or restricted shoulder internal rotation. Gather additional task-specific information.
+- The scapula must move. Protraction and retraction are normal parts of pushing tasks; upward rotation and some elevation are normal components of overhead arm movement. Do not rigidly pin the shoulder blades or treat all elevation as faulty. Assess whether movement is appropriate, controlled, tolerable and coordinated with the task.
+- The ribcage and trunk are not fixed structures. Assess whether the person can organize and control them for the task, without unwanted or excessive compensation; do not force one static posture across all movements.
+- Separate available range, active range, control through range and symptom tolerance. A limited position can reflect mobility, strength, coordination, confidence, unfamiliarity or symptoms; observation alone cannot establish which factor is responsible.
