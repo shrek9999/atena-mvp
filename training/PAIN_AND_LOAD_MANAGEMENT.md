@@ -70,3 +70,16 @@ Biomechanics helps explain where and how mechanical demands arise. It does not, 
 - The scapula must move. Protraction and retraction are normal parts of pushing tasks; upward rotation and some elevation are normal components of overhead arm movement. Do not rigidly pin the shoulder blades or treat all elevation as faulty. Assess whether movement is appropriate, controlled, tolerable and coordinated with the task.
 - The ribcage and trunk are not fixed structures. Assess whether the person can organize and control them for the task, without unwanted or excessive compensation; do not force one static posture across all movements.
 - Separate available range, active range, control through range and symptom tolerance. A limited position can reflect mobility, strength, coordination, confidence, unfamiliarity or symptoms; observation alone cannot establish which factor is responsible.
+
+## Development pathway: specific capacity to functional task
+
+When a specific limitation is reasonably identified within coaching scope, the training pathway may move from:
+1. a targeted exercise to develop the relevant capacity;
+2. integration into a more complex multi-joint movement;
+3. integration into a relevant functional task.
+
+This is a programming option, not a mandatory sequence for every person or every symptom. Do not assume that an observed movement deviation identifies a weak muscle or tissue.
+
+## Interpreting examples in the FZS seminar
+
+The seminar's example of reducing a squat load to roughly half, using two preparation sets and then returning to the usual load illustrates how a changed dose can alter the response to the same movement and similar ROM. It is an example of dose exploration, not a universal percentage-based rule or a prescription for every painful squat.
