@@ -1537,12 +1537,17 @@ def _build_adaptive_decision(sessions, exercise_progressions=None,
         conditioning_progression=conditioning_progression,
         prior_adaptation=prior,
     )
-    latest_date = latest.get("session_date", "no-date")
-    seed = "|".join([
-        str(latest_date), str(decision.get("decision")),
-        str(decision.get("scope")), ",".join(decision.get("reason_codes", [])),
-    ])
-    decision["adaptation_id"] = uuid.uuid5(uuid.NAMESPACE_URL, "atena:" + seed).hex[:24]
+    if decision.get("decision") == "confirm_previous_change" and isinstance(prior, dict):
+        # Keep the original ID while a recommendation remains untried. This
+        # prevents ATENA from creating a new, endlessly repeatable proposal.
+        decision["adaptation_id"] = prior.get("adaptation_id")
+    else:
+        latest_date = latest.get("session_date", "no-date")
+        seed = "|".join([
+            str(latest_date), str(decision.get("decision")),
+            str(decision.get("scope")), ",".join(decision.get("reason_codes", [])),
+        ])
+        decision["adaptation_id"] = uuid.uuid5(uuid.NAMESPACE_URL, "atena:" + seed).hex[:24]
     decision["feedback_contract"] = {
         "field": "adaptation_response",
         "outcomes": ["helped", "no_change", "worse", "not_tried"],
