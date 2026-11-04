@@ -813,11 +813,11 @@ def test_beginner_foundational_exercises_use_learning_tempo_for_strength():
 
 
 def test_session_set_volume_uses_flexible_time_bands():
-    for duration, maximum in ((30, 10), (45, 15)):
+    for duration, minimum, maximum in ((30, 7, 10), (45, 10, 15)):
         plan = generate_program({**BASE, "experience": "beginner", "goal": "strength",
                                  "equipment": ["dumbbell", "bench"], "session_minutes": duration})
         for session in plan["sessions"]:
-            assert 7 <= session["work_sets"] <= maximum
+            assert minimum <= session["work_sets"] <= maximum
             assert session["work_sets"] == sum(ex["prescription"]["sets"] for ex in session["exercises"])
     longer = generate_program({**BASE, "experience": "beginner", "goal": "strength",
                                "equipment": ["barbell", "rack", "dumbbell", "bench", "pull_up_bar", "kettlebell", "cable", "resistance_band", "box"], "session_minutes": 60})
