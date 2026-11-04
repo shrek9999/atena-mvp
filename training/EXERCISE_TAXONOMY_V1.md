@@ -33,7 +33,7 @@ An exercise may serve multiple purposes. Its catalogue `goals` remain the existi
 Every exercise has:
 
 - `stability_role`: `primary`, `supporting`, `incidental` or `none`.
-- `stability_focus`: zero or more of `trunk_control`, `trunk_bracing`, `balance`, `joint_control`.
+- `stability_focus`: zero or more of `trunk_control`, `trunk_bracing`, `balance`, `coordination`, `joint_control`.
 
 Interpretation:
 
