@@ -130,3 +130,36 @@ def test_no_evidence_means_no_change():
     result = decide_adaptation([row("2026-11-02")])
     assert result["decision"] == "maintain_and_monitor"
     assert result["scope"] == "none"
+
+
+
+def test_other_incomplete_reason_requests_context_instead_of_guessing():
+    result = decide_adaptation([
+        row("2026-11-02", completed=False, completion_reason="other")
+    ])
+    assert result["decision"] == "collect_context"
+    assert result["scope"] == "none"
+    assert result["clarifying_question"]
+
+
+def test_latest_session_is_selected_by_date_not_input_order():
+    result = decide_adaptation([
+        row("2026-11-01", completed=False, completion_reason="time_constraint"),
+        row("2026-11-03", completed=False, completion_reason="external_interruption"),
+    ])
+    assert result["decision"] == "maintain_and_reschedule"
+
+
+def test_only_valid_named_exercises_are_returned_as_progression_candidates():
+    result = decide_adaptation(
+        [row("2026-11-02")],
+        exercise_progressions=[
+            {"decision": "increase_load"},
+            {"exercise_id": "", "decision": "add_repetitions"},
+            {"exercise_id": "squat", "decision": "increase_load"},
+            {"exercise_id": "squat", "decision": "add_repetitions"},
+            {"exercise_id": "press", "decision": "progress_variation"},
+        ],
+    )
+    assert result["decision"] == "exercise_specific_progression_review"
+    assert result["eligible_exercises"] == ["squat", "press"]
