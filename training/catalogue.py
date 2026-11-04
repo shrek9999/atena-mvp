@@ -8,6 +8,7 @@ from typing import Iterable
 CATALOGUE_PATH = Path(__file__).with_name("exercises.json")
 REQUIRED_FIELDS = {
     "id", "name", "name_en", "pattern", "joint_type", "goals", "equipment", "equipment_any",
+    "movement_pattern", "training_purposes", "stability_role", "stability_focus",
     "level", "primary_muscles", "secondary_muscles", "cues", "common_errors",
     "regressions", "progressions", "alternatives", "warnings", "single_joint",
 }
@@ -16,6 +17,18 @@ VALID_LEVELS = {"beginner", "intermediate", "advanced"}
 VALID_LOADING_POTENTIALS = {"low", "moderate", "high"}
 VALID_TRAINING_ROLES = {"main", "accessory", "mobility", "conditioning", "stability", "power"}
 VALID_ENDURANCE_TYPES = {"aerobic", "anaerobic", "muscular"}
+VALID_MOVEMENT_PATTERNS = {
+    "squat", "lunge", "hinge", "push", "pull", "carry", "trunk_control",
+    "locomotion", "conditioning", "mobility", "balance", "coordination", "accessory",
+}
+VALID_TRAINING_PURPOSES = {
+    "strength", "hypertrophy", "mobility", "stability", "trunk_bracing",
+    "balance", "coordination", "power", "cardiorespiratory_conditioning",
+    "muscular_endurance", "general_fitness", "functional_fitness",
+    "weight_management", "skill",
+}
+VALID_STABILITY_ROLES = {"primary", "supporting", "incidental", "none"}
+VALID_STABILITY_FOCUS = {"trunk_control", "trunk_bracing", "balance", "joint_control"}
 
 
 class CatalogueValidationError(ValueError):
@@ -58,6 +71,18 @@ def validate_catalogue(exercises: object) -> None:
             raise CatalogueValidationError(f"{exercise_id}: single_joint in joint_type nista usklajena.")
         if "unilateral" in exercise and not isinstance(exercise["unilateral"], bool):
             raise CatalogueValidationError(f"{exercise_id}: unilateral mora biti true ali false.")
+        if exercise["movement_pattern"] not in VALID_MOVEMENT_PATTERNS:
+            raise CatalogueValidationError(f"{exercise_id}: neveljaven movement_pattern.")
+        if not isinstance(exercise["training_purposes"], list) or not exercise["training_purposes"] or not set(exercise["training_purposes"]).issubset(VALID_TRAINING_PURPOSES):
+            raise CatalogueValidationError(f"{exercise_id}: training_purposes vsebuje neveljavne ali manjkajoče oznake.")
+        if exercise["stability_role"] not in VALID_STABILITY_ROLES:
+            raise CatalogueValidationError(f"{exercise_id}: neveljaven stability_role.")
+        if not isinstance(exercise["stability_focus"], list) or not set(exercise["stability_focus"]).issubset(VALID_STABILITY_FOCUS):
+            raise CatalogueValidationError(f"{exercise_id}: stability_focus vsebuje neveljavne oznake.")
+        if exercise["stability_role"] == "none" and exercise["stability_focus"]:
+            raise CatalogueValidationError(f"{exercise_id}: stability_focus mora biti prazen, ko je stability_role none.")
+        if exercise["stability_role"] != "none" and not exercise["stability_focus"]:
+            raise CatalogueValidationError(f"{exercise_id}: stability_focus ne sme biti prazen, ko je stabilnostni namen določen.")
         if exercise.get("loading_potential") not in VALID_LOADING_POTENTIALS:
             raise CatalogueValidationError(f"{exercise_id}: loading_potential mora biti low, moderate ali high.")
         if exercise.get("training_role") not in VALID_TRAINING_ROLES:
