@@ -1239,7 +1239,7 @@ def _normalize_logged_exercise(item):
         "exercise_id", "sets_completed", "reps_completed",
         "work_seconds_completed", "load_kg", "rir", "set_results",
         "planned_sets", "target_reps_min", "target_reps_max",
-        "target_work_seconds", "execution_quality",
+        "target_work_seconds", "execution_quality", "tempo_control", "tempo_target",
     }
     if not isinstance(item, dict) or set(item) - allowed:
         return None, "Zapis vaje vsebuje neveljavna polja."
@@ -1272,6 +1272,21 @@ def _normalize_logged_exercise(item):
     execution_quality = item.get("execution_quality", "unknown")
     if not isinstance(execution_quality, str) or execution_quality not in {"unknown", "controlled", "needs_attention"}:
         return None, "Ocena kakovosti izvedbe ni veljavna."
+    tempo_control = item.get("tempo_control", "unknown")
+    if not isinstance(tempo_control, str) or tempo_control not in {
+        "unknown", "followed", "inconsistent", "not_followed", "not_applicable"
+    }:
+        return None, "Ocena nadzora tempa ni veljavna."
+    tempo_target = item.get("tempo_target")
+    if tempo_target is not None and (
+        not isinstance(tempo_target, str) or
+        not re.fullmatch(r"\d{1,2}[–-]\d{1,2}[–-](?:\d{1,2}|[Xx])[–-]\d{1,2}", tempo_target)
+    ):
+        return None, "Predpisani tempo ni veljaven."
+    if tempo_control == "not_applicable" and tempo_target is not None:
+        return None, "Tempo ne more biti označen kot neuporaben, če je predpisan."
+    if tempo_control in {"followed", "inconsistent", "not_followed"} and tempo_target is None:
+        return None, "Ocena tempa potrebuje pripadajoči predpisani tempo."
 
     set_results = item.get("set_results")
     if set_results is not None:
@@ -1320,7 +1335,10 @@ def _normalize_logged_exercise(item):
             "sets_completed": len(normalized_sets),
             "set_results": normalized_sets,
             "execution_quality": execution_quality,
+            "tempo_control": tempo_control,
         }
+        if tempo_target is not None:
+            entry["tempo_target"] = tempo_target
         if planned_sets is not None:
             entry["planned_sets"] = planned_sets
         if target_min is not None:
@@ -1356,7 +1374,10 @@ def _normalize_logged_exercise(item):
         return None, "Trajanje delovne serije ni veljavno."
     if reps is None and work_seconds is None:
         return None, "Za vajo je treba navesti ponovitve ali trajanje delovne serije."
-    entry = {"exercise_id": exercise_id, "sets_completed": sets, "execution_quality": execution_quality}
+    entry = {"exercise_id": exercise_id, "sets_completed": sets, "execution_quality": execution_quality,
+             "tempo_control": tempo_control}
+    if tempo_target is not None:
+        entry["tempo_target"] = tempo_target
     if planned_sets is not None:
         entry["planned_sets"] = planned_sets
     if target_min is not None:

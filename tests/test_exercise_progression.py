@@ -17,13 +17,16 @@ def record(day, exercises, *, difficulty="moderate", recovery="good", completed=
 
 
 def exercise(exercise_id, *, reps=(10, 10, 10), load=20, rir=(4, 4, 3),
-             quality="controlled", target=(8, 12), sets=3):
+             quality="controlled", tempo="followed", tempo_target="3–1–1–0",
+             target=(8, 12), sets=3):
     return {
         "exercise_id": exercise_id,
         "planned_sets": sets,
         "target_reps_min": target[0],
         "target_reps_max": target[1],
         "execution_quality": quality,
+        "tempo_control": tempo,
+        **({"tempo_target": tempo_target} if tempo_target is not None else {}),
         "set_results": [
             {"reps": rep, "load_kg": load, "rir": reserve}
             for rep, reserve in zip(reps, rir)
@@ -216,6 +219,7 @@ def test_aerobic_time_is_not_progressed_from_duration_and_rir_alone():
         "planned_sets": 1,
         "target_work_seconds": 1200,
         "execution_quality": "controlled",
+        "tempo_control": "not_applicable",
         "set_results": [{"work_seconds": 1200, "rir": 4}],
     }
     sessions = [
@@ -233,6 +237,7 @@ def test_two_successful_timed_exposures_increase_work_by_a_meaningful_step():
         "planned_sets": 3,
         "target_work_seconds": 30,
         "execution_quality": "controlled",
+        "tempo_control": "not_applicable",
         "set_results": [
             {"work_seconds": 30, "rir": 4},
             {"work_seconds": 30, "rir": 4},
@@ -281,3 +286,55 @@ def test_incomplete_sessions_are_not_used_as_progression_exposures():
         record("2026-10-30", [exercise("squat_goblet")]),
     ]
     assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "collect_data"
+
+
+def test_progression_is_blocked_when_latest_tempo_was_not_followed():
+    sessions = [
+        record("2026-11-03", [exercise("squat_goblet", tempo="not_followed")]),
+        record("2026-10-30", [exercise("squat_goblet")]),
+    ]
+    result = decision(recommend_exercise_progression(sessions), "squat_goblet")
+    assert result["decision"] == "technique_review"
+    assert "predpisanega tempa" in result["reason"].lower()
+
+
+def test_inconsistent_tempo_holds_progression_without_increasing_the_dose():
+    sessions = [
+        record("2026-11-03", [exercise("squat_goblet", tempo="inconsistent")]),
+        record("2026-10-30", [exercise("squat_goblet")]),
+    ]
+    result = decision(recommend_exercise_progression(sessions), "squat_goblet")
+    assert result["decision"] == "hold"
+    assert "tempo" in result["reason"].lower()
+
+
+def test_missing_tempo_assessment_never_triggers_progression():
+    sessions = [
+        record("2026-11-03", [exercise("squat_goblet", tempo="unknown")]),
+        record("2026-10-30", [exercise("squat_goblet", tempo="unknown")]),
+    ]
+    assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "collect_data"
+
+
+def test_tempo_target_must_match_between_the_two_exposures():
+    sessions = [
+        record("2026-11-03", [exercise("squat_goblet", tempo_target="3–1–1–0")]),
+        record("2026-10-30", [exercise("squat_goblet", tempo_target="2–0–X–0")]),
+    ]
+    assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "hold"
+
+
+def test_previous_exposure_with_inconsistent_tempo_blocks_progression():
+    sessions = [
+        record("2026-11-03", [exercise("squat_goblet")]),
+        record("2026-10-30", [exercise("squat_goblet", tempo="inconsistent")]),
+    ]
+    assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "hold"
+
+
+def test_exercises_without_a_tempo_target_can_use_not_applicable():
+    sessions = [
+        record("2026-11-03", [exercise("squat_goblet", tempo="not_applicable", tempo_target=None)]),
+        record("2026-10-30", [exercise("squat_goblet", tempo="not_applicable", tempo_target=None)]),
+    ]
+    assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "add_repetitions"
