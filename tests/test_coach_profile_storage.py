@@ -503,7 +503,9 @@ def test_profile_program_keeps_global_feedback_out_of_generator_and_exposes_adap
     # applied globally to every exercise by the programme generator.
     assert captured["feedback"] is None
     data = response.get_json()
-    assert data["adaptive_decision"]["decision"] == "collect_context"
+    # Poor recovery is a higher-priority signal than an unspecified
+    # incomplete-session reason, so the engine requests a recovery review.
+    assert data["adaptive_decision"]["decision"] == "recovery_review"
     assert data["adaptive_decision"]["clarifying_question"]
 
 
