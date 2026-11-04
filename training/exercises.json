@@ -6802,5 +6802,70 @@
       "Če se spodnji del hrbta odlepi od podlage, skrajšaj vzvod ali izberi lažjo različico."
     ],
     "single_joint": false
+  },
+  {
+    "id": "controlled_lateral_step",
+    "name": "Počasen bočni korak z nadzorom",
+    "name_en": "Controlled lateral step",
+    "pattern": "coordination",
+    "joint_type": "multi_joint",
+    "goals": [
+      "functional",
+      "general_fitness"
+    ],
+    "equipment": [],
+    "equipment_any": [
+      "bodyweight"
+    ],
+    "level": "beginner",
+    "primary_muscles": [
+      "gluteus_medius",
+      "quadriceps"
+    ],
+    "secondary_muscles": [
+      "gluteus_maximus",
+      "calves",
+      "trunk"
+    ],
+    "cues": [
+      "Stopi vstran z majhnim, nadzorovanim korakom.",
+      "Prenesi težo na delujočo nogo brez nagibanja trupa.",
+      "Najprej obvladaj ritem in zaviranje; hitrost povečuj postopno."
+    ],
+    "common_errors": [
+      "Prevelik korak glede na sposobnost nadzora.",
+      "Nagibanje trupa ali izguba ravnotežja.",
+      "Prehiter prenos teže brez nadzorovanega zaviranja."
+    ],
+    "regressions": [
+      "Bočni prenos teže ob stabilni opori"
+    ],
+    "progressions": [
+      "Daljši bočni korak z nadzorovanim zaviranjem",
+      "Počasno bočno prestopanje v obe smeri"
+    ],
+    "alternatives": [
+      "lateral_shuffle"
+    ],
+    "warnings": [
+      "Izvajaj na ravni, nedrseči podlagi. Če izgubiš ravnotežje, skrajšaj korak ali se vrni na prenos teže ob opori."
+    ],
+    "single_joint": false,
+    "training_role": "power",
+    "loading_potential": "low",
+    "time_based": true,
+    "endurance_type": "muscular",
+    "movement_family": "coordination",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "coordination"
+    ],
+    "target_regions": [
+      "lower_body"
+    ],
+    "target_systems": [
+      "neuromuscular"
+    ]
   }
 ]

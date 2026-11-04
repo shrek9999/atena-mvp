@@ -131,7 +131,7 @@ def validate_profile(profile: object) -> dict:
     }
 
 
-def _session_patterns(session_index: int, sessions: int, goal: str, include_accessories: bool = False, include_stability: bool = False) -> list[str]:
+def _session_patterns(session_index: int, sessions: int, goal: str, include_accessories: bool = False, include_stability: bool = False, experience: str = "intermediate") -> list[str]:
     """Compact full-body templates; trunk-control work is added only when feedback supports it."""
     if goal == "fat_loss" and sessions >= 3 and session_index >= 2:
         # Two resistance-focused full-body days remain the foundation. Additional days
@@ -141,13 +141,26 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # Keep sessions compact: the full set of capacities is distributed over
         # the week rather than cramming every quality into every workout.
         base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
-        functional_additions = [
-            ["balance", "jump"],
-            ["coordination", "conditioning"],
-            ["balance", "conditioning"],
-            ["coordination", "jump"],
-        ]
+        if experience == "beginner":
+            # Do not prescribe plyometrics or intermediate change-of-direction drills
+            # by default before a beginner's landing/braking competency is established.
+            # Carry work and a low-speed coordination drill preserve the functional intent.
+            functional_additions = [
+                ["balance", "carry"],
+                ["coordination", "conditioning"],
+                ["balance", "carry"],
+                ["coordination", "conditioning"],
+            ]
+        else:
+            functional_additions = [
+                ["balance", "jump"],
+                ["coordination", "conditioning"],
+                ["balance", "conditioning"],
+                ["coordination", "jump"],
+            ]
         patterns = base + functional_additions[session_index]
+        if include_stability:
+            patterns.insert(0, "trunk_stability")
         if sessions >= 3:
             patterns.append("lunge" if session_index % 2 == 0 else ("vertical_push" if session_index % 4 == 1 else "vertical_pull"))
         return patterns
@@ -183,31 +196,40 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     is_power = pattern in {"jump", "hinge_power"}
     rir_range = None
     if goal == "mobility" and pattern == "mobility_stretch":
-        sets, reps, rir, rest = 2, "20–30 s", None, 30
+        sets, reps, rir, rest = (3, "20–30 s", None, 30) if level == "advanced" else (2, "20–30 s", None, 30)
     elif goal == "mobility" and exercise.get("mobility_strength"):
         sets, reps, rir, rest = (3, "6–10", 3, 90) if level == "advanced" else (2, "8–12", 3, 75)
     elif goal == "mobility" or pattern in {"mobility", "mobility_stretch"}:
-        sets, reps, rir, rest = 2, "5–8", None, 30
+        if level == "beginner":
+            sets, reps, rir, rest = 2, "5–8", None, 30
+        elif level == "intermediate":
+            sets, reps, rir, rest = 2, "6–10", None, 30
+        else:
+            sets, reps, rir, rest = 3, "6–10", None, 45
     elif goal == "fat_loss" and pattern == "locomotion":
-        sets, reps, rir, rest = 1, "8 min", None, 0
+        duration = {"beginner": "6 min", "intermediate": "8 min", "advanced": "10 min"}[level]
+        sets, reps, rir, rest = 1, duration, None, 0
     elif goal == "fat_loss" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
+        sets = {"beginner": 2, "intermediate": 3, "advanced": 4}[level]
         if kind == "aerobic":
-            sets, reps, rir, rest = 2, "1 min", None, 60
+            reps, rir, rest = "1 min", None, 60
         elif kind == "anaerobic":
-            sets, reps, rir, rest = 2, "15–20 s", None, 60
+            reps, rir, rest = "15–20 s", None, 60
         else:
-            sets, reps, rir, rest = 2, "20–30 s", None, 60
+            reps, rir, rest = "20–30 s", None, 60
     elif goal == "endurance" and pattern == "locomotion":
         sets, reps, rir, rest = 1, "20–30 min", None, 0
     elif goal == "endurance" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
+        # Keep the agreed four-interval structure; scale interval duration by experience below.
+        sets = 4
         if kind == "aerobic":
-            sets, reps, rir, rest = 4, "2–3 min", None, 90
+            reps, rir, rest = "2–3 min", None, 90
         elif kind == "anaerobic":
-            sets, reps, rir, rest = 4, "15–20 s", None, 90
+            reps, rir, rest = "15–20 s", None, 90
         else:
-            sets, reps, rir, rest = 4, "20–30 s", None, 60
+            reps, rir, rest = "20–30 s", None, 60
     elif goal == "endurance" and pattern in {"carry", "lunge"}:
         sets, reps, rir, rest = 2, "12–20", None, 45
     elif is_power:
@@ -218,9 +240,8 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         sets, reps, rir, rest = 2, "5–8", None, 45
     elif pattern == "coordination":
         sets, reps, rir, rest = 3, "10–15 s", None, 45
-    elif level in {"beginner", "intermediate"} and goal in {"strength", "hypertrophy", "strength_hypertrophy"}:
-        # Early training age: keep strength and hypertrophy prescription practically
-        # aligned across all foundational multi-joint patterns.
+    elif level == "beginner" and goal in {"strength", "hypertrophy", "strength_hypertrophy"}:
+        # Beginners first build repeatable technique with moderate reps and a clear reserve.
         if pattern in {"lunge"} or unilateral:
             sets, reps, rir, rest = 2, "8–12", 3, 90
         elif pattern in {"vertical_push", "vertical_pull"}:
@@ -230,6 +251,29 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         else:
             sets, reps, rir, rest = 3, "8–12", 3, 120 if pattern in {"squat", "hinge"} else 90
         rir_range = "2–3"
+    elif level == "intermediate" and goal in {"strength", "hypertrophy", "strength_hypertrophy"}:
+        # Preserve the agreed practical base dose for less-experienced lifters;
+        # exercise selection and tempo provide the next level of technical demand.
+        if pattern in {"lunge"} or unilateral:
+            sets, reps, rir, rest = 2, "8–12", 3, 90
+        elif pattern in {"vertical_push", "vertical_pull"}:
+            sets, reps, rir, rest = 2, "8–12", 3, 90
+        elif pattern in {"hip_extension", "carry"}:
+            sets, reps, rir, rest = 2, "10–15", 3, 75
+        else:
+            sets, reps, rir, rest = 3, "8–12", 3, 120 if pattern in {"squat", "hinge"} else 90
+        rir_range = "2–3"
+    elif level == "intermediate" and goal == "fat_loss":
+        if pattern in {"lunge"} or unilateral:
+            sets, reps, rir, rest = 2, "8–10", 2, 90
+        elif pattern in {"vertical_push", "vertical_pull"}:
+            sets, reps, rir, rest = 2, "8–12", 2, 90
+        elif pattern in {"hip_extension", "carry"}:
+            sets, reps, rir, rest = 2, "10–15", 2, 75
+        elif pattern in {"squat", "hinge"}:
+            sets, reps, rir, rest = 3, "6–10", 2, 120
+        else:
+            sets, reps, rir, rest = 3, "8–12", 2, 90
     elif level == "beginner":
         # Beginners still train toward the selected goal; the goal changes the
         # dose while technique and a conservative effort reserve remain priorities.
@@ -302,11 +346,13 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
             sets, reps, rir, rest = 3, "8–12", (2 if level != "beginner" else 3), 90
     else:
         if pattern in {"trunk_stability", "anti_rotation"}:
-            sets, reps, rir, rest = 2, "10–15", 3, 60
+            sets, reps, rir, rest = (2, "10–15", 3, 60) if level == "intermediate" else (3, "10–15", 2, 60)
         elif pattern in {"hip_extension", "carry"}:
-            sets, reps, rir, rest = 2, "10–15", 3, 75
+            sets, reps, rir, rest = (2, "10–15", 3, 75) if level == "intermediate" else (3, "8–12", 2, 90)
+        elif level == "intermediate":
+            sets, reps, rir, rest = 3, "8–12", 3, 90
         else:
-            sets, reps, rir, rest = (3, "6–12", 3, 90) if level != "beginner" else (2, "8–12", 3, 75)
+            sets, reps, rir, rest = 3, "6–10", 2, 120
     if pattern == "mobility_stretch":
         tempo, tempo_description, tempo_seconds = "zadržanje", "Zadrži blag do zmeren razteg, dihaj sproščeno in ne sili v končni položaj.", 0
     elif goal == "mobility" or pattern == "mobility":
@@ -360,7 +406,13 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         prescription.update({"work_seconds": 1200, "time_label": "neprekinjene aerobne aktivnosti", "effort_target": "Zmeren pogovorni tempo; lahko govoriš v stavkih, vendar čutiš pospešeno dihanje."})
     elif goal == "endurance" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
-        duration = 180 if kind == "aerobic" else 20 if kind == "anaerobic" else 30
+        duration = (
+            {"beginner": 120, "intermediate": 150, "advanced": 180}[level]
+            if kind == "aerobic" else
+            {"beginner": 15, "intermediate": 18, "advanced": 20}[level]
+            if kind == "anaerobic" else
+            {"beginner": 20, "intermediate": 25, "advanced": 30}[level]
+        )
         target = (
             "Zmeren, enakomeren napor; ohrani pogovorni tempo in tehniko."
             if kind == "aerobic" else
@@ -548,7 +600,8 @@ def generate_program(profile: object, feedback: object = None) -> dict:
     for session_index in range(p["sessions_per_week"]):
         patterns = _session_patterns(
             session_index, p["sessions_per_week"], planning_goal,
-            p["include_accessories"] and p["session_minutes"] >= 75 and not include_stability, include_stability
+            p["include_accessories"] and p["session_minutes"] >= 75 and not include_stability, include_stability,
+            p["experience"]
         )
         warm_up_minutes = 5 if p["session_minutes"] <= 30 else (7 if p["session_minutes"] <= 60 else 10)
         selected = []

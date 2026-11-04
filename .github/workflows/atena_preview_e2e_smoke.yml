@@ -1,0 +1,128 @@
+name: ATENA Cloudflare Preview end-to-end smoke
+
+on:
+  push:
+    branches:
+      - qa/visible-goal-matrix-functional-beginner-safety
+  pull_request:
+    branches:
+      - pilot/website-ai-coach
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+concurrency:
+  group: atena-cloudflare-preview-smoke-${{ github.event_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  preview-to-render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wake and check the Render backend
+        run: |
+          python - <<'PY'
+          import json
+          import urllib.request
+
+          url = "https://atena-ai-coach-pilot.onrender.com/health"
+          with urllib.request.urlopen(url, timeout=120) as response:
+              body = json.loads(response.read().decode("utf-8"))
+              print(f"Render health: HTTP {response.status}; status={body.get('status')}; version={body.get('version')}")
+              if response.status != 200 or body.get("status") != "ok":
+                  raise SystemExit("Render health check failed.")
+          PY
+
+      - name: Verify GitHub Actions token matches the Render pilot token
+        env:
+          PILOT_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.request
+
+          token = os.environ.get("PILOT_TOKEN", "").strip()
+          if len(token) < 16:
+              print("GitHub Actions secret AI_COACH_TEST_TOKEN is missing or too short.")
+              sys.exit(1)
+          request = urllib.request.Request(
+              "https://atena-ai-coach-pilot.onrender.com/coach/status",
+              headers={"X-Pilot-Token": token},
+              method="GET"
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  body = json.loads(response.read().decode("utf-8"))
+                  print(f"GitHub → Render token: PASS (HTTP {response.status}; programme_available={body.get('program_available')}; chat_available={body.get('chat_available')})")
+          except urllib.error.HTTPError as exc:
+              print(f"GitHub → Render token: FAIL (HTTP {exc.code}); the repository secret does not match the Render pilot token or the endpoint is not configured.")
+              sys.exit(1)
+          PY
+
+      - name: Verify Cloudflare Preview securely calls the Render programme generator
+        run: |
+          python - <<'PY'
+          import json
+          import sys
+          import time
+          import urllib.error
+          import urllib.request
+
+          url = "https://493a8420.atena-ai-trener.pages.dev/api/plan"
+          payload = {
+              "profile": {
+                  "goal": "moč in mišična masa",
+                  "experience": "začetnik",
+                  "equipment": "polno opremljen fitnes",
+                  "frequency": "2",
+                  "duration": "60 minut ali več",
+                  "restrictions": "ne"
+              }
+          }
+          request = urllib.request.Request(
+              url,
+              data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+              headers={
+                  "Content-Type": "application/json",
+                  "Accept": "application/json",
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                  "Origin": "https://493a8420.atena-ai-trener.pages.dev"
+              },
+              method="POST"
+          )
+          time.sleep(3)
+          try:
+              with urllib.request.urlopen(request, timeout=120) as response:
+                  status = response.status
+                  body = json.loads(response.read().decode("utf-8"))
+          except urllib.error.HTTPError as exc:
+              raw = exc.read().decode("utf-8", errors="replace")
+              try:
+                  detail = json.loads(raw)
+              except json.JSONDecodeError:
+                  detail = {"error": raw[:250]}
+              print(f"Preview generator: HTTP {exc.code}; safe diagnostic={detail.get('error', 'no error message')}; upstream={detail.get('diagnostic', {})}")
+              sys.exit(1)
+
+          program = body.get("program") or {}
+          sessions = program.get("sessions")
+          if status != 200 or not isinstance(sessions, list) or len(sessions) != 2:
+              print(f"Preview generator returned an invalid programme shape: HTTP {status}; session_count={len(sessions) if isinstance(sessions, list) else 'missing'}")
+              sys.exit(1)
+          if not all(isinstance(session.get("exercises"), list) and session["exercises"] for session in sessions):
+              print("Preview generator returned an empty session.")
+              sys.exit(1)
+          if body.get("source") != "curated_exercise_catalogue" or body.get("pilot") is not True:
+              print("Preview generator source or pilot marker did not match the expected contract.")
+              sys.exit(1)
+
+          exercise_count = sum(len(session["exercises"]) for session in sessions)
+          print(f"Cloudflare Preview → Render generator: PASS (HTTP {status}; sessions={len(sessions)}; exercises={exercise_count}; catalogue-backed response)")
+          print("No user profile was persisted. No credential was sent from this workflow or printed.")
+          PY

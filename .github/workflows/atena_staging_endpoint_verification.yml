@@ -118,7 +118,7 @@ jobs:
           catalogue_count = readiness.get("catalogue_count")
           readiness_ok = (
               readiness_status == 200
-              and catalogue_count == 120
+              and catalogue_count == 121
               and readiness.get("chat_available") is True
               and readiness.get("program_available") is True
           )
@@ -130,7 +130,7 @@ jobs:
               f"{'PASS' if readiness_ok else 'FAIL'}"
           )
           if not readiness_ok:
-              failures.append("deployed catalogue must contain exactly 120 exercises and chat/program must be available")
+              failures.append("deployed catalogue must contain exactly 121 exercises and chat/program must be available")
 
           check_request = urllib.request.Request(
               BASE + "/coach/storage/check",
