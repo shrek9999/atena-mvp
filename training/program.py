@@ -196,31 +196,39 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     is_power = pattern in {"jump", "hinge_power"}
     rir_range = None
     if goal == "mobility" and pattern == "mobility_stretch":
-        sets, reps, rir, rest = 2, "20–30 s", None, 30
+        sets, reps, rir, rest = (3, "20–30 s", None, 30) if level == "advanced" else (2, "20–30 s", None, 30)
     elif goal == "mobility" and exercise.get("mobility_strength"):
         sets, reps, rir, rest = (3, "6–10", 3, 90) if level == "advanced" else (2, "8–12", 3, 75)
     elif goal == "mobility" or pattern in {"mobility", "mobility_stretch"}:
-        sets, reps, rir, rest = 2, "5–8", None, 30
+        if level == "beginner":
+            sets, reps, rir, rest = 2, "5–8", None, 30
+        elif level == "intermediate":
+            sets, reps, rir, rest = 2, "6–10", None, 30
+        else:
+            sets, reps, rir, rest = 3, "6–10", None, 45
     elif goal == "fat_loss" and pattern == "locomotion":
-        sets, reps, rir, rest = 1, "8 min", None, 0
+        duration = {"beginner": "6 min", "intermediate": "8 min", "advanced": "10 min"}[level]
+        sets, reps, rir, rest = 1, duration, None, 0
     elif goal == "fat_loss" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
+        sets = {"beginner": 2, "intermediate": 3, "advanced": 4}[level]
         if kind == "aerobic":
-            sets, reps, rir, rest = 2, "1 min", None, 60
+            reps, rir, rest = "1 min", None, 60
         elif kind == "anaerobic":
-            sets, reps, rir, rest = 2, "15–20 s", None, 60
+            reps, rir, rest = "15–20 s", None, 60
         else:
-            sets, reps, rir, rest = 2, "20–30 s", None, 60
+            reps, rir, rest = "20–30 s", None, 60
     elif goal == "endurance" and pattern == "locomotion":
         sets, reps, rir, rest = 1, "20–30 min", None, 0
     elif goal == "endurance" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
+        sets = {"beginner": 2, "intermediate": 3, "advanced": 4}[level]
         if kind == "aerobic":
-            sets, reps, rir, rest = 4, "2–3 min", None, 90
+            reps, rir, rest = "2–3 min", None, 90
         elif kind == "anaerobic":
-            sets, reps, rir, rest = 4, "15–20 s", None, 90
+            reps, rir, rest = "15–20 s", None, 90
         else:
-            sets, reps, rir, rest = 4, "20–30 s", None, 60
+            reps, rir, rest = "20–30 s", None, 60
     elif goal == "endurance" and pattern in {"carry", "lunge"}:
         sets, reps, rir, rest = 2, "12–20", None, 45
     elif is_power:
@@ -231,9 +239,8 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         sets, reps, rir, rest = 2, "5–8", None, 45
     elif pattern == "coordination":
         sets, reps, rir, rest = 3, "10–15 s", None, 45
-    elif level in {"beginner", "intermediate"} and goal in {"strength", "hypertrophy", "strength_hypertrophy"}:
-        # Early training age: keep strength and hypertrophy prescription practically
-        # aligned across all foundational multi-joint patterns.
+    elif level == "beginner" and goal in {"strength", "hypertrophy", "strength_hypertrophy"}:
+        # Beginners first build repeatable technique with moderate reps and a clear reserve.
         if pattern in {"lunge"} or unilateral:
             sets, reps, rir, rest = 2, "8–12", 3, 90
         elif pattern in {"vertical_push", "vertical_pull"}:
@@ -242,6 +249,23 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
             sets, reps, rir, rest = 2, "10–15", 3, 75
         else:
             sets, reps, rir, rest = 3, "8–12", 3, 120 if pattern in {"squat", "hinge"} else 90
+        rir_range = "2–3"
+    elif level == "intermediate" and goal in {"strength", "hypertrophy", "strength_hypertrophy", "fat_loss"}:
+        # Intermediate profiles move toward more goal-specific loading while retaining technical reserve.
+        if goal == "strength" and pattern in {"squat", "hinge"}:
+            sets, reps, rir, rest = 3, "5–8", 2, 180
+        elif pattern in {"lunge"} or unilateral:
+            sets, reps, rir, rest = 3, "8–10", 2, 90
+        elif pattern in {"vertical_push", "vertical_pull"}:
+            sets, reps, rir, rest = 3, "8–12", 2, 90
+        elif pattern in {"hip_extension", "carry"}:
+            sets, reps, rir, rest = 3, "10–12", 2, 75
+        elif goal in {"hypertrophy", "fat_loss"} and pattern in {"squat", "hinge"}:
+            sets, reps, rir, rest = 3, "6–10", 2, 120
+        elif goal == "strength_hypertrophy" and pattern in {"squat", "hinge"}:
+            sets, reps, rir, rest = 3, "6–10", 2, 150
+        else:
+            sets, reps, rir, rest = 3, "8–12", 2, 90
         rir_range = "2–3"
     elif level == "beginner":
         # Beginners still train toward the selected goal; the goal changes the
@@ -315,11 +339,13 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
             sets, reps, rir, rest = 3, "8–12", (2 if level != "beginner" else 3), 90
     else:
         if pattern in {"trunk_stability", "anti_rotation"}:
-            sets, reps, rir, rest = 2, "10–15", 3, 60
+            sets, reps, rir, rest = (2, "10–15", 3, 60) if level == "intermediate" else (3, "10–15", 2, 60)
         elif pattern in {"hip_extension", "carry"}:
-            sets, reps, rir, rest = 2, "10–15", 3, 75
+            sets, reps, rir, rest = (2, "10–15", 3, 75) if level == "intermediate" else (3, "8–12", 2, 90)
+        elif level == "intermediate":
+            sets, reps, rir, rest = 3, "8–12", 3, 90
         else:
-            sets, reps, rir, rest = (3, "6–12", 3, 90) if level != "beginner" else (2, "8–12", 3, 75)
+            sets, reps, rir, rest = 3, "6–10", 2, 120
     if pattern == "mobility_stretch":
         tempo, tempo_description, tempo_seconds = "zadržanje", "Zadrži blag do zmeren razteg, dihaj sproščeno in ne sili v končni položaj.", 0
     elif goal == "mobility" or pattern == "mobility":
