@@ -81,6 +81,35 @@ def test_load_change_between_exposures_must_be_consolidated_before_progression()
     assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "hold"
 
 
+def test_per_set_loads_must_match_not_just_average_load():
+    latest = exercise("squat_goblet", reps=(12, 12, 12), rir=(4, 4, 3))
+    previous = exercise("squat_goblet", reps=(12, 12, 12), rir=(4, 4, 3))
+    for item, load in zip(latest["set_results"], (15, 20, 25)):
+        item["load_kg"] = load
+    for item in previous["set_results"]:
+        item["load_kg"] = 20
+    sessions = [
+        record("2026-11-03", [latest]),
+        record("2026-10-30", [previous]),
+    ]
+    result = decision(recommend_exercise_progression(sessions), "squat_goblet")
+    assert result["decision"] == "hold"
+    assert "posameznih serijah" in result["reason"]
+
+
+def test_missing_load_for_one_set_cannot_trigger_load_progression():
+    latest = exercise("squat_goblet", reps=(12, 12, 12), rir=(4, 4, 3))
+    latest["set_results"][1].pop("load_kg")
+    previous = exercise("squat_goblet", reps=(12, 12, 12), rir=(4, 4, 3))
+    sessions = [
+        record("2026-11-03", [latest]),
+        record("2026-10-30", [previous]),
+    ]
+    result = decision(recommend_exercise_progression(sessions), "squat_goblet")
+    assert result["decision"] == "collect_data"
+    assert "vsako serijo" in result["reason"]
+
+
 def test_regressing_repetitions_do_not_trigger_an_increase():
     sessions = [
         record("2026-11-03", [exercise("squat_goblet", reps=(9, 9, 9), rir=(4, 4, 3))]),
