@@ -1550,11 +1550,12 @@ def _build_adaptive_decision(sessions, exercise_progressions=None,
             ",".join(decision.get("reason_codes", [])),
         ])
         decision["adaptation_id"] = uuid.uuid5(uuid.NAMESPACE_URL, "atena:" + seed).hex[:24]
-    decision["feedback_contract"] = {
-        "field": "adaptation_response",
-        "outcomes": ["helped", "no_change", "worse", "not_tried"],
-        "instruction": "V naslednjem zapisu treninga pošlji adaptation_id in izbrani outcome.",
-    }
+    if decision.get("decision") not in {"collect_baseline", "collect_context", "collect_data"}:
+        decision["feedback_contract"] = {
+            "field": "adaptation_response",
+            "outcomes": ["helped", "no_change", "worse", "not_tried"],
+            "instruction": "V naslednjem zapisu treninga pošlji adaptation_id in izbrani outcome.",
+        }
     return decision
 
 
