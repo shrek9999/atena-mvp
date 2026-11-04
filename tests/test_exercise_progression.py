@@ -17,13 +17,16 @@ def record(day, exercises, *, difficulty="moderate", recovery="good", completed=
 
 
 def exercise(exercise_id, *, reps=(10, 10, 10), load=20, rir=(4, 4, 3),
-             quality="controlled", target=(8, 12), sets=3):
+             quality="controlled", tempo="followed", tempo_target="3–1–1–0",
+             target=(8, 12), sets=3):
     return {
         "exercise_id": exercise_id,
         "planned_sets": sets,
         "target_reps_min": target[0],
         "target_reps_max": target[1],
         "execution_quality": quality,
+        "tempo_control": tempo,
+        **({"tempo_target": tempo_target} if tempo_target is not None else {}),
         "set_results": [
             {"reps": rep, "load_kg": load, "rir": reserve}
             for rep, reserve in zip(reps, rir)
