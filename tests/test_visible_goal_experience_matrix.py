@@ -144,3 +144,68 @@ def test_functional_goal_adds_trunk_control_only_when_feedback_identifies_a_need
     assert "trunk_stability" not in baseline_patterns
     assert "trunk_stability" in targeted_patterns
     assert targeted["sessions"][0]["exercises"][0]["pattern"] == "trunk_stability"
+
+def _matrix_plan(goal, experience):
+    return generate_program({
+        "goal": goal,
+        "experience": experience,
+        "sessions_per_week": 2,
+        "session_minutes": 60,
+        "equipment": _complete_equipment_set(),
+        "include_accessories": False,
+    })
+
+
+def _first_exercise(plan, pattern):
+    return next(
+        exercise
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+        if exercise["pattern"] == pattern
+    )
+
+
+@pytest.mark.parametrize("goal", ["endurance", "fat_loss"])
+def test_conditioning_work_volume_scales_with_experience(goal):
+    total_conditioning_sets = []
+    for experience in EXPERIENCE_LEVELS:
+        plan = _matrix_plan(goal, experience)
+        total_conditioning_sets.append(sum(
+            exercise["prescription"]["sets"]
+            for session in plan["sessions"]
+            for exercise in session["exercises"]
+            if exercise["pattern"] == "conditioning"
+        ))
+
+    assert total_conditioning_sets == [4, 6, 8]
+
+
+def test_strength_hypertrophy_main_lift_dose_scales_across_all_three_levels():
+    prescriptions = [
+        _first_exercise(_matrix_plan("strength_hypertrophy", level), "squat")["prescription"]
+        for level in EXPERIENCE_LEVELS
+    ]
+
+    assert [item["reps"] for item in prescriptions] == ["8–12", "6–10", "5–8"]
+    assert [item["rir"] for item in prescriptions] == [3, 2, 2]
+    assert [item["sets"] for item in prescriptions] == [3, 3, 3]
+
+
+def test_functional_main_lift_prescription_distinguishes_intermediate_and_advanced():
+    prescriptions = [
+        _first_exercise(_matrix_plan("functional", level), "squat")["prescription"]
+        for level in EXPERIENCE_LEVELS
+    ]
+
+    assert [item["reps"] for item in prescriptions] == ["8–12", "8–12", "6–10"]
+    assert [item["rir"] for item in prescriptions] == [3, 3, 2]
+    assert [item["tempo"] for item in prescriptions] == ["3–1–1–0", "2–0–1–0", "2–0–1–0"]
+
+
+def test_mobility_work_volume_scales_for_advanced_profiles():
+    prescriptions = [
+        _first_exercise(_matrix_plan("mobility", level), "mobility")["prescription"]
+        for level in EXPERIENCE_LEVELS
+    ]
+
+    assert [item["sets"] for item in prescriptions] == [2, 2, 3]
