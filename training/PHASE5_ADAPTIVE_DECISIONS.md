@@ -21,7 +21,7 @@ Every decision returns:
 1. An incomplete session is not automatically treated as an excessive training dose.
    The engine distinguishes time constraints, high difficulty, poor recovery,
    external interruption and unknown causes when the structured reason is supplied.
-2. Poor recovery and symptoms take precedence over positive progression signals.
+2. Poor recovery, symptoms and structured movement-control concerns take precedence over positive progression signals.
 3. Multi-week decline prompts review of the affected exercise, not automatic
    reduction of the whole programme.
 4. Positive progression remains exercise-specific; one successful exercise does
