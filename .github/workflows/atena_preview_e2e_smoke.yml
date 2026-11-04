@@ -74,7 +74,7 @@ jobs:
           import urllib.error
           import urllib.request
 
-          url = "https://3c9d85f4.atena-ai-trener.pages.dev/api/plan"
+          url = "https://493a8420.atena-ai-trener.pages.dev/api/plan"
           payload = {
               "profile": {
                   "goal": "moč in mišična masa",
@@ -92,7 +92,7 @@ jobs:
                   "Content-Type": "application/json",
                   "Accept": "application/json",
                   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-                  "Origin": "https://3c9d85f4.atena-ai-trener.pages.dev"
+                  "Origin": "https://493a8420.atena-ai-trener.pages.dev"
               },
               method="POST"
           )
