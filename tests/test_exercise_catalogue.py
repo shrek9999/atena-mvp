@@ -209,3 +209,22 @@ def test_unloaded_hinge_uses_neutral_back_forward_bend_user_facing_name():
     item = get_exercise("bodyweight_hip_hinge")
     assert item["name"] == "Predklon z nevtralnim hrbtom (lastna teža)"
     assert any("nevtralnega položaja hrbtenice" in cue for cue in item["cues"])
+
+
+
+def test_knee_flexion_accessories_are_not_misclassified_as_hip_hinge_patterns():
+    assert get_exercise("slider_leg_curl")["movement_pattern"] == "accessory"
+    assert get_exercise("nordic_hamstring_curl")["movement_pattern"] == "accessory"
+
+
+def test_static_stretches_do_not_claim_balance_or_stability_training():
+    for exercise_id in ("couch_stretch", "supine_hamstring_stretch", "doorway_pec_stretch", "calf_wall_stretch"):
+        item = get_exercise(exercise_id)
+        assert item["training_purposes"] == ["mobility"]
+        assert item["stability_role"] == "none"
+        assert item["stability_focus"] == []
+
+
+def test_low_load_trunk_control_drills_are_not_tagged_as_hypertrophy_exercises():
+    for exercise_id in ("pallof_press", "dead_bug", "seated_leg_lift"):
+        assert "hypertrophy" not in get_exercise(exercise_id)["training_purposes"]
