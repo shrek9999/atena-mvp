@@ -1543,9 +1543,11 @@ def _build_adaptive_decision(sessions, exercise_progressions=None,
         decision["adaptation_id"] = prior.get("adaptation_id")
     else:
         latest_date = latest.get("session_date", "no-date")
+        latest_session = latest.get("session", {})
         seed = "|".join([
-            str(latest_date), str(decision.get("decision")),
-            str(decision.get("scope")), ",".join(decision.get("reason_codes", [])),
+            str(latest_date), str(latest_session.get("session_key", "")),
+            str(decision.get("decision")), str(decision.get("scope")),
+            ",".join(decision.get("reason_codes", [])),
         ])
         decision["adaptation_id"] = uuid.uuid5(uuid.NAMESPACE_URL, "atena:" + seed).hex[:24]
     decision["feedback_contract"] = {
