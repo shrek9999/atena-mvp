@@ -128,6 +128,8 @@ def test_adaptive_decision_endpoint_accepts_set_by_set_exercise_evidence(monkeyp
                 "target_reps_min": 8,
                 "target_reps_max": 12,
                 "execution_quality": "controlled",
+                "tempo_control": "followed",
+                "tempo_target": "3–1–1–0",
                 "set_results": [
                     {"reps": 10, "load_kg": 30, "rir": 3},
                     {"reps": 10, "load_kg": 30, "rir": 3},
@@ -222,3 +224,23 @@ def test_adaptive_decision_endpoint_interprets_positive_and_neutral_feedback(
         assert decision["previous_adaptation_id"] == first["adaptation_id"]
     else:
         assert decision["adaptation_id"] != first["adaptation_id"]
+
+
+def test_adaptive_decision_endpoint_rejects_invalid_tempo_target(monkeypatch):
+    response = post(client(monkeypatch), [{
+        "session_date": "2026-11-03",
+        "session": {
+            "completed": True,
+            "difficulty": "moderate",
+            "recovery": "good",
+            "exercises": [{
+                "exercise_id": load_catalogue()[0]["id"],
+                "planned_sets": 1,
+                "execution_quality": "controlled",
+                "tempo_control": "followed",
+                "tempo_target": "fast",
+                "set_results": [{"reps": 10, "rir": 3}],
+            }],
+        },
+    }])
+    assert response.status_code == 400
