@@ -135,6 +135,12 @@ def _classify(history):
         or not latest["rir_complete"] or not previous["rir_complete"]
     ):
         return "collect_data", "Manjka zanesljiva ocena RIR za vsako serijo v obeh zadnjih izvedbah. Brez popolnih podatkov ne bom sklepal, da je progresija upravičena."
+    if not isinstance(latest["planned_sets"], int) or isinstance(latest["planned_sets"], bool) or latest["planned_sets"] < 1:
+        return "collect_data", "Manjka zanesljiv podatek o načrtovanem številu serij. Pred progresijo ga je treba potrditi."
+    if not isinstance(previous["planned_sets"], int) or isinstance(previous["planned_sets"], bool) or previous["planned_sets"] < 1:
+        return "collect_data", "V prejšnji izvedbi manjka podatek o načrtovanem številu serij. Potrebna je še ena primerljiva izvedba."
+    if latest["planned_sets"] != previous["planned_sets"]:
+        return "hold", "Načrtovano število serij se je med zadnjima izvedbama spremenilo. Najprej utrdi enak obseg v dveh primerljivih izvedbah."
     if not latest["sets_complete"] or not previous["sets_complete"]:
         return "hold", "V eni od zadnjih izvedb ni bilo zabeleženih vseh načrtovanih serij. Najprej preveri razlog in utrdi načrtovani odmerek."
     if min(latest["rirs"]) < 3 or min(previous["rirs"]) < 3:
