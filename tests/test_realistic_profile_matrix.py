@@ -15,6 +15,7 @@ VISIBLE_GOALS = [
     "fat_loss",
 ]
 EXPERIENCE_LEVELS = ["beginner", "intermediate", "advanced"]
+SESSIONS_PER_WEEK = [2, 3, 4]
 
 # These are the four equipment choices exposed by the current onboarding UI.
 EQUIPMENT_PROFILES = {
@@ -29,24 +30,25 @@ EQUIPMENT_PROFILES = {
 
 
 @pytest.mark.parametrize(
-    "goal,experience,equipment_name,equipment,duration",
+    "goal,experience,equipment_name,equipment,sessions,duration",
     [
         (goal, experience, equipment_name, equipment, duration)
-        for goal, experience, (equipment_name, equipment), duration in product(
+        for goal, experience, (equipment_name, equipment), sessions, duration in product(
             VISIBLE_GOALS,
             EXPERIENCE_LEVELS,
             EQUIPMENT_PROFILES.items(),
+            SESSIONS_PER_WEEK,
             [30, 45, 60],
         )
     ],
 )
 def test_visible_profiles_work_with_realistic_equipment_and_time_choices(
-    goal, experience, equipment_name, equipment, duration
+    goal, experience, equipment_name, equipment, sessions, duration
 ):
     profile = {
         "goal": goal,
         "experience": experience,
-        "sessions_per_week": 2,
+        "sessions_per_week": sessions,
         "session_minutes": duration,
         "equipment": equipment,
         "include_accessories": False,
@@ -56,11 +58,11 @@ def test_visible_profiles_work_with_realistic_equipment_and_time_choices(
 
     assert plan["goal"] == goal, (goal, experience, equipment_name, duration)
     assert plan["experience"] == experience
-    assert len(plan["sessions"]) == 2
+    assert len(plan["sessions"]) == sessions
 
     available = set(equipment) | {"bodyweight"}
     for session in plan["sessions"]:
-        context = (goal, experience, equipment_name, duration, session["session"])
+        context = (goal, experience, equipment_name, sessions, duration, session["session"])
         assert 3 <= len(session["exercises"]) <= 6, context
         assert session["available_minutes"] == duration, context
         assert session["estimated_minutes"] <= duration, context
