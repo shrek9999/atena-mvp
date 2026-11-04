@@ -40,6 +40,21 @@ def test_poor_recovery_is_not_mistaken_for_lack_of_time():
     assert result["reason_codes"] == ["incomplete_due_to_recovery"]
 
 
+def test_poor_recovery_takes_priority_when_time_shortage_is_also_reported():
+    result = decide_adaptation([
+        row("2026-11-02", completed=False, completion_reason="time_constraint", recovery="poor")
+    ])
+    assert result["decision"] == "recovery_review"
+
+
+def test_failed_previous_adjustment_is_not_masked_by_incomplete_time_reason():
+    result = decide_adaptation(
+        [row("2026-11-02", completed=False, completion_reason="time_constraint")],
+        prior_adaptation={"adaptation_id": "adapt-123", "outcome": "worse"},
+    )
+    assert result["decision"] == "reassess_previous_change"
+
+
 def test_external_interruption_does_not_reduce_the_programme():
     result = decide_adaptation([
         row("2026-11-02", completed=False, completion_reason="external_interruption")
