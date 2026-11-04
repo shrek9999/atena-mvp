@@ -1223,7 +1223,8 @@
     "training_purposes": [
       "strength",
       "general_fitness",
-      "functional_fitness"
+      "functional_fitness",
+      "stability"
     ],
     "stability_role": "primary",
     "stability_focus": [
@@ -1295,7 +1296,8 @@
     "training_purposes": [
       "general_fitness",
       "functional_fitness",
-      "strength"
+      "strength",
+      "stability"
     ],
     "stability_role": "primary",
     "stability_focus": [
@@ -1360,7 +1362,8 @@
     "movement_pattern": "trunk_control",
     "training_purposes": [
       "general_fitness",
-      "functional_fitness"
+      "functional_fitness",
+      "stability"
     ],
     "stability_role": "primary",
     "stability_focus": [
@@ -3789,7 +3792,8 @@
       "strength",
       "hypertrophy",
       "functional_fitness",
-      "general_fitness"
+      "general_fitness",
+      "stability"
     ],
     "stability_role": "primary",
     "stability_focus": [
@@ -3858,7 +3862,8 @@
     "training_purposes": [
       "strength",
       "hypertrophy",
-      "functional_fitness"
+      "functional_fitness",
+      "stability"
     ],
     "stability_role": "primary",
     "stability_focus": [
@@ -5167,7 +5172,8 @@
     "training_purposes": [
       "strength",
       "functional_fitness",
-      "general_fitness"
+      "general_fitness",
+      "stability"
     ],
     "stability_role": "primary",
     "stability_focus": [
@@ -5232,7 +5238,8 @@
     "training_purposes": [
       "strength",
       "functional_fitness",
-      "general_fitness"
+      "general_fitness",
+      "stability"
     ],
     "stability_role": "primary",
     "stability_focus": [
@@ -7172,7 +7179,8 @@
     "training_purposes": [
       "strength",
       "functional_fitness",
-      "general_fitness"
+      "general_fitness",
+      "stability"
     ],
     "stability_role": "primary",
     "stability_focus": [
@@ -7247,7 +7255,8 @@
     "training_purposes": [
       "strength",
       "functional_fitness",
-      "general_fitness"
+      "general_fitness",
+      "stability"
     ],
     "stability_role": "primary",
     "stability_focus": [
@@ -7592,7 +7601,8 @@
     ],
     "movement_pattern": "trunk_control",
     "training_purposes": [
-      "functional_fitness"
+      "functional_fitness",
+      "stability"
     ],
     "stability_role": "primary",
     "stability_focus": [
@@ -7662,7 +7672,8 @@
       "functional_fitness",
       "general_fitness",
       "mobility",
-      "balance"
+      "balance",
+      "stability"
     ],
     "stability_role": "primary",
     "stability_focus": [
@@ -7801,7 +7812,8 @@
     "movement_pattern": "trunk_control",
     "training_purposes": [
       "strength",
-      "functional_fitness"
+      "functional_fitness",
+      "stability"
     ],
     "stability_role": "primary",
     "stability_focus": [
@@ -7866,7 +7878,8 @@
     "single_joint": false,
     "movement_pattern": "trunk_control",
     "training_purposes": [
-      "functional_fitness"
+      "functional_fitness",
+      "stability"
     ],
     "stability_role": "primary",
     "stability_focus": [
@@ -7929,7 +7942,8 @@
     "single_joint": false,
     "movement_pattern": "trunk_control",
     "training_purposes": [
-      "functional_fitness"
+      "functional_fitness",
+      "stability"
     ],
     "stability_role": "primary",
     "stability_focus": [
