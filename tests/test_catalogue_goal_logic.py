@@ -217,8 +217,8 @@ def test_beginner_combined_strength_hypertrophy_uses_foundational_tempo():
     for pattern in patterns:
         exercise = {"id": f"test_{pattern}", "pattern": pattern, "unilateral": pattern == "lunge"}
         prescription = _prescription("strength_hypertrophy", "beginner", pattern, exercise)
-        assert prescription["tempo"] == "2–1–1–0", pattern
-        assert prescription["tempo_seconds_per_rep"] == 4, pattern
+        assert prescription["tempo"] == "3–1–1–0", pattern
+        assert prescription["tempo_seconds_per_rep"] == 5, pattern
 
 
 
