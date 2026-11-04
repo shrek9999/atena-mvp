@@ -75,6 +75,9 @@ def _decision(decision, scope, reason_code, explanation, objective, *,
         "pause_and_review": [
             "Pred nadaljevanjem ni novih ali poslabšanih opozorilnih znakov; progresija ostane ustavljena do ponovne presoje."
         ],
+        "technique_review": [
+            "Pri naslednjih dveh primerljivih izvedbah je nadzor trupa in položaja potrjen kot stabilen, preden se progresija ponovno odpre."
+        ],
     }
     result = {
         "decision": decision,
@@ -119,6 +122,15 @@ def decide_adaptation(sessions, *, exercise_progressions=None,
             "V zadnjih treh zapisih je zabeleženo nelagodje. Varnostni signal ima prednost pred trendi in progresijo.",
             "Razjasniti trenutno stanje in varno nadaljevanje.",
             question="Ali je nelagodje še prisotno ali se je povsem umirilo?",
+        )
+
+    if any(session.get("movement_control") in {"spinal_flexion", "bracing", "both"} for _, session in recent):
+        return _decision(
+            "technique_review", "session", "movement_control_issue",
+            "Zabeležena je težava z nadzorom trupa ali vzpostavljanjem znotrajtrebušnega pritiska. Pred progresijo je treba preveriti kakovost izvedbe osnovnih vzorcev.",
+            "Potrditi nadzorovano izvedbo in ustrezno strategijo stabilizacije, ne pa samodejno dodajati stabilizacijskih vaj vsem treningom.",
+            question="Pri katerem gibalnem vzorcu se je težava pokazala in ali se je pojavila pri eni ali več vajah?",
+            adjustment="hold_affected_exercise_and_review_context",
         )
 
     latest_day, latest = recent[0]
