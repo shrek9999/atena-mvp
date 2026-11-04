@@ -4,7 +4,7 @@
 
 The catalogue is the source of truth for exercise selection. The generator must select an exercise because its movement pattern, training role, loading potential, available equipment and intended stimulus match the user's goal—not merely because the exercise name contains a familiar movement.
 
-The catalogue currently contains 109 curated entries. It is a controlled pilot library, not an exhaustive encyclopaedia. New exercises should be added only with a defined purpose, equipment contract, coaching cues, common errors, regression, progression and safety notes.
+The catalogue currently contains 121 curated entries. It is a controlled pilot library, not an exhaustive encyclopaedia. New exercises should be added only with a defined purpose, equipment contract, coaching cues, common errors, regression, progression and safety notes.
 
 
 ## Exercise naming policy
@@ -12,6 +12,8 @@ The catalogue currently contains 109 curated entries. It is a controlled pilot l
 The catalogue `name` field is the canonical user-facing exercise name. Use an established Slovenian name only when it is genuinely used and unambiguous in coaching practice. If no established Slovenian name exists, retain the canonical English exercise name from `name_en`; do not create literal translations or improvised Slovenian labels. Keep the same canonical name in the programme, exercise instructions, alternatives and interface. In particular, the catalogue label is **Cossack squat**, not a translated label.
 
 ## Movement architecture
+
+The structured semantic fields `movement_pattern`, `training_purposes`, `stability_role` and `stability_focus` are defined in [EXERCISE_TAXONOMY_V1.md](EXERCISE_TAXONOMY_V1.md). Keep foundational pattern, training purpose and stability contribution separate. The legacy `pattern` remains the detailed filter key.
 
 | Pattern / family | Purpose and examples |
 |---|---|

@@ -177,3 +177,75 @@ def test_added_strength_side_and_atg_variants_are_available():
         "patrick_step", "reverse_nordic_curl", "sled_backward_drag",
         "front_rack_carry", "overhead_carry",
     } <= records
+
+
+def test_every_exercise_has_valid_taxonomy_and_stability_metadata():
+    valid_patterns = {
+        "squat", "lunge", "hinge", "hip_extension", "push", "pull", "carry", "trunk_control",
+        "locomotion", "conditioning", "mobility", "balance", "coordination", "accessory",
+    }
+    valid_stability_roles = {"primary", "supporting", "incidental", "none"}
+    valid_stability_focus = {"trunk_control", "trunk_bracing", "balance", "coordination", "joint_control"}
+    for item in load_catalogue():
+        assert item["movement_pattern"] in valid_patterns, item["id"]
+        assert item["training_purposes"], item["id"]
+        assert item["stability_role"] in valid_stability_roles, item["id"]
+        assert set(item["stability_focus"]) <= valid_stability_focus, item["id"]
+        assert (item["stability_role"] == "none") == (not item["stability_focus"]), item["id"]
+
+
+def test_reaching_squat_is_an_accessible_squat_with_supporting_stability_role():
+    item = get_exercise("reaching_squat")
+    assert item["movement_pattern"] == "squat"
+    assert item["stability_role"] == "supporting"
+    assert {"trunk_bracing", "balance", "coordination"} <= set(item["stability_focus"])
+    assert {"stability", "trunk_bracing", "balance", "coordination", "skill"} <= set(item["training_purposes"])
+    assert "hypertrophy" not in item["training_purposes"]
+    assert "weight_plate" in item["equipment_any"]
+    assert any("5 kg" in cue for cue in item["cues"])
+
+
+def test_unloaded_hinge_uses_neutral_back_forward_bend_user_facing_name():
+    item = get_exercise("bodyweight_hip_hinge")
+    assert item["name"] == "Predklon z nevtralnim hrbtom (lastna teža)"
+    assert any("nevtralnega položaja hrbtenice" in cue for cue in item["cues"])
+
+
+
+def test_knee_flexion_accessories_are_not_misclassified_as_hip_hinge_patterns():
+    assert get_exercise("slider_leg_curl")["movement_pattern"] == "accessory"
+    assert get_exercise("nordic_hamstring_curl")["movement_pattern"] == "accessory"
+
+
+def test_static_stretches_do_not_claim_balance_or_stability_training():
+    for exercise_id in ("couch_stretch", "supine_hamstring_stretch", "doorway_pec_stretch", "calf_wall_stretch"):
+        item = get_exercise(exercise_id)
+        assert item["training_purposes"] == ["mobility"]
+        assert item["stability_role"] == "none"
+        assert item["stability_focus"] == []
+
+
+def test_low_load_trunk_control_drills_are_not_tagged_as_hypertrophy_exercises():
+    for exercise_id in ("pallof_press", "dead_bug", "seated_leg_lift"):
+        assert "hypertrophy" not in get_exercise(exercise_id)["training_purposes"]
+
+
+
+def test_hip_extension_variants_are_distinct_from_the_predklon_pattern():
+    for exercise_id in ("hip_thrust", "glute_bridge", "long_lever_glute_bridge", "elevated_heel_hip_lift"):
+        assert get_exercise(exercise_id)["movement_pattern"] == "hip_extension"
+    assert get_exercise("bodyweight_hip_hinge")["movement_pattern"] == "hinge"
+
+
+
+def test_programme_hinge_label_uses_neutral_back_predklon_wording():
+    from training.program import PATTERN_LABELS
+
+    assert PATTERN_LABELS["hinge"] == "predklon z nevtralnim hrbtom"
+
+
+
+def test_single_leg_balance_reach_uses_balance_and_joint_control_stability_focus():
+    item = get_exercise("single_leg_balance_reach")
+    assert item["stability_role"] == "primary"
+    assert set(item["stability_focus"]) == {"balance", "joint_control"}

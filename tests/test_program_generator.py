@@ -713,7 +713,7 @@ def test_hinge_pattern_uses_clear_coaching_term_predklon_z_ravnim_hrbtom():
         if exercise["pattern"] == "hinge"
     ]
     assert hinges
-    assert all(exercise["pattern_label"] == "predklon z ravnim hrbtom" for exercise in hinges)
+    assert all(exercise["pattern_label"] == "predklon z nevtralnim hrbtom" for exercise in hinges)
 
 
 
