@@ -16,7 +16,7 @@ Every exercise receives `movement_pattern`, one of:
 - `conditioning`: cyclical or mixed-modal conditioning not better represented as locomotion.
 - `mobility`: active mobility, transitions and stretching.
 - `balance`, `coordination`: exercises whose primary movement identity is these qualities.
-- `accessory`: local or supplementary exercises that do not fit the foundational patterns.
+- `accessory`: local or supplementary exercises that do not fit the foundational patterns. Knee-flexion accessories such as slider and Nordic hamstring curls are not hip-hinge/predklon patterns.
 
 The legacy `pattern` and `movement_family` remain intact for current filtering and are not to be removed in this phase.
 
@@ -26,7 +26,7 @@ Each record has a list `training_purposes`. Allowed values:
 
 - `strength`, `hypertrophy`, `mobility`, `stability`, `trunk_bracing`, `balance`, `coordination`, `power`, `cardiorespiratory_conditioning`, `muscular_endurance`, `general_fitness`, `functional_fitness`, `weight_management`, `skill`.
 
-An exercise may serve multiple purposes. Its catalogue `goals` remain the existing high-level programme eligibility tags; purposes explain the specific qualities the exercise can contribute. A purpose tag does not make an exercise automatically suitable as the main stimulus for that goal. Consider loading potential, training experience, range, dose and feedback.
+An exercise may serve multiple purposes. Its catalogue `goals` remain the existing high-level programme eligibility tags; purposes explain the specific qualities the exercise can contribute. A purpose tag does not make an exercise automatically suitable as the main stimulus for that goal. Consider loading potential, training experience, range, dose and feedback. Avoid broad, decorative tagging: do not label every mobility drill as functional fitness, every unilateral exercise as balance training, or every exercise requiring ordinary postural control as a dedicated stability exercise.
 
 ## Stability semantics
 
