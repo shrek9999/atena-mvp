@@ -8,6 +8,7 @@ import urllib.error
 import urllib.request
 import secrets
 import socket
+import time
 import uuid
 from datetime import date
 
@@ -782,6 +783,51 @@ def _format_recent_training_context(sessions):
     return "\\n".join(lines)
 
 
+def _request_gemini_content(api_key, model, fallback_model, payload):
+    """Retry transient Gemini capacity errors and optionally use a configured fallback."""
+    candidates = [model]
+    if fallback_model and fallback_model != model:
+        candidates.append(fallback_model)
+    transient_statuses = {500, 502, 503, 504}
+    last_error = None
+    for model_index, candidate_model in enumerate(candidates):
+        url = (
+            "https://generativelanguage.googleapis.com/v1beta/models/"
+            + candidate_model + ":generateContent?key=" + api_key
+        )
+        request_body = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        for attempt in range(2):
+            try:
+                with urllib.request.urlopen(request_body, timeout=65) as response:
+                    data = json.loads(response.read().decode("utf-8"))
+                if model_index:
+                    logger.warning(
+                        "Gemini fallback model %s succeeded after primary model %s failed",
+                        candidate_model, model
+                    )
+                return data, candidate_model
+            except urllib.error.HTTPError as exc:
+                last_error = exc
+                if exc.code not in transient_statuses:
+                    raise
+                logger.warning(
+                    "Gemini model %s returned transient HTTP %s (attempt %s/2)",
+                    candidate_model, exc.code, attempt + 1
+                )
+                if attempt == 0:
+                    time.sleep(1.0)
+                    continue
+                break
+    if last_error is not None:
+        raise last_error
+    raise urllib.error.URLError("Gemini request failed without a provider response")
+
+
 @coach_bp.route("/coach/chat", methods=["POST", "OPTIONS"])
 def coach_chat():
     if request.method == "OPTIONS":
@@ -922,16 +968,16 @@ def coach_chat():
             "guardrail_applied": True,
             "response_source": "server_guardrail",
         })
-    url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + api_key
     body = {
         "systemInstruction": {"parts": [{"text": system_prompt}]},
         "contents": contents,
         "generationConfig": {"temperature": 0.25, "maxOutputTokens": 900}
     }
-    req = urllib.request.Request(url, data=json.dumps(body).encode("utf-8"), headers={"Content-Type": "application/json"}, method="POST")
+    fallback_model = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-3.1-flash-lite").strip()
     try:
-        with urllib.request.urlopen(req, timeout=65) as response:
-            data = json.loads(response.read().decode("utf-8"))
+        data, used_model = _request_gemini_content(
+            api_key, model, fallback_model, body
+        )
         parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
         answer = "\n".join(p.get("text", "") for p in parts if isinstance(p, dict)).strip()
         if not answer:
@@ -950,7 +996,7 @@ def coach_chat():
         )
         return jsonify({
             "reply": answer,
-            "model": model,
+            "model": used_model,
             "pilot": True,
             "guardrail_applied": False,
             "response_source": "gemini",
