@@ -8174,7 +8174,9 @@
     "joint_type": "multi_joint",
     "goals": [
       "general_fitness",
-      "functional"
+      "functional",
+      "strength",
+      "hypertrophy"
     ],
     "equipment": [
       "bodyweight"
@@ -8205,9 +8207,7 @@
       "Izmenični dvig nasprotne roke in noge leže na trebuhu",
       "Kratek izometrični Superman z nadzorovanim položajem"
     ],
-    "alternatives": [
-      "bird_dog"
-    ],
+    "alternatives": [],
     "warnings": [
       "Izberi le, če je položaj leže na trebuhu udoben in neboleč.",
       "Ob bolečini ali naraščajočem nelagodju v hrbtu vajo prekini in razjasni odziv."
