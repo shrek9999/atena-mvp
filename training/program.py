@@ -396,8 +396,8 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     elif is_stability:
         tempo, tempo_description, tempo_seconds = "2–1–2–1", "2 s izteg oziroma odmik · 1 s nadzor · 2 s vrnitev · 1 s ponastavitev.", 6
     elif goal == "strength_hypertrophy" and level == "beginner":
-        # Beginners learn repeatable positions with a deliberately controlled eccentric phase.
-        tempo, tempo_description, tempo_seconds = "3–1–1–0", "3 s nadzorovan spust · 1 s nadzor v spodnjem položaju · 1 s dvig · brez premora v vrhu.", 5
+        # Agreed beginner combined-goal default: controlled, repeatable 2–1–1–0.
+        tempo, tempo_description, tempo_seconds = "2–1–1–0", "2 s nadzorovan spust · 1 s nadzor v spodnjem položaju · 1 s dvig · brez premora v vrhu.", 4
     elif level == "beginner":
         # Foundational exercises use the same learning tempo across strength and hypertrophy goals.
         tempo, tempo_description, tempo_seconds = "3–1–1–0", "3 s nadzorovan spust · 1 s nadzor v spodnjem položaju · 1 s dvig · brez premora v vrhu.", 5
