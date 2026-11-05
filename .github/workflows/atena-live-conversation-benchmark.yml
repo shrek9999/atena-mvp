@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
-      AI_COACH_TEST_TOKEN: \${{ secrets.AI_COACH_TEST_TOKEN }}
+      AI_COACH_TEST_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
       ATENA_BENCHMARK_BACKEND: https://atena-ai-coach-pilot.onrender.com
     steps:
       - name: Check out backend
