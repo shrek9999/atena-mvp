@@ -344,7 +344,7 @@ jobs:
                   "exercises": []
               }
               _, saved = call(f"/api/profile/{profile_id}/sessions", "POST", session_payload, profile_token, expected=(201,))
-              session_id = saved.get("session_id")
+              session_id = (saved.get("session") or {}).get("session_id")
               if not session_id:
                   raise RuntimeError("Training session was not saved with an ID.")
 
