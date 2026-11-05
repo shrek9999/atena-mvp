@@ -869,7 +869,6 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                         prescription["rir"] = max(3, prescription["rir"])
                     if prescription.get("rir_range") is not None:
                         prescription["rir_range"] = "3–4"
-                    prescription["adjustment_note"] = movement_note
                 movement_adaptation_events.append({
                     "pattern": pattern, "tasks": affected_tasks,
                     "action": "simpler_catalogue_variant_selected" if pattern != "balance" else "stable_support_cue",
@@ -878,7 +877,6 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 })
             elif movement_status == "uncertain":
                 movement_note = "Pri tej nalogi nisi prepričan/-a. ATENA zato ni spreminjala izbire na podlagi ugibanja; pred prvo delovno serijo preveri, ali je različica udobna in nadzorovana. Če nisi prepričan/-a, vprašaj trenerja za lažjo možnost."
-                prescription["adjustment_note"] = movement_note
                 movement_adaptation_events.append({
                     "pattern": pattern, "tasks": affected_tasks,
                     "action": "kept_selection_pending_user_clarification",
@@ -929,7 +927,7 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                     "Ker je bil zadnji trening pretežek oziroma regeneracija slabša, "
                     "je naslednji vadbeni odmerek konservativno zmanjšan. Ohrani nadzorovano izvedbo."
                 )
-            elif progress_load:
+            elif progress_load and movement_status not in {"needs_support", "uncertain"}:
                 # One easy report earns only a small, reversible progression:
                 # one additional target rep or a small work-time increase. Never
                 # invent a kilogram increase without knowing the actual load.
@@ -952,6 +950,9 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                         "dodaj eno kakovostno ponovitev na serijo. Breme povečaj šele, ko "
                         "večkrat dosežeš zgornjo mejo z ustrezno rezervo in tehniko."
                     )
+            if movement_note:
+                existing_note = prescription.get("adjustment_note")
+                prescription["adjustment_note"] = movement_note + ((" " + existing_note) if existing_note else "")
             def equipment_priority(item: str) -> tuple[int, str]:
                 if item in {"dumbbell", "kettlebell", "barbell", "resistance_band"}:
                     return (0, item)
@@ -1150,7 +1151,7 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
         "movement_adaptation": {
             "source": "self_reported_movement_assessment",
             "is_diagnosis": False,
-            "automatic_progression": "unchanged",
+            "automatic_progression": "movement_assessment_does_not_trigger_progression",
             "events": movement_adaptation_events,
             "summary": movement_summary,
         } if movement_summary is not None else None,
