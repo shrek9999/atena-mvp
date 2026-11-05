@@ -38,6 +38,8 @@ ALLOWED_ORIGINS = {
     "https://www.gregajenko.si",
     # Temporary, isolated Netlify Deploy Preview used for the closed pilot only.
     "https://deploy-preview-7--tiny-figolla-016703.netlify.app",
+    # Cloudflare Pages pilot preview used by the current ATENA frontend.
+    "https://pilot-atena-profile-history.atena-ai-trener.pages.dev",
 }
 
 @coach_bp.after_request
