@@ -676,6 +676,11 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
             seen_patterns.add(pattern)
             movement_status = movement_status_by_pattern.get(pattern)
             affected_tasks = movement_tasks_by_pattern.get(pattern, [])
+            if pattern == "locomotion" and movement_status == "needs_support":
+                raise ProgramValidationError(
+                    "Pri hoji si navedel/-la uporabo opore ali pomoč druge osebe. ATENA ti ne bo samodejno predpisala hitre hoje. "
+                    "Pred pripravo kondicijskega programa morava v pogovoru razjasniti, kakšna hoja je zate običajna in varna."
+                )
             if movement_status == "symptoms_reported":
                 missing_patterns.add(pattern)
                 movement_adaptation_events.append({
