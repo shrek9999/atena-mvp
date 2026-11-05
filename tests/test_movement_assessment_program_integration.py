@@ -141,15 +141,10 @@ def test_needs_support_horizontal_pull_does_not_fall_back_to_unmodified_one_arm_
     )
 
 
-def test_needs_support_walking_does_not_auto_prescribe_brisk_walking():
+def test_needs_support_walking_fails_closed_instead_of_prescribing_brisk_walking():
     profile = {**BASE, "goal": "fat_loss", "sessions_per_week": 3}
-    plan = generate_program(profile, movement_assessment={"locomotion": "needs_support"})
-    assert not _exercises(plan, "locomotion")
-    assert any(
-        event["pattern"] == "locomotion"
-        and event["action"] == "omitted_no_verified_supported_variant"
-        for event in plan["movement_adaptation"]["events"]
-    )
+    with pytest.raises(ProgramValidationError, match="ni dovolj preverjenih vaj"):
+        generate_program(profile, movement_assessment={"locomotion": "needs_support"})
 
 
 def test_overhead_reach_uncertainty_does_not_auto_remove_vertical_press():
