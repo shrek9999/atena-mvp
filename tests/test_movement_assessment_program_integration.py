@@ -46,6 +46,19 @@ def test_needs_support_hinge_uses_bodyweight_learning_variant_not_loaded_rdl():
     assert all(exercise["prescription"]["sets"] <= 2 for exercise in hinges)
 
 
+def test_easy_feedback_does_not_progress_a_pattern_marked_needs_support():
+    plan = generate_program(
+        BASE,
+        feedback={"difficulty": "easy", "discomfort": "no"},
+        movement_assessment={"squat": "needs_support"},
+    )
+    squats = _exercises(plan, "squat")
+    assert squats
+    assert all(exercise["prescription"]["sets"] <= 2 for exercise in squats)
+    assert all("lažja različica" in exercise["prescription"]["adjustment_note"] for exercise in squats)
+    assert all("prelahek" not in exercise["prescription"]["adjustment_note"] for exercise in squats)
+
+
 def test_uncertain_keeps_the_original_selection_and_explains_no_guessing():
     baseline = generate_program(BASE)
     uncertain = generate_program(BASE, movement_assessment={"squat": "uncertain"})
