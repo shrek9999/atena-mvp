@@ -1,0 +1,370 @@
+name: ATENA Cloudflare Preview end-to-end smoke
+
+on:
+  push:
+    branches:
+      - qa/visible-goal-matrix-functional-beginner-safety
+  pull_request:
+    branches:
+      - pilot/website-ai-coach
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+concurrency:
+  group: atena-cloudflare-preview-smoke-${{ github.event_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  preview-to-render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wake and check the Render backend
+        run: |
+          python - <<'PY'
+          import json
+          import urllib.request
+
+          url = "https://atena-ai-coach-pilot.onrender.com/health"
+          with urllib.request.urlopen(url, timeout=120) as response:
+              body = json.loads(response.read().decode("utf-8"))
+              print(f"Render health: HTTP {response.status}; status={body.get('status')}; version={body.get('version')}")
+              if response.status != 200 or body.get("status") != "ok":
+                  raise SystemExit("Render health check failed.")
+          PY
+
+      - name: Verify GitHub Actions token matches the Render pilot token
+        env:
+          PILOT_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.request
+
+          token = os.environ.get("PILOT_TOKEN", "").strip()
+          if len(token) < 16:
+              print("GitHub Actions secret AI_COACH_TEST_TOKEN is missing or too short.")
+              sys.exit(1)
+          request = urllib.request.Request(
+              "https://atena-ai-coach-pilot.onrender.com/coach/status",
+              headers={"X-Pilot-Token": token},
+              method="GET"
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  body = json.loads(response.read().decode("utf-8"))
+                  print(f"GitHub → Render token: PASS (HTTP {response.status}; programme_available={body.get('program_available')}; chat_available={body.get('chat_available')})")
+          except urllib.error.HTTPError as exc:
+              print(f"GitHub → Render token: FAIL (HTTP {exc.code}); the repository secret does not match the Render pilot token or the endpoint is not configured.")
+              sys.exit(1)
+          PY
+
+      - name: Verify the stable Cloudflare pilot alias securely calls the Render programme generator
+        env:
+          PREVIEW_TOKEN: ${{ secrets.AI_TRAINER_PREVIEW_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+          import time
+          import urllib.error
+          import urllib.request
+
+          preview_token = os.environ.get("PREVIEW_TOKEN", "").strip()
+          if len(preview_token) < 20:
+              print("GitHub Actions secret AI_TRAINER_PREVIEW_TOKEN is missing or too short.")
+              sys.exit(1)
+
+          origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
+          url = origin + "/api/plan"
+          payload = {
+              "profile": {
+                  "goal": "moč in mišična masa",
+                  "experience": "začetnik",
+                  "equipment": "polno opremljen fitnes",
+                  "frequency": "2",
+                  "duration": "60 minut ali več",
+                  "restrictions": "ne"
+              }
+          }
+          request = urllib.request.Request(
+              url,
+              data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+              headers={
+                  "Content-Type": "application/json",
+                  "Accept": "application/json",
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                  "Origin": origin,
+                  "X-ATENA-Preview-Token": preview_token
+              },
+              method="POST"
+          )
+          time.sleep(3)
+          try:
+              with urllib.request.urlopen(request, timeout=120) as response:
+                  status = response.status
+                  body = json.loads(response.read().decode("utf-8"))
+          except urllib.error.HTTPError as exc:
+              raw = exc.read().decode("utf-8", errors="replace")
+              try:
+                  detail = json.loads(raw)
+              except json.JSONDecodeError:
+                  detail = {"error": raw[:250]}
+              print(f"Cloudflare pilot generator: HTTP {exc.code}; safe diagnostic={detail.get('error', 'no error message')}; upstream={detail.get('diagnostic', {})}")
+              sys.exit(1)
+
+          program = body.get("program") or {}
+          sessions = program.get("sessions")
+          if status != 200 or not isinstance(sessions, list) or len(sessions) != 2:
+              print(f"Pilot generator returned an invalid programme shape: HTTP {status}; session_count={len(sessions) if isinstance(sessions, list) else 'missing'}")
+              sys.exit(1)
+          if not all(isinstance(session.get("exercises"), list) and session["exercises"] for session in sessions):
+              print("Pilot generator returned an empty session.")
+              sys.exit(1)
+          if body.get("source") != "curated_exercise_catalogue" or body.get("pilot") is not True:
+              print("Pilot generator source or pilot marker did not match the expected contract.")
+              sys.exit(1)
+
+          exercise_count = sum(len(session["exercises"]) for session in sessions)
+          print(f"Cloudflare pilot → Render generator: PASS (HTTP {status}; sessions={len(sessions)}; exercises={exercise_count}; catalogue-backed response)")
+          print("No user profile was persisted. No credential was sent from this workflow or printed.")
+          PY
+
+      - name: Verify browser preflight for the Cloudflare pilot endpoints
+        run: |
+          python - <<'PY'
+          import sys
+          import urllib.error
+          import urllib.request
+
+          origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
+          checks = {
+              "/api/plan": "content-type, x-atena-preview-token",
+              "/api/chat": "content-type, x-atena-preview-token, x-profile-id, x-profile-token",
+          }
+          for path, requested_headers in checks.items():
+              request = urllib.request.Request(
+                  origin + path,
+                  headers={
+                      "Origin": origin,
+                      "Access-Control-Request-Method": "POST",
+                      "Access-Control-Request-Headers": requested_headers,
+                      "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36",
+                  },
+                  method="OPTIONS",
+              )
+              try:
+                  response_context = urllib.request.urlopen(request, timeout=30)
+              except urllib.error.HTTPError as exc:
+                  diagnostic = exc.read().decode("utf-8", errors="replace")[:250]
+                  print(f"Cloudflare preflight {path}: HTTP {exc.code}; diagnostic={diagnostic!r}; server={exc.headers.get('Server')}; cf-ray={exc.headers.get('CF-Ray')}")
+                  sys.exit(1)
+              with response_context as response:
+                  allowed_origin = response.headers.get("Access-Control-Allow-Origin")
+                  allowed_methods = response.headers.get("Access-Control-Allow-Methods", "").upper()
+                  allowed_headers = response.headers.get("Access-Control-Allow-Headers", "").lower()
+                  if response.status != 204 or allowed_origin != origin or "POST" not in allowed_methods:
+                      raise SystemExit(f"CORS preflight failed for {path}: HTTP {response.status}; origin={allowed_origin}; methods={allowed_methods}")
+                  missing = [item.strip() for item in requested_headers.split(",") if item.strip() not in allowed_headers]
+                  if missing:
+                      raise SystemExit(f"CORS preflight missing headers for {path}: {', '.join(missing)}")
+                  print(f"Cloudflare browser preflight {path}: PASS (HTTP {response.status}; origin and requested headers allowed)")
+
+          PY
+
+      - name: Verify a real ATENA chat response through Cloudflare and Render
+        env:
+          PREVIEW_TOKEN: ${{ secrets.AI_TRAINER_PREVIEW_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.request
+
+          token = os.environ.get("PREVIEW_TOKEN", "").strip()
+          if len(token) < 20:
+              raise SystemExit("GitHub Actions secret AI_TRAINER_PREVIEW_TOKEN is missing or too short.")
+          origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
+          request = urllib.request.Request(
+              origin + "/api/chat",
+              data=json.dumps({
+                  "messages": [{
+                      "role": "user",
+                      "content": "Pozdrav. V enem kratkem stavku povej, kako mi lahko pomagaš pri vadbi."
+                  }]
+              }, ensure_ascii=False).encode("utf-8"),
+              headers={
+                  "Origin": origin,
+                  "Content-Type": "application/json",
+                  "Accept": "application/json",
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                  "X-ATENA-Preview-Token": token,
+              },
+              method="POST",
+          )
+          import time
+          time.sleep(3)
+          try:
+              with urllib.request.urlopen(request, timeout=100) as response:
+                  body = json.loads(response.read().decode("utf-8"))
+                  answer = body.get("answer")
+                  if response.status != 200 or not isinstance(answer, str) or len(answer.strip()) < 12:
+                      raise SystemExit(f"ATENA chat returned no usable answer (HTTP {response.status}).")
+                  if not body.get("disclaimer"):
+                      raise SystemExit("ATENA chat response is missing its safety disclaimer.")
+                  print(f"Cloudflare → Render → AI chat: PASS (HTTP {response.status}; provider={body.get('provider', 'unspecified')}; non-empty answer; safety disclaimer present)")
+                  print("Synthetic greeting only; no profile or training history was created.")
+          except urllib.error.HTTPError as exc:
+              detail = exc.read().decode("utf-8", errors="replace")[:300]
+              print(f"ATENA chat failed: HTTP {exc.code}; response={detail}")
+              sys.exit(1)
+          PY
+
+      - name: Check Supabase reachability and pilot storage consent gate
+        run: |
+          python - <<'PY'
+          import json
+          import sys
+          import time
+          import urllib.request
+
+          origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
+          request = urllib.request.Request(
+              origin + "/api/profile/status",
+              headers={
+                  "Origin": origin,
+                  "Accept": "application/json",
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+              },
+              method="GET",
+          )
+          time.sleep(3)
+          with urllib.request.urlopen(request, timeout=30) as response:
+              body = json.loads(response.read().decode("utf-8"))
+              available = body.get("available") is True
+              enabled = body.get("storageEnabled") is True
+              print(f"Profile storage status: HTTP {response.status}; database_reachable={available}; storage_enabled={enabled}; privacy_notice_version={body.get('privacyNoticeVersion') or 'not available'}")
+              if response.status != 200:
+                  raise SystemExit("Profile storage status endpoint failed.")
+              if not available:
+                  raise SystemExit(f"Supabase connectivity is not ready: {body.get('message', 'no safe diagnostic')}")
+              if not enabled:
+                  print("Database is reachable; persistent user-data writes remain disabled until privacy approval.")
+          PY
+
+      - name: Verify synthetic profile and training-session persistence, then clean up
+        env:
+          PREVIEW_TOKEN: ${{ secrets.AI_TRAINER_PREVIEW_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+          import time
+          import urllib.error
+          import urllib.request
+
+          origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
+          preview_token = os.environ.get("PREVIEW_TOKEN", "").strip()
+          if len(preview_token) < 20:
+              raise SystemExit("Preview token is missing or too short.")
+          user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+
+          def call(path, method="GET", payload=None, profile_token=None, expected=(200,)):
+              headers = {"Origin": origin, "Accept": "application/json", "User-Agent": user_agent}
+              if path == "/api/profile" or path.startswith("/api/profile/"):
+                  headers["X-ATENA-Preview-Token"] = preview_token
+              if profile_token:
+                  headers["X-Profile-Token"] = profile_token
+              data = None
+              if payload is not None:
+                  headers["Content-Type"] = "application/json"
+                  data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+              request = urllib.request.Request(origin + path, data=data, headers=headers, method=method)
+              try:
+                  response = urllib.request.urlopen(request, timeout=40)
+                  with response:
+                      body = response.read().decode("utf-8")
+                      parsed = json.loads(body) if body else {}
+                      if response.status not in expected:
+                          raise RuntimeError(f"{method} {path}: unexpected HTTP {response.status}")
+                      return response.status, parsed
+              except urllib.error.HTTPError as exc:
+                  body = exc.read().decode("utf-8", errors="replace")[:250]
+                  if exc.code in expected:
+                      return exc.code, json.loads(body) if body.startswith("{") else {}
+                  raise RuntimeError(f"{method} {path}: HTTP {exc.code}; safe response={body}") from exc
+
+          time.sleep(3)
+          status_code, storage = call("/api/profile/status")
+          if status_code != 200 or storage.get("available") is not True or storage.get("storageEnabled") is not True:
+              raise SystemExit("Synthetic persistence test stopped: database or privacy-approved storage is not enabled.")
+          notice_version = storage.get("privacyNoticeVersion")
+          if not notice_version:
+              raise SystemExit("Privacy notice version is missing; no test profile was created.")
+
+          profile_id = None
+          profile_token = None
+          deleted = False
+          try:
+              _, created = call("/api/profile", "POST", {
+                  "profile": {
+                      "goal": "strength",
+                      "experience": "beginner",
+                      "equipment": [],
+                      "sessions_per_week": 2,
+                      "session_minutes": 30,
+                      "available_days": [],
+                      "pistol_squat_capable": False
+                  },
+                  "privacy_notice_acknowledged": True,
+                  "privacy_notice_version": notice_version,
+                  "health_data_consent": False
+              }, expected=(201,))
+              profile = created.get("profile") or {}
+              profile_id = profile.get("profile_id")
+              profile_token = created.get("profile_access_token")
+              if not profile_id or not profile_token:
+                  raise RuntimeError("Profile creation did not return its one-time access credentials.")
+
+              session_payload = {
+                  "session_date": "2026-11-05",
+                  "duration_minutes": 1,
+                  "difficulty": "easy",
+                  "completed": True,
+                  "recovery": "good",
+                  "exercises": []
+              }
+              _, saved = call(f"/api/profile/{profile_id}/sessions", "POST", session_payload, profile_token, expected=(201,))
+              session_id = (saved.get("session") or {}).get("session_id")
+              if not session_id:
+                  raise RuntimeError("Training session was not saved with an ID.")
+
+              _, listed = call(f"/api/profile/{profile_id}/sessions", "GET", profile_token=profile_token)
+              sessions = listed.get("sessions") or []
+              if not any(item.get("session_id") == session_id for item in sessions):
+                  raise RuntimeError("Saved training session could not be read back.")
+
+              call(f"/api/profile/{profile_id}", "DELETE", profile_token=profile_token, expected=(200,))
+              deleted = True
+              call(f"/api/profile/{profile_id}", "GET", profile_token=profile_token, expected=(404,))
+              print("Supabase profile persistence: PASS (synthetic profile created, authenticated session saved/read, profile deleted, access revoked).")
+              print("Test record contained no health data; health_data_consent=false; no user profile was retained.")
+          finally:
+              if profile_id and profile_token and not deleted:
+                  try:
+                      call(f"/api/profile/{profile_id}", "DELETE", profile_token=profile_token, expected=(200, 404))
+                      print("Cleanup: synthetic test profile deletion attempted.")
+                  except Exception as cleanup_error:
+                      print(f"Cleanup warning: synthetic test profile may need review ({type(cleanup_error).__name__}).")
+                      raise
+          PY

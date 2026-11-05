@@ -1,0 +1,359 @@
+name: ATENA staging endpoint verification
+
+on:
+  push:
+    branches:
+      - pilot/website-ai-coach
+    paths:
+      - ".github/workflows/atena_staging_endpoint_verification.yml"
+      - "training/program.py"
+      - "training/catalogue.py"
+      - "training/exercises.json"
+      - "coach_routes.py"
+      - "coach_store.py"
+      - "tests/test_catalogue_goal_logic.py"
+  workflow_dispatch:
+
+concurrency:
+  group: atena-staging-endpoint-verification
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Wait for the free staging deployment to settle
+        run: sleep 90
+
+      - name: Validate secret is available (without revealing it)
+        env:
+          PILOT_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
+        run: |
+          if [ -z "$PILOT_TOKEN" ]; then
+            echo "::error::GitHub repository secret AI_COACH_TEST_TOKEN is not configured."
+            exit 1
+          fi
+          echo "Staging test token is available."
+
+      - name: Test authenticated staging endpoints and coaching behavior
+        env:
+          PILOT_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+          import time
+          import urllib.error
+          import urllib.request
+
+          BASE = "https://atena-ai-coach-pilot.onrender.com"
+          TOKEN = os.environ["PILOT_TOKEN"]
+
+          def post(path, payload):
+              data = json.dumps(payload).encode("utf-8")
+              request = urllib.request.Request(
+                  BASE + path,
+                  data=data,
+                  headers={"Content-Type": "application/json", "X-Pilot-Token": TOKEN},
+                  method="POST",
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=60) as response:
+                      return response.status, json.loads(response.read().decode("utf-8"))
+              except urllib.error.HTTPError as exc:
+                  raw = exc.read().decode("utf-8", errors="replace")
+                  try:
+                      body = json.loads(raw)
+                  except json.JSONDecodeError:
+                      body = {"error": raw[:300]}
+                  return exc.code, body
+              except Exception as exc:
+                  print(f"{path}: NETWORK ERROR: {type(exc).__name__}")
+                  return None, {}
+
+          def call_profile_api(method, path, profile_token, payload=None):
+              headers = {"X-Profile-Token": profile_token}
+              data = None
+              if payload is not None:
+                  data = json.dumps(payload).encode("utf-8")
+                  headers["Content-Type"] = "application/json"
+              request = urllib.request.Request(
+                  BASE + path, data=data, headers=headers, method=method
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      raw = response.read().decode("utf-8")
+                      return response.status, json.loads(raw) if raw else {}
+              except urllib.error.HTTPError as exc:
+                  raw = exc.read().decode("utf-8", errors="replace")
+                  try:
+                      body = json.loads(raw)
+                  except json.JSONDecodeError:
+                      body = {"error": raw[:300]}
+                  return exc.code, body
+              except Exception as exc:
+                  print(f"{path}: PROFILE ROUND-TRIP ERROR: {type(exc).__name__}")
+                  return None, {}
+
+          failures = []
+
+          # Verify that the exact deployed revision exposes the full curated catalogue.
+          status_request = urllib.request.Request(
+              BASE + "/coach/status",
+              headers={"X-Pilot-Token": TOKEN},
+              method="GET",
+          )
+          try:
+              with urllib.request.urlopen(status_request, timeout=30) as response:
+                  readiness_status = response.status
+                  readiness = json.loads(response.read().decode("utf-8"))
+          except urllib.error.HTTPError as exc:
+              readiness_status = exc.code
+              readiness = {}
+          catalogue_count = readiness.get("catalogue_count")
+          readiness_ok = (
+              readiness_status == 200
+              and isinstance(catalogue_count, int)
+              and catalogue_count >= 121
+              and readiness.get("chat_available") is True
+              and readiness.get("program_available") is True
+          )
+          print(
+              "Deployed readiness: "
+              f"HTTP {readiness_status}; catalogue={catalogue_count}; "
+              f"chat={readiness.get('chat_available')}; "
+              f"program={readiness.get('program_available')}; "
+              f"{'PASS' if readiness_ok else 'FAIL'}"
+          )
+          if not readiness_ok:
+              failures.append("deployed catalogue must contain at least 121 exercises and chat/program must be available")
+
+          check_request = urllib.request.Request(
+              BASE + "/coach/storage/check",
+              headers={"X-Pilot-Token": TOKEN},
+              method="GET",
+          )
+          try:
+              with urllib.request.urlopen(check_request, timeout=30) as response:
+                  db_status = response.status
+                  db_body = json.loads(response.read().decode("utf-8"))
+          except urllib.error.HTTPError as exc:
+              db_status = exc.code
+              raw = exc.read().decode("utf-8", errors="replace")
+              try:
+                  db_body = json.loads(raw)
+              except json.JSONDecodeError:
+                  db_body = {}
+          print(f"Supabase PostgreSQL connectivity: HTTP {db_status}")
+          if db_status == 200 and db_body.get("database") == "reachable":
+              print("Database connectivity: PASS (read-only SELECT 1; no user tables or profiles created)")
+          elif db_status == 503 and db_body.get("reason") == "missing_url":
+              print("Database connectivity: SKIP (Supabase connection string not configured; profile storage remains disabled)")
+          else:
+              print(f"Database connectivity: FAIL; safe diagnostic={db_body.get('reason', 'not_returned')} (no secret is printed)")
+              failures.append("Supabase PostgreSQL connectivity")
+
+          status, body = post("/coach/program", {
+              "profile": {
+                  "goal": "hypertrophy",
+                  "experience": "intermediate",
+                  "sessions_per_week": 2,
+                  "session_minutes": 60,
+                  "equipment": ["barbell", "rack", "dumbbell", "bench", "pull_up_bar"]
+              }
+          })
+          print(f"Hypertrophy program endpoint: HTTP {status}")
+          program = body.get("program", {})
+          hinges = [
+              exercise for session in program.get("sessions", [])
+              for exercise in session.get("exercises", [])
+              if exercise.get("pattern") == "hinge"
+          ]
+          hinge_ok = any(item.get("pattern_label") == "predklon z ravnim hrbtom" for item in hinges)
+          print(f"Straight-back hinge coaching term: {'PASS' if hinge_ok else 'FAIL'}")
+          if status != 200 or not hinge_ok:
+              failures.append("hypertrophy program or hinge terminology")
+
+          status, body = post("/coach/program", {
+              "profile": {
+                  "goal": "endurance",
+                  "experience": "beginner",
+                  "sessions_per_week": 2,
+                  "session_minutes": 45,
+                  "equipment": ["bicycle", "jump_rope", "bodyweight", "step"]
+              }
+          })
+          print(f"45-minute beginner endurance endpoint: HTTP {status}")
+          endurance = body.get("program", {})
+          sessions = endurance.get("sessions", [])
+          time_ok = (
+              len(sessions) == 2
+              and all(session.get("estimated_minutes", 999) <= 45 for session in sessions)
+          )
+          print(f"45-minute time envelope: {'PASS' if time_ok else 'FAIL'}")
+          if status != 200 or not time_ok:
+              failures.append("45-minute endurance time envelope")
+
+          chat_payload = {
+              "messages": [{
+                  "role": "user",
+                  "content": "Želim razvijati moč in mišično maso. Pred pripravo individualnega programa mi postavi eno najpomembnejše manjkajoče vprašanje."
+              }]
+          }
+          status, body = post("/coach/chat", chat_payload)
+          if status in (429, 502, 504):
+              print(f"Chat returned transient HTTP {status}; retrying once.")
+              time.sleep(10)
+              status, body = post("/coach/chat", chat_payload)
+          reply = body.get("reply", "").lower()
+          safety_first = any(term in reply for term in ("boleč", "poškodb", "omejit", "zdravstven"))
+          if status != 200:
+              print(f"Chat endpoint diagnostic: {body.get('error', 'no error detail returned')}")
+          print(f"Proactive safety-first onboarding: HTTP {status}; {'PASS' if safety_first else 'FAIL'}")
+          if status != 200 or not safety_first:
+              failures.append("safety-first onboarding question")
+
+          # A fake ID and invalid token cannot create or expose any data.
+          profile_request = urllib.request.Request(
+              BASE + "/coach/profile/00000000-0000-4000-8000-000000000000",
+              headers={"X-Profile-Token": "invalid-test-token"},
+              method="GET",
+          )
+          try:
+              with urllib.request.urlopen(profile_request, timeout=30) as response:
+                  profile_status = response.status
+          except urllib.error.HTTPError as exc:
+              profile_status = exc.code
+          print(f"Unauthorised/nonexistent profile access: HTTP {profile_status}")
+          # The API intentionally returns the same 404 for unknown IDs and invalid
+          # profile tokens so it cannot be used to enumerate existing profiles.
+          if profile_status != 404:
+              failures.append("profile access must not disclose profile existence")
+
+          storage_request = urllib.request.Request(
+              BASE + "/coach/storage/status",
+              headers={"X-Pilot-Token": TOKEN},
+              method="GET",
+          )
+          try:
+              with urllib.request.urlopen(storage_request, timeout=30) as response:
+                  storage_status = response.status
+                  storage_body = json.loads(response.read().decode("utf-8"))
+          except urllib.error.HTTPError as exc:
+              storage_status = exc.code
+              storage_body = {}
+          storage_state_valid = (
+              storage_status == 200
+              and isinstance(storage_body.get("storage_enabled"), bool)
+              and bool(storage_body.get("privacy_notice_version"))
+          )
+          state_label = "ENABLED" if storage_body.get("storage_enabled") is True else "DISABLED"
+          print(f"Profile storage operator state: HTTP {storage_status}; {state_label if storage_state_valid else 'NOT VERIFIED'}")
+          if not storage_state_valid:
+              failures.append("profile storage state and privacy notice version must be reported safely")
+
+          # Verify a real Supabase write/read/delete round-trip with synthetic,
+          # non-health data. Always attempt cleanup and never print access tokens.
+          if storage_state_valid and storage_body.get("storage_enabled") is True:
+              created_status, created_body = post("/coach/profile", {
+                  "profile": {
+                      "goal": "hypertrophy",
+                      "experience": "beginner",
+                      "equipment": ["bodyweight", "dumbbell"],
+                      "sessions_per_week": 2,
+                      "session_minutes": 45,
+                      "available_days": ["monday", "thursday"],
+                      "pistol_squat_capable": False
+                  },
+                  "privacy_notice_acknowledged": True,
+                  "privacy_notice_version": storage_body["privacy_notice_version"],
+                  "health_data_consent": False
+              })
+              profile = created_body.get("profile", {})
+              profile_id = profile.get("profile_id")
+              profile_token = created_body.get("profile_access_token")
+              round_trip_ok = created_status == 201 and profile_id and profile_token
+              try:
+                  if round_trip_ok:
+                      read_status, read_body = call_profile_api(
+                          "GET", f"/coach/profile/{profile_id}", profile_token
+                      )
+                      round_trip_ok = (
+                          read_status == 200
+                          and read_body.get("profile", {}).get("profile_id") == profile_id
+                      )
+                  if round_trip_ok:
+                      session_status, session_body = call_profile_api(
+                          "POST", f"/coach/profile/{profile_id}/sessions", profile_token, {
+                              "session_date": __import__("datetime").date.today().isoformat(),
+                              "duration_minutes": 30,
+                              "difficulty": "moderate",
+                              "completed": True,
+                              "recovery": "good",
+                              "exercises": [{
+                                  "exercise_id": "squat_goblet",
+                                  "sets_completed": 3,
+                                  "reps_completed": 10,
+                                  "load_kg": 8,
+                                  "rir": 2
+                              }]
+                          }
+                      )
+                      round_trip_ok = session_status == 201 and bool(session_body.get("session"))
+                  if round_trip_ok:
+                      sessions_status, sessions_body = call_profile_api(
+                          "GET", f"/coach/profile/{profile_id}/sessions", profile_token
+                      )
+                      saved_sessions = sessions_body.get("sessions", [])
+                      round_trip_ok = (
+                          sessions_status == 200
+                          and len(saved_sessions) == 1
+                          and saved_sessions[0].get("session", {}).get("exercises", [{}])[0].get("exercise_id") == "squat_goblet"
+                      )
+                  if round_trip_ok:
+                      progress_status, progress_body = call_profile_api(
+                          "GET", f"/coach/profile/{profile_id}/progress", profile_token
+                      )
+                      round_trip_ok = progress_status == 200 and isinstance(progress_body.get("progress"), dict)
+              finally:
+                  if profile_id and profile_token:
+                      delete_status, _ = call_profile_api(
+                          "DELETE", f"/coach/profile/{profile_id}", profile_token
+                      )
+                      round_trip_ok = round_trip_ok and delete_status == 200
+              print(f"Supabase profile/session round-trip with cleanup: {'PASS' if round_trip_ok else 'FAIL'}")
+              if not round_trip_ok:
+                  failures.append("real profile create/read/session/progress/delete round-trip")
+          else:
+              print("Supabase profile/session round-trip: FAIL (storage not enabled)")
+              failures.append("profile storage must be enabled for pilot round-trip")
+
+          preflight = urllib.request.Request(
+              BASE + "/coach/profile/example",
+              headers={
+                  "Origin": "https://gregajenko.si",
+                  "Access-Control-Request-Method": "PUT",
+                  "Access-Control-Request-Headers": "content-type,x-profile-token",
+              },
+              method="OPTIONS",
+          )
+          with urllib.request.urlopen(preflight, timeout=30) as response:
+              cors_ok = response.status == 204 and "X-Profile-Token" in response.headers.get("Access-Control-Allow-Headers", "")
+          print(f"Profile API CORS preflight: {'PASS' if cors_ok else 'FAIL'}")
+          if not cors_ok:
+              failures.append("profile API CORS preflight")
+
+          print("Access token was not printed or stored in the output.")
+          print("\\n--- RESULT ---")
+          print("Authenticated endpoints and coaching checks:", "PASS" if not failures else "FAIL")
+          if failures:
+              print("Failed checks:", "; ".join(failures))
+              sys.exit(1)
+          PY
+
+# Run the integration checks after changes to the deterministic planner or chat coach.
