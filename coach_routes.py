@@ -969,7 +969,7 @@ def _request_gemini_content(api_key, model, fallback_model, payload):
     candidates = [model]
     if fallback_model and fallback_model != model:
         candidates.append(fallback_model)
-    transient_statuses = {500, 502, 503, 504}
+    transient_statuses = {429, 500, 502, 503, 504}
     last_error = None
     for model_index, candidate_model in enumerate(candidates):
         url = (
@@ -1001,7 +1001,7 @@ def _request_gemini_content(api_key, model, fallback_model, payload):
                     candidate_model, exc.code, attempt + 1
                 )
                 if attempt == 0:
-                    time.sleep(1.0)
+                    time.sleep(5.0 if exc.code == 429 else 1.0)
                     continue
                 break
     if last_error is not None:
