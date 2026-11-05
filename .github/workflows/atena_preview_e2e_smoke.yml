@@ -259,3 +259,111 @@ jobs:
               if not enabled:
                   print("Database is reachable; persistent user-data writes remain disabled until privacy approval.")
           PY
+
+      - name: Verify synthetic profile and training-session persistence, then clean up
+        env:
+          PREVIEW_TOKEN: ${{ secrets.AI_TRAINER_PREVIEW_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+          import time
+          import urllib.error
+          import urllib.request
+
+          origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
+          preview_token = os.environ.get("PREVIEW_TOKEN", "").strip()
+          if len(preview_token) < 20:
+              raise SystemExit("Preview token is missing or too short.")
+          user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+
+          def call(path, method="GET", payload=None, profile_token=None, expected=(200,)):
+              headers = {"Origin": origin, "Accept": "application/json", "User-Agent": user_agent}
+              if path == "/api/profile" or path.startswith("/api/profile/"):
+                  headers["X-ATENA-Preview-Token"] = preview_token
+              if profile_token:
+                  headers["X-Profile-Token"] = profile_token
+              data = None
+              if payload is not None:
+                  headers["Content-Type"] = "application/json"
+                  data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+              request = urllib.request.Request(origin + path, data=data, headers=headers, method=method)
+              try:
+                  response = urllib.request.urlopen(request, timeout=40)
+                  with response:
+                      body = response.read().decode("utf-8")
+                      parsed = json.loads(body) if body else {}
+                      if response.status not in expected:
+                          raise RuntimeError(f"{method} {path}: unexpected HTTP {response.status}")
+                      return response.status, parsed
+              except urllib.error.HTTPError as exc:
+                  body = exc.read().decode("utf-8", errors="replace")[:250]
+                  if exc.code in expected:
+                      return exc.code, json.loads(body) if body.startswith("{") else {}
+                  raise RuntimeError(f"{method} {path}: HTTP {exc.code}; safe response={body}") from exc
+
+          time.sleep(3)
+          status_code, storage = call("/api/profile/status")
+          if status_code != 200 or storage.get("available") is not True or storage.get("storageEnabled") is not True:
+              raise SystemExit("Synthetic persistence test stopped: database or privacy-approved storage is not enabled.")
+          notice_version = storage.get("privacyNoticeVersion")
+          if not notice_version:
+              raise SystemExit("Privacy notice version is missing; no test profile was created.")
+
+          profile_id = None
+          profile_token = None
+          deleted = False
+          try:
+              _, created = call("/api/profile", "POST", {
+                  "profile": {
+                      "goal": "strength",
+                      "experience": "beginner",
+                      "equipment": [],
+                      "sessions_per_week": 2,
+                      "session_minutes": 30,
+                      "available_days": [],
+                      "pistol_squat_capable": False
+                  },
+                  "privacy_notice_acknowledged": True,
+                  "privacy_notice_version": notice_version,
+                  "health_data_consent": False
+              }, expected=(201,))
+              profile = created.get("profile") or {}
+              profile_id = profile.get("profile_id")
+              profile_token = created.get("profile_access_token")
+              if not profile_id or not profile_token:
+                  raise RuntimeError("Profile creation did not return its one-time access credentials.")
+
+              session_payload = {
+                  "session_date": "2026-11-05",
+                  "duration_minutes": 1,
+                  "difficulty": "easy",
+                  "completed": True,
+                  "recovery": "good",
+                  "exercises": []
+              }
+              _, saved = call(f"/api/profile/{profile_id}/sessions", "POST", session_payload, profile_token, expected=(201,))
+              session_id = saved.get("session_id")
+              if not session_id:
+                  raise RuntimeError("Training session was not saved with an ID.")
+
+              _, listed = call(f"/api/profile/{profile_id}/sessions", "GET", profile_token=profile_token)
+              sessions = listed.get("sessions") or []
+              if not any(item.get("session_id") == session_id for item in sessions):
+                  raise RuntimeError("Saved training session could not be read back.")
+
+              call(f"/api/profile/{profile_id}", "DELETE", profile_token=profile_token, expected=(200,))
+              deleted = True
+              call(f"/api/profile/{profile_id}", "GET", profile_token=profile_token, expected=(404,))
+              print("Supabase profile persistence: PASS (synthetic profile created, authenticated session saved/read, profile deleted, access revoked).")
+              print("Test record contained no health data; health_data_consent=false; no user profile was retained.")
+          finally:
+              if profile_id and profile_token and not deleted:
+                  try:
+                      call(f"/api/profile/{profile_id}", "DELETE", profile_token=profile_token, expected=(200, 404))
+                      print("Cleanup: synthetic test profile deletion attempted.")
+                  except Exception as cleanup_error:
+                      print(f"Cleanup warning: synthetic test profile may need review ({type(cleanup_error).__name__}).")
+                      raise
+          PY
