@@ -5,6 +5,10 @@ from collections import Counter
 from typing import Any
 
 from training.catalogue import get_exercises
+from training.movement_assessment import (
+    MovementAssessmentError, SUPPORTED_VARIANTS, TASK_PATTERNS,
+    assess_movement_competence,
+)
 
 SUPPORTED_GOALS = {"hypertrophy", "strength", "strength_hypertrophy", "fat_loss", "general_fitness", "functional", "power", "endurance", "mobility"}
 SUPPORTED_LEVELS = {"beginner", "intermediate", "advanced"}
@@ -495,7 +499,7 @@ def _display_exercise_reference(value: str, names: dict[str, str]) -> str:
     return names.get(value, value)
 
 
-def generate_program(profile: object, feedback: object = None) -> dict:
+def generate_program(profile: object, feedback: object = None, movement_assessment: object = None) -> dict:
     """Generate a repeatable catalogue plan, conservatively adapting to the last session."""
     p = validate_profile(profile)
     planning_goal = p["goal"]
@@ -503,6 +507,22 @@ def generate_program(profile: object, feedback: object = None) -> dict:
         if p["training_emphasis"] in {"strength", "hypertrophy"}:
             planning_goal = p["training_emphasis"]
     response = _validate_feedback(feedback)
+    movement_summary = None
+    movement_status_by_pattern: dict[str, str] = {}
+    movement_tasks_by_pattern: dict[str, list[str]] = {}
+    movement_adaptation_events = []
+    if movement_assessment is not None:
+        try:
+            movement_summary = assess_movement_competence(movement_assessment)
+        except MovementAssessmentError as exc:
+            raise ProgramValidationError(str(exc)) from exc
+        status_priority = {"comfortable": 0, "not_assessed": 0, "uncertain": 1, "needs_support": 2, "symptoms_reported": 3}
+        for task, status in movement_assessment.items():
+            for pattern in TASK_PATTERNS[task]:
+                current = movement_status_by_pattern.get(pattern)
+                if current is None or status_priority[status] > status_priority[current]:
+                    movement_status_by_pattern[pattern] = status
+                movement_tasks_by_pattern.setdefault(pattern, []).append(task)
     reduce_load = bool(response and (
         response["difficulty"] == "hard" or not response["completed"] or response["recovery"] == "poor"
     ))
@@ -654,6 +674,16 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             if pattern in seen_patterns and planning_goal != "mobility":
                 continue
             seen_patterns.add(pattern)
+            movement_status = movement_status_by_pattern.get(pattern)
+            affected_tasks = movement_tasks_by_pattern.get(pattern, [])
+            if movement_status == "symptoms_reported":
+                missing_patterns.add(pattern)
+                movement_adaptation_events.append({
+                    "pattern": pattern, "tasks": affected_tasks,
+                    "action": "omitted_pending_symptom_review",
+                    "message": "Ta gibalni vzorec je iz programa izpuščen, ker si pri povezani nalogi navedel/-la bolečino ali nelagodje. ATENA ga ne nadomesti samodejno.",
+                })
+                continue
             candidates = by_pattern.get(pattern, [])
             if planning_goal in {"endurance", "fat_loss"} and pattern == "locomotion":
                 candidates = [item for item in candidates if item.get("endurance_type") == "aerobic"]
@@ -661,6 +691,19 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 # Lateral shuffle requires braking/change-of-direction competence;
                 # it is not inferred from the user's training-experience label.
                 candidates = [item for item in candidates if item["id"] != "lateral_shuffle"]
+            if movement_status == "needs_support" and pattern != "balance":
+                preferred_ids = SUPPORTED_VARIANTS.get(pattern, ())
+                supported_candidates = [item for item in candidates if item["id"] in preferred_ids]
+                if supported_candidates:
+                    candidates = supported_candidates
+                else:
+                    missing_patterns.add(pattern)
+                    movement_adaptation_events.append({
+                        "pattern": pattern, "tasks": affected_tasks,
+                        "action": "omitted_no_verified_supported_variant",
+                        "message": "Za ta gibalni vzorec ni na voljo preverjene lažje različice z izbrano opremo. Vzorec je zato izpuščen, namesto da bi ATENA ugibala.",
+                    })
+                    continue
             if not candidates:
                 # A vertical pull is not mandatory when the available catalogue/equipment cannot support it.
                 if pattern in {"vertical_pull", "vertical_push", "carry", "anti_rotation", "trunk_stability"}:
@@ -799,6 +842,33 @@ def generate_program(profile: object, feedback: object = None) -> dict:
             effective_pattern = candidate["pattern"]
             used_counts[candidate["id"]] += 1
             prescription = _prescription(planning_goal, p["experience"], effective_pattern, candidate)
+            movement_note = None
+            if movement_status == "needs_support":
+                if pattern == "balance":
+                    movement_note = "Izvedi ob stabilni opori, ki jo lahko z roko dosežeš; obseg in trajanje prilagodi tako, da ostaneta nadzorovana."
+                else:
+                    movement_note = "Na podlagi tvoje samoocene je izbrana lažja različica istega gibalnega vzorca. Začni z največ dvema kakovostnima serijama in ohrani vsaj 3 ponovitve v rezervi; če ni udobno, vajo prekini in preveri ustreznost."
+                    prescription["sets"] = min(2, prescription.get("sets", 2))
+                    if prescription.get("rir") is not None:
+                        prescription["rir"] = max(3, prescription["rir"])
+                    if prescription.get("rir_range") is not None:
+                        prescription["rir_range"] = "3–4"
+                    prescription["adjustment_note"] = movement_note
+                movement_adaptation_events.append({
+                    "pattern": pattern, "tasks": affected_tasks,
+                    "action": "simpler_catalogue_variant_selected" if pattern != "balance" else "stable_support_cue",
+                    "exercise_id": candidate["id"], "exercise_name": candidate["name"],
+                    "message": movement_note,
+                })
+            elif movement_status == "uncertain":
+                movement_note = "Pri tej nalogi nisi prepričan/-a. ATENA zato ni spreminjala izbire na podlagi ugibanja; pred prvo delovno serijo preveri, ali je različica udobna in nadzorovana. Če nisi prepričan/-a, vprašaj trenerja za lažjo možnost."
+                prescription["adjustment_note"] = movement_note
+                movement_adaptation_events.append({
+                    "pattern": pattern, "tasks": affected_tasks,
+                    "action": "kept_selection_pending_user_clarification",
+                    "exercise_id": candidate["id"], "exercise_name": candidate["name"],
+                    "message": movement_note,
+                })
             if planning_goal == "endurance" and effective_pattern == "locomotion":
                 # Reserve time for warm-up, transitions and interval work; locomotion is a flexible aerobic block.
                     prescription["work_seconds"] = max(600, int(p["session_minutes"] * 15))
@@ -927,6 +997,7 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 "progressions": progressions,
                 "alternatives": alternatives,
                 "prescription": prescription,
+                **({"movement_adaptation_note": movement_note} if movement_note else {}),
                 **({
                     "coaching_note": "Ciljno pripravljalno delo za nadzor trupa, vključeno na podlagi tvoje povratne informacije. Izvedi po splošnem ogrevanju in pred glavnimi vajami."
                 } if pattern == "trunk_stability" and include_stability else {}),
@@ -1059,7 +1130,14 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 session_patterns_seen.add(item["pattern"])
             pattern_work_sets[item["pattern"]] += item["prescription"]["sets"]
     return {
-        "program_version": "2.9.0",
+        "program_version": "3.0.0",
+        "movement_adaptation": {
+            "source": "self_reported_movement_assessment",
+            "is_diagnosis": False,
+            "automatic_progression": "unchanged",
+            "events": movement_adaptation_events,
+            "summary": movement_summary,
+        } if movement_summary is not None else None,
         "goal": p["goal"],
         "training_emphasis": p["training_emphasis"],
         "experience": p["experience"],
