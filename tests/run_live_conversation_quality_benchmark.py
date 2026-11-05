@@ -40,7 +40,7 @@ def request_chat(messages: list[dict[str, str]]) -> dict:
         },
         method="POST",
     )
-    transient_statuses = {500, 502, 503, 504}
+    transient_statuses = {429, 500, 502, 503, 504}
     last_error = None
     for attempt in range(3):
         try:
@@ -59,7 +59,7 @@ def request_chat(messages: list[dict[str, str]]) -> dict:
             last_error = RuntimeError(f"HTTP {exc.code}: {message}")
             if exc.code not in transient_statuses or attempt == 2:
                 raise last_error from exc
-            wait_seconds = 2 * (attempt + 1)
+            wait_seconds = (5 if exc.code == 429 else 2) * (attempt + 1)
             print(f"Transient HTTP {exc.code}; retrying this turn in {wait_seconds}s.")
             time.sleep(wait_seconds)
         except (urllib.error.URLError, TimeoutError) as exc:
@@ -109,7 +109,7 @@ def main() -> int:
             })
             messages.append({"role": "model", "content": answer})
             if turn_index < len(scenario["turns"]):
-                time.sleep(1.0)
+                time.sleep(5.0)
 
         results.append({
             "id": scenario["id"],

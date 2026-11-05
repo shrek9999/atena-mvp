@@ -271,7 +271,13 @@ def _sanitize_unverified_safety_claim(answer, messages):
         r"(?:nimaš|nimaš nobenih|si brez|ni nobenih)\s+"
         r"(?:bolečin|poškodb|omejitev|zdravstvenih težav)|"
         r"(?:vesel(?:a)?\s+sem,?\s+da)\s+(?:ni|nimaš)\s+"
-        r"(?:nobenih\s+)?(?:bolečin|poškodb|omejitev)",
+        r"(?:nobenih\s+)?(?:bolečin|poškodb|omejitev)|"
+        r"(?:ker|saj).{0,80}(?:nisi omenil|nisi navedel|nisi poročal).{0,60}"
+        r"(?:bolečin|poškodb|omejitv\w*|zdravstven\w*)|"
+        r"(?:sva|smo|si).{0,40}zdravstven\w*\s+(?:pregled|preverjanje).{0,40}"
+        r"(?:opravila|zaključila|končala)|"
+        r"zdravstven\w*\s+(?:pregled|preverjanje).{0,40}"
+        r"(?:je bil|je bilo)\s+(?:že\s+)?(?:opravljen|zaključen)",
         answer,
         re.IGNORECASE,
     )
@@ -497,8 +503,8 @@ def _coaching_guardrail_reply(messages):
 
     # Do not let a language model convert an unanswered safety question into clearance.
     assistant_asked_safety = any(re.search(
-        r"(bolečin.{0,60}poškodb|poškodb.{0,60}omejitev|zdravstven.{0,60}omejitev|"
-        r"ali imaš trenutno kakršne koli)",
+        r"(?:ali\s+(?:imaš|trenutno|morda)|imaš\s+(?:trenutno|kakšne|kakršne koli)|občutiš|opaziš).{0,100}"
+        r"(?:bolečin\w*|poškodb\w*|omejitv\w*|zdravstven.{0,30}težav)",
         item,
         re.IGNORECASE,
     ) for item in assistant_texts)
@@ -509,6 +515,20 @@ def _coaching_guardrail_reply(messages):
         re.IGNORECASE,
     ))
     if assistant_asked_safety and not _has_explicit_safety_clearance(history) and not latest_reports_health_issue:
+        if re.search(r"(vse sem pokvaril|vse pokvaril|pokvaril sem vse)", lowered):
+            return (
+                "Ničesar nisi pokvaril. En izpuščen trening ne izbriše napredka; pomembno je, "
+                "da se vrneš v ritem brez lovljenja zamujenega obsega. Varnostnega vprašanja "
+                "pa še nisi odgovoril, zato ne bom sklepal, da omejitev ni: ali imaš trenutno "
+                "kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
+            )
+        if re.search(r"(brez energije|utrujen|izčrpan)", lowered):
+            return (
+                "Razumem; utrujenost po službi je pomemben podatek in trening lahko prilagodiva, "
+                "namesto da siliš skozi izčrpanost. Pred individualnim načrtom mi manjka še "
+                "varnostni odgovor: ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne "
+                "omejitve ali zdravstvene zadržke?"
+            )
         return (
             "Zabeležil sem tvoj zadnji podatek in ga bom upošteval. Varnostnega vprašanja "
             "pa še nisi odgovoril, zato ne bom sklepal, da omejitev ni. Ali imaš trenutno "
@@ -951,7 +971,7 @@ def _request_gemini_content(api_key, model, fallback_model, payload):
     candidates = [model]
     if fallback_model and fallback_model != model:
         candidates.append(fallback_model)
-    transient_statuses = {500, 502, 503, 504}
+    transient_statuses = {429, 500, 502, 503, 504}
     last_error = None
     for model_index, candidate_model in enumerate(candidates):
         url = (
@@ -983,7 +1003,7 @@ def _request_gemini_content(api_key, model, fallback_model, payload):
                     candidate_model, exc.code, attempt + 1
                 )
                 if attempt == 0:
-                    time.sleep(1.0)
+                    time.sleep(5.0 if exc.code == 429 else 1.0)
                     continue
                 break
     if last_error is not None:
