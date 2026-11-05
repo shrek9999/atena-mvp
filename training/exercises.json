@@ -8025,5 +8025,151 @@
     "stability_focus": [
       "trunk_control"
     ]
+  },
+  {
+    "id": "chair_sit_to_stand",
+    "name": "Vstajanje s stola (počep do stola)",
+    "name_en": "Chair sit-to-stand",
+    "pattern": "squat",
+    "joint_type": "multi_joint",
+    "goals": [
+      "strength",
+      "hypertrophy",
+      "general_fitness",
+      "functional"
+    ],
+    "equipment": [],
+    "level": "beginner",
+    "primary_muscles": [
+      "quadriceps",
+      "gluteus_maximus"
+    ],
+    "secondary_muscles": [
+      "hamstrings",
+      "trunk"
+    ],
+    "cues": [
+      "Uporabi stabilen stol, postavljen ob steno, da med izvedbo ne zdrsne.",
+      "Stopala postavi v udoben položaj; nagni trup naprej toliko, da lahko vstaneš nadzorovano.",
+      "Po potrebi si pomagaj z rokami na naslonjalih ali stegnih; pomoč je dovoljena prilagoditev.",
+      "Vstani brez sunkov in se počasi usedi nazaj.",
+      "Višino sedišča in obseg gibanja prilagodi trenutnim zmožnostim."
+    ],
+    "common_errors": [
+      "Uporaba nestabilnega stola.",
+      "Nenadzorovano padanje na sedišče.",
+      "Siljenje v ponovitve kljub bolečini ali izgubi nadzora."
+    ],
+    "regressions": [
+      "Višje sedišče",
+      "Uporaba naslonjal za roke"
+    ],
+    "progressions": [
+      "Počep z iztegnjenimi rokami (reaching squat)",
+      "Počep z lastno težo (air squat)"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Začetna, prilagodljiva različica za vadbo vstajanja. Če je potrebna pomoč druge osebe ali se pojavi bolečina, je potrebna individualna presoja."
+    ],
+    "single_joint": false,
+    "equipment_any": [
+      "chair",
+      "household_support"
+    ],
+    "loading_potential": "low",
+    "training_role": "main",
+    "time_based": false,
+    "movement_family": "knee_dominant",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ],
+    "movement_pattern": "squat",
+    "training_purposes": [
+      "strength",
+      "hypertrophy",
+      "general_fitness",
+      "functional_fitness",
+      "skill"
+    ],
+    "stability_role": "supporting",
+    "stability_focus": [
+      "trunk_bracing",
+      "coordination"
+    ]
+  },
+  {
+    "id": "wall_hip_hinge",
+    "name": "Predklon z ravnim hrbtom ob steni",
+    "name_en": "Wall-supported hip hinge",
+    "pattern": "hinge",
+    "joint_type": "multi_joint",
+    "goals": [
+      "strength",
+      "hypertrophy",
+      "general_fitness",
+      "functional"
+    ],
+    "equipment": [],
+    "level": "beginner",
+    "primary_muscles": [
+      "gluteus_maximus",
+      "hamstrings"
+    ],
+    "secondary_muscles": [
+      "spinal_erectors",
+      "trunk"
+    ],
+    "cues": [
+      "Postavi se s hrbtom proti steni, približno 10–20 cm stran.",
+      "Kolena rahlo pokrči in medenico pomikaj nazaj, da se z zadnjico nežno dotakneš stene.",
+      "Trup nagni naprej ob ohranjanju udobnega, nevtralnega položaja hrbtenice.",
+      "Gib izvedi počasi in se vrni v pokončen položaj.",
+      "Razdaljo od stene postopno prilagajaj samo, če gib ostaja udoben in nadzorovan."
+    ],
+    "common_errors": [
+      "Pretirano upogibanje ledvene hrbtenice.",
+      "Počepanje namesto pomika medenice nazaj.",
+      "Odmikanje od stene z izgubo nadzora."
+    ],
+    "regressions": [
+      "Manjša razdalja od stene"
+    ],
+    "progressions": [
+      "Predklon z ravnim hrbtom (lastna teža)",
+      "Romunski mrtvi dvig"
+    ],
+    "alternatives": [],
+    "warnings": [
+      "Učna različica gibalnega vzorca. Ne sili v globino ali pobiranje predmeta s tal, če je to neprijetno."
+    ],
+    "single_joint": false,
+    "equipment_any": [
+      "wall"
+    ],
+    "loading_potential": "low",
+    "training_role": "main",
+    "time_based": false,
+    "movement_family": "hip_hinge",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ],
+    "movement_pattern": "hinge",
+    "training_purposes": [
+      "strength",
+      "hypertrophy",
+      "general_fitness",
+      "functional_fitness",
+      "skill"
+    ],
+    "stability_role": "supporting",
+    "stability_focus": [
+      "trunk_bracing",
+      "coordination"
+    ]
   }
 ]
