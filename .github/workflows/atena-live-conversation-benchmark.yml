@@ -11,6 +11,10 @@ on:
       - "coach_routes.py"
   workflow_dispatch:
 
+concurrency:
+  group: atena-live-gemini-coaching
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
