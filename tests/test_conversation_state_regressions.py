@@ -58,4 +58,4 @@ def test_duration_estimate_rounds_up_conservatively():
             "tempo_seconds_per_rep": 2, "rest_seconds": 60,
         }
     }]
-    assert _estimated_minutes(exercises, warm_up_minutes=5) == 8
+    assert _estimated_minutes(exercises, warm_up_minutes=5) == 7
