@@ -271,3 +271,14 @@ def test_reaching_squat_is_not_eligible_as_a_hypertrophy_stimulus_by_purpose():
     hypertrophy = {item["id"] for item in get_exercises(goal="hypertrophy", purposes={"hypertrophy"})}
     assert "reaching_squat" in mobility
     assert "reaching_squat" not in hypertrophy
+
+
+def test_everyday_movement_regressions_are_catalogued_with_required_supports():
+    chair = get_exercise("chair_sit_to_stand")
+    wall_hinge = get_exercise("wall_hip_hinge")
+    assert chair["pattern"] == "squat"
+    assert chair["level"] == "beginner"
+    assert "chair" in chair["equipment_any"] or "household_support" in chair["equipment_any"]
+    assert wall_hinge["pattern"] == "hinge"
+    assert wall_hinge["level"] == "beginner"
+    assert "wall" in wall_hinge["equipment_any"]

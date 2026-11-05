@@ -5,16 +5,16 @@ a movement diagnosis, or an automatic clearance to progress training.
 """
 from __future__ import annotations
 
-ASSESSMENT_VERSION = "1.1"
+ASSESSMENT_VERSION = "1.2"
 MOVEMENT_TASKS = {
-    "squat": "počep",
-    "hinge": "predklon z ravnim hrbtom",
+    "squat": "vstajanje s stola",
+    "hinge": "pobiranje lahkega predmeta s tal",
     "lunge": "izpadni korak",
     "push": "potisk",
     "pull": "poteg",
-    "overhead": "dvig roke nad glavo",
+    "overhead": "doseganje nad višino ramen",
     "single_leg_balance": "ravnotežje na eni nogi",
-    "locomotion": "hoja oziroma lahka lokomocija",
+    "locomotion": "hoja po ravni podlagi",
 }
 VALID_STATUSES = {
     "comfortable",
@@ -40,15 +40,16 @@ TASK_PATTERNS = {
 # Candidate order is intentionally conservative. The programme generator
 # still verifies goal, equipment, exclusions, pattern and exercise level.
 SUPPORTED_VARIANTS = {
-    "squat": ("reaching_squat", "air_squat"),
-    "hinge": ("bodyweight_hip_hinge",),
+    "squat": ("chair_sit_to_stand", "reaching_squat", "air_squat"),
+    "hinge": ("wall_hip_hinge", "bodyweight_hip_hinge"),
     # No supported lunge regression is currently represented as a catalogue ID;
     # fail closed instead of relabelling an ordinary split squat as a regression.
     "horizontal_push": ("push_up_incline", "wall_push_up"),
     "vertical_push": ("band_overhead_press",),
     "horizontal_pull": ("band_row", "trx_row"),
     "vertical_pull": ("band_assisted_pull_up", "foot_assisted_pull_up", "band_lat_pulldown"),
-    "locomotion": ("brisk_walking",),
+    # A report of needing a walking aid is not clearance for brisk walking.
+    # Clarify the context before choosing or substituting locomotion work.
 }
 
 

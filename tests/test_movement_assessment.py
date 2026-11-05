@@ -75,3 +75,12 @@ def test_all_supported_tasks_are_returned_with_explicit_unassessed_defaults():
     result = assess_movement_competence({"pull": "comfortable"})
     assert [item["movement_task"] for item in result["tasks"]] == list(MOVEMENT_TASKS)
     assert next(item for item in result["tasks"] if item["movement_task"] == "squat")["status"] == "not_assessed"
+
+
+def test_public_task_labels_match_everyday_activities_in_the_user_interface():
+    from training.movement_assessment import MOVEMENT_TASKS
+
+    assert MOVEMENT_TASKS["locomotion"] == "hoja po ravni podlagi"
+    assert MOVEMENT_TASKS["squat"] == "vstajanje s stola"
+    assert MOVEMENT_TASKS["hinge"] == "pobiranje lahkega predmeta s tal"
+    assert MOVEMENT_TASKS["overhead"] == "doseganje nad višino ramen"
