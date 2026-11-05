@@ -274,8 +274,10 @@ def _sanitize_unverified_safety_claim(answer, messages):
         r"(?:nobenih\s+)?(?:bolečin|poškodb|omejitev)|"
         r"(?:ker|saj).{0,80}(?:nisi omenil|nisi navedel|nisi poročal).{0,60}"
         r"(?:bolečin|poškodb|omejitv\w*|zdravstven\w*)|"
+        r"(?:sva|smo|si).{0,40}zdravstven\w*\s+(?:pregled|preverjanje).{0,40}"
+        r"(?:opravila|zaključila|končala)|"
         r"zdravstven\w*\s+(?:pregled|preverjanje).{0,40}"
-        r"(?:sva|smo|si)\s+(?:že\s+)?(?:opravila|zaključila|končala)",
+        r"(?:je bil|je bilo)\s+(?:že\s+)?(?:opravljen|zaključen)",
         answer,
         re.IGNORECASE,
     )
@@ -501,7 +503,7 @@ def _coaching_guardrail_reply(messages):
 
     # Do not let a language model convert an unanswered safety question into clearance.
     assistant_asked_safety = any(re.search(
-        r"(?:ali|imaš|občutiš|opaziš).{0,100}"
+        r"(?:ali\s+(?:imaš|trenutno|morda)|imaš\s+(?:trenutno|kakšne|kakršne koli)|občutiš|opaziš).{0,100}"
         r"(?:bolečin\w*|poškodb\w*|omejitv\w*|zdravstven.{0,30}težav)",
         item,
         re.IGNORECASE,
