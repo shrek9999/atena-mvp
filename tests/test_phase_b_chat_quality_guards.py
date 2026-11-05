@@ -614,3 +614,19 @@ def test_system_prompt_preserves_cossack_name_and_beginner_combined_tempo():
     assert 'never translate it as "kozaški počep"' in prompt
     assert "use 2–1–1–0 as the consistent default tempo" in prompt
     assert "Do not switch some ordinary exercises to 3–1–2–0 or 2–0–X–0" in prompt
+
+
+def test_system_prompt_makes_conversation_primary_and_avoids_intake_form():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "The conversation is the primary interface" in prompt
+    assert "Ask exactly one high-value question at a time" in prompt
+    assert "Do not make the person feel they are completing an intake form" in prompt
+    assert "Do not ask every user to complete a movement-competence checklist" in prompt
+
+
+def test_system_prompt_distinguishes_general_fitness_conditioning_and_functional_fitness():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "general fitness is a balanced improvement in overall capacity" in prompt
+    assert "conditioning focuses primarily on aerobic/anaerobic work capacity" in prompt
+    assert "functional fitness develops useful physical capacities across strength, conditioning, power, balance and coordination" in prompt
+    assert "These goals may overlap but are not interchangeable" in prompt
