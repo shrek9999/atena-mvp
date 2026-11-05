@@ -49,4 +49,4 @@ def test_benchmark_covers_core_coaching_and_safety_cases():
 
 def test_benchmark_does_not_claim_model_execution_or_results():
     benchmark = json.loads(FIXTURE.read_text(encoding="utf-8"))
-    assert "samo po sebi ne dokazuje kakovosti modela" in benchmark["purpose"]
+    assert "sam po sebi ne dokazuje kakovosti modela" in benchmark["purpose"]
