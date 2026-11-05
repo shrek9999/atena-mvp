@@ -20,17 +20,17 @@ Faza 12 poveže neobvezno gibalno samooceno iz faze 11 z determinističnim gener
 
 Izbira ni prosto generirana. Generator uporablja le obstoječe zapise v katalogu in pred izborom preveri gibalni vzorec, namen vaje, opremo, zahtevnost in uporabnikove izključitve.
 
-- Počep: podprta oziroma manj obremenjena različica, npr. `reaching_squat` ali `air_squat`.
+- Počep: `reaching_squat` ali `air_squat`.
 - Predklon z ravnim hrbtom: `bodyweight_hip_hinge`.
-- Izpadni korak: `split_squat` oziroma `reverse_lunge`.
-- Horizontalni potisk: `push_up_incline`, `wall_push_up` ali `push_up`.
-- Vertikalni potisk: `band_overhead_press` oziroma `overhead_press`, če ustreza razpoložljivi opremi.
-- Horizontalni poteg: `band_row`, `trx_row` ali `one_arm_row`, če je oprema potrjena.
-- Vertikalni poteg: asistirana različica zgiba ali vleka elastike, če so sidrišče in oprema potrjeni.
+- Izpadni korak: katalog trenutno nima potrjene podprte regresije kot samostojnega zapisa; vzorec se zato izpusti, dokler ustrezna različica ni dodana in preverjena.
+- Horizontalni potisk: `push_up_incline` ali `wall_push_up`; običajna skleca ni sprejeta kot regresija sama sebi.
+- Vertikalni potisk: `band_overhead_press`, samo če je elastika na voljo; sicer se vzorec izpusti.
+- Horizontalni poteg: `band_row` ali `trx_row`, samo če je ustrezna oprema na voljo; enoročno veslanje z ročko se ne obravnava samodejno kot regresija.
+- Vertikalni poteg: asistirana različica zgiba ali vleka elastike, če so drog, sidrišče in oprema potrjeni.
 - Lokomocija: `brisk_walking`.
 - Ravnotežje na eni nogi: obstoječa naloga ostane, vendar se doda jasen namig za uporabo dosegljive stabilne opore; sistem ne trdi, da je našel drugo vajo.
 
-To so prednostne možnosti, ne obvezna zamenjava. Če pogoji niso izpolnjeni, se vaja ne izbere.
+To so prednostne možnosti, ne obvezna zamenjava. Če pogoji niso izpolnjeni, se gibalni vzorec izpusti in razlog prikaže uporabniku.
 
 ## Varnostne meje
 
