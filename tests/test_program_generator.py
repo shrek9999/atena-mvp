@@ -914,7 +914,7 @@ def test_every_programme_exercise_exposes_the_new_semantic_taxonomy():
     ["bodyweight", "chair", "wall", "household_support", "towel", "barbell", "rack", "weight_plate", "dumbbell", "kettlebell", "bench", "cable", "pull_up_bar"],
 ])
 def test_phase9_goal_experience_equipment_matrix(goal, experience, equipment):
-    """All 36 combinations exposed by the simplified onboarding must generate a safe usable plan."""
+    """Exercise all onboarding goal, experience and equipment combinations with hard compatibility checks."""
     profile = {
         "goal": goal,
         "experience": experience,
