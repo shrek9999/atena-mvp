@@ -1038,7 +1038,10 @@ def coach_program():
         except MovementAssessmentError as exc:
             return jsonify({"error": str(exc)}), 400
     try:
-        result = generate_program(profile, feedback=feedback)
+        result = generate_program(
+            profile, feedback=feedback,
+            movement_assessment=payload.get("movement_assessment"),
+        )
     except ProgramSafetyBlock as exc:
         return jsonify({"blocked": True, "message": str(exc)}), 409
     except ProgramValidationError as exc:
@@ -1047,6 +1050,8 @@ def coach_program():
         logger.exception("ATENA catalogue/program generation failed")
         return jsonify({"error": "Programa trenutno ni mogoče sestaviti iz kataloga."}), 500
     response = {"program": result, "source": "curated_exercise_catalogue", "pilot": True}
+    if result.get("movement_adaptation") is not None:
+        response["movement_adaptation"] = result["movement_adaptation"]
     if movement_assessment is not None:
         # The self-reported assessment is returned as coaching context only.
         # It is never persisted and never changes exercise selection in this phase.
