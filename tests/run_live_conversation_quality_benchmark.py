@@ -40,22 +40,36 @@ def request_chat(messages: list[dict[str, str]]) -> dict:
         },
         method="POST",
     )
-    try:
-        with urllib.request.urlopen(req, timeout=100) as response:
-            data = json.loads(response.read().decode("utf-8"))
-            if response.status != 200 or not isinstance(data.get("reply"), str):
-                raise RuntimeError(f"Unexpected HTTP {response.status} response shape")
-            return data
-    except urllib.error.HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")
+    transient_statuses = {500, 502, 503, 504}
+    last_error = None
+    for attempt in range(3):
         try:
-            parsed = json.loads(detail)
-            message = parsed.get("error", "Unknown API error")
-        except json.JSONDecodeError:
-            message = detail[:300]
-        raise RuntimeError(f"HTTP {exc.code}: {message}") from exc
-    except (urllib.error.URLError, TimeoutError) as exc:
-        raise RuntimeError(f"Network/timeout error: {exc}") from exc
+            with urllib.request.urlopen(req, timeout=100) as response:
+                data = json.loads(response.read().decode("utf-8"))
+                if response.status != 200 or not isinstance(data.get("reply"), str):
+                    raise RuntimeError(f"Unexpected HTTP {response.status} response shape")
+                return data
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            try:
+                parsed = json.loads(detail)
+                message = parsed.get("error", "Unknown API error")
+            except json.JSONDecodeError:
+                message = detail[:300]
+            last_error = RuntimeError(f"HTTP {exc.code}: {message}")
+            if exc.code not in transient_statuses or attempt == 2:
+                raise last_error from exc
+            wait_seconds = 2 * (attempt + 1)
+            print(f"Transient HTTP {exc.code}; retrying this turn in {wait_seconds}s.")
+            time.sleep(wait_seconds)
+        except (urllib.error.URLError, TimeoutError) as exc:
+            last_error = RuntimeError(f"Network/timeout error: {exc}")
+            if attempt == 2:
+                raise last_error from exc
+            wait_seconds = 2 * (attempt + 1)
+            print(f"Transient network error; retrying this turn in {wait_seconds}s.")
+            time.sleep(wait_seconds)
+    raise last_error or RuntimeError("Chat request failed after retries.")
 
 
 def main() -> int:
