@@ -306,7 +306,7 @@ def _sanitize_unlisted_support(answer, messages):
     answer = re.sub(
         r"višj\w*\s+oporo,?\s*npr\.?\s*(?:ob|na)\s*(?:sten\w*|pult\w*)"
         r"(?:\s+ali\s+(?:stabilen\s+)?rob)?",
-        "skleco na kolenih ali skrajšan obseg giba",
+        "izvedbo sklece na kolenih ali s krajšim obsegom giba",
         answer,
         flags=re.IGNORECASE,
     )
