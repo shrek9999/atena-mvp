@@ -241,7 +241,7 @@ def test_hip_extension_variants_are_distinct_from_the_predklon_pattern():
 def test_programme_hinge_label_uses_neutral_back_predklon_wording():
     from training.program import PATTERN_LABELS
 
-    assert PATTERN_LABELS["hinge"] == "predklon z nevtralnim hrbtom"
+    assert PATTERN_LABELS["hinge"] == "predklon z ravnim hrbtom"
 
 
 

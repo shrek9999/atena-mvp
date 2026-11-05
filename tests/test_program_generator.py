@@ -713,7 +713,7 @@ def test_hinge_pattern_uses_clear_coaching_term_predklon_z_ravnim_hrbtom():
         if exercise["pattern"] == "hinge"
     ]
     assert hinges
-    assert all(exercise["pattern_label"] == "predklon z nevtralnim hrbtom" for exercise in hinges)
+    assert all(exercise["pattern_label"] == "predklon z ravnim hrbtom" for exercise in hinges)
 
 
 
@@ -903,3 +903,78 @@ def test_every_programme_exercise_exposes_the_new_semantic_taxonomy():
     assert all(ex["training_purposes"] for ex in exercises)
     assert all(ex["stability_role"] in {"primary", "supporting", "incidental", "none"} for ex in exercises)
     assert all(isinstance(ex["stability_focus"], list) for ex in exercises)
+
+
+@pytest.mark.parametrize("goal", ["strength_hypertrophy", "functional", "fat_loss"])
+@pytest.mark.parametrize("experience", ["beginner", "intermediate", "advanced"])
+@pytest.mark.parametrize("equipment", [
+    ["bodyweight", "chair", "wall", "household_support", "towel"],
+    ["bodyweight", "chair", "wall", "household_support", "towel", "resistance_band"],
+    ["bodyweight", "chair", "wall", "household_support", "towel", "dumbbell"],
+    ["bodyweight", "chair", "wall", "household_support", "towel", "barbell", "rack", "weight_plate", "dumbbell", "kettlebell", "bench", "cable", "pull_up_bar"],
+])
+def test_phase9_goal_experience_equipment_matrix(goal, experience, equipment):
+    """Exercise all onboarding goal, experience and equipment combinations with hard compatibility checks."""
+    profile = {
+        "goal": goal,
+        "experience": experience,
+        "equipment": equipment,
+        "sessions_per_week": 2,
+        "session_minutes": 60,
+    }
+    plan = generate_program(profile)
+    assert len(plan["sessions"]) == 2
+    assert all(session["exercises"] for session in plan["sessions"])
+    assert all(len(session["exercises"]) >= 3 for session in plan["sessions"])
+    assert all(session["estimated_minutes"] <= 60 for session in plan["sessions"])
+    available = set(equipment) | {"bodyweight"}
+    for session in plan["sessions"]:
+        for exercise in session["exercises"]:
+            assert set(exercise["equipment"]).issubset(available), (
+                goal, experience, equipment, exercise["exercise_id"], exercise["equipment"]
+            )
+            assert exercise["prescription"]["tempo"]
+            assert exercise["prescription"]["tempo_description"]
+            assert exercise["range_of_motion"]
+
+
+@pytest.mark.parametrize("weight_type", ["dumbbell", "kettlebell"])
+def test_free_weight_variants_work_without_assuming_the_other_type(weight_type):
+    """A user who owns only one free-weight type must never receive the other."""
+    plan = generate_program({
+        "goal": "functional",
+        "experience": "intermediate",
+        "equipment": ["bodyweight", weight_type],
+        "sessions_per_week": 2,
+        "session_minutes": 60,
+    })
+    allowed = {"bodyweight", weight_type}
+    assert all(
+        set(exercise["equipment"]).issubset(allowed)
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+    )
+
+
+def test_functional_and_fat_loss_programmes_have_distinct_training_intent():
+    profile = {
+        "experience": "intermediate",
+        "equipment": ["bodyweight", "dumbbell", "kettlebell", "bench", "resistance_band"],
+        "sessions_per_week": 2,
+        "session_minutes": 60,
+    }
+    functional = generate_program({**profile, "goal": "functional"})
+    fat_loss = generate_program({**profile, "goal": "fat_loss"})
+    functional_patterns = {
+        exercise["pattern"]
+        for session in functional["sessions"]
+        for exercise in session["exercises"]
+    }
+    fat_loss_patterns = {
+        exercise["pattern"]
+        for session in fat_loss["sessions"]
+        for exercise in session["exercises"]
+    }
+    assert {"balance", "coordination"}.intersection(functional_patterns)
+    assert "conditioning" in fat_loss_patterns
+    assert functional_patterns != fat_loss_patterns
