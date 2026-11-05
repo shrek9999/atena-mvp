@@ -141,6 +141,7 @@ jobs:
         run: |
           python - <<'PY'
           import sys
+          import urllib.error
           import urllib.request
 
           origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
@@ -155,10 +156,17 @@ jobs:
                       "Origin": origin,
                       "Access-Control-Request-Method": "POST",
                       "Access-Control-Request-Headers": requested_headers,
+                      "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36",
                   },
                   method="OPTIONS",
               )
-              with urllib.request.urlopen(request, timeout=30) as response:
+              try:
+                  response_context = urllib.request.urlopen(request, timeout=30)
+              except urllib.error.HTTPError as exc:
+                  diagnostic = exc.read().decode("utf-8", errors="replace")[:250]
+                  print(f"Cloudflare preflight {path}: HTTP {exc.code}; diagnostic={diagnostic!r}; server={exc.headers.get('Server')}; cf-ray={exc.headers.get('CF-Ray')}")
+                  sys.exit(1)
+              with response_context as response:
                   allowed_origin = response.headers.get("Access-Control-Allow-Origin")
                   allowed_methods = response.headers.get("Access-Control-Allow-Methods", "").upper()
                   allowed_headers = response.headers.get("Access-Control-Allow-Headers", "").lower()
