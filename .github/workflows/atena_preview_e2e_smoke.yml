@@ -227,3 +227,35 @@ jobs:
               print(f"ATENA chat failed: HTTP {exc.code}; response={detail}")
               sys.exit(1)
           PY
+
+      - name: Check Supabase reachability and pilot storage consent gate
+        run: |
+          python - <<'PY'
+          import json
+          import sys
+          import time
+          import urllib.request
+
+          origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
+          request = urllib.request.Request(
+              origin + "/api/profile/status",
+              headers={
+                  "Origin": origin,
+                  "Accept": "application/json",
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+              },
+              method="GET",
+          )
+          time.sleep(3)
+          with urllib.request.urlopen(request, timeout=30) as response:
+              body = json.loads(response.read().decode("utf-8"))
+              available = body.get("available") is True
+              enabled = body.get("storageEnabled") is True
+              print(f"Profile storage status: HTTP {response.status}; database_reachable={available}; storage_enabled={enabled}; privacy_notice_version={body.get('privacyNoticeVersion') or 'not available'}")
+              if response.status != 200:
+                  raise SystemExit("Profile storage status endpoint failed.")
+              if not available:
+                  raise SystemExit(f"Supabase connectivity is not ready: {body.get('message', 'no safe diagnostic')}")
+              if not enabled:
+                  print("Database is reachable; persistent user-data writes remain disabled until privacy approval.")
+          PY
