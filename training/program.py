@@ -1086,7 +1086,13 @@ def generate_program(profile: object, feedback: object = None) -> dict:
                 if p["experience"] == "beginner" else
                 "Intermediate: uporablja bolj specifične razpone glede na cilj; pri glavnih vajah za moč je običajen razpon 5–8 ponovitev, pri hipertrofiji večinoma 6–12. Advanced: pri glavnih vajah za moč lahko uporablja 3–6 ponovitev, ob večji obremenitvi pa zahteva ustrezno tehniko, regeneracijo in daljše odmore."
             ),
-            "tempo": ("Začetnik: pri osnovnih vajah je privzeti tempo 3–1–1–0 (3 s nadzorovan spust, 1 s nadzor v spodnjem položaju, 1 s dvig, brez premora v vrhu). Eksplozivne, časovno določene, stabilizacijske in mobilnostne vaje imajo ustrezno specifičen tempo." if p["experience"] == "beginner" else "Tempo je določen glede na cilj in vrsto vaje: moč uporablja nadzorovano ekscentrično fazo ter hitro koncentrično namero, hipertrofija daljšo nadzorovano izvedbo, eksplozivne vaje hiter koncentrični del, vzdržljivost ritmično delo, mobilnost pa počasno aktivno raziskovanje obsega. Stabilizacijsko delo se doda ciljno, ne avtomatično."),
+            "tempo": (
+                "Začetnik pri kombiniranem cilju moč + hipertrofija: pri osnovnih počepih in predklonih z ravnim hrbtom uporabi tempo 2–1–1–0 (2 s nadzorovan spust, 1 s nadzor v spodnjem položaju, 1 s dvig, brez premora v vrhu). Druge začetniške vaje in posebni vzorci ohranijo svoj namenski tempo."
+                if p["experience"] == "beginner" and planning_goal == "strength_hypertrophy" else
+                "Začetnik: pri osnovnih vajah je privzeti tempo 3–1–1–0 (3 s nadzorovan spust, 1 s nadzor v spodnjem položaju, 1 s dvig, brez premora v vrhu). Eksplozivne, časovno določene, stabilizacijske in mobilnostne vaje imajo ustrezno specifičen tempo."
+                if p["experience"] == "beginner" else
+                "Tempo je določen glede na cilj in vrsto vaje: moč uporablja nadzorovano ekscentrično fazo ter hitro koncentrično namero, hipertrofija daljšo nadzorovano izvedbo, eksplozivne vaje hiter koncentrični del, vzdržljivost ritmično delo, mobilnost pa počasno aktivno raziskovanje obsega. Stabilizacijsko delo se doda ciljno, ne avtomatično."
+            ),
             "range_of_motion": "Pri vsaki vaji uporabi največjo amplitudo, ki jo omogočata gibljivost in nadzor. Amplitudo postopno razvijaj; ne žrtvuj položaja, stabilnosti ali neboleče izvedbe. Pri mobilnosti kombiniraj aktivno gibanje in moč skozi razpoložljivo amplitudo.",
             "progression": ("Pri aerobni vzdržljivosti postopno povečuj trajanje ali obseg, nato po potrebi intenzivnost; pri intervalih spreminjaj le eno spremenljivko naenkrat. Ohraniti moraš ponovljivo tehniko in regeneracijo."
                 if planning_goal == "endurance" else
