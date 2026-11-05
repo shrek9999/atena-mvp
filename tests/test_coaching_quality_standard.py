@@ -2,6 +2,7 @@
 
 from training.catalogue import get_exercise, load_catalogue
 from coach_routes import SYSTEM_PROMPT
+from training.program import generate_program
 
 
 def test_superman_is_a_verified_bodyweight_mat_accessory_not_a_primary_strength_lift():
@@ -56,3 +57,39 @@ def test_coach_prompt_requires_concise_non_repetitive_exercise_cues():
     prompt = SYSTEM_PROMPT.casefold()
     assert "2–4 concise, non-repetitive coaching cues" in prompt
     assert "avoid repeating generic amplitude and safety paragraphs" in prompt
+
+
+
+def test_generated_program_exposes_internal_regression_and_progression_decision_criteria():
+    plan = generate_program({
+        "goal": "strength_hypertrophy",
+        "experience": "beginner",
+        "sessions_per_week": 2,
+        "session_minutes": 30,
+        "equipment": ["bodyweight"],
+    })
+    exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
+    assert exercises
+    for exercise in exercises:
+        logic = exercise["coaching_logic"]
+        assert logic["regress_when"]
+        assert logic["progress_when"]
+        assert logic["progression_order"]
+        assert logic["regressions"] == exercise["regressions"]
+        assert logic["progressions"] == exercise["progressions"]
+        assert any("dveh izpostavitvah" in rule for rule in logic["progress_when"])
+
+
+def test_bodyweight_program_never_invents_equipment_or_furniture_rows():
+    plan = generate_program({
+        "goal": "strength_hypertrophy",
+        "experience": "beginner",
+        "sessions_per_week": 2,
+        "session_minutes": 30,
+        "equipment": ["bodyweight"],
+    })
+    for session in plan["sessions"]:
+        for exercise in session["exercises"]:
+            assert set(exercise["equipment"]).issubset({"bodyweight"})
+            assert "table" not in exercise["name"].casefold()
+            assert "miza" not in exercise["name"].casefold()
