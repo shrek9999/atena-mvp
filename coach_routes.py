@@ -258,6 +258,33 @@ def _normalize_slovene_coaching_terms(answer):
     return answer
 
 
+def _sanitize_unverified_safety_claim(answer, messages):
+    """Reject model claims that the user cleared safety when no user did so."""
+    user_history = "\n".join(
+        item.get("content", "") for item in messages
+        if item.get("role") == "user" and isinstance(item.get("content"), str)
+    )
+    if _has_explicit_safety_clearance(user_history):
+        return answer
+    claim = re.search(
+        r"(?:ker|saj)\s+(?:si\s+)?(?:potrdil|povedal),?\s+da\s+(?:nimaš|si brez)|"
+        r"(?:ker|odlično,?\s+ker|vesel(?:a)?\s+sem,?\s+da)\s+"
+        r"(?:nimaš|nimaš nobenih|si brez|ni nobenih)\s+"
+        r"(?:bolečin|poškodb|omejitev|zdravstvenih težav)|"
+        r"(?:vesel(?:a)?\s+sem,?\s+da)\s+(?:ni|nimaš)\s+"
+        r"(?:nobenih\s+)?(?:bolečin|poškodb|omejitev)",
+        answer,
+        re.IGNORECASE,
+    )
+    if not claim:
+        return answer
+    return (
+        "Tega še nisi izrecno potrdil, zato ne bom predpostavljal, da nimaš omejitev. "
+        "Ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve ali "
+        "zdravstvene zadržke, ki bi jih moral upoštevati?"
+    )
+
+
 def _bodyweight_only_program_note(messages):
     """Add a transparent equipment limitation when no pulling anchor exists."""
     profile = _profile_from_messages(messages) or {}
@@ -401,6 +428,40 @@ def _coaching_guardrail_reply(messages):
             "oziroma nestabilnosti ali sveže poškodbe?"
         )
 
+    assistant_texts = [
+        item.get("content", "") for item in messages
+        if item.get("role") == "model" and isinstance(item.get("content"), str)
+    ]
+    assistant_asked_pain_details = any(
+        re.search(r"kje natančno se pojavi bolečina|kakšna je in kako močna", item, re.IGNORECASE)
+        for item in assistant_texts
+    )
+    if positive_pain and assistant_asked_pain_details:
+        reported_intensity = bool(re.search(
+            r"\b(?:10|[0-9])\s*(?:/\s*10|od\s+10)\b|\b(?:jakost|intenzivnost)\s+(?:je|okoli)\s+\d",
+            history_lower,
+        ))
+        reported_after_effect = bool(re.search(
+            r"(po prenehanju|ko preneham|ko se ustavim).{0,50}(izzveni|mine|vztraja|ostane|ne boli)|"
+            r"(izzveni|mine|vztraja|ostane).{0,50}(prenehanju|ustavitvi|gibu)",
+            history_lower,
+        ))
+        if not reported_intensity:
+            return (
+                "Hvala, zdaj vem, kje in pri katerem delu giba se pojavi težava. "
+                "Kolikšna je bolečina na lestvici od 0 do 10? Ali po prenehanju giba "
+                "izzveni ali ostane prisotna?"
+            )
+        if not reported_after_effect:
+            return (
+                "Hvala. Še preveriva odziv: ali bolečina po prenehanju giba hitro izzveni "
+                "ali ostane prisotna tudi pozneje?"
+            )
+        return (
+            "Hvala, osnovni opis imam. Preden razmišljava o spremembi vaje, mi povej še, "
+            "ali je naslednje jutro stanje enako kot običajno ali je bolečina izrazitejša."
+        )
+
     if positive_pain:
         return (
             "Za zdaj ne ponavljaj giba v isti dozi, če sproža bolečino; to ne pomeni, da moraš "
@@ -411,6 +472,27 @@ def _coaching_guardrail_reply(messages):
             "spremenljivko doze (obseg, obremenitev, število serij, pogostost ali tempo) in "
             "preveriva odziv. Ob novi, hudi, slabšajoči se ali vztrajni bolečini oziroma "
             "oteklini, zaklepanju, popuščanju ali nezmožnosti obremenitve poišči strokovno oceno."
+        )
+
+    # Do not let a language model convert an unanswered safety question into clearance.
+    assistant_asked_safety = any(re.search(
+        r"(bolečin.{0,60}poškodb|poškodb.{0,60}omejitev|zdravstven.{0,60}omejitev|"
+        r"ali imaš trenutno kakršne koli)",
+        item,
+        re.IGNORECASE,
+    ) for item in assistant_texts)
+    latest_reports_health_issue = bool(re.search(
+        r"(imam|občutim|čutim|pojavlja se|pojavila se je).{0,70}"
+        r"(boleč|poškodb|omejit|bolezen|operacij|simptom)",
+        latest,
+        re.IGNORECASE,
+    ))
+    if assistant_asked_safety and not _has_explicit_safety_clearance(history) and not latest_reports_health_issue:
+        return (
+            "Zabeležil sem tvoj zadnji podatek in ga bom upošteval. Varnostnega vprašanja "
+            "pa še nisi odgovoril, zato ne bom sklepal, da omejitev ni. Ali imaš trenutno "
+            "kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke? "
+            "Če jih nimaš, to samo potrdi."
         )
 
     balance_clarified = (
@@ -1044,6 +1126,7 @@ def coach_chat():
             logger.warning("Gemini returned no text for model %s", model)
             return jsonify({"error": "Model ni vrnil odgovora. Poskusi znova."}), 502
         answer = _normalize_slovene_coaching_terms(answer)
+        answer = _sanitize_unverified_safety_claim(answer, messages)
         bodyweight_note = _bodyweight_only_program_note(messages)
         if bodyweight_note and bodyweight_note not in answer:
             answer += "\n\n" + bodyweight_note
