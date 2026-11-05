@@ -66,13 +66,21 @@ jobs:
           PY
 
       - name: Verify the stable Cloudflare pilot alias securely calls the Render programme generator
+        env:
+          PREVIEW_TOKEN: ${{ secrets.AI_TRAINER_PREVIEW_TOKEN }}
         run: |
           python - <<'PY'
           import json
+          import os
           import sys
           import time
           import urllib.error
           import urllib.request
+
+          preview_token = os.environ.get("PREVIEW_TOKEN", "").strip()
+          if len(preview_token) < 20:
+              print("GitHub Actions secret AI_TRAINER_PREVIEW_TOKEN is missing or too short.")
+              sys.exit(1)
 
           origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
           url = origin + "/api/plan"
@@ -93,7 +101,8 @@ jobs:
                   "Content-Type": "application/json",
                   "Accept": "application/json",
                   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-                  "Origin": origin
+                  "Origin": origin,
+                  "X-ATENA-Preview-Token": preview_token
               },
               method="POST"
           )
