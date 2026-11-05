@@ -38,6 +38,8 @@ ALLOWED_ORIGINS = {
     "https://www.gregajenko.si",
     # Temporary, isolated Netlify Deploy Preview used for the closed pilot only.
     "https://deploy-preview-7--tiny-figolla-016703.netlify.app",
+    # Cloudflare Pages pilot preview used by the current ATENA frontend.
+    "https://pilot-atena-profile-history.atena-ai-trener.pages.dev",
 }
 
 @coach_bp.after_request
@@ -47,7 +49,7 @@ def add_cors_headers(response):
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Vary"] = "Origin"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Pilot-Token, X-Profile-Token"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Pilot-Token, X-Profile-Id, X-Profile-Token"
         response.headers["Access-Control-Max-Age"] = "600"
     return response
 
