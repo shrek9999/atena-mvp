@@ -46,3 +46,51 @@ def test_movement_assessment_rejects_invalid_payload(client):
 def test_movement_assessment_preflight_is_available(client):
     response = client.options("/coach/movement-assessment")
     assert response.status_code == 204
+
+
+def test_program_route_returns_assessment_as_context_without_changing_program(monkeypatch, client):
+    import coach_routes
+
+    called = {}
+
+    def fake_generate_program(profile, feedback=None):
+        called["profile"] = profile
+        called["feedback"] = feedback
+        return {"goal": "functional", "sessions": [{"session": 1, "exercises": []}]}
+
+    monkeypatch.setattr(coach_routes, "generate_program", fake_generate_program)
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-token"},
+        json={
+            "profile": {"goal": "functional", "experience": "beginner"},
+            "movement_assessment": {"squat": "needs_support", "hinge": "comfortable"},
+        },
+    )
+    assert response.status_code == 200
+    body = response.get_json()
+    assert called["profile"]["goal"] == "functional"
+    assert body["program"]["goal"] == "functional"
+    assert body["movement_assessment"]["is_diagnosis"] is False
+    assert body["movement_assessment"]["automatic_programme_change"] == "none"
+    assert body["movement_assessment"]["coaching_guidance"]["consider_supported_or_simpler_variation"] == ["squat"]
+    assert body["movement_assessment_stored"] is False
+
+
+def test_program_route_rejects_invalid_movement_assessment_without_generating(monkeypatch, client):
+    import coach_routes
+
+    def should_not_run(*args, **kwargs):
+        raise AssertionError("Programme generator must not run for invalid assessment.")
+
+    monkeypatch.setattr(coach_routes, "generate_program", should_not_run)
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-token"},
+        json={
+            "profile": {"goal": "functional", "experience": "beginner"},
+            "movement_assessment": {"jump": "comfortable"},
+        },
+    )
+    assert response.status_code == 400
+    assert "Neznane" in response.get_json()["error"]
