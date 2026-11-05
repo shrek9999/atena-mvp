@@ -95,3 +95,46 @@ def test_comfortable_self_report_does_not_change_exercise_selection():
 def test_invalid_movement_assessment_is_rejected(assessment):
     with pytest.raises(ProgramValidationError):
         generate_program(BASE, movement_assessment=assessment)
+
+
+def test_needs_support_lunge_is_omitted_until_a_verified_supported_variant_exists():
+    plan = generate_program(BASE, movement_assessment={"lunge": "needs_support"})
+    assert not _exercises(plan, "lunge")
+    assert any(
+        event["pattern"] == "lunge"
+        and event["action"] == "omitted_no_verified_supported_variant"
+        for event in plan["movement_adaptation"]["events"]
+    )
+
+
+def test_needs_support_vertical_push_is_not_relabelled_as_an_unassisted_press():
+    profile = {**BASE, "equipment": [item for item in BASE["equipment"] if item != "resistance_band"]}
+    plan = generate_program(profile, movement_assessment={"overhead": "needs_support"})
+    assert not _exercises(plan, "vertical_push")
+    assert any(
+        event["pattern"] == "vertical_push"
+        and event["action"] == "omitted_no_verified_supported_variant"
+        for event in plan["movement_adaptation"]["events"]
+    )
+
+
+def test_needs_support_horizontal_push_does_not_fall_back_to_the_same_standard_push_up():
+    profile = {**BASE, "equipment": ["bodyweight"]}
+    plan = generate_program(profile, movement_assessment={"push": "needs_support"})
+    assert not _exercises(plan, "horizontal_push")
+    assert any(
+        event["pattern"] == "horizontal_push"
+        and event["action"] == "omitted_no_verified_supported_variant"
+        for event in plan["movement_adaptation"]["events"]
+    )
+
+
+def test_needs_support_horizontal_pull_does_not_fall_back_to_unmodified_one_arm_row():
+    profile = {**BASE, "equipment": ["dumbbell"]}
+    plan = generate_program(profile, movement_assessment={"pull": "needs_support"})
+    assert not _exercises(plan, "horizontal_pull")
+    assert any(
+        event["pattern"] == "horizontal_pull"
+        and event["action"] == "omitted_no_verified_supported_variant"
+        for event in plan["movement_adaptation"]["events"]
+    )
