@@ -40,12 +40,13 @@ TASK_PATTERNS = {
 # Candidate order is intentionally conservative. The programme generator
 # still verifies goal, equipment, exclusions, pattern and exercise level.
 SUPPORTED_VARIANTS = {
-    "squat": ("reaching_squat", "air_squat", "squat_goblet"),
+    "squat": ("reaching_squat", "air_squat"),
     "hinge": ("bodyweight_hip_hinge",),
-    "lunge": ("split_squat", "reverse_lunge"),
-    "horizontal_push": ("push_up_incline", "wall_push_up", "push_up"),
-    "vertical_push": ("band_overhead_press", "overhead_press"),
-    "horizontal_pull": ("band_row", "trx_row", "one_arm_row"),
+    # No supported lunge regression is currently represented as a catalogue ID;
+    # fail closed instead of relabelling an ordinary split squat as a regression.
+    "horizontal_push": ("push_up_incline", "wall_push_up"),
+    "vertical_push": ("band_overhead_press",),
+    "horizontal_pull": ("band_row", "trx_row"),
     "vertical_pull": ("band_assisted_pull_up", "foot_assisted_pull_up", "band_lat_pulldown"),
     "locomotion": ("brisk_walking",),
 }
