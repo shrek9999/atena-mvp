@@ -16,6 +16,59 @@ def test_unanswered_health_question_is_not_implicit_clearance():
     assert "ne bom sklepal" in reply
 
 
+def test_pending_safety_question_detects_health_restriction_wording():
+    messages = [
+        {"role": "user", "content": "Rad bi bil bolj fit."},
+        {
+            "role": "model",
+            "content": "Ali trenutno morda opaziš kakšne zdravstvene omejitve, poškodbe ali težave z gibanjem?",
+        },
+        {
+            "role": "user",
+            "content": "Predvsem bi rad imel več energije in se manj zadihal.",
+        },
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "še nisi odgovoril" in reply
+    assert "ne bom sklepal" in reply
+
+
+def test_omitting_health_information_is_not_a_negative_confirmation():
+    messages = [
+        {"role": "user", "content": "Rad bi pridobil mišično maso."},
+        {"role": "model", "content": "Ali imaš zdravstvene omejitve ali bolečine?"},
+        {"role": "user", "content": "Treniram že tri leta in imam dostop do fitnesa."},
+    ]
+    answer = (
+        "Ker v prejšnjem odgovoru nisi omenil zdravstvenih omejitev ali bolečin, "
+        "predvidevam, da lahko začneva brez posebnih prilagoditev."
+    )
+    assert "Tega še nisi izrecno potrdil" in _sanitize_unverified_safety_claim(answer, messages)
+
+
+def test_model_cannot_claim_safety_review_was_completed_without_answer():
+    messages = [
+        {"role": "user", "content": "Rad bi bil bolj fit."},
+        {"role": "model", "content": "Ali imaš kakšne zdravstvene omejitve?"},
+        {"role": "user", "content": "Želim izboljšati kondicijo."},
+    ]
+    answer = "Ker sva zdravstveni pregled že opravila, lahko nadaljujeva."
+    assert "Tega še nisi izrecno potrdil" in _sanitize_unverified_safety_claim(answer, messages)
+
+
+def test_emotional_reassurance_is_preserved_while_safety_answer_is_pending():
+    messages = [
+        {"role": "user", "content": "Ta teden sem opravil samo en trening."},
+        {"role": "model", "content": "Ali imaš kakšne zdravstvene omejitve ali bolečine?"},
+        {"role": "user", "content": "Zdaj imam občutek, da sem vse pokvaril."},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "Ničesar nisi pokvaril" in reply
+    assert "varnostnega vprašanja" in reply
+
+
 def test_explicit_negative_answer_is_respected():
     messages = [
         {"role": "user", "content": "Nimam bolečin, poškodb ali zdravstvenih omejitev."},
