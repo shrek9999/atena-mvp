@@ -8094,11 +8094,8 @@
       "functional_fitness",
       "skill"
     ],
-    "stability_role": "supporting",
-    "stability_focus": [
-      "trunk_bracing",
-      "coordination"
-    ]
+    "stability_role": "none",
+    "stability_focus": []
   },
   {
     "id": "wall_hip_hinge",
@@ -8166,10 +8163,7 @@
       "functional_fitness",
       "skill"
     ],
-    "stability_role": "supporting",
-    "stability_focus": [
-      "trunk_bracing",
-      "coordination"
-    ]
+    "stability_role": "none",
+    "stability_focus": []
   }
 ]
