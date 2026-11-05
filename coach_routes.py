@@ -68,14 +68,13 @@ def _has_explicit_no_pain_confirmation(text):
 
 
 def _has_explicit_safety_clearance(text):
+    """Accept only direct negative answers, never an ambiguous mention of uncertainty."""
     patterns = (
-        r"\bnimam\b[^.\n]{0,80}\b(?:bolečin|poškodb|omejitev)\b",
-        r"\bbrez\b[^.\n]{0,60}\b(?:bolečin|poškodb|omejitev)\b",
-        # The website intake form records an explicit negative answer in this
-        # structured profile summary. Treat that exact statement as clearance;
-        # do not confuse it with an absent/unknown value such as "none reported".
+        r"\bnimam\s+(?:(?:trenutno|nobenih|kakršnih koli|večjih)\s+)*(?:bolečin|poškodb|(?:zdravstvenih|gibalnih)\s+omejitev|omejitev|zdravstvenih težav)\b",
+        r"\bbrez\s+(?:(?:trenutnih|nobenih)\s+)*(?:bolečin|poškodb|(?:zdravstvenih|gibalnih)\s+omejitev|omejitev)\b",
+        # Exact structured profile wording from the website intake form.
         r"\btrenutna\s+bolečina\s*/\s*poškodba\s*/\s*zdravstvena\s+omejitev\s*:\s*ne\b",
-        r"\bno (?:pain|injuries|limitations)\b",
+        r"\bno\s+(?:pain|injuries|limitations)\b",
     )
     return any(re.search(pattern, text, re.IGNORECASE) for pattern in patterns)
 
