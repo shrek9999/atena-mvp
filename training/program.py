@@ -693,7 +693,19 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 candidates = [item for item in candidates if item["id"] != "lateral_shuffle"]
             if movement_status == "needs_support" and pattern != "balance":
                 preferred_ids = SUPPORTED_VARIANTS.get(pattern, ())
-                supported_candidates = [item for item in candidates if item["id"] in preferred_ids]
+                available_for_regression = set(p["equipment"]) | {"bodyweight"}
+                supported_candidates = [
+                    item for item in reference_catalogue
+                    if item["id"] in preferred_ids
+                    and item["pattern"] == pattern
+                    and not item["single_joint"]
+                    and item["level"] in {"beginner", p["experience"]}
+                    and set(item["equipment"]).issubset(available_for_regression)
+                    and (not item["equipment_any"] or bool(set(item["equipment_any"]) & available_for_regression))
+                    and bool(set(item["training_purposes"]) & allowed_purposes)
+                    and item["pattern"] not in p["excluded_patterns"]
+                    and item["id"] not in p["excluded_exercise_ids"]
+                ]
                 if supported_candidates:
                     candidates = supported_candidates
                 else:
