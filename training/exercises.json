@@ -8165,5 +8165,73 @@
     ],
     "stability_role": "none",
     "stability_focus": []
+  },
+  {
+    "id": "superman",
+    "name": "Superman (dvig trupa in okončin leže na trebuhu)",
+    "name_en": "Superman",
+    "pattern": "trunk_stability",
+    "joint_type": "multi_joint",
+    "goals": [
+      "general_fitness",
+      "functional"
+    ],
+    "equipment": [
+      "bodyweight"
+    ],
+    "level": "beginner",
+    "primary_muscles": [
+      "erector_spinae"
+    ],
+    "secondary_muscles": [
+      "gluteus_maximus",
+      "posterior_shoulder",
+      "trunk"
+    ],
+    "cues": [
+      "Lezi na trebuh in ohrani vrat v podaljšku hrbtenice.",
+      "Rahlo dvigni prsni koš in/ali okončine brez sunkov.",
+      "Dvig naj bo majhen in nadzorovan; ne sili v skrajni izteg."
+    ],
+    "common_errors": [
+      "Pretirano usločanje ledvenega dela.",
+      "Sunkovit dvig ali pretirano dvigovanje glave.",
+      "Zadrževanje diha."
+    ],
+    "regressions": [
+      "Dvig prsnega koša z rokami ob telesu v majhni amplitudi"
+    ],
+    "progressions": [
+      "Izmenični dvig nasprotne roke in noge leže na trebuhu",
+      "Kratek izometrični Superman z nadzorovanim položajem"
+    ],
+    "alternatives": [
+      "bird_dog"
+    ],
+    "warnings": [
+      "Izberi le, če je položaj leže na trebuhu udoben in neboleč.",
+      "Ob bolečini ali naraščajočem nelagodju v hrbtu vajo prekini in razjasni odziv."
+    ],
+    "single_joint": false,
+    "equipment_any": [],
+    "loading_potential": "low",
+    "training_role": "accessory",
+    "time_based": false,
+    "movement_family": "trunk_control",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "trunk_control"
+    ],
+    "movement_pattern": "trunk_control",
+    "training_purposes": [
+      "general_fitness",
+      "functional_fitness",
+      "stability"
+    ],
+    "stability_role": "supporting",
+    "stability_focus": [
+      "trunk_control"
+    ]
   }
 ]
