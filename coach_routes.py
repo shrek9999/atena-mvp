@@ -30,6 +30,7 @@ from training.conditioning_progression import summarize_conditioning_progress
 from training.periodization import summarize_training_cycle
 from training.proactive_checkin import build_proactive_checkin
 from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL
+from training.movement_assessment import MovementAssessmentError, assess_movement_competence
 
 logger = logging.getLogger(__name__)
 coach_bp = Blueprint("coach", __name__)
@@ -995,6 +996,31 @@ def coach_program():
         return jsonify({"error": "Programa trenutno ni mogoče sestaviti iz kataloga."}), 500
     return jsonify({"program": result, "source": "curated_exercise_catalogue", "pilot": True}), 200
 
+
+@coach_bp.route("/coach/movement-assessment", methods=["POST", "OPTIONS"])
+def coach_movement_assessment():
+    """Evaluate self-reported movement-task experience without diagnosis or storage."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    expected_token = os.getenv("AI_COACH_TEST_TOKEN", "").strip()
+    supplied_token = request.headers.get("X-Pilot-Token", "").strip()
+    if not expected_token:
+        return jsonify({"error": "Testni dostop še ni nastavljen na strežniku."}), 503
+    if not supplied_token or not hmac.compare_digest(supplied_token, expected_token):
+        return jsonify({"error": "Testni dostopni ključ ni pravilen."}), 403
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict) or not isinstance(payload.get("assessment"), dict):
+        return jsonify({"error": "Pričakovan je objekt assessment z ocenami gibalnih nalog."}), 400
+    try:
+        result = assess_movement_competence(payload["assessment"])
+    except MovementAssessmentError as exc:
+        return jsonify({"error": str(exc)}), 400
+    return jsonify({
+        "assessment": result,
+        "stored": False,
+        "source": "self_reported_movement_assessment",
+        "pilot": True,
+    }), 200
 
 
 @coach_bp.route("/coach/status", methods=["GET", "OPTIONS"])
