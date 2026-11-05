@@ -142,7 +142,7 @@ def test_needs_support_horizontal_pull_does_not_fall_back_to_unmodified_one_arm_
 
 
 def test_needs_support_walking_does_not_auto_prescribe_brisk_walking():
-    profile = {**BASE, "goal": "endurance"}
+    profile = {**BASE, "goal": "fat_loss", "sessions_per_week": 3}
     plan = generate_program(profile, movement_assessment={"locomotion": "needs_support"})
     assert not _exercises(plan, "locomotion")
     assert any(
