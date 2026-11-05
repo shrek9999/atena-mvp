@@ -1031,6 +1031,12 @@ def coach_program():
         return jsonify({"error": "Pričakovan je JSON objekt s profilom vadečega."}), 400
     profile = payload.get("profile", payload)
     feedback = payload.get("feedback")
+    movement_assessment = None
+    if "movement_assessment" in payload:
+        try:
+            movement_assessment = assess_movement_competence(payload["movement_assessment"])
+        except MovementAssessmentError as exc:
+            return jsonify({"error": str(exc)}), 400
     try:
         result = generate_program(profile, feedback=feedback)
     except ProgramSafetyBlock as exc:
@@ -1040,7 +1046,13 @@ def coach_program():
     except (OSError, ValueError):
         logger.exception("ATENA catalogue/program generation failed")
         return jsonify({"error": "Programa trenutno ni mogoče sestaviti iz kataloga."}), 500
-    return jsonify({"program": result, "source": "curated_exercise_catalogue", "pilot": True}), 200
+    response = {"program": result, "source": "curated_exercise_catalogue", "pilot": True}
+    if movement_assessment is not None:
+        # The self-reported assessment is returned as coaching context only.
+        # It is never persisted and never changes exercise selection in this phase.
+        response["movement_assessment"] = movement_assessment
+        response["movement_assessment_stored"] = False
+    return jsonify(response), 200
 
 
 @coach_bp.route("/coach/movement-assessment", methods=["POST", "OPTIONS"])
