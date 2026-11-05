@@ -220,8 +220,8 @@ def test_beginner_combined_strength_hypertrophy_uses_foundational_tempo():
     for pattern in patterns:
         exercise = {"id": f"test_{pattern}", "pattern": pattern, "unilateral": pattern == "lunge"}
         prescription = _prescription("strength_hypertrophy", "beginner", pattern, exercise)
-        assert prescription["tempo"] == "3–1–1–0", pattern
-        assert prescription["tempo_seconds_per_rep"] == 5, pattern
+        assert prescription["tempo"] == "2–1–1–0", pattern
+        assert prescription["tempo_seconds_per_rep"] == 4, pattern
 
 
 
@@ -277,6 +277,6 @@ def test_beginner_combined_goal_methodology_summary_matches_exercise_tempo():
         "session_minutes": 60,
         "equipment": ["bodyweight", "dumbbell", "bench"],
     })
-    assert "3–1–1–0" in result["methodology"]["tempo"]
+    assert "2–1–1–0" in result["methodology"]["tempo"]
     assert "3–1–2–0" not in result["methodology"]["tempo"]
     assert result["program_version"] == "2.9.0"
