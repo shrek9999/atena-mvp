@@ -1053,8 +1053,9 @@ def coach_program():
     if result.get("movement_adaptation") is not None:
         response["movement_adaptation"] = result["movement_adaptation"]
     if movement_assessment is not None:
-        # The self-reported assessment is returned as coaching context only.
-        # It is never persisted and never changes exercise selection in this phase.
+        # The self-reported assessment may select a verified simpler catalogue
+        # variant or omit the affected pattern when symptoms are reported.
+        # It is not persisted and does not establish clinical clearance.
         response["movement_assessment"] = movement_assessment
         response["movement_assessment_stored"] = False
     return jsonify(response), 200
