@@ -1,6 +1,6 @@
 """Regression tests for conversation state and conservative duration estimates."""
 
-from coach_routes import _coaching_guardrail_reply, _sanitize_unverified_safety_claim
+from coach_routes import _coaching_guardrail_reply, _sanitize_unverified_safety_claim, _has_explicit_safety_clearance
 from training.program import _estimated_minutes
 
 
@@ -23,6 +23,11 @@ def test_explicit_negative_answer_is_respected():
         {"role": "user", "content": "Imam ročke in elastiko."},
     ]
     assert _coaching_guardrail_reply(messages) is None
+
+
+def test_uncertain_health_answer_is_not_treated_as_clearance():
+    assert not _has_explicit_safety_clearance("Nimam pojma, ali imam zdravstvene omejitve.")
+    assert not _has_explicit_safety_clearance("Ne vem, ali imam kakšne bolečine.")
 
 
 def test_model_cannot_invent_a_negative_health_confirmation():
