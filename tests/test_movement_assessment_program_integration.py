@@ -34,7 +34,7 @@ def test_needs_support_selects_a_verified_simpler_squat_variant_and_reduces_dose
     assert all(exercise["prescription"]["sets"] <= 2 for exercise in squats)
     assert all(exercise["prescription"]["rir"] >= 3 for exercise in squats)
     assert all(exercise["prescription"]["adjustment_note"] for exercise in squats)
-    assert plan["movement_adaptation"]["automatic_progression"] == "unchanged"
+    assert plan["movement_adaptation"]["automatic_progression"] == "movement_assessment_does_not_trigger_progression"
     assert plan["movement_adaptation"]["is_diagnosis"] is False
 
 
