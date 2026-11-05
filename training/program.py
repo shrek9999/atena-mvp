@@ -1018,6 +1018,32 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 "regressions": regressions,
                 "progressions": progressions,
                 "alternatives": alternatives,
+                # Machine-readable coaching criteria keep the progression logic
+                # available to the application even when the UI stays minimal.
+                "coaching_logic": {
+                    "regress_when": [
+                        "ne dosežeš spodnje meje predpisanih ponovitev z ustrezno tehniko",
+                        "izgubiš nadzor, ravnotežje ali načrtovano amplitudo",
+                        "predpisani RIR ni dosežen oziroma je napor previsok",
+                        "pojavi se bolečina ali novo nelagodje; avtomatska progresija se ustavi",
+                        "oprema ali opora ni varna oziroma je ni mogoče potrditi",
+                    ],
+                    "progress_when": [
+                        "vse serije dosežejo zgornjo mejo ponovitev",
+                        "tehnika in kontrolirana amplituda ostaneta ponovljivi",
+                        "ohraniš predpisani RIR",
+                        "enak uspeh se ponovi na najmanj dveh izpostavitvah in regeneracija je ustrezna",
+                        "ni bolečine ali novega zaskrbljujočega simptoma",
+                    ],
+                    "progression_order": [
+                        "najprej postopno dodaj ponovitve znotraj predpisanega razpona",
+                        "nato dodaj majhno obremenitev, če je na voljo in varna",
+                        "sicer uporabi naslednjo preverjeno progresijo iz kataloga",
+                        "spreminjaj samo eno glavno spremenljivko naenkrat",
+                    ],
+                    "regressions": regressions,
+                    "progressions": progressions,
+                },
                 "prescription": prescription,
                 **({"movement_adaptation_note": movement_note} if movement_note else {}),
                 **({
