@@ -28,7 +28,7 @@ def test_coach_prompt_prioritizes_simple_effective_bodyweight_exercises():
     prompt = SYSTEM_PROMPT.casefold()
     assert "a controlled bodyweight squat" in prompt
     assert "3 × 8 bodyweight squats" in prompt
-    assert "do not automatically progress it to a harder unilateral exercise" in prompt
+    assert "do not replace them with advanced variations merely to make the plan look sophisticated" in prompt
 
 
 def test_coach_prompt_requires_explicit_equipment_and_rejects_unsafe_table_rows():
@@ -49,7 +49,7 @@ def test_coach_prompt_has_observable_regression_and_progression_criteria():
 def test_coach_prompt_keeps_mat_based_trunk_work_as_complementary_not_a_replacement_for_pulling():
     prompt = SYSTEM_PROMPT.casefold()
     assert "mat-based exercises" in prompt
-    assert "do not claim a prone back exercise fully replaces loaded pulling" in prompt
+    assert "do not pretend a prone back exercise fully replaces loaded pulling" in prompt
 
 
 def test_coach_prompt_requires_concise_non_repetitive_exercise_cues():
