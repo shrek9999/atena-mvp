@@ -34,6 +34,8 @@ def test_model_cannot_invent_a_negative_health_confirmation():
     answer = "Odlično, ker si potrdil, da nimaš zdravstvenih omejitev, lahko začnemo."
     safe = _sanitize_unverified_safety_claim(answer, messages)
     assert "Tega še nisi izrecno potrdil" in safe
+    second_claim = "Odlično, da nimaš nobenih poškodb ali omejitev."
+    assert "Tega še nisi izrecno potrdil" in _sanitize_unverified_safety_claim(second_claim, messages)
 
 
 def test_pain_followup_requests_only_missing_details():
