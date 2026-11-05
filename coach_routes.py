@@ -321,6 +321,28 @@ def _coaching_guardrail_reply(messages):
     lowered = latest.casefold()
     history_lower = history.casefold()
 
+    recovery_context = bool(re.search(
+        r"(slabo spim|slab(?:o|ega) spanec|slaba regeneracija|neprespan)",
+        history_lower,
+    )) and bool(re.search(
+        r"(mišice.{0,35}utrujen|utrujen.{0,35}mišic|utrujenost)",
+        history_lower,
+    ))
+    asks_to_continue = bool(re.search(
+        r"(naj kar nadaljujem|ali naj nadaljujem|nadaljujem po načrtu|nadaljujem po planu)",
+        lowered,
+    ))
+    if recovery_context and asks_to_continue:
+        return (
+            "Ne nadaljuj avtomatično po prvotnem načrtu, če sta spanec slab in mišična "
+            "utrujenost še prisotna. Zahtevnejši trening prestavi, dokler se počutje ne "
+            "izboljša; če se želiš gibati, izberi le lahkotno aktivnost, ki ne poveča "
+            "utrujenosti ali povzroča bolečine. Izpuščenega obsega ne nadomeščaj z dvojno "
+            "vadbo. Ko se regeneracija izboljša, se vrni z nekoliko manjšim obsegom in "
+            "preveri odziv. Je utrujenost predvsem v mišicah, ki si jih treniral, ali "
+            "občutiš tudi splošno izčrpanost?"
+        )
+
     # Answer persistence questions directly; a conversational response is not a saved change.
     if re.search(r"(ali si že|si že).{0,80}(prilagodil|spremenil|shranil)|naslednj.{0,20}(trening|program).{0,30}(shranjen|spremenjen|prilagojen)", lowered):
         return (
