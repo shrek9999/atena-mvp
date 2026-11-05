@@ -59,14 +59,16 @@ def test_gemini_uses_configured_fallback_after_primary_transient_failures():
     assert "gemini-fallback:generateContent" in fallback_request.full_url
 
 
-def test_gemini_does_not_retry_rate_limit_errors():
+def test_gemini_retries_rate_limit_once_per_model_then_returns_error():
     with patch.object(
         coach_routes.urllib.request, "urlopen", side_effect=_http_error(429)
-    ) as mocked:
+    ) as mocked, patch.object(coach_routes.time, "sleep") as sleeper:
         with pytest.raises(urllib.error.HTTPError) as error:
             coach_routes._request_gemini_content(
                 "test-key", "gemini-primary", "gemini-fallback", {"contents": []}
             )
 
     assert error.value.code == 429
-    assert mocked.call_count == 1
+    assert mocked.call_count == 4
+    assert sleeper.call_count == 2
+    assert all(call.args == (5.0,) for call in sleeper.call_args_list)
