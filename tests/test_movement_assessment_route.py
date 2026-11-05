@@ -53,9 +53,10 @@ def test_program_route_returns_assessment_as_context_without_changing_program(mo
 
     called = {}
 
-    def fake_generate_program(profile, feedback=None):
+    def fake_generate_program(profile, feedback=None, movement_assessment=None):
         called["profile"] = profile
         called["feedback"] = feedback
+        called["movement_assessment"] = movement_assessment
         return {"goal": "functional", "sessions": [{"session": 1, "exercises": []}]}
 
     monkeypatch.setattr(coach_routes, "generate_program", fake_generate_program)
@@ -70,6 +71,7 @@ def test_program_route_returns_assessment_as_context_without_changing_program(mo
     assert response.status_code == 200
     body = response.get_json()
     assert called["profile"]["goal"] == "functional"
+    assert called["movement_assessment"] == {"squat": "needs_support", "hinge": "comfortable"}
     assert body["program"]["goal"] == "functional"
     assert body["movement_assessment"]["is_diagnosis"] is False
     assert body["movement_assessment"]["automatic_programme_change"] == "none"
