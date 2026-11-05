@@ -2126,7 +2126,7 @@
   },
   {
     "id": "bodyweight_hip_hinge",
-    "name": "Predklon z nevtralnim hrbtom (lastna teža)",
+    "name": "Predklon z ravnim hrbtom (lastna teža)",
     "name_en": "Bodyweight hip hinge",
     "pattern": "hinge",
     "joint_type": "multi_joint",
@@ -2159,7 +2159,7 @@
       "Izguba nevtralnega položaja hrbtenice pri spuščanju."
     ],
     "regressions": [
-      "Predklon ob steni z nevtralnim hrbtom"
+      "Predklon ob steni z ravnim hrbtom"
     ],
     "progressions": [
       "Mrtvi dvig z ročkama",
