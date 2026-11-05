@@ -176,6 +176,26 @@ jobs:
                   if missing:
                       raise SystemExit(f"CORS preflight missing headers for {path}: {', '.join(missing)}")
                   print(f"Cloudflare browser preflight {path}: PASS (HTTP {response.status}; origin and requested headers allowed)")
+
+          backend = "https://atena-ai-coach-pilot.onrender.com"
+          requested_headers = "content-type, x-pilot-token, x-profile-id, x-profile-token"
+          request = urllib.request.Request(
+              backend + "/coach/chat",
+              headers={
+                  "Origin": origin,
+                  "Access-Control-Request-Method": "POST",
+                  "Access-Control-Request-Headers": requested_headers,
+                  "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36",
+              },
+              method="OPTIONS",
+          )
+          with urllib.request.urlopen(request, timeout=30) as response:
+              allowed_origin = response.headers.get("Access-Control-Allow-Origin")
+              allowed_headers = response.headers.get("Access-Control-Allow-Headers", "").lower()
+              missing = [item.strip() for item in requested_headers.split(",") if item.strip() not in allowed_headers]
+              if response.status != 204 or allowed_origin != origin or missing:
+                  raise SystemExit(f"Render backend preflight failed: HTTP {response.status}; origin={allowed_origin}; missing_headers={missing}")
+              print("Render backend preflight /coach/chat: PASS (profile ID and profile token headers allowed)")
           PY
 
       - name: Verify a real ATENA chat response through Cloudflare and Render
