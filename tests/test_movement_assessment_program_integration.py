@@ -30,7 +30,7 @@ def test_needs_support_selects_a_verified_simpler_squat_variant_and_reduces_dose
     plan = generate_program(BASE, movement_assessment={"squat": "needs_support"})
     squats = _exercises(plan, "squat")
     assert squats
-    assert all(exercise["exercise_id"] in {"reaching_squat", "air_squat"} for exercise in squats)
+    assert all(exercise["exercise_id"] in {"chair_sit_to_stand", "reaching_squat", "air_squat"} for exercise in squats)
     assert all(exercise["prescription"]["sets"] <= 2 for exercise in squats)
     assert all(exercise["prescription"]["rir"] >= 3 for exercise in squats)
     assert all(exercise["prescription"]["adjustment_note"] for exercise in squats)
@@ -42,8 +42,8 @@ def test_needs_support_hinge_uses_bodyweight_learning_variant_not_loaded_rdl():
     plan = generate_program(BASE, movement_assessment={"hinge": "needs_support"})
     hinges = _exercises(plan, "hinge")
     assert hinges
-    assert all(exercise["exercise_id"] == "bodyweight_hip_hinge" for exercise in hinges)
-    assert all(exercise["name"] == "Predklon z ravnim hrbtom (lastna teža)" for exercise in hinges)
+    assert all(exercise["exercise_id"] == "wall_hip_hinge" for exercise in hinges)
+    assert all(exercise["name"] == "Predklon z ravnim hrbtom ob steni" for exercise in hinges)
     assert all(exercise["prescription"]["sets"] <= 2 for exercise in hinges)
 
 
@@ -139,3 +139,21 @@ def test_needs_support_horizontal_pull_does_not_fall_back_to_unmodified_one_arm_
         and event["action"] == "omitted_no_verified_supported_variant"
         for event in plan["movement_adaptation"]["events"]
     )
+
+
+def test_needs_support_walking_does_not_auto_prescribe_brisk_walking():
+    plan = generate_program(BASE, movement_assessment={"locomotion": "needs_support"})
+    assert not _exercises(plan, "locomotion")
+    assert any(
+        event["pattern"] == "locomotion"
+        and event["action"] == "omitted_no_verified_supported_variant"
+        for event in plan["movement_adaptation"]["events"]
+    )
+
+
+def test_overhead_reach_uncertainty_does_not_auto_remove_vertical_press():
+    baseline = generate_program(BASE)
+    uncertain = generate_program(BASE, movement_assessment={"overhead": "uncertain"})
+    assert [x["exercise_id"] for x in _exercises(uncertain, "vertical_push")] == [
+        x["exercise_id"] for x in _exercises(baseline, "vertical_push")
+    ]
