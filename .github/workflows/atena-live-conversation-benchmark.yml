@@ -1,0 +1,65 @@
+name: ATENA live conversation quality benchmark
+
+on:
+  push:
+    branches:
+      - pilot/website-ai-coach
+    paths:
+      - "tests/fixtures/conversation_quality_benchmark_v1.json"
+      - "tests/run_live_conversation_quality_benchmark.py"
+      - ".github/workflows/atena-live-conversation-benchmark.yml"
+      - "coach_routes.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-conversation-benchmark:
+    name: Run real multi-turn coaching scenarios
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      AI_COACH_TEST_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
+      ATENA_BENCHMARK_BACKEND: https://atena-ai-coach-pilot.onrender.com
+    steps:
+      - name: Check out backend
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Confirm live backend and pilot credential
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.request
+
+          token = os.environ.get("AI_COACH_TEST_TOKEN", "").strip()
+          if len(token) < 16:
+              sys.exit("GitHub Actions secret AI_COACH_TEST_TOKEN is missing or too short.")
+          request = urllib.request.Request(
+              "https://atena-ai-coach-pilot.onrender.com/coach/status",
+              headers={"X-Pilot-Token": token},
+          )
+          with urllib.request.urlopen(request, timeout=90) as response:
+              data = json.loads(response.read().decode("utf-8"))
+          if not data.get("chat_available"):
+              sys.exit("ATENA chat is not reported as available.")
+          print("Live Render chat endpoint is available; secret was not printed.")
+
+      - name: Run all 12 multi-turn scenarios against live ATENA
+        run: python tests/run_live_conversation_quality_benchmark.py
+
+      - name: Upload full transcripts and run summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atena-live-conversation-benchmark
+          path: benchmark-results/
+          if-no-files-found: warn
+          retention-days: 14
