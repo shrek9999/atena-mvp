@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from collections import Counter
-import math
 from typing import Any
 
 from training.catalogue import get_exercises
@@ -492,7 +491,7 @@ def _estimated_minutes(exercises: list[dict], warm_up_minutes: int = 7) -> int:
             execution = reps * prescription.get("tempo_seconds_per_rep", 4) * sets * sides
         rests = max(0, sets - 1) * prescription["rest_seconds"]
         total_seconds += execution + rests + 45
-    return math.ceil(total_seconds / 60)
+    return round(total_seconds / 60)
 
 
 def _display_exercise_reference(value: str, names: dict[str, str]) -> str:
