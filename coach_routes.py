@@ -396,7 +396,7 @@ def _coaching_guardrail_reply(messages):
     positive_pain = bool(re.search(
         r"(me\s+(?:blago\s+)?boli|boli me|me\s+(?:blago\s+)?zaboli|zaboli me|"
         r"blag\w*\s+(?:bolečin\w*|boli|zaboli)|čutim bolečino|občutim bolečino|"
-        r"bolečina se pojavi|nova bolečina|po treningu.{0,30}bolečin)",
+        r"bolečin\w*\s+(?:čutim|občutim)|bolečina se pojavi|nova bolečina|po treningu.{0,30}bolečin)",
         latest,
         re.IGNORECASE,
     )) and not no_pain_now
