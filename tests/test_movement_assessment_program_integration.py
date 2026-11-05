@@ -43,6 +43,7 @@ def test_needs_support_hinge_uses_bodyweight_learning_variant_not_loaded_rdl():
     hinges = _exercises(plan, "hinge")
     assert hinges
     assert all(exercise["exercise_id"] == "bodyweight_hip_hinge" for exercise in hinges)
+    assert all(exercise["name"] == "Predklon z ravnim hrbtom (lastna teža)" for exercise in hinges)
     assert all(exercise["prescription"]["sets"] <= 2 for exercise in hinges)
 
 
