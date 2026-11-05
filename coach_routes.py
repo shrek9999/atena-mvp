@@ -268,7 +268,7 @@ def _sanitize_unverified_safety_claim(answer, messages):
         return answer
     claim = re.search(
         r"(?:ker|saj)\s+(?:si\s+)?(?:potrdil|povedal),?\s+da\s+(?:nimaš|si brez)|"
-        r"(?:ker|odlično,?\s+ker|vesel(?:a)?\s+sem,?\s+da)\s+"
+        r"(?:ker|odlično,?\s+(?:ker|da)|super,?\s+da|vesel(?:a)?\s+sem,?\s+da)\s+"
         r"(?:nimaš|nimaš nobenih|si brez|ni nobenih)\s+"
         r"(?:bolečin|poškodb|omejitev|zdravstvenih težav)|"
         r"(?:vesel(?:a)?\s+sem,?\s+da)\s+(?:ni|nimaš)\s+"
