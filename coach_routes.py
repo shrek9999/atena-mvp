@@ -290,6 +290,41 @@ def _sanitize_unverified_safety_claim(answer, messages):
     )
 
 
+def _sanitize_unlisted_support(answer, messages):
+    """Keep bodyweight-only regressions free of unconfirmed props."""
+    if _profile_available_equipment(messages) != {"bodyweight"}:
+        return answer
+    phrase = re.compile(
+        r"višj\w*\s+oporo,?\s*npr\.?\s*(?:ob|na)\s*(?:sten\w*|pult\w*)"
+        r"(?:\s+ali\s+(?:stabilen\s+)?rob)?|"
+        r"(?:skleca|sklece)\s+(?:ob|na)\s+(?:sten\w*|pult\w*)|"
+        r"npr\.?\s*(?:ob|na)\s*(?:sten\w*|pult\w*|stol\w*|klop\w*|miz\w*)",
+        re.IGNORECASE,
+    )
+    if not phrase.search(answer):
+        return answer
+    answer = re.sub(
+        r"višj\w*\s+oporo,?\s*npr\.?\s*(?:ob|na)\s*(?:sten\w*|pult\w*)"
+        r"(?:\s+ali\s+(?:stabilen\s+)?rob)?",
+        "izvedbo sklece na kolenih ali s krajšim obsegom giba",
+        answer,
+        flags=re.IGNORECASE,
+    )
+    answer = re.sub(
+        r"(?:skleca|sklece)\s+(?:ob|na)\s+(?:sten\w*|pult\w*)",
+        "skleca na kolenih",
+        answer,
+        flags=re.IGNORECASE,
+    )
+    answer = re.sub(
+        r"npr\.?\s*(?:ob|na)\s*(?:sten\w*|pult\w*|stol\w*|klop\w*|miz\w*)",
+        "na kolenih ali s krajšim obsegom giba",
+        answer,
+        flags=re.IGNORECASE,
+    )
+    return answer
+
+
 def _bodyweight_only_program_note(messages):
     """Add a transparent equipment limitation when no pulling anchor exists."""
     profile = _profile_from_messages(messages) or {}
@@ -1168,6 +1203,7 @@ def coach_chat():
             return jsonify({"error": "Model ni vrnil odgovora. Poskusi znova."}), 502
         answer = _normalize_slovene_coaching_terms(answer)
         answer = _sanitize_unverified_safety_claim(answer, messages)
+        answer = _sanitize_unlisted_support(answer, messages)
         bodyweight_note = _bodyweight_only_program_note(messages)
         if bodyweight_note and bodyweight_note not in answer:
             answer += "\n\n" + bodyweight_note

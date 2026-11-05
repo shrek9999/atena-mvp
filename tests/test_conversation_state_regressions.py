@@ -109,6 +109,34 @@ def test_pain_followup_requests_only_missing_details():
     assert "Kje natančno se pojavi bolečina" not in reply
 
 
+def test_bodyweight_only_regression_does_not_assume_wall_or_furniture():
+    from coach_routes import _sanitize_unlisted_support
+
+    messages = [{
+        "role": "user",
+        "content": 'Profil: {"goal":"strength_hypertrophy","experience":"beginner","equipment":["bodyweight"]}',
+    }]
+    answer = (
+        "Skleca: 3 serije po 8–12 ponovitev. "
+        "(Če je pretežko, začni z višjo oporo, npr. ob steno ali stabilen rob.)"
+    )
+    result = _sanitize_unlisted_support(answer, messages)
+    assert "ob steno" not in result
+    assert "stabilen rob" not in result
+    assert "izvedbo sklece na kolenih" in result
+
+
+def test_bodyweight_only_profile_does_not_rewrite_confirmed_chair_support():
+    from coach_routes import _sanitize_unlisted_support
+
+    messages = [{
+        "role": "user",
+        "content": 'Profil: {"goal":"strength","experience":"beginner","equipment":["bodyweight","chair"]}',
+    }]
+    answer = "Po potrebi uporabi stol za vstajanje."
+    assert _sanitize_unlisted_support(answer, messages) == answer
+
+
 def test_duration_estimate_rounds_up_conservatively():
     exercises = [{
         "prescription": {
