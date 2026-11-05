@@ -723,6 +723,10 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 return potential
 
             def selection_priority(item: dict) -> int:
+                if movement_status == "needs_support":
+                    preferred = SUPPORTED_VARIANTS.get(pattern, ())
+                    if item["id"] in preferred:
+                        return -100 + preferred.index(item["id"])
                 if pattern in {"trunk_stability", "anti_rotation"}:
                     # Use foundational trunk control when a stability need is flagged;
                     # advanced static calisthenics remain skill options, not default rehab-like drills.
