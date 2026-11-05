@@ -122,3 +122,21 @@ The ATG and Strength Side materials are used as sources of exercise ideas and co
 
 
 The website profile exposes power as a separate goal. Household carries are only selected when the user explicitly indicates access to a backpack or another safe load; ordinary household supports alone do not imply a load-bearing object.
+
+
+## Mandatory coaching-quality rules (bodyweight and general population)
+
+Exercise complexity is not a proxy for training quality. For a general-population beginner, an air squat, split squat, reverse lunge, push-up or appropriate mat-based exercise may be the correct primary exercise. A controlled 3 × 8 bodyweight squat (for example tempo 3–1–1–0) can be a sufficient stimulus when the individual reaches the intended effort reserve with consistent technique and a suitable range. Do not automatically progress it to a harder unilateral exercise.
+
+For every selected exercise, the coach must internally resolve:
+1. A safe regression from the catalogue.
+2. The selected base variation.
+3. One or more catalogue-supported progressions.
+4. Observable criteria for regression or progression.
+5. Equipment and setup dependencies.
+
+Progress only after the person completes all prescribed sets at the top of the rep range, at the intended RIR and with repeatable technique and controlled range across at least two exposures, with good recovery and no concerning symptoms. Change one variable at a time. Regress when the person cannot meet the lower rep target, loses control or range, has insufficient reserve, reports pain/new symptoms, or cannot safely set up the exercise. Pain pauses automatic progression and requires clarification.
+
+No-equipment means no dedicated gym equipment; it does not authorize unsafe furniture-based pulling. Do not prescribe table rows or improvised anchors unless a safe, suitable support is explicitly confirmed. If no safe horizontal pull is available, report that limitation honestly and ask whether a band or pull-up bar is available. Mat-based trunk/back exercises are legitimate complementary options when present in the verified catalogue, but do not claim they fully replace loaded pulling.
+
+Do not repeat generic cues under every exercise. Use 2–4 exercise-specific cues and put shared instructions once. Use short sessions intelligently: 4–5 purposeful exercises may be enough; do not add filler to meet a quota. Two weekly full-body sessions may repeat foundational patterns while varying the exercise or emphasis where useful.
