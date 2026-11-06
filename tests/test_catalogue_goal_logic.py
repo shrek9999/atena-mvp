@@ -31,7 +31,7 @@ def test_mobility_catalogue_includes_strength_through_range():
     assert by_id["loaded_deep_squat"]["mobility_strength"] is True
 
 
-def test_functional_week_covers_balance_coordination_carry_and_conditioning():
+def test_functional_week_covers_balance_coordination_carry_and_aerobic_locomotion():
     week = [_session_patterns(i, 2, "functional") for i in range(2)]
     patterns = {pattern for session in week for pattern in session}
     assert {"balance", "coordination", "carry", "locomotion", "squat", "hinge", "lunge"} <= patterns
@@ -110,7 +110,7 @@ def test_generated_functional_program_fits_a_normal_session():
     assert len(result["sessions"]) == 2
     assert all(session["estimated_minutes"] <= 60 for session in result["sessions"])
     patterns = {item["pattern"] for session in result["sessions"] for item in session["exercises"]}
-    assert {"balance", "coordination", "carry", "conditioning"} <= patterns
+    assert {"balance", "coordination", "carry", "locomotion", "lunge"} <= patterns
     assert "jump" not in patterns
 
 
