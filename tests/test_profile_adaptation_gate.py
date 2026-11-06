@@ -67,3 +67,40 @@ def test_no_history_returns_no_feedback_and_a_hold_guidance():
     feedback, guidance = _build_profile_adaptation([])
     assert feedback is None
     assert guidance["progression_allowed"] is False
+
+def test_incomplete_training_for_time_does_not_trigger_automatic_volume_reduction():
+    from training.adaptation import assess_next_step
+
+    result = assess_next_step([{
+        "session_date": "2026-11-06",
+        "session": {"completed": False, "completion_reason": "time_constraint"},
+    }])
+    assert result["decision"] == "maintain_and_reschedule"
+    assert result["volume_change"] == "maintain"
+    assert result["reason_codes"] == ["time_constraint"]
+
+
+def test_incomplete_training_for_high_difficulty_requests_review_not_automatic_cut():
+    from training.adaptation import assess_next_step
+
+    result = assess_next_step([{
+        "session_date": "2026-11-06",
+        "session": {"completed": False, "completion_reason": "high_difficulty"},
+    }])
+    assert result["decision"] == "review_session_dose"
+    assert result["volume_change"] == "maintain"
+
+
+def test_poor_recovery_precedes_incomplete_session_reason():
+    from training.adaptation import assess_next_step
+
+    result = assess_next_step([{
+        "session_date": "2026-11-06",
+        "session": {
+            "completed": False,
+            "completion_reason": "time_constraint",
+            "recovery": "poor",
+        },
+    }])
+    assert result["decision"] == "recovery_review"
+    assert result["volume_change"] == "maintain"
