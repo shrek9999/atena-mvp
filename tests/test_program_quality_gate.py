@@ -82,3 +82,13 @@ def test_quality_gate_rejects_overlong_session():
     broken = deepcopy(program)
     broken["sessions"][0]["estimated_minutes"] = profile["session_minutes"] + 1
     assert any("presega razpoložljivi čas" in issue for issue in validate_generated_program(broken, profile))
+
+
+@pytest.mark.parametrize("sessions", [2, 3, 4])
+def test_power_sessions_do_not_exceed_seven_exercises(sessions):
+    profile = {"goal": "power", "experience": "intermediate", "equipment": ["bodyweight", "barbell", "dumbbell", "bench", "pull_up_bar", "cable", "kettlebell", "box", "resistance_band"], "sessions_per_week": sessions, "session_minutes": 60, "include_accessories": False}
+    program = generate_program(profile)
+    assert validate_generated_program(program, profile) == []
+    assert all(3 <= len(session["exercises"]) <= 7 for session in program["sessions"])
+    patterns = {exercise["pattern"] for session in program["sessions"] for exercise in session["exercises"]}
+    assert patterns.intersection({"jump", "hinge_power"})
