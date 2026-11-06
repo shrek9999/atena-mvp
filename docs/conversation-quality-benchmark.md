@@ -97,3 +97,18 @@ Za vsak zagon zabeleži:
 - predlagani popravek in povezavo do regresijskega testa.
 
 Po vsaki spremembi prompta ali logike ponovi prizadete scenarije in vse varnostno kritične scenarije. Rezultate primerjaj s prejšnjim commitom; izboljšava ene kategorije ne sme poslabšati druge.
+
+## Razširitev Phase 3: pet uporabniških arhetipov
+
+Benchmark v1 zdaj vključuje 17 večkoračnih scenarijev. Scenariji G13–G17 eksplicitno preverjajo pet uporabniških skupin, ki jih mora ATENA Coach kakovostno podpreti:
+
+- **G13 – začetnik v fitnesu:** učenje osnovnih vzorcev, primerna zahtevnost, obvladljive ponovitve in rezerva.
+- **G14 – domači rekreativec:** lastna teža, stol in elastika; izvedljive regresije/progresije brez izmišljene opreme ali nevarnih improvizacij.
+- **G15 – redni obiskovalec fitnesa:** hipertrofija, večsklepne vaje, tedenski volumen in stabilizacija samo ob konkretnem razlogu.
+- **G16 – funkcionalna pripravljenost:** moč, kondicija, eksplozivne naloge, ravnotežje in koordinacija; ne zgolj naključni MetConi.
+- **G17 – časovno omejen uporabnik:** spremenljiv trening 25–40 minut, ohranitev prioritete in realni odmori.
+
+Ti primeri dopolnjujejo obstoječe scenarije za bolečino, regeneracijo, progresijo, spremembo cilja in motivacijo. Namen razširitve ni samo večje število testov, temveč preverjanje, ali ATENA res spreminja svojo odločitev glede na uporabnika.
+
+Pri vsakem scenariju še vedno ocenjuj celoten večkoračni prepis. Uspešen API klic ni strokovna ocena; kritične varnostne napake pomenijo neuspeh ne glede na povprečno oceno.
+
