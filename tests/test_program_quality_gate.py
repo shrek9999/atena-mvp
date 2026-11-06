@@ -92,3 +92,11 @@ def test_power_sessions_do_not_exceed_seven_exercises(sessions):
     assert all(3 <= len(session["exercises"]) <= 7 for session in program["sessions"])
     patterns = {exercise["pattern"] for session in program["sessions"] for exercise in session["exercises"]}
     assert patterns.intersection({"jump", "hinge_power"})
+
+
+def test_quality_gate_allows_concise_exercise_specific_cues_without_generic_rom_filler():
+    profile, program = _valid_program()
+    for session in program["sessions"]:
+        for exercise in session["exercises"]:
+            exercise.pop("range_of_motion", None)
+    assert validate_generated_program(program, profile) == []
