@@ -32,7 +32,7 @@ from training.periodization import summarize_training_cycle
 from training.proactive_checkin import build_proactive_checkin
 from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL
 from training.movement_assessment import MovementAssessmentError, assess_movement_competence
-from training.athlete_state import validate_athlete_state
+from training.athlete_state import AthleteStateError, validate_athlete_state
 from training.profile_state_adapter import (
     ProfileStateMigrationError, attach_athlete_state, legacy_profile_view,
     profile_needs_state_migration,
@@ -1432,13 +1432,10 @@ def _profile_record_with_state(record, token, *, persist_migration=False):
         return response_record
     try:
         validate_athlete_state(profile.get("athlete_state"))
-    except Exception as exc:
-        from training.athlete_state import AthleteStateError
-        if isinstance(exc, AthleteStateError):
-            raise ProfileStateMigrationError(
-                "Shranjeno kanonično stanje športnika ni veljavno; podatki niso bili prepisani."
-            ) from exc
-        raise
+    except AthleteStateError as exc:
+        raise ProfileStateMigrationError(
+            "Shranjeno kanonično stanje športnika ni veljavno; podatki niso bili prepisani."
+        ) from exc
     return record
 
 
