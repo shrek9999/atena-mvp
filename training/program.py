@@ -230,14 +230,18 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     is_power = pattern in {"jump", "hinge_power"}
     rir_range = None
     functional_conditioning_seconds = None
+    carry_work_seconds = None
     if pattern == "carry":
         # Loaded carries are prescribed by distance, never by repetitions.
         if level == "beginner":
             sets, reps, rir, rest = 2, "15–20 m", None, 60
+            carry_work_seconds = 20
         elif level == "intermediate":
             sets, reps, rir, rest = 2, "20–30 m", None, 75
+            carry_work_seconds = 25
         else:
             sets, reps, rir, rest = 3, "25–40 m", None, 90
+            carry_work_seconds = 35
     elif goal in {"functional", "general_fitness"} and pattern == "conditioning":
         # Functional conditioning is a short, controlled work interval rather than
         # a slow resistance exercise with RIR and a lifting tempo.
@@ -412,9 +416,9 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         else:
             sets, reps, rir, rest = 3, "6–10", 2, 120
     if pattern == "carry":
-        tempo, tempo_description, tempo_seconds = "tekoče", "Hodi z enakomernim, nadzorovanim korakom; breme naj ne spremeni drže ali kakovosti hoje.", 1
+        tempo, tempo_description, tempo_seconds = "tekoče", "Hodi z enakomernim, nadzorovanim korakom; breme naj ne spremeni drže ali kakovosti hoje.", 0
     elif functional_conditioning_seconds is not None:
-        tempo, tempo_description, tempo_seconds = "ritmično", "Ohrani enakomeren, nadzorovan ritem; interval končaj, ko se kakovost izvedbe poslabša.", 1
+        tempo, tempo_description, tempo_seconds = "ritmično", "Ohrani enakomeren, nadzorovan ritem; interval končaj, ko se kakovost izvedbe poslabša.", 0
     elif pattern == "mobility_stretch":
         tempo, tempo_description, tempo_seconds = "zadržanje", "Zadrži blag do zmeren razteg, dihaj sproščeno in ne sili v končni položaj.", 0
     elif goal == "mobility" or pattern == "mobility":
@@ -455,14 +459,13 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     if pattern == "carry":
         prescription.update({
             "distance_based": True,
+            "work_seconds": carry_work_seconds,
             "time_label": "razdalje",
-            "effort_target": "Izberi breme, s katerim ohraniš pokončno držo, enakomeren korak in normalen ritem dihanja.",
         })
     elif functional_conditioning_seconds is not None:
         prescription.update({
             "work_seconds": functional_conditioning_seconds,
             "time_label": "kondicijskega intervala",
-            "effort_target": "Nadzorovana intenzivnost; ne izvajaj maksimalno in ne žrtvuj tehnike ali položaja trupa.",
         })
     elif exercise.get("id") == "l_sit":
         prescription.update({"reps": "8–15 s", "work_seconds": 12, "time_label": "zadržanja"})
