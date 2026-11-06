@@ -970,5 +970,6 @@ def test_explicitly_incomplete_session_still_triggers_reason_review():
     }]
     simple = assess_next_step(history)
     detailed = decide_adaptation(history)
-    assert simple["decision"] == "review_volume_reduction"
+    assert simple["decision"] == "maintain_and_reschedule"
+    assert simple["volume_change"] == "maintain"
     assert detailed["decision"] == "restructure_session"
