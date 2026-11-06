@@ -1648,7 +1648,7 @@
       "Met medicinke ob tla"
     ],
     "warnings": [
-      "Najprej obvladaj predklon z ravnim hrbtom in mrtvi dvig."
+      "Najprej obvladaj predklon z nevtralnim položajem hrbtenice in mrtvi dvig."
     ],
     "single_joint": false,
     "equipment_any": [],
@@ -1955,7 +1955,7 @@
       "trunk"
     ],
     "cues": [
-      "Kolena rahlo pokrči in izvedi predklon z ravnim hrbtom.",
+      "Kolena rahlo pokrči in izvedi predklon z nevtralnim položajem hrbtenice.",
       "Trup ohrani stabilen, ročki naj visita pod rameni.",
       "Komolca vodi nazaj, nato ročki nadzorovano spusti."
     ],
@@ -2094,7 +2094,7 @@
       "Prehiter dvig brez predhodne napetosti trupa."
     ],
     "regressions": [
-      "Predklon z ravnim hrbtom z lastno težo"
+      "Predklon z nevtralnim položajem hrbtenice z lastno težo"
     ],
     "progressions": [
       "Romunski mrtvi dvig"
@@ -2195,7 +2195,7 @@
   },
   {
     "id": "supported_single_leg_rdl",
-    "name": "Podprti enonožni predklon z ravnim hrbtom",
+    "name": "Podprti enonožni predklon z nevtralnim položajem hrbtenice",
     "name_en": "Supported single-leg hip hinge",
     "pattern": "hinge",
     "joint_type": "multi_joint",
@@ -6736,7 +6736,7 @@
     "cues": [
       "Sprednjo golen podpri na nizki, stabilni opori.",
       "Medenico ohrani čim bolj poravnano.",
-      "Kolčni pregib izvedi počasi, brez siljenja v koleno."
+      "Predklon z nevtralnim položajem hrbtenice izvedi počasi, brez siljenja v koleno."
     ],
     "common_errors": [
       "Previsoka opora.",
@@ -8135,7 +8135,7 @@
       "Manjša razdalja od stene"
     ],
     "progressions": [
-      "Predklon z ravnim hrbtom (lastna teža)",
+      "Predklon z nevtralnim položajem hrbtenice (lastna teža)",
       "Romunski mrtvi dvig"
     ],
     "alternatives": [],
