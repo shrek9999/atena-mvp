@@ -68,7 +68,11 @@ def test_tempo_and_full_controlled_range_are_explicit_for_every_exercise():
     exercises = [ex for s in plan["sessions"] for ex in s["exercises"]]
     assert all(ex["prescription"]["tempo"] for ex in exercises)
     assert all(ex["prescription"]["tempo_description"] for ex in exercises)
-    assert all(ex["range_of_motion"] for ex in exercises)
+    assert plan["methodology"]["range_of_motion"]
+    assert all(
+        ex["range_of_motion"] is None or isinstance(ex["range_of_motion"], str)
+        for ex in exercises
+    )
     assert all(ex["prescription"]["tempo_seconds_per_rep"] > 0 for ex in exercises)
 
 
@@ -978,3 +982,70 @@ def test_functional_and_fat_loss_programmes_have_distinct_training_intent():
     assert {"balance", "coordination"}.intersection(functional_patterns)
     assert "conditioning" in fat_loss_patterns
     assert functional_patterns != fat_loss_patterns
+
+
+def test_functional_beginner_conditioning_uses_timed_work_not_reps_or_rir():
+    profile = {
+        **BASE,
+        "goal": "functional",
+        "experience": "beginner",
+        "equipment": ["bodyweight"],
+    }
+    plan = generate_program(profile)
+    conditioning = [
+        ex for session in plan["sessions"] for ex in session["exercises"]
+        if ex["pattern"] == "conditioning"
+    ]
+    assert conditioning
+    assert all(ex["time_based"] for ex in conditioning)
+    assert all(ex["prescription"]["work_seconds"] > 0 for ex in conditioning)
+    assert all(ex["prescription"]["tempo"] == "ritmično" for ex in conditioning)
+    assert all("rir" not in ex["prescription"] for ex in conditioning)
+
+
+def test_functional_carry_uses_distance_not_repetition_count():
+    profile = {
+        **BASE,
+        "goal": "functional",
+        "experience": "intermediate",
+        "equipment": ["dumbbell", "kettlebell"],
+    }
+    plan = generate_program(profile)
+    carries = [
+        ex for session in plan["sessions"] for ex in session["exercises"]
+        if ex["pattern"] == "carry"
+    ]
+    assert carries
+    assert all(ex["prescription"]["distance_based"] is True for ex in carries)
+    assert all(ex["prescription"]["reps"].endswith("m") for ex in carries)
+    assert all("rir" not in ex["prescription"] for ex in carries)
+
+
+def test_functional_two_day_program_varies_hinge_when_equivalent_option_exists():
+    profile = {
+        **BASE,
+        "goal": "functional",
+        "experience": "intermediate",
+        "equipment": ["dumbbell", "kettlebell"],
+    }
+    plan = generate_program(profile)
+    hinges = [
+        next(ex for ex in session["exercises"] if ex["pattern"] == "hinge")
+        for session in plan["sessions"]
+    ]
+    assert len(hinges) == 2
+    assert hinges[0]["exercise_id"] != hinges[1]["exercise_id"]
+
+
+def test_bodyweight_only_program_never_selects_table_inverted_row():
+    profile = {
+        **BASE,
+        "goal": "hypertrophy",
+        "experience": "beginner",
+        "equipment": ["bodyweight"],
+    }
+    plan = generate_program(profile)
+    assert all(
+        ex["exercise_id"] != "inverted_row_table"
+        for session in plan["sessions"] for ex in session["exercises"]
+    )
