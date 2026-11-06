@@ -54,7 +54,8 @@ def test_all_nine_goals_generate_catalogue_backed_plans(goal, experience):
             assert set(source["equipment"]).issubset(set(profile["equipment"]) | {"bodyweight"})
             assert exercise["prescription"]["tempo"]
             assert exercise["prescription"]["tempo_description"]
-            assert exercise["range_of_motion"]
+            assert exercise["cues"]
+            assert exercise.get("range_of_motion") is None or exercise["range_of_motion"].strip()
             assert exercise["training_purposes"]
 
 
