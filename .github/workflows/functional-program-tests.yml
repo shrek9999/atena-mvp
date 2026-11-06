@@ -5,6 +5,8 @@ on:
       - "training/**"
       - "tests/test_catalogue_goal_logic.py"
       - "tests/test_program_quality_gate.py"
+      - "tests/test_program_generator.py"
+      - "tests/test_program_quality_matrix.py"
       - "requirements.txt"
       - ".github/workflows/functional-program-tests.yml"
 permissions:
@@ -25,4 +27,4 @@ jobs:
       - name: Run focused functional programme tests
         env:
           PYTHONPATH: .
-        run: pytest -q tests/test_catalogue_goal_logic.py tests/test_program_quality_gate.py
+        run: pytest -q tests/test_catalogue_goal_logic.py tests/test_program_quality_gate.py tests/test_program_generator.py tests/test_program_quality_matrix.py
