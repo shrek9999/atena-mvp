@@ -448,7 +448,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     if pattern == "carry":
         sides = 2 if (unilateral or exercise.get("reps_per_side")) else 1
         prescription.update({
-            "reps": "20–30 m", "work_seconds": 20,
+            "reps": "20–30 m", "work_seconds": 20, "distance_based": True,
             "time_label": "nošenja", "tempo_label": "enakomeren korak",
             "effort_target": "Izberi breme, ki ga lahko neseš z naravno hojo, stabilnim trupom in normalnim dihanjem; končaj, preden se položaj poslabša.",
         })
