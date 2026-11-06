@@ -459,7 +459,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     if pattern == "carry":
         prescription.update({
             "distance_based": True,
-            "work_seconds": carry_work_seconds,
+            "estimated_work_seconds": carry_work_seconds,
             "time_label": "razdalje",
         })
     elif functional_conditioning_seconds is not None:
@@ -532,6 +532,10 @@ def _estimated_minutes(exercises: list[dict], warm_up_minutes: int = 7) -> int:
         sides = 2 if prescription.get("rep_unit") == "per_side" else 1
         if prescription.get("work_seconds") is not None:
             execution = prescription["work_seconds"] * sets * sides
+        elif prescription.get("estimated_work_seconds") is not None:
+            # Distance-based carries retain a distance prescription; this hidden
+            # estimate is used only for session-time calculation, not as work dose.
+            execution = prescription["estimated_work_seconds"] * sets * sides
         else:
             rep_bounds = [int(value) for value in prescription["reps"].split("–")]
             reps = round(sum(rep_bounds) / len(rep_bounds))
@@ -981,6 +985,13 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 elif prescription.get("work_seconds") is not None:
                     floor = 300 if pattern == "locomotion" else 10
                     prescription["work_seconds"] = max(floor, int(prescription["work_seconds"] * 0.85))
+                elif prescription.get("distance_based"):
+                    bounds = [int(value) for value in prescription.get("reps", "").split("–") if value.isdigit()]
+                    if len(bounds) == 2:
+                        low, high = bounds
+                        reduced_low = max(5, low - 5)
+                        reduced_high = max(reduced_low, high - 5)
+                        prescription["reps"] = f"{reduced_low}–{reduced_high} m"
                 else:
                     bounds = [int(value) for value in prescription.get("reps", "").split("–") if value.isdigit()]
                     if len(bounds) == 2:
@@ -1007,6 +1018,15 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                     prescription["adjustment_note"] = (
                         "Ker je bil zadnji trening prelahek, je delovni interval "
                         "podaljšan za majhen korak. Ohrani predpisano ciljno intenzivnost."
+                    )
+                elif prescription.get("distance_based"):
+                    bounds = [int(value) for value in prescription.get("reps", "").split("–") if value.isdigit()]
+                    if len(bounds) == 2:
+                        low, high = bounds
+                        prescription["reps"] = f"{low + 5}–{high + 5} m"
+                    prescription["adjustment_note"] = (
+                        "Ker je bil zadnji trening prelahek, je razdalja nošenja "
+                        "povečana za 5 m. Ohrani pokončno držo in enakomeren korak."
                     )
                 else:
                     bounds = [int(value) for value in prescription.get("reps", "").split("–") if value.isdigit()]
