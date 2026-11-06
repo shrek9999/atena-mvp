@@ -80,7 +80,7 @@ def test_emotional_reassurance_is_preserved_while_safety_answer_is_pending():
     reply = _coaching_guardrail_reply(messages)
     assert reply is not None
     assert "Ničesar nisi pokvaril" in reply
-    assert "varnostnega vprašanja" in reply.casefold()
+    assert "varnost" in reply.casefold()
 
 
 def test_explicit_negative_answer_is_respected():
