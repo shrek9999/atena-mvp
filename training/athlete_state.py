@@ -12,6 +12,9 @@ from training.goal_taxonomy import canonicalize_goal
 
 ATHLETE_STATE_SCHEMA_VERSION = 1
 EXPERIENCE_LEVELS = {"beginner", "intermediate", "advanced"}
+AVAILABLE_DAYS = {
+    "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
+}
 MOVEMENT_TASKS = {
     "squat",
     "lunge",
@@ -82,6 +85,7 @@ def create_athlete_state(
     equipment: list[str],
     sessions_per_week: int,
     session_duration_minutes: int | None = None,
+    available_days: list[str] | None = None,
     movement_tasks: dict | None = None,
     symptoms: dict | None = None,
     excluded_patterns: list[str] | None = None,
@@ -112,6 +116,9 @@ def create_athlete_state(
         functional_focus=functional_focus,
     )
     equipment = _validate_string_list(equipment, "equipment")
+    available_days = _validate_string_list(available_days or [], "available_days")
+    if not set(available_days).issubset(AVAILABLE_DAYS):
+        raise AthleteStateError("Razpoložljivi dnevi vsebujejo neveljavno vrednost.")
     excluded_patterns = _validate_string_list(excluded_patterns or [], "excluded_patterns")
     excluded_exercise_ids = _validate_string_list(
         excluded_exercise_ids or [], "excluded_exercise_ids"
@@ -195,6 +202,7 @@ def create_athlete_state(
         "availability": {
             "sessions_per_week": sessions_per_week,
             "session_duration_minutes": session_duration_minutes,
+            "available_days": available_days,
         },
         "movement_assessment": {
             "version": 1,
@@ -261,6 +269,7 @@ def validate_athlete_state(state: object) -> dict:
         equipment=state["equipment"],
         sessions_per_week=availability.get("sessions_per_week"),
         session_duration_minutes=availability.get("session_duration_minutes"),
+        available_days=availability.get("available_days", []),
         movement_tasks=movement["tasks"],
         symptoms=symptoms,
         excluded_patterns=constraints.get("excluded_patterns", []),
