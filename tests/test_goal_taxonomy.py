@@ -1,7 +1,6 @@
 import pytest
 
 from training.goal_taxonomy import (
-    CANONICAL_GOALS,
     GoalTaxonomyError,
     canonicalize_goal,
 )
@@ -28,7 +27,7 @@ def test_legacy_goals_map_to_three_canonical_goals(legacy, canonical, focus):
     assert result["source_goal"] == legacy
     assert result["source_schema"] == "legacy"
     assert result["legacy_generator_goal"] in {
-        "strength_hypertrophy", "fat_loss", "functional",
+        "strength_hypertrophy", "fat_loss", "general_fitness", "functional",
         "power", "endurance", "mobility",
     }
 
