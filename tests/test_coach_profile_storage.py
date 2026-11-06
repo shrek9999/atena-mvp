@@ -693,3 +693,136 @@ def test_profile_next_program_is_blocked_when_storage_is_paused(monkeypatch, tmp
         json={"no_current_pain_or_restrictions": True},
     )
     assert response.status_code == 503
+
+
+def test_new_profiles_persist_canonical_athlete_state(monkeypatch, tmp_path):
+    created = _create(_client(monkeypatch, tmp_path))
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    saved = created["profile"]["profile"]
+    state = saved["athlete_state"]
+
+    assert state["schema_version"] == 1
+    assert state["profile_id"] == profile_id
+    assert state["goal"]["canonical_goal"] == "strength_muscle"
+    assert state["equipment"] == ["barbell", "rack", "dumbbell", "bench"]
+    assert state["availability"]["sessions_per_week"] == 2
+    assert state["availability"]["session_duration_minutes"] == 60
+    assert state["symptoms"]["status"] == "not_asked"
+    assert all(
+        item["status"] == "not_assessed"
+        for item in state["movement_assessment"]["tasks"].values()
+    )
+
+    loaded = _client(monkeypatch, tmp_path).get(
+        f"/coach/profile/{profile_id}", headers={"X-Profile-Token": token}
+    )
+    assert loaded.status_code == 200
+    assert loaded.get_json()["profile"]["profile"]["athlete_state"] == state
+
+
+def test_legacy_profile_is_lazily_migrated_and_persisted_on_authenticated_read(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    from coach_store import create_profile as store_create_profile
+
+    profile_id = "legacy-profile-001"
+    token = "legacy-profile-secret-token"
+    legacy_profile = {
+        "goal": "hypertrophy",
+        "experience": "intermediate",
+        "equipment": ["barbell", "rack"],
+        "sessions_per_week": 2,
+        "session_minutes": 60,
+        "available_days": ["monday", "thursday"],
+        "pistol_squat_capable": False,
+    }
+    store_create_profile(profile_id, token, legacy_profile, False, "test-v1")
+
+    response = client.get(
+        f"/coach/profile/{profile_id}", headers={"X-Profile-Token": token}
+    )
+    assert response.status_code == 200
+    state = response.get_json()["profile"]["profile"]["athlete_state"]
+    assert state["schema_version"] == 1
+    assert state["symptoms"]["status"] == "not_asked"
+    assert all(
+        item["status"] == "not_assessed"
+        for item in state["movement_assessment"]["tasks"].values()
+    )
+
+    conn = sqlite3.connect(tmp_path / "atena-test.sqlite3")
+    import json
+    persisted = json.loads(conn.execute(
+        "SELECT profile_json FROM atena_profiles WHERE profile_id = ?", (profile_id,)
+    ).fetchone()[0])
+    conn.close()
+    assert persisted["athlete_state"] == state
+
+
+def test_profile_update_preserves_existing_movement_and_symptom_context(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+
+    from coach_store import update_profile as store_update_profile
+    from training.profile_state_adapter import attach_athlete_state
+
+    original = created["profile"]["profile"]
+    stateful = attach_athlete_state(original, profile_id)
+    stateful["athlete_state"]["movement_assessment"]["tasks"]["squat"] = {
+        "status": "needs_support",
+        "source": "observed",
+        "recorded_at": "2026-11-06T09:00:00+00:00",
+        "note": "potreben je nadzor pri spuščanju",
+    }
+    stateful["athlete_state"]["symptoms"] = {
+        "status": "present_stable",
+        "items": [{"location": "koleno", "side": "levo", "provoking_task": "izpadni korak"}],
+    }
+    store_update_profile(profile_id, token, stateful)
+
+    response = client.put(
+        f"/coach/profile/{profile_id}",
+        headers={"X-Profile-Token": token},
+        json={"profile": {
+            "goal": "strength",
+            "experience": "intermediate",
+            "equipment": ["barbell", "rack"],
+            "sessions_per_week": 3,
+            "session_minutes": 75,
+            "available_days": ["tuesday", "friday"],
+        }},
+    )
+    assert response.status_code == 200
+    saved = response.get_json()["profile"]["profile"]
+    assert saved["goal"] == "strength"
+    assert saved["athlete_state"]["availability"]["sessions_per_week"] == 3
+    assert saved["athlete_state"]["movement_assessment"]["tasks"]["squat"]["status"] == "needs_support"
+    assert saved["athlete_state"]["movement_assessment"]["tasks"]["squat"]["source"] == "observed"
+    assert saved["athlete_state"]["symptoms"]["status"] == "present_stable"
+    assert saved["athlete_state"]["symptoms"]["items"][0]["location"] == "koleno"
+
+
+def test_program_generator_receives_legacy_profile_view_not_canonical_envelope(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+
+    import coach_routes
+    captured = {}
+
+    def fake_generate(profile, feedback=None):
+        captured["profile"] = profile
+        return {"goal": profile["goal"], "sessions": []}
+
+    monkeypatch.setattr(coach_routes, "generate_program", fake_generate)
+    response = client.post(
+        f"/coach/profile/{profile_id}/program",
+        headers={"X-Profile-Token": token},
+        json={"no_current_pain_or_restrictions": True},
+    )
+    assert response.status_code == 200
+    assert "athlete_state" not in captured["profile"]
+    assert captured["profile"]["goal"] == "hypertrophy"
