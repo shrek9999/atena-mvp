@@ -168,3 +168,17 @@ def test_recurring_slovene_generation_typos_are_normalized():
     normalized = _normalize_slovene_coaching_terms(answer)
     assert "Preden začneva" in normalized
     assert "pripravljenosti" in normalized
+
+
+def test_model_cannot_infer_absence_of_pain_from_incomplete_feedback():
+    messages = [
+        {"role": "user", "content": "Vse serije sem opravil. Ali je bila kakšna bolečina?"},
+        {"role": "model", "content": "Ali si med vajami občutil bolečino ali izgubo ravnotežja?"},
+        {"role": "user", "content": "Tehnika je bila dobra in trening ni bil pretežek."},
+    ]
+    answer = (
+        "Ker sva uspešno preverila, da pri prejšnjem treningu ni bilo težav "
+        "z nelagodjem ali ravnotežjem, lahko povečava obremenitev."
+    )
+    safe = _sanitize_unverified_safety_claim(answer, messages)
+    assert "Tega še nisi izrecno potrdil" in safe
