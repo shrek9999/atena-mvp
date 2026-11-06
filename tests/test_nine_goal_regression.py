@@ -89,7 +89,7 @@ def test_functional_goal_has_its_own_capacity_signature_without_unassessed_jumps
     })
     exercises = [item for session in plan["sessions"] for item in session["exercises"]]
     patterns = {item["pattern"] for item in exercises}
-    assert {"balance", "coordination", "carry", "conditioning"}.issubset(patterns)
+    assert {"balance", "coordination", "carry", "locomotion"}.issubset(patterns)
     assert "jump" not in patterns
     assert "lateral_shuffle" not in {item["exercise_id"] for item in exercises}
 
