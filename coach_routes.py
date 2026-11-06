@@ -1430,7 +1430,15 @@ def _profile_record_with_state(record, token, *, persist_migration=False):
         response_record = dict(record)
         response_record["profile"] = upgraded
         return response_record
-    validate_athlete_state(profile.get("athlete_state"))
+    try:
+        validate_athlete_state(profile.get("athlete_state"))
+    except Exception as exc:
+        from training.athlete_state import AthleteStateError
+        if isinstance(exc, AthleteStateError):
+            raise ProfileStateMigrationError(
+                "Shranjeno kanonično stanje športnika ni veljavno; podatki niso bili prepisani."
+            ) from exc
+        raise
     return record
 
 
