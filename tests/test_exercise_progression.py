@@ -404,7 +404,7 @@ def test_exercises_without_a_tempo_target_can_use_not_applicable():
 
 def test_latest_incomplete_session_holds_progression_even_if_older_exposures_qualify():
     sessions = [
-        record("2026-11-06", [exercise("squat_goblet")], completed=False, completion_reason="high_difficulty"),
+        dict(record("2026-11-06", [exercise("squat_goblet")], completed=False), session={**record("2026-11-06", [exercise("squat_goblet")], completed=False)["session"], "completion_reason": "high_difficulty"}),
         record("2026-11-03", [exercise("squat_goblet", reps=(12, 12, 12))]),
         record("2026-10-30", [exercise("squat_goblet", reps=(12, 12, 12))]),
     ]
@@ -424,4 +424,4 @@ def test_unknown_latest_completion_status_cannot_use_older_positive_exposures():
     ]
     result = decision(recommend_exercise_progression(sessions), "squat_goblet")
     assert result["decision"] == "collect_data"
-    assert "ni potrjeno" in result["reason"].lower()
+    assert "ni potrjen" in result["reason"].lower()
