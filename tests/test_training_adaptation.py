@@ -27,8 +27,8 @@ def test_incomplete_latest_session_triggers_conservative_volume_review():
         record("2026-11-01", completed=False),
         record("2026-10-29", difficulty="easy"),
     ])
-    assert result["decision"] == "review_volume_reduction"
-    assert result["volume_change"] == "reduce_next_program_sets"
+    assert result["decision"] == "collect_context"
+    assert result["volume_change"] == "maintain"
     assert result["progression_allowed"] is False
 
 

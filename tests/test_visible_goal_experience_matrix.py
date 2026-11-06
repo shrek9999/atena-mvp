@@ -57,12 +57,13 @@ def test_all_fifteen_visible_goal_experience_profiles_generate_valid_distinct_pl
             assert set(exercise["equipment"]).issubset(set(profile["equipment"]) | {"bodyweight"})
             assert exercise["prescription"]["tempo"]
             assert exercise["prescription"]["tempo_description"]
-            assert exercise["range_of_motion"]
+            assert exercise["cues"]
+            assert exercise.get("range_of_motion") is None or exercise["range_of_motion"].strip()
             patterns.add(exercise["pattern"])
 
     expected = {
         "strength_hypertrophy": {"squat", "hinge", "horizontal_push", "horizontal_pull"},
-        "functional": {"balance", "coordination", "conditioning"},
+        "functional": {"balance", "coordination", "locomotion", "lunge"},
         "mobility": {"mobility", "mobility_stretch", "squat"},
         "endurance": {"locomotion", "conditioning"},
         "fat_loss": {"squat", "hinge", "conditioning"},

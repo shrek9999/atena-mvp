@@ -39,16 +39,55 @@ def assess_next_step(sessions):
             ),
         }
 
-    if recent and recent[0][1].get("completed") is not True:
+    if recent and recent[0][1].get("completed") is None:
         return {
-            "decision": "review_volume_reduction",
+            "decision": "collect_context",
             "progression_allowed": False,
-            "volume_change": "reduce_next_program_sets",
-            "reason_codes": ["session_not_completed"],
-            "message": "Zadnji trening ni bil zaključen. Ob tvoji zahtevi bo naslednji program konservativno zmanjšal število serij; pred tem preveri razlog in regeneracijo.",
+            "volume_change": "maintain",
+            "reason_codes": ["completion_status_unknown"],
+            "message": "Manjka podatek, ali je bil trening zaključen. Ne sklepaj o nedokončani vadbi ali zmanjšanju odmerka; najprej dopolni zapis.",
         }
 
-    if recent and (recent[0][1].get("difficulty") == "hard" or recent[0][1].get("recovery") == "poor"):
+    if recent and recent[0][1].get("recovery") == "poor":
+        return {
+            "decision": "recovery_review",
+            "progression_allowed": False,
+            "volume_change": "maintain",
+            "reason_codes": ["poor_recovery"],
+            "message": "Regeneracija je bila slabša. Pred spremembo odmerka preveri spanec, stres, razmik med vadbami in ali je šlo za osamljen odziv.",
+        }
+
+    if recent and recent[0][1].get("completed") is False:
+        reason = recent[0][1].get("completion_reason", "unknown")
+        if reason == "time_constraint":
+            decision, volume, code, message = (
+                "maintain_and_reschedule", "maintain", "time_constraint",
+                "Trening je bil prekinjen zaradi pomanjkanja časa. To ni dokaz previsokega odmerka; ohrani ključne vaje in ne nadomeščaj izpuščenega obsega.",
+            )
+        elif reason == "external_interruption":
+            decision, volume, code, message = (
+                "maintain_and_reschedule", "maintain", "external_interruption",
+                "Trening je prekinila zunanja okoliščina. Program ostane nespremenjen; nadaljuj po načrtu.",
+            )
+        elif reason == "high_difficulty":
+            decision, volume, code, message = (
+                "review_session_dose", "maintain", "incomplete_due_to_high_difficulty",
+                "Trening je bil prekinjen zaradi previsoke zahtevnosti. Najprej ugotovi, katera vaja ali del treninga je bil problem; ne zmanjšuj samodejno celotnega programa.",
+            )
+        else:
+            decision, volume, code, message = (
+                "collect_context", "maintain", "incomplete_reason_unknown",
+                "Trening ni bil zaključen, vendar razlog ni znan. Pred spremembo programa je treba razjasniti, kaj se je zgodilo.",
+            )
+        return {
+            "decision": decision,
+            "progression_allowed": False,
+            "volume_change": volume,
+            "reason_codes": [code],
+            "message": message,
+        }
+
+    if recent and recent[0][1].get("difficulty") == "hard":
         reasons = []
         if recent[0][1].get("difficulty") == "hard":
             reasons.append("last_session_hard")

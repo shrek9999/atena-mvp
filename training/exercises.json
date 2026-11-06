@@ -8,7 +8,8 @@
     "goals": [
       "hypertrophy",
       "strength",
-      "general_fitness"
+      "general_fitness",
+      "functional"
     ],
     "equipment": [],
     "level": "beginner",
@@ -58,7 +59,8 @@
     "training_purposes": [
       "hypertrophy",
       "strength",
-      "general_fitness"
+      "general_fitness",
+      "functional_fitness"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -74,7 +76,8 @@
     "goals": [
       "hypertrophy",
       "strength",
-      "general_fitness"
+      "general_fitness",
+      "functional"
     ],
     "equipment": [
       "barbell",
@@ -125,7 +128,8 @@
     "training_purposes": [
       "hypertrophy",
       "strength",
-      "general_fitness"
+      "general_fitness",
+      "functional_fitness"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -140,7 +144,8 @@
     "joint_type": "multi_joint",
     "goals": [
       "hypertrophy",
-      "strength"
+      "strength",
+      "functional"
     ],
     "equipment": [
       "barbell",
@@ -191,7 +196,8 @@
     "movement_pattern": "squat",
     "training_purposes": [
       "hypertrophy",
-      "strength"
+      "strength",
+      "functional_fitness"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -1098,7 +1104,8 @@
     "joint_type": "multi_joint",
     "goals": [
       "hypertrophy",
-      "strength"
+      "strength",
+      "functional"
     ],
     "equipment": [
       "dumbbell"
@@ -1150,7 +1157,8 @@
     "training_purposes": [
       "hypertrophy",
       "strength",
-      "balance"
+      "balance",
+      "functional_fitness"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -1938,7 +1946,8 @@
     "joint_type": "multi_joint",
     "goals": [
       "hypertrophy",
-      "strength"
+      "strength",
+      "functional"
     ],
     "equipment": [
       "dumbbell"
@@ -1989,7 +1998,8 @@
     "movement_pattern": "pull",
     "training_purposes": [
       "hypertrophy",
-      "strength"
+      "strength",
+      "functional_fitness"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -2486,7 +2496,8 @@
     "goals": [
       "hypertrophy",
       "strength",
-      "general_fitness"
+      "general_fitness",
+      "functional"
     ],
     "equipment": [
       "dumbbell"
@@ -2542,7 +2553,8 @@
     "training_purposes": [
       "hypertrophy",
       "strength",
-      "general_fitness"
+      "general_fitness",
+      "functional_fitness"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -3094,7 +3106,8 @@
     "joint_type": "multi_joint",
     "goals": [
       "hypertrophy",
-      "strength"
+      "strength",
+      "functional"
     ],
     "equipment": [
       "kettlebell"
@@ -3143,7 +3156,8 @@
     "training_purposes": [
       "hypertrophy",
       "strength",
-      "balance"
+      "balance",
+      "functional_fitness"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -5451,7 +5465,8 @@
     "joint_type": "multi_joint",
     "goals": [
       "hypertrophy",
-      "strength"
+      "strength",
+      "functional"
     ],
     "equipment": [
       "barbell"
@@ -5498,7 +5513,8 @@
     "movement_pattern": "pull",
     "training_purposes": [
       "hypertrophy",
-      "strength"
+      "strength",
+      "functional_fitness"
     ],
     "stability_role": "incidental",
     "stability_focus": [

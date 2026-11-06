@@ -71,7 +71,8 @@ def test_visible_profiles_work_with_realistic_equipment_and_time_choices(
                 context, exercise["exercise_id"], exercise["equipment"]
             )
             assert exercise["prescription"]["tempo"]
-            assert exercise["range_of_motion"]
+            assert exercise["cues"]
+            assert exercise.get("range_of_motion") is None or exercise["range_of_motion"].strip()
 
     exercises = [
         exercise

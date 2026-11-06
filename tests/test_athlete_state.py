@@ -141,3 +141,57 @@ def test_functional_focus_survives_state_validation_round_trip():
         sessions_per_week=2,
     )
     assert validate_athlete_state(state)["goal"]["functional_focus"] == "power"
+
+
+
+def test_available_training_days_are_part_of_canonical_availability():
+    state = create_athlete_state(
+        profile_id="days-1",
+        goal="strength_muscle",
+        experience="intermediate",
+        equipment=["bodyweight"],
+        sessions_per_week=2,
+        available_days=["monday", "thursday"],
+    )
+    assert state["availability"]["available_days"] == ["monday", "thursday"]
+    assert validate_athlete_state(state)["availability"]["available_days"] == [
+        "monday", "thursday"
+    ]
+
+
+def test_invalid_available_training_day_is_rejected():
+    with pytest.raises(AthleteStateError):
+        create_athlete_state(
+            profile_id="days-2",
+            goal="strength_muscle",
+            experience="intermediate",
+            equipment=["bodyweight"],
+            sessions_per_week=2,
+            available_days=["holiday"],
+        )
+
+
+def test_self_reported_capabilities_are_separate_from_observed_assessment():
+    state = create_athlete_state(
+        profile_id="capability-1",
+        goal="strength_muscle",
+        experience="intermediate",
+        equipment=["bodyweight"],
+        sessions_per_week=2,
+        self_reported_capabilities={"pistol_squat": True},
+    )
+    assert state["capabilities"]["self_reported"]["pistol_squat"] is True
+    assert state["movement_assessment"]["tasks"]["squat"]["status"] == "not_assessed"
+    assert validate_athlete_state(state)["capabilities"]["self_reported"]["pistol_squat"] is True
+
+
+def test_unknown_self_reported_capability_is_rejected():
+    with pytest.raises(AthleteStateError):
+        create_athlete_state(
+            profile_id="capability-2",
+            goal="strength_muscle",
+            experience="intermediate",
+            equipment=["bodyweight"],
+            sessions_per_week=2,
+            self_reported_capabilities={"observed_squat_quality": True},
+        )

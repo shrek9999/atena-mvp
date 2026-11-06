@@ -32,6 +32,11 @@ from training.periodization import summarize_training_cycle
 from training.proactive_checkin import build_proactive_checkin
 from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL
 from training.movement_assessment import MovementAssessmentError, assess_movement_competence
+from training.athlete_state import AthleteStateError, validate_athlete_state
+from training.profile_state_adapter import (
+    ProfileStateMigrationError, attach_athlete_state, legacy_profile_view,
+    profile_needs_state_migration,
+)
 
 logger = logging.getLogger(__name__)
 coach_bp = Blueprint("coach", __name__)
@@ -1409,6 +1414,42 @@ def _validate_profile(value):
     }
 
 
+
+def _profile_record_with_state(record, token, *, persist_migration=False):
+    """Validate canonical state and lazily migrate a legacy JSON profile.
+
+    The JSON envelope keeps legacy generator fields while the state captures
+    explicit availability, self-reported capability, and observed evidence.
+    """
+    profile = record.get("profile")
+    if not isinstance(profile, dict):
+        raise ProfileStateMigrationError("Shranjeni profil ni veljaven.")
+    profile_id = record.get("profile_id")
+    if not isinstance(profile_id, str) or not profile_id:
+        raise ProfileStateMigrationError("Shranjeni profil nima veljavnega identifikatorja.")
+    if profile_needs_state_migration(profile):
+        required_fields = {
+            "goal", "experience", "equipment", "sessions_per_week", "session_minutes"
+        }
+        if not required_fields.issubset(profile):
+            # Some historical/test records are intentionally partial. Do not
+            # invent missing profile facts merely to satisfy the new schema.
+            return record
+        upgraded = attach_athlete_state(profile, profile_id)
+        if persist_migration and storage_enabled():
+            return store_update_profile(profile_id, token, upgraded)
+        response_record = dict(record)
+        response_record["profile"] = upgraded
+        return response_record
+    try:
+        validate_athlete_state(profile.get("athlete_state"))
+    except AthleteStateError as exc:
+        raise ProfileStateMigrationError(
+            "Shranjeno kanonično stanje športnika ni veljavno; podatki niso bili prepisani."
+        ) from exc
+    return record
+
+
 def _profile_token():
     return request.headers.get("X-Profile-Token", "").strip()
 
@@ -1439,6 +1480,7 @@ def create_coach_profile():
     try:
         profile = _validate_profile(payload.get("profile"))
         profile_id = str(uuid.uuid4())
+        profile = attach_athlete_state(profile, profile_id)
         access_token = secrets.token_urlsafe(32)
         saved = store_create_profile(profile_id, access_token, profile, health_consent, notice_version)
         # The access token is returned once. Only its SHA-256 hash is stored.
@@ -1457,9 +1499,13 @@ def manage_coach_profile(profile_id):
     token = _profile_token()
     if request.method == "GET":
         try:
-            return jsonify({"profile": store_get_profile(profile_id, token)}), 200
+            record = store_get_profile(profile_id, token)
+            record = _profile_record_with_state(record, token, persist_migration=True)
+            return jsonify({"profile": record}), 200
         except ProfileNotFound:
             return _profile_auth_error()
+        except ProfileStateMigrationError:
+            return jsonify({"error": "Shranjeni profil potrebuje preverjanje; podatki niso bili spremenjeni."}), 409
         except StorageUnavailable as exc:
             return _storage_error(exc)
     if request.method == "PUT":
@@ -1467,7 +1513,11 @@ def manage_coach_profile(profile_id):
         if not isinstance(payload, dict):
             return jsonify({"error": "Pričakovan je JSON objekt."}), 400
         try:
+            previous = store_get_profile(profile_id, token)
             profile = _validate_profile(payload.get("profile"))
+            profile = attach_athlete_state(
+                profile, profile_id, previous_profile=previous.get("profile")
+            )
             updated = store_update_profile(profile_id, token, profile)
             return jsonify({"profile": updated}), 200
         except ValueError as exc:
@@ -1887,6 +1937,8 @@ def coach_training_progress(profile_id):
     token = _profile_token()
     try:
         profile = store_get_profile(profile_id, token)
+        profile = _profile_record_with_state(profile, token, persist_migration=True)
+        legacy_profile = legacy_profile_view(profile["profile"])
         sessions = store_list_sessions(profile_id, token, limit=50)
         exercise_progressions = recommend_exercise_progression(sessions)
         longitudinal_progression = summarize_longitudinal_progression(sessions)
@@ -1896,7 +1948,7 @@ def coach_training_progress(profile_id):
             conditioning_progression,
         )
         training_cycle = summarize_training_cycle(
-            profile["profile"], sessions, exercise_progressions,
+            legacy_profile, sessions, exercise_progressions,
             longitudinal_progression, conditioning_progression,
         )
         return jsonify({
@@ -1924,6 +1976,7 @@ def export_coach_profile(profile_id):
     token = _profile_token()
     try:
         profile = store_get_profile(profile_id, token)
+        profile = _profile_record_with_state(profile, token, persist_migration=True)
         sessions = store_list_sessions(profile_id, token, limit=5000)
         response = jsonify({
             "export_version": "1.0",
@@ -1941,6 +1994,8 @@ def export_coach_profile(profile_id):
         return response, 200
     except ProfileNotFound:
         return _profile_auth_error()
+    except ProfileStateMigrationError:
+        return jsonify({"error": "Shranjeni profil potrebuje preverjanje; izvoz ni bil spremenjen."}), 409
     except StorageUnavailable as exc:
         return _storage_error(exc)
 
@@ -1961,30 +2016,31 @@ def _build_profile_adaptation(sessions):
     if not session_data:
         return None, guidance
     last = session_data[0]
+    # Preserve only facts that were actually recorded. Missing feedback is
+    # unknown, not evidence of an easy, completed, pain-free session.
+    feedback = {}
     if last.get("discomfort_reported") is True:
-        # The profile-program route requires a fresh explicit confirmation that
-        # there is no current pain or restriction. Keep progression on hold,
-        # but do not permanently block a recovered user because of a past entry.
-        feedback = {
-            "difficulty": "right",
-            "completed": bool(last.get("completed", True)),
-            "discomfort": "no",
-            "recovery": last.get("recovery", "normal"),
-        }
-        return feedback, guidance
-    difficulty = {"easy": "easy", "moderate": "right", "hard": "hard"}.get(
-        last.get("difficulty"), "right"
-    )
-    if difficulty == "easy" and not guidance.get("progression_allowed", False):
-        difficulty = "right"
-    feedback = {
-        "difficulty": difficulty,
-        "completed": bool(last.get("completed", True)),
-        "discomfort": "no",
-        "recovery": last.get("recovery", "normal"),
-        "movement_control": "none",
-    }
-    return feedback, guidance
+        # A reported discomfort must remain an affirmative signal. It holds
+        # progression until a fresh safety review; never rewrite it as "no".
+        feedback["discomfort"] = "yes"
+    elif last.get("discomfort_reported") is False:
+        feedback["discomfort"] = "no"
+
+    if last.get("difficulty") in {"easy", "moderate", "hard"}:
+        difficulty = {"easy": "easy", "moderate": "right", "hard": "hard"}[
+            last["difficulty"]
+        ]
+        if difficulty == "easy" and not guidance.get("progression_allowed", False):
+            difficulty = "right"
+        feedback["difficulty"] = difficulty
+
+    if isinstance(last.get("completed"), bool):
+        feedback["completed"] = last["completed"]
+    if last.get("recovery") in {"good", "normal", "poor"}:
+        feedback["recovery"] = last["recovery"]
+    if last.get("movement_control") in {"spinal_flexion", "bracing", "both"}:
+        feedback["movement_control"] = last["movement_control"]
+    return (feedback or None), guidance
 
 
 @coach_bp.route("/coach/profile/<profile_id>/program", methods=["POST", "OPTIONS"])
@@ -2005,6 +2061,8 @@ def coach_profile_program(profile_id):
     token = _profile_token()
     try:
         profile = store_get_profile(profile_id, token)
+        profile = _profile_record_with_state(profile, token, persist_migration=True)
+        legacy_profile = legacy_profile_view(profile["profile"])
         # Use enough history to enforce the same progression gate shown in the
         # adaptation endpoint: two completed, easy sessions with RIR >= 3.
         sessions = store_list_sessions(profile_id, token, limit=50)
@@ -2017,7 +2075,7 @@ def coach_profile_program(profile_id):
             conditioning_progression,
         )
         training_cycle = summarize_training_cycle(
-            profile["profile"], sessions, exercise_progressions,
+            legacy_profile, sessions, exercise_progressions,
             longitudinal_progression, conditioning_progression,
         )
         # Global session feedback is now advisory only. It must not silently
@@ -2025,7 +2083,7 @@ def coach_profile_program(profile_id):
         # scope, while the exercise engine applies only independently justified
         # exercise-level rep guidance. A future user-confirmed session-level
         # adjustment can be applied through an explicit programme revision.
-        result = generate_program(profile["profile"])
+        result = generate_program(legacy_profile)
         result = apply_exercise_progression(result, exercise_progressions)
         return jsonify({
             "program": result,
@@ -2042,6 +2100,8 @@ def coach_profile_program(profile_id):
         return jsonify({"blocked": True, "message": str(exc)}), 409
     except ProgramValidationError as exc:
         return jsonify({"error": str(exc)}), 400
+    except ProfileStateMigrationError:
+        return jsonify({"error": "Shranjeni profil potrebuje preverjanje; programa nisem ustvaril."}), 409
     except ProfileNotFound:
         return _profile_auth_error()
     except StorageUnavailable as exc:

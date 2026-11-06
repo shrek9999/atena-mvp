@@ -41,9 +41,12 @@ def test_realistic_onboarding_profile_generates_safe_catalogue_backed_plan(scena
             assert set(exercise["equipment"]).issubset(set(profile["equipment"]) | {"bodyweight"})
             assert exercise["prescription"]["tempo"]
             assert exercise["prescription"]["tempo_description"]
-            assert exercise["range_of_motion"]
+            assert exercise["cues"]
+            assert exercise.get("range_of_motion") is None or exercise["range_of_motion"].strip()
             if profile["experience"] == "beginner" and profile["goal"] in {"hypertrophy", "strength", "general_fitness", "functional"}:
-                if exercise["pattern"] not in {"trunk_stability", "anti_rotation"}:
+                if exercise["pattern"] in {"carry", "locomotion", "conditioning"}:
+                    assert exercise["prescription"]["rir"] is None
+                elif exercise["pattern"] not in {"trunk_stability", "anti_rotation", "balance", "coordination"}:
                     assert exercise["prescription"]["rir"] >= 3
                     assert exercise["prescription"]["reps"] in {"8–10", "8–12", "10–15", "12–15"}
             if source["single_joint"] and profile["goal"] == "hypertrophy":

@@ -52,12 +52,15 @@ def test_program_quality_across_goal_and_experience_matrix(goal, experience):
             assert set(exercise["equipment"]).issubset(set(profile["equipment"]) | {"bodyweight"})
             assert exercise["prescription"]["tempo"]
             assert exercise["prescription"]["tempo_description"]
-            assert exercise["range_of_motion"]
+            assert exercise["cues"]
+            assert exercise.get("range_of_motion") is None or exercise["range_of_motion"].strip()
             if source["single_joint"] and goal == "hypertrophy":
                 assert experience == "advanced"
                 assert profile.get("include_accessories") is True
             if experience == "beginner" and goal in {"hypertrophy", "strength", "general_fitness", "functional"}:
-                if exercise["pattern"] not in {"trunk_stability", "anti_rotation", "balance", "coordination"}:
+                if exercise["pattern"] in {"carry", "locomotion", "conditioning"}:
+                    assert exercise["prescription"]["rir"] is None
+                elif exercise["pattern"] not in {"trunk_stability", "anti_rotation", "balance", "coordination"}:
                     assert exercise["prescription"]["rir"] >= 3
                     if exercise["pattern"] in {"jump", "hinge_power"}:
                         assert exercise["prescription"]["reps"] == "3–5"

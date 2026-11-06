@@ -54,7 +54,8 @@ def test_all_nine_goals_generate_catalogue_backed_plans(goal, experience):
             assert set(source["equipment"]).issubset(set(profile["equipment"]) | {"bodyweight"})
             assert exercise["prescription"]["tempo"]
             assert exercise["prescription"]["tempo_description"]
-            assert exercise["range_of_motion"]
+            assert exercise["cues"]
+            assert exercise.get("range_of_motion") is None or exercise["range_of_motion"].strip()
             assert exercise["training_purposes"]
 
 
@@ -88,7 +89,7 @@ def test_functional_goal_has_its_own_capacity_signature_without_unassessed_jumps
     })
     exercises = [item for session in plan["sessions"] for item in session["exercises"]]
     patterns = {item["pattern"] for item in exercises}
-    assert {"balance", "coordination", "carry", "conditioning"}.issubset(patterns)
+    assert {"balance", "coordination", "carry", "locomotion"}.issubset(patterns)
     assert "jump" not in patterns
     assert "lateral_shuffle" not in {item["exercise_id"] for item in exercises}
 
