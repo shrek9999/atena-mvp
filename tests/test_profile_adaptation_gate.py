@@ -41,7 +41,7 @@ def test_hard_session_is_passed_through_for_immediate_reduction():
         wrapped_session(difficulty="hard", rir=1)
     ])
     assert feedback["difficulty"] == "hard"
-    assert guidance["decision"] == "review_volume_reduction"
+    assert guidance["decision"] == "recovery_review"
 
 
 def test_poor_recovery_holds_progression_and_preserves_recovery_signal():
