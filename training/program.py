@@ -171,10 +171,10 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # Carry work, balance and controlled low-speed coordination preserve the
         # functional intent until landing/braking readiness can be assessed explicitly.
         functional_additions = [
+            ["lunge", "balance", "carry"],
+            ["coordination", "locomotion"],
             ["balance", "carry"],
-            ["coordination", "conditioning"],
-            ["balance", "carry"],
-            ["coordination", "conditioning"],
+            ["coordination", "locomotion"],
         ]
         patterns = base + functional_additions[session_index]
         if include_stability:
@@ -267,6 +267,12 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
             reps, rir, rest = "20–30 s", None, 60
     elif goal == "endurance" and pattern == "locomotion":
         sets, reps, rir, rest = 1, "20–30 min", None, 0
+    elif goal == "functional" and pattern == "locomotion":
+        # Functional fitness needs a repeatable aerobic base, not a random high-impact finisher.
+        sets, reps, rir, rest = 1, "6–8 min", None, 0
+    elif pattern == "carry":
+        # Carries are locomotor tasks: prescribe distance, not repetition counts or RIR.
+        sets, reps, rir, rest = 2, "20–30 m", None, 60
     elif goal == "endurance" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
         # Keep the agreed four-interval structure; scale interval duration by experience below.
@@ -410,6 +416,8 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         tempo, tempo_description, tempo_seconds = "1–0–X–0", "Nadzorovan začetni položaj; dvig oziroma odriv izvedi hitro in tehnično čisto; med ponovitvami se ponastavi.", 3
     elif pattern in {"balance", "coordination"}:
         tempo, tempo_description, tempo_seconds = "kontrolirano", "Najprej kakovost in nadzor; hitrost ali doseg povečuj šele, ko je izvedba ponovljiva.", 0
+    elif pattern in {"carry", "locomotion"}:
+        tempo, tempo_description, tempo_seconds = "ritmično", "Ohrani naraven, enakomeren ritem; ne pospešuj na račun nadzora.", 0
     elif is_stability:
         tempo, tempo_description, tempo_seconds = "2–1–2–1", "2 s izteg oziroma odmik · 1 s nadzor · 2 s vrnitev · 1 s ponastavitev.", 6
     elif goal == "strength_hypertrophy" and level == "beginner":
@@ -437,6 +445,20 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         "tempo_description": tempo_description,
         "tempo_seconds_per_rep": tempo_seconds,
     }
+    if pattern == "carry":
+        sides = 2 if (unilateral or exercise.get("reps_per_side")) else 1
+        prescription.update({
+            "reps": "20–30 m", "work_seconds": 20 * sides,
+            "time_label": "nošenja", "tempo_label": "enakomeren korak",
+            "effort_target": "Izberi breme, ki ga lahko neseš z naravno hojo, stabilnim trupom in normalnim dihanjem; končaj, preden se položaj poslabša.",
+        })
+    elif goal == "functional" and pattern == "locomotion":
+        duration = {"beginner": 360, "intermediate": 420, "advanced": 480}[level]
+        prescription.update({
+            "reps": f"{duration // 60} min", "work_seconds": duration,
+            "time_label": "aerobne aktivnosti", "tempo_label": "pogovorni tempo",
+            "effort_target": "Hodi v zmernem pogovornem tempu; dihanje je nekoliko pospešeno, vendar lahko govoriš v celih stavkih.",
+        })
     if exercise.get("id") == "l_sit":
         prescription.update({"reps": "8–15 s", "work_seconds": 12, "time_label": "zadržanja"})
     elif exercise.get("time_based") and pattern in {"trunk_stability", "anti_rotation"}:
@@ -1023,10 +1045,8 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 "primary_muscles": candidate["primary_muscles"],
                 "equipment": selected_equipment,
                 "cues": candidate["cues"],
-                "range_of_motion": candidate.get("range_of_motion") or (
-                    "Uporabi največjo nebolečo amplitudo, ki jo dopuščata tvoja gibljivost in nadzor. "
-                    "Ne krajšaj giba po nepotrebnem; amplitudo povečuj postopno, brez izgube položaja."
-                ),
+                # Only exercise-specific ROM guidance belongs here. Generic advice is shown once at programme level.
+                "range_of_motion": candidate.get("range_of_motion"),
                 "warnings": candidate["warnings"],
                 "regressions": regressions,
                 "progressions": progressions,
