@@ -39,7 +39,16 @@ def assess_next_step(sessions):
             ),
         }
 
-    if recent and recent[0][1].get("completed") is not True:
+    if recent and recent[0][1].get("completed") is None:
+        return {
+            "decision": "collect_context",
+            "progression_allowed": False,
+            "volume_change": "maintain",
+            "reason_codes": ["completion_status_unknown"],
+            "message": "Manjka podatek, ali je bil trening zaključen. Ne sklepaj o nedokončani vadbi ali zmanjšanju odmerka; najprej dopolni zapis.",
+        }
+
+    if recent and recent[0][1].get("completed") is False:
         return {
             "decision": "review_volume_reduction",
             "progression_allowed": False,
