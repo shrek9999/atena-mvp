@@ -709,7 +709,8 @@ def test_new_profiles_persist_canonical_athlete_state(monkeypatch, tmp_path):
     assert state["availability"]["sessions_per_week"] == 2
     assert state["availability"]["session_duration_minutes"] == 60
     assert state["availability"]["available_days"] == ["monday", "thursday"]
-    assert state["capabilities"]["self_reported"]["pistol_squat"] is False
+    # Legacy False is a default, not evidence that the user cannot perform it.
+    assert state["capabilities"]["self_reported"] == {}
     assert state["symptoms"]["status"] == "not_asked"
     assert all(
         item["status"] == "not_assessed"
