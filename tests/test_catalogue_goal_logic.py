@@ -299,6 +299,7 @@ def test_functional_program_uses_safe_locomotion_and_loaded_row_when_available()
     carry = next(item for item in items if item["pattern"] == "carry")
     assert carry["prescription"]["reps"] == "20–30 m"
     assert carry["prescription"]["work_seconds"] > 0
+    assert carry["prescription"]["distance_based"] is True
     assert carry["prescription"].get("rir") is None
 
 
