@@ -536,27 +536,6 @@ def _coaching_guardrail_reply(messages):
             "oteklini, zaklepanju, popuščanju ali nezmožnosti obremenitve poišči strokovno oceno."
         )
 
-    # An unanswered safety question is not clearance, but it must not freeze
-    # the conversation. Non-prescriptive context and general questions may continue;
-    # individualized prescriptions remain blocked by the explicit gate below.
-    assistant_asked_safety = any(re.search(
-        r"(?:ali\\s+(?:imaš|trenutno|morda)|imaš\\s+(?:trenutno|kakšne|kakršne koli)|občutiš|opaziš).{0,100}"
-        r"(?:bolečin\\w*|poškodb\\w*|omejitv\\w*|zdravstven.{0,30}težav)",
-        item,
-        re.IGNORECASE,
-    ) for item in assistant_texts)
-    latest_reports_health_issue = bool(re.search(
-        r"(imam|občutim|čutim|pojavlja se|pojavila se je).{0,70}"
-        r"(boleč|poškodb|omejit|bolezen|operacij|simptom)",
-        latest,
-        re.IGNORECASE,
-    ))
-    safety_clearance_pending = (
-        assistant_asked_safety
-        and not _has_explicit_safety_clearance(history)
-        and not latest_reports_health_issue
-    )
-
     balance_clarified = (
         bool(re.search(
             r"(pri spuščanju|pri dvigu|v spodnjem položaju|iz spodnjega položaja)",
