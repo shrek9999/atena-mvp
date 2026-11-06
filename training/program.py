@@ -9,6 +9,7 @@ from training.movement_assessment import (
     MovementAssessmentError, SUPPORTED_VARIANTS, TASK_PATTERNS,
     assess_movement_competence,
 )
+from training.quality_gate import validate_generated_program
 
 SUPPORTED_GOALS = {"hypertrophy", "strength", "strength_hypertrophy", "fat_loss", "general_fitness", "functional", "power", "endurance", "mobility"}
 SUPPORTED_LEVELS = {"beginner", "intermediate", "advanced"}
@@ -196,6 +197,18 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         patterns = mobility_templates[session_index % len(mobility_templates)]
         if include_stability:
             patterns = ["trunk_stability"] + patterns[:-1]
+        return patterns
+    if goal == "power":
+        # Power sessions retain foundational strength work but cap the template
+        # at seven exercises. Alternate the two explosive patterns across days
+        # rather than stacking every power drill in every weekly session.
+        patterns = [
+            "squat", "hinge", "horizontal_push", "horizontal_pull", "lunge",
+            "jump" if session_index % 2 == 0 else "hinge_power",
+        ]
+        if include_stability:
+            # Targeted trunk-control work replaces the optional lunge slot.
+            patterns = ["trunk_stability"] + patterns[:-2] + [patterns[-1]]
         return patterns
     base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
     if goal == "fat_loss":
@@ -1177,7 +1190,7 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 pattern_session_frequency[item["pattern"]] += 1
                 session_patterns_seen.add(item["pattern"])
             pattern_work_sets[item["pattern"]] += item["prescription"]["sets"]
-    return {
+    program = {
         "program_version": "3.0.0",
         "movement_adaptation": {
             "source": "self_reported_movement_assessment",
@@ -1267,3 +1280,9 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
             else []
         ),
     }
+    quality_issues = validate_generated_program(program, p)
+    if quality_issues:
+        raise ProgramValidationError(
+            "Program ni prestal končnega preverjanja kakovosti: " + "; ".join(quality_issues[:8])
+        )
+    return program
