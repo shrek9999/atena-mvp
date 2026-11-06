@@ -276,6 +276,8 @@ def _sanitize_unverified_safety_claim(answer, messages):
         r"(?:nobenih\s+)?(?:bolečin|poškodb|omejitev)|"
         r"(?:ker|saj).{0,80}(?:nisi omenil|nisi navedel|nisi poročal).{0,60}"
         r"(?:bolečin|poškodb|omejitv\w*|zdravstven\w*)|"
+        r"(?:sva|smo).{0,60}(?:preveril|ugotovil)\w*.{0,100}"
+        r"(?:ni bilo|niso bile|ni bilo večjih).{0,60}(?:težav|nelagodj|bolečin|ravnotežj)|"
         r"(?:sva|smo|si).{0,40}zdravstven\w*\s+(?:pregled|preverjanje).{0,40}"
         r"(?:opravila|zaključila|končala)|"
         r"zdravstven\w*\s+(?:pregled|preverjanje).{0,40}"
