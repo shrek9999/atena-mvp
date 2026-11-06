@@ -1416,7 +1416,11 @@ def _validate_profile(value):
 
 
 def _profile_record_with_state(record, token, *, persist_migration=False):
-    """Validate canonical state and lazily migrate a legacy JSON profile."""
+    """Validate canonical state and lazily migrate a legacy JSON profile.
+
+    The JSON envelope keeps legacy generator fields while the state captures
+    explicit availability, self-reported capability, and observed evidence.
+    """
     profile = record.get("profile")
     if not isinstance(profile, dict):
         raise ProfileStateMigrationError("Shranjeni profil ni veljaven.")
