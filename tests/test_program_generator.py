@@ -1049,3 +1049,34 @@ def test_bodyweight_only_program_never_selects_table_inverted_row():
         ex["exercise_id"] != "inverted_row_table"
         for session in plan["sessions"] for ex in session["exercises"]
     )
+
+
+def test_distance_carry_progression_and_regression_change_meters_not_reps():
+    profile = {
+        **BASE,
+        "goal": "functional",
+        "experience": "intermediate",
+        "equipment": ["dumbbell", "kettlebell"],
+    }
+    base = generate_program(profile)
+    easy = generate_program(profile, feedback={"difficulty": "easy", "completed": True, "recovery": "good"})
+    hard = generate_program(profile, feedback={"difficulty": "hard", "completed": True, "recovery": "normal"})
+
+    def carry_distance(plan):
+        carry = next(
+            ex for session in plan["sessions"] for ex in session["exercises"]
+            if ex["pattern"] == "carry"
+        )
+        return carry["prescription"]["reps"], carry["prescription"]
+
+    base_reps, base_prescription = carry_distance(base)
+    easy_reps, easy_prescription = carry_distance(easy)
+    hard_reps, hard_prescription = carry_distance(hard)
+    assert base_reps == "20–30 m"
+    assert easy_reps == "25–35 m"
+    assert hard_reps == "15–25 m"
+    assert base_prescription["distance_based"] is True
+    assert base_prescription["estimated_work_seconds"] > 0
+    assert "work_seconds" not in base_prescription
+    assert easy_prescription["distance_based"] is True
+    assert hard_prescription["distance_based"] is True
