@@ -229,7 +229,31 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     is_stability = pattern in {"trunk_stability", "anti_rotation"}
     is_power = pattern in {"jump", "hinge_power"}
     rir_range = None
-    if goal == "mobility" and pattern == "mobility_stretch":
+    functional_conditioning_seconds = None
+    if pattern == "carry":
+        # Loaded carries are prescribed by distance, never by repetitions.
+        if level == "beginner":
+            sets, reps, rir, rest = 2, "15–20 m", None, 60
+        elif level == "intermediate":
+            sets, reps, rir, rest = 2, "20–30 m", None, 75
+        else:
+            sets, reps, rir, rest = 3, "25–40 m", None, 90
+    elif goal in {"functional", "general_fitness"} and pattern == "conditioning":
+        # Functional conditioning is a short, controlled work interval rather than
+        # a slow resistance exercise with RIR and a lifting tempo.
+        kind = exercise.get("endurance_type")
+        if kind == "aerobic":
+            duration = {"beginner": 30, "intermediate": 40, "advanced": 45}[level]
+            sets, rest = (2 if level == "beginner" else 3), 45
+        elif kind == "anaerobic":
+            duration = {"beginner": 15, "intermediate": 20, "advanced": 25}[level]
+            sets, rest = (2 if level == "beginner" else 3), (60 if level != "advanced" else 75)
+        else:
+            duration = {"beginner": 20, "intermediate": 25, "advanced": 30}[level]
+            sets, rest = (2 if level == "beginner" else 3), 60
+        reps, rir = f"{duration} s", None
+        functional_conditioning_seconds = duration
+    elif goal == "mobility" and pattern == "mobility_stretch":
         sets, reps, rir, rest = (3, "20–30 s", None, 30) if level == "advanced" else (2, "20–30 s", None, 30)
     elif goal == "mobility" and exercise.get("mobility_strength"):
         sets, reps, rir, rest = (3, "6–10", 3, 90) if level == "advanced" else (2, "8–12", 3, 75)
@@ -387,7 +411,11 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
             sets, reps, rir, rest = 3, "8–12", 3, 90
         else:
             sets, reps, rir, rest = 3, "6–10", 2, 120
-    if pattern == "mobility_stretch":
+    if pattern == "carry":
+        tempo, tempo_description, tempo_seconds = "tekoče", "Hodi z enakomernim, nadzorovanim korakom; breme naj ne spremeni drže ali kakovosti hoje.", 1
+    elif functional_conditioning_seconds is not None:
+        tempo, tempo_description, tempo_seconds = "ritmično", "Ohrani enakomeren, nadzorovan ritem; interval končaj, ko se kakovost izvedbe poslabša.", 1
+    elif pattern == "mobility_stretch":
         tempo, tempo_description, tempo_seconds = "zadržanje", "Zadrži blag do zmeren razteg, dihaj sproščeno in ne sili v končni položaj.", 0
     elif goal == "mobility" or pattern == "mobility":
         tempo, tempo_description, tempo_seconds = "kontrolirano", "Aktivno raziskuj razpoložljivo amplitudo brez sunkov in prisiljevanja.", 4
@@ -424,7 +452,19 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         "tempo_description": tempo_description,
         "tempo_seconds_per_rep": tempo_seconds,
     }
-    if exercise.get("id") == "l_sit":
+    if pattern == "carry":
+        prescription.update({
+            "distance_based": True,
+            "time_label": "razdalje",
+            "effort_target": "Izberi breme, s katerim ohraniš pokončno držo, enakomeren korak in normalen ritem dihanja.",
+        })
+    elif functional_conditioning_seconds is not None:
+        prescription.update({
+            "work_seconds": functional_conditioning_seconds,
+            "time_label": "kondicijskega intervala",
+            "effort_target": "Nadzorovana intenzivnost; ne izvajaj maksimalno in ne žrtvuj tehnike ali položaja trupa.",
+        })
+    elif exercise.get("id") == "l_sit":
         prescription.update({"reps": "8–15 s", "work_seconds": 12, "time_label": "zadržanja"})
     elif exercise.get("time_based") and pattern in {"trunk_stability", "anti_rotation"}:
         prescription.update({"reps": "8–15 s", "work_seconds": 10, "time_label": "zadržanja"})
@@ -459,7 +499,11 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         duration = 30 if pattern == "mobility_stretch" else 20
         target = "Zadrži blag do zmeren razteg brez bolečine, mravljinčenja ali prisiljevanja." if pattern == "mobility_stretch" else "Deluj v kontrolirani neboleči amplitudi; brez siljenja v končni položaj."
         prescription.update({"work_seconds": duration, "time_label": "zadržanja" if pattern == "mobility_stretch" else "aktivnega zadržanja", "effort_target": target})
-    if exercise.get("id") == "l_sit":
+    if pattern == "carry":
+        prescription["effort_target"] = "Ohrani pokončno držo, stabilen prijem in enakomerno hojo; prekini, ko se drža ali korak poslabšata."
+    elif functional_conditioning_seconds is not None:
+        prescription["effort_target"] = "Nadzorovana intenzivnost; končaj interval, ko se poslabša tehnika, ritem ali nadzor trupa."
+    elif exercise.get("id") == "l_sit":
         prescription["effort_target"] = "Zadrži kakovosten položaj z aktivnim potiskom v oporo; končaj, preden izgubiš stabilen položaj ramen ali medenice."
     elif pattern == "balance":
         prescription["effort_target"] = "Ohrani stabilno oporo in nadzor; končaj serijo, ko se kakovost izvedbe poslabša."
@@ -728,6 +772,22 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                     continue
                 missing_patterns.add(pattern)
                 continue
+            if planning_goal == "functional" and pattern == "hinge" and session_index > 0:
+                # Rotate a hinge only when another unused, main-role, sufficiently
+                # loadable option is valid for this experience level. Never force
+                # a harder or poorly loaded variant merely for cosmetic variety.
+                level_order = {"beginner": 0, "intermediate": 1, "advanced": 2}
+                target_rank = level_order[p["experience"]]
+                unused_hinges = [
+                    item for item in candidates
+                    if used_counts[item["id"]] == 0
+                    and item.get("training_role") == "main"
+                    and not item.get("single_joint")
+                    and item.get("loading_potential") in {"moderate", "high"}
+                    and level_order.get(item.get("level"), 99) <= target_rank
+                ]
+                if unused_hinges:
+                    candidates = unused_hinges
             # Rank variants by goal, experience and actual available loading.
             available_equipment = set(p["equipment"]) | {"bodyweight"}
             external_load_items = {"dumbbell", "kettlebell", "barbell", "resistance_band", "household_load", "backpack", "cable"}
@@ -1010,10 +1070,9 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 "primary_muscles": candidate["primary_muscles"],
                 "equipment": selected_equipment,
                 "cues": candidate["cues"],
-                "range_of_motion": candidate.get("range_of_motion") or (
-                    "Uporabi največjo nebolečo amplitudo, ki jo dopuščata tvoja gibljivost in nadzor. "
-                    "Ne krajšaj giba po nepotrebnem; amplitudo povečuj postopno, brez izgube položaja."
-                ),
+                # Keep exercise-specific ROM guidance here. General ROM guidance
+                # is shown once in methodology, not repeated under every exercise.
+                "range_of_motion": candidate.get("range_of_motion"),
                 "warnings": candidate["warnings"],
                 "regressions": regressions,
                 "progressions": progressions,
@@ -1199,7 +1258,7 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
             "exercise_scaling": "Vsaka vaja ima označen potencial obremenitve, vlogo, zahteve glede opreme in stopnjevanje. Nizko obremenljive učne vaje niso privzeta glavna izbira za hipertrofijo.",
             "equipment_policy": "Brez uteži ne pomeni brez običajnih stabilnih gospodinjskih opor. Stol, kavč, miza, stopnica, brisača ali palica so dovoljeni le, kadar jih profil izrecno vključuje in so varni za uporabo.",
             "endurance_policy": "Vzdržljivost je ločen cilj; aerobne aktivnosti, intervali in mišična vzdržljivost so označeni ločeno.",
-            "mobility_policy": "Mobilnost vključuje aktivne gibalne vaje, kontrolirano gibanje v končnih amplitudah in razvoj moči skozi čim večji nadzorovan in toleriran obseg (npr. predklon z ravnim hrbtom/RDL, ATG izpadni počep, Cossack squat in obremenjeni globoki počep), ne samo pasivnega raztezanja.",
+            "mobility_policy": "Mobilnost vključuje aktivne gibalne vaje, kontrolirano gibanje v končnih amplitudah in razvoj moči skozi čim večji nadzorovan in toleriran obseg (npr. predklon z nevtralnim položajem hrbtenice/RDL, ATG izpadni počep, Cossack squat in obremenjeni globoki počep), ne samo pasivnega raztezanja.",
             "fat_loss_policy": "Pri uravnavanju telesne teže združi vadbo moči za ohranitev mišične mase s kratkimi, odmerjenimi kondicijskimi intervali v istem treningu; ob treh ali štirih treningih je lahko dodatna enota pretežno aerobna. MetCon naj bo nadzorovan, ne maksimalen in ne na račun tehnike ali regeneracije. Za zmanjšanje telesne maščobe je potreben vzdržen energijski primanjkljaj; vadba sama ga ne zagotavlja.",
             "experience_adaptation": (
                 "Vzdržljivost: začetnik gradi predvsem enakomeren aerobni obseg v pogovornem tempu; intervale uvajaj postopno. Naprednejši lahko kombinira daljše aerobne enote, intervale in mišično vzdržljivost, vendar ne vsega maksimalno v isti vadbi."
