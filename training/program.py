@@ -198,6 +198,18 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         if include_stability:
             patterns = ["trunk_stability"] + patterns[:-1]
         return patterns
+    if goal == "power":
+        # Power sessions retain foundational strength work but cap the template
+        # at seven exercises. Alternate the two explosive patterns across days
+        # rather than stacking every power drill in every weekly session.
+        patterns = [
+            "squat", "hinge", "horizontal_push", "horizontal_pull", "lunge",
+            "jump" if session_index % 2 == 0 else "hinge_power",
+        ]
+        if include_stability:
+            # Targeted trunk-control work replaces the optional lunge slot.
+            patterns = ["trunk_stability"] + patterns[:-2] + [patterns[-1]]
+        return patterns
     base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
     if goal == "fat_loss":
         # Preserve two resistance-focused full-body sessions plus a controlled
