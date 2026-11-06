@@ -401,3 +401,27 @@ def test_exercises_without_a_tempo_target_can_use_not_applicable():
         record("2026-10-30", [exercise("squat_goblet", tempo="not_applicable", tempo_target=None)]),
     ]
     assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "add_repetitions"
+
+def test_latest_incomplete_session_holds_progression_even_if_older_exposures_qualify():
+    sessions = [
+        record("2026-11-06", [exercise("squat_goblet")], completed=False),
+        record("2026-11-03", [exercise("squat_goblet", reps=(12, 12, 12))]),
+        record("2026-10-30", [exercise("squat_goblet", reps=(12, 12, 12))]),
+    ]
+    result = decision(recommend_exercise_progression(sessions), "squat_goblet")
+    assert result["decision"] == "hold"
+    assert "zadnji trening ni bil zaključen" in result["reason"].lower()
+
+
+def test_unknown_latest_completion_status_cannot_use_older_positive_exposures():
+    sessions = [
+        {
+            "session_date": "2026-11-06",
+            "session": {"exercises": [exercise("squat_goblet")]},
+        },
+        record("2026-11-03", [exercise("squat_goblet", reps=(12, 12, 12))]),
+        record("2026-10-30", [exercise("squat_goblet", reps=(12, 12, 12))]),
+    ]
+    result = decision(recommend_exercise_progression(sessions), "squat_goblet")
+    assert result["decision"] == "collect_data"
+    assert "ni potrjeno" in result["reason"].lower()
