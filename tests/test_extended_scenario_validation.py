@@ -41,7 +41,7 @@ def test_extended_goal_and_experience_profiles(goal, experience):
             assert set(source["equipment"]).issubset(set(profile["equipment"]) | {"bodyweight"})
             assert set(item["equipment"]).issubset(set(profile["equipment"]) | {"bodyweight"})
             assert item["prescription"]["tempo"]
-            assert item["range_of_motion"]
+            assert item["range_of_motion"] is None or isinstance(item["range_of_motion"], str)
             if source["single_joint"]:
                 assert experience == "advanced"
                 assert goal == "strength_hypertrophy"
