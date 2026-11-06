@@ -352,10 +352,37 @@ def set_health_data_consent(profile_id: str, token: str, consent: bool):
     try:
         _init(conn, dialect)
         _authorized_profile(conn, dialect, profile_id, token)
+        authorized = _authorized_profile(conn, dialect, profile_id, token)
+        now = _now()
         _execute(conn, dialect,
                  "UPDATE atena_profiles SET health_data_consent = %s, health_data_consent_at = %s, updated_at = %s WHERE profile_id = %s",
-                 (bool(consent), _now() if consent else None, _now(), profile_id))
+                 (bool(consent), now if consent else None, now, profile_id))
         if not consent:
+            # Health/movement observations are consent-gated. On withdrawal,
+            # erase them from the canonical state as well as legacy session flags.
+            profile_data = authorized["profile"]
+            if isinstance(profile_data, dict):
+                athlete_state = profile_data.get("athlete_state")
+                if isinstance(athlete_state, dict):
+                    athlete_state["symptoms"] = {"status": "not_asked", "items": []}
+                    movement = athlete_state.get("movement_assessment")
+                    if isinstance(movement, dict) and isinstance(movement.get("tasks"), dict):
+                        for task in movement["tasks"].values():
+                            if isinstance(task, dict):
+                                task.update({
+                                    "status": "not_assessed",
+                                    "source": None,
+                                    "recorded_at": None,
+                                    "note": None,
+                                })
+                    constraints = athlete_state.get("constraints")
+                    if isinstance(constraints, dict):
+                        constraints["excluded_patterns"] = []
+                        constraints["excluded_exercise_ids"] = []
+                    profile_data["athlete_state"] = athlete_state
+                    _execute(conn, dialect,
+                             "UPDATE atena_profiles SET profile_json = %s WHERE profile_id = %s",
+                             (_encode_json(profile_data, dialect), profile_id))
             rows = _execute(conn, dialect,
                             "SELECT session_id, session_json FROM atena_training_sessions WHERE profile_id = %s",
                             (profile_id,)).fetchall()
