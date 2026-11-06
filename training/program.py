@@ -775,6 +775,13 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 return potential
 
             def selection_priority(item: dict) -> int:
+                if planning_goal == "functional" and pattern == "locomotion":
+                    # For the general-population functional track, use a scalable,
+                    # low-impact aerobic base before crawling or running variants.
+                    if item["id"] == "brisk_walking":
+                        return -30
+                    if item["id"] in {"bear_crawl", "running_easy"}:
+                        return 20
                 if movement_status == "needs_support":
                     preferred = SUPPORTED_VARIANTS.get(pattern, ())
                     if item["id"] in preferred:
