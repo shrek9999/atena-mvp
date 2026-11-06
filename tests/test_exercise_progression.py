@@ -404,7 +404,7 @@ def test_exercises_without_a_tempo_target_can_use_not_applicable():
 
 def test_latest_incomplete_session_holds_progression_even_if_older_exposures_qualify():
     sessions = [
-        record("2026-11-06", [exercise("squat_goblet")], completed=False),
+        record("2026-11-06", [exercise("squat_goblet")], completed=False, completion_reason="high_difficulty"),
         record("2026-11-03", [exercise("squat_goblet", reps=(12, 12, 12))]),
         record("2026-10-30", [exercise("squat_goblet", reps=(12, 12, 12))]),
     ]
