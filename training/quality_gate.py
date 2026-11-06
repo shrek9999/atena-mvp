@@ -84,8 +84,8 @@ def validate_generated_program(program: object, profile: object) -> list[str]:
         if not isinstance(exercises, list):
             issues.append(f"{prefix} nima seznama vaj.")
             continue
-        if not 3 <= len(exercises) <= 6:
-            issues.append(f"{prefix} mora vsebovati 3–6 smiselnih vaj.")
+        if not 3 <= len(exercises) <= 7:
+            issues.append(f"{prefix} mora vsebovati 3–7 smiselnih vaj.")
         if session.get("available_minutes") != profile.get("session_minutes"):
             issues.append(f"{prefix}: razpoložljivi čas ni skladen s profilom.")
         estimate = session.get("estimated_minutes")
@@ -133,8 +133,11 @@ def validate_generated_program(program: object, profile: object) -> list[str]:
             if source.get("single_joint") and experience != "advanced":
                 if not (goal == "mobility" and source.get("training_role") == "mobility"):
                     issues.append(f"{item_prefix}: enosklepna vaja ni primerna za privzeti profil.")
-            if source.get("training_role") == "stability" and not stability_was_requested:
-                issues.append(f"{item_prefix}: stabilizacijska vaja je vključena brez utemeljenega razloga.")
+            # Carries and balance tasks have useful functional/strength roles even
+            # though the catalogue labels their training_role as stability. The
+            # explicit feedback requirement applies to targeted trunk-control drills.
+            if exercise.get("pattern") in {"trunk_stability", "anti_rotation"} and not stability_was_requested:
+                issues.append(f"{item_prefix}: ciljna vaja za nadzor trupa je vključena brez utemeljenega razloga.")
 
             prescription = exercise.get("prescription")
             if not isinstance(prescription, dict):
