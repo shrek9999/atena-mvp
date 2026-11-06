@@ -16,7 +16,7 @@ SUPPORTED_SESSIONS = {2, 3, 4}
 PATTERN_LABELS = {
     "squat": "počep",
     "lunge": "izpadni korak",
-    "hinge": "predklon z ravnim hrbtom",
+    "hinge": "predklon z nevtralnim položajem hrbtenice",
     "hip_extension": "izteg kolkov",
     "horizontal_push": "horizontalni potisk",
     "horizontal_pull": "horizontalni poteg",
