@@ -122,7 +122,11 @@ def attach_athlete_state(
             self_reported_capabilities=(
                 {"pistol_squat": True}
                 if result.get("pistol_squat_capable") is True
-                else {}
+                else (
+                    {"pistol_squat": True}
+                    if previous and previous["capabilities"]["self_reported"].get("pistol_squat") is True
+                    else {}
+                )
             ),
             movement_tasks=movement_tasks,
             symptoms=symptoms,
