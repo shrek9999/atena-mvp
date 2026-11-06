@@ -163,7 +163,15 @@ def decide_adaptation(sessions, *, exercise_progressions=None,
             question="Je bila regeneracija slabša tudi izven treninga ali predvsem po zadnji vadbi?",
         )
 
-    if latest.get("completed") is not True:
+    if "completed" not in latest or latest.get("completed") is None:
+        return _decision(
+            "collect_context", "none", "completion_status_unknown",
+            "Zapis ne pove, ali je bil trening zaključen. Manjkajoč podatek ni dokaz nedokončane vadbe in ne upravičuje zmanjšanja odmerka.",
+            "Dopolniti zapis izvedbe, preden se spremeni program.",
+            question="Ali si trening zaključil po načrtu ali si ga prekinil?",
+        )
+
+    if latest.get("completed") is False:
         reason = latest.get("completion_reason", "unknown")
         if reason == "time_constraint":
             return _decision(
