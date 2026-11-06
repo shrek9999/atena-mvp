@@ -895,3 +895,50 @@ def test_profile_update_preserves_explicit_capability_without_inventing_false(mo
 
     unknown = attach_athlete_state({**edited, "pistol_squat_capable": False}, "new-profile")
     assert unknown["athlete_state"]["capabilities"]["self_reported"] == {}
+
+def test_profile_adaptation_preserves_unknown_feedback_instead_of_inventing_defaults(monkeypatch):
+    import coach_routes
+
+    monkeypatch.setattr(
+        coach_routes, "assess_next_step",
+        lambda _sessions: {"progression_allowed": False, "decision": "collect_context"},
+    )
+    feedback, guidance = coach_routes._build_profile_adaptation([{
+        "session_date": "2026-11-06",
+        "session": {"exercises": []},
+    }])
+    assert feedback is None
+    assert guidance["decision"] == "collect_context"
+
+
+def test_profile_adaptation_never_rewrites_reported_discomfort_as_pain_free(monkeypatch):
+    import coach_routes
+
+    monkeypatch.setattr(
+        coach_routes, "assess_next_step",
+        lambda _sessions: {"progression_allowed": False, "decision": "pause_and_review"},
+    )
+    feedback, _ = coach_routes._build_profile_adaptation([{
+        "session_date": "2026-11-06",
+        "session": {"discomfort_reported": True, "completed": False},
+    }])
+    assert feedback == {"discomfort": "yes", "completed": False}
+
+
+def test_profile_adaptation_records_pain_free_only_when_explicitly_reported(monkeypatch):
+    import coach_routes
+
+    monkeypatch.setattr(
+        coach_routes, "assess_next_step",
+        lambda _sessions: {"progression_allowed": False, "decision": "collect_context"},
+    )
+    unknown, _ = coach_routes._build_profile_adaptation([{
+        "session_date": "2026-11-06", "session": {"completed": True},
+    }])
+    explicit_no, _ = coach_routes._build_profile_adaptation([{
+        "session_date": "2026-11-06", "session": {
+            "completed": True, "discomfort_reported": False,
+        },
+    }])
+    assert unknown == {"completed": True}
+    assert explicit_no == {"completed": True, "discomfort": "no"}
