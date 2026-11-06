@@ -116,3 +116,28 @@ def test_symptom_denial_cannot_contain_symptom_entries():
             "status": "denied",
             "items": [{"location": "koleno"}],
         })
+
+
+def test_advanced_strength_emphasis_survives_state_validation_round_trip():
+    state = create_athlete_state(
+        profile_id="advanced-1",
+        goal="strength_muscle",
+        experience="advanced",
+        training_emphasis="strength",
+        equipment=["barbell"],
+        sessions_per_week=3,
+    )
+    assert state["goal"]["strength_emphasis"] == "strength"
+    assert validate_athlete_state(state)["goal"]["strength_emphasis"] == "strength"
+
+
+def test_functional_focus_survives_state_validation_round_trip():
+    state = create_athlete_state(
+        profile_id="functional-1",
+        goal="functional_fitness",
+        experience="intermediate",
+        functional_focus="power",
+        equipment=["bodyweight"],
+        sessions_per_week=2,
+    )
+    assert validate_athlete_state(state)["goal"]["functional_focus"] == "power"
