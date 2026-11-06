@@ -246,6 +246,8 @@ def _normalize_slovene_coaching_terms(answer):
         (r"\bzgornji del hrbet\b", "zgornji del hrbta"),
         (r"\bmišične masa\b", "mišične mase"),
         (r"\bprilezi daljši počitek\b", "vzemi si daljši počitek"),
+        (r"\bPrednoiva\b", "Preden"),
+        (r"\bpripravljivosti\b", "pripravljenosti"),
         (r"\bna session\b", "na vadbeni dan"),
     )
     for pattern, replacement in replacements:
