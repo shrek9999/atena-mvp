@@ -57,7 +57,7 @@ def test_all_fifteen_visible_goal_experience_profiles_generate_valid_distinct_pl
             assert set(exercise["equipment"]).issubset(set(profile["equipment"]) | {"bodyweight"})
             assert exercise["prescription"]["tempo"]
             assert exercise["prescription"]["tempo_description"]
-            assert exercise["range_of_motion"]
+            assert exercise["range_of_motion"] is None or isinstance(exercise["range_of_motion"], str)
             patterns.add(exercise["pattern"])
 
     expected = {

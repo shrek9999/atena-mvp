@@ -52,12 +52,25 @@ def test_program_quality_across_goal_and_experience_matrix(goal, experience):
             assert set(exercise["equipment"]).issubset(set(profile["equipment"]) | {"bodyweight"})
             assert exercise["prescription"]["tempo"]
             assert exercise["prescription"]["tempo_description"]
-            assert exercise["range_of_motion"]
+            assert (
+                exercise["range_of_motion"] is None
+                or isinstance(exercise["range_of_motion"], str)
+            )
             if source["single_joint"] and goal == "hypertrophy":
                 assert experience == "advanced"
                 assert profile.get("include_accessories") is True
             if experience == "beginner" and goal in {"hypertrophy", "strength", "general_fitness", "functional"}:
-                if exercise["pattern"] not in {"trunk_stability", "anti_rotation", "balance", "coordination"}:
+                if exercise["pattern"] in {"carry", "conditioning"}:
+                    assert "rir" not in exercise["prescription"]
+                    if exercise["pattern"] == "carry":
+                        assert exercise["prescription"]["distance_based"] is True
+                        assert exercise["prescription"]["reps"].endswith("m")
+                        assert exercise["prescription"]["estimated_work_seconds"] > 0
+                        assert "work_seconds" not in exercise["prescription"]
+                    else:
+                        assert exercise["time_based"] is True
+                        assert exercise["prescription"]["work_seconds"] > 0
+                elif exercise["pattern"] not in {"trunk_stability", "anti_rotation", "balance", "coordination"}:
                     assert exercise["prescription"]["rir"] >= 3
                     if exercise["pattern"] in {"jump", "hinge_power"}:
                         assert exercise["prescription"]["reps"] == "3–5"

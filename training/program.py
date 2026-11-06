@@ -229,7 +229,35 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     is_stability = pattern in {"trunk_stability", "anti_rotation"}
     is_power = pattern in {"jump", "hinge_power"}
     rir_range = None
-    if goal == "mobility" and pattern == "mobility_stretch":
+    functional_conditioning_seconds = None
+    carry_work_seconds = None
+    if pattern == "carry":
+        # Loaded carries are prescribed by distance, never by repetitions.
+        if level == "beginner":
+            sets, reps, rir, rest = 2, "15–20 m", None, 60
+            carry_work_seconds = 20
+        elif level == "intermediate":
+            sets, reps, rir, rest = 2, "20–30 m", None, 75
+            carry_work_seconds = 25
+        else:
+            sets, reps, rir, rest = 3, "25–40 m", None, 90
+            carry_work_seconds = 35
+    elif goal in {"functional", "general_fitness"} and pattern == "conditioning":
+        # Functional conditioning is a short, controlled work interval rather than
+        # a slow resistance exercise with RIR and a lifting tempo.
+        kind = exercise.get("endurance_type")
+        if kind == "aerobic":
+            duration = {"beginner": 30, "intermediate": 40, "advanced": 45}[level]
+            sets, rest = (2 if level == "beginner" else 3), 45
+        elif kind == "anaerobic":
+            duration = {"beginner": 15, "intermediate": 20, "advanced": 25}[level]
+            sets, rest = (2 if level == "beginner" else 3), (60 if level != "advanced" else 75)
+        else:
+            duration = {"beginner": 20, "intermediate": 25, "advanced": 30}[level]
+            sets, rest = (2 if level == "beginner" else 3), 60
+        reps, rir = f"{duration} s", None
+        functional_conditioning_seconds = duration
+    elif goal == "mobility" and pattern == "mobility_stretch":
         sets, reps, rir, rest = (3, "20–30 s", None, 30) if level == "advanced" else (2, "20–30 s", None, 30)
     elif goal == "mobility" and exercise.get("mobility_strength"):
         sets, reps, rir, rest = (3, "6–10", 3, 90) if level == "advanced" else (2, "8–12", 3, 75)
@@ -387,7 +415,11 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
             sets, reps, rir, rest = 3, "8–12", 3, 90
         else:
             sets, reps, rir, rest = 3, "6–10", 2, 120
-    if pattern == "mobility_stretch":
+    if pattern == "carry":
+        tempo, tempo_description, tempo_seconds = "tekoče", "Hodi z enakomernim, nadzorovanim korakom; breme naj ne spremeni drže ali kakovosti hoje.", 0
+    elif functional_conditioning_seconds is not None:
+        tempo, tempo_description, tempo_seconds = "ritmično", "Ohrani enakomeren, nadzorovan ritem; interval končaj, ko se kakovost izvedbe poslabša.", 0
+    elif pattern == "mobility_stretch":
         tempo, tempo_description, tempo_seconds = "zadržanje", "Zadrži blag do zmeren razteg, dihaj sproščeno in ne sili v končni položaj.", 0
     elif goal == "mobility" or pattern == "mobility":
         tempo, tempo_description, tempo_seconds = "kontrolirano", "Aktivno raziskuj razpoložljivo amplitudo brez sunkov in prisiljevanja.", 4
@@ -424,7 +456,18 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         "tempo_description": tempo_description,
         "tempo_seconds_per_rep": tempo_seconds,
     }
-    if exercise.get("id") == "l_sit":
+    if pattern == "carry":
+        prescription.update({
+            "distance_based": True,
+            "estimated_work_seconds": carry_work_seconds,
+            "time_label": "razdalje",
+        })
+    elif functional_conditioning_seconds is not None:
+        prescription.update({
+            "work_seconds": functional_conditioning_seconds,
+            "time_label": "kondicijskega intervala",
+        })
+    elif exercise.get("id") == "l_sit":
         prescription.update({"reps": "8–15 s", "work_seconds": 12, "time_label": "zadržanja"})
     elif exercise.get("time_based") and pattern in {"trunk_stability", "anti_rotation"}:
         prescription.update({"reps": "8–15 s", "work_seconds": 10, "time_label": "zadržanja"})
@@ -459,7 +502,11 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         duration = 30 if pattern == "mobility_stretch" else 20
         target = "Zadrži blag do zmeren razteg brez bolečine, mravljinčenja ali prisiljevanja." if pattern == "mobility_stretch" else "Deluj v kontrolirani neboleči amplitudi; brez siljenja v končni položaj."
         prescription.update({"work_seconds": duration, "time_label": "zadržanja" if pattern == "mobility_stretch" else "aktivnega zadržanja", "effort_target": target})
-    if exercise.get("id") == "l_sit":
+    if pattern == "carry":
+        prescription["effort_target"] = "Ohrani pokončno držo, stabilen prijem in enakomerno hojo; prekini, ko se drža ali korak poslabšata."
+    elif functional_conditioning_seconds is not None:
+        prescription["effort_target"] = "Nadzorovana intenzivnost; končaj interval, ko se poslabša tehnika, ritem ali nadzor trupa."
+    elif exercise.get("id") == "l_sit":
         prescription["effort_target"] = "Zadrži kakovosten položaj z aktivnim potiskom v oporo; končaj, preden izgubiš stabilen položaj ramen ali medenice."
     elif pattern == "balance":
         prescription["effort_target"] = "Ohrani stabilno oporo in nadzor; končaj serijo, ko se kakovost izvedbe poslabša."
@@ -485,6 +532,10 @@ def _estimated_minutes(exercises: list[dict], warm_up_minutes: int = 7) -> int:
         sides = 2 if prescription.get("rep_unit") == "per_side" else 1
         if prescription.get("work_seconds") is not None:
             execution = prescription["work_seconds"] * sets * sides
+        elif prescription.get("estimated_work_seconds") is not None:
+            # Distance-based carries retain a distance prescription; this hidden
+            # estimate is used only for session-time calculation, not as work dose.
+            execution = prescription["estimated_work_seconds"] * sets * sides
         else:
             rep_bounds = [int(value) for value in prescription["reps"].split("–")]
             reps = round(sum(rep_bounds) / len(rep_bounds))
@@ -728,6 +779,22 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                     continue
                 missing_patterns.add(pattern)
                 continue
+            if planning_goal == "functional" and pattern == "hinge" and session_index > 0 and movement_status not in {"needs_support", "uncertain"}:
+                # Rotate a hinge only when another unused, main-role, sufficiently
+                # loadable option is valid for this experience level. Never force
+                # a harder or poorly loaded variant merely for cosmetic variety.
+                level_order = {"beginner": 0, "intermediate": 1, "advanced": 2}
+                target_rank = level_order[p["experience"]]
+                unused_hinges = [
+                    item for item in candidates
+                    if used_counts[item["id"]] == 0
+                    and item.get("training_role") == "main"
+                    and not item.get("single_joint")
+                    and item.get("loading_potential") in {"moderate", "high"}
+                    and level_order.get(item.get("level"), 99) <= target_rank
+                ]
+                if unused_hinges:
+                    candidates = unused_hinges
             # Rank variants by goal, experience and actual available loading.
             available_equipment = set(p["equipment"]) | {"bodyweight"}
             external_load_items = {"dumbbell", "kettlebell", "barbell", "resistance_band", "household_load", "backpack", "cable"}
@@ -918,8 +985,15 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 elif prescription.get("work_seconds") is not None:
                     floor = 300 if pattern == "locomotion" else 10
                     prescription["work_seconds"] = max(floor, int(prescription["work_seconds"] * 0.85))
+                elif prescription.get("distance_based"):
+                    bounds = [int(value) for value in prescription.get("reps", "").replace(" m", "").split("–") if value.strip().isdigit()]
+                    if len(bounds) == 2:
+                        low, high = bounds
+                        reduced_low = max(5, low - 5)
+                        reduced_high = max(reduced_low, high - 5)
+                        prescription["reps"] = f"{reduced_low}–{reduced_high} m"
                 else:
-                    bounds = [int(value) for value in prescription.get("reps", "").split("–") if value.isdigit()]
+                    bounds = [int(value) for value in prescription.get("reps", "").replace(" m", "").split("–") if value.strip().isdigit()]
                     if len(bounds) == 2:
                         low, high = bounds
                         prescription["reps"] = f"{low}–{max(low, high - 2)}"
@@ -945,8 +1019,17 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                         "Ker je bil zadnji trening prelahek, je delovni interval "
                         "podaljšan za majhen korak. Ohrani predpisano ciljno intenzivnost."
                     )
+                elif prescription.get("distance_based"):
+                    bounds = [int(value) for value in prescription.get("reps", "").replace(" m", "").split("–") if value.strip().isdigit()]
+                    if len(bounds) == 2:
+                        low, high = bounds
+                        prescription["reps"] = f"{low + 5}–{high + 5} m"
+                    prescription["adjustment_note"] = (
+                        "Ker je bil zadnji trening prelahek, je razdalja nošenja "
+                        "povečana za 5 m. Ohrani pokončno držo in enakomeren korak."
+                    )
                 else:
-                    bounds = [int(value) for value in prescription.get("reps", "").split("–") if value.isdigit()]
+                    bounds = [int(value) for value in prescription.get("reps", "").replace(" m", "").split("–") if value.strip().isdigit()]
                     if len(bounds) == 2 and bounds[0] < bounds[1]:
                         low, high = bounds
                         prescription["reps"] = f"{low + 1}–{high}"
@@ -1010,10 +1093,9 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 "primary_muscles": candidate["primary_muscles"],
                 "equipment": selected_equipment,
                 "cues": candidate["cues"],
-                "range_of_motion": candidate.get("range_of_motion") or (
-                    "Uporabi največjo nebolečo amplitudo, ki jo dopuščata tvoja gibljivost in nadzor. "
-                    "Ne krajšaj giba po nepotrebnem; amplitudo povečuj postopno, brez izgube položaja."
-                ),
+                # Keep exercise-specific ROM guidance here. General ROM guidance
+                # is shown once in methodology, not repeated under every exercise.
+                "range_of_motion": candidate.get("range_of_motion"),
                 "warnings": candidate["warnings"],
                 "regressions": regressions,
                 "progressions": progressions,
