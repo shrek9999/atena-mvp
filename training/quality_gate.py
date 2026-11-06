@@ -128,7 +128,16 @@ def validate_generated_program(program: object, profile: object) -> list[str]:
                 issues.append(f"{item_prefix}: ni potrjene nobene zahtevane možnosti opreme.")
 
             purposes = set(exercise.get("training_purposes", []))
-            if allowed_purposes and not purposes.intersection(allowed_purposes):
+            purpose_matches_goal = bool(purposes.intersection(allowed_purposes))
+            purpose_matches_targeted_stability = (
+                stability_was_requested
+                and source.get("stability_role") in {"primary", "supporting"}
+                and bool(purposes.intersection({"stability", "trunk_bracing"}))
+                and exercise.get("pattern") in {"trunk_stability", "anti_rotation"}
+            )
+            if allowed_purposes and not (
+                purpose_matches_goal or purpose_matches_targeted_stability
+            ):
                 issues.append(f"{item_prefix}: namen vaje ni usklajen s ciljem.")
             if source.get("single_joint") and experience != "advanced":
                 if not (goal == "mobility" and source.get("training_role") == "mobility"):
