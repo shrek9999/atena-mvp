@@ -942,3 +942,33 @@ def test_profile_adaptation_records_pain_free_only_when_explicitly_reported(monk
     }])
     assert unknown == {"completed": True}
     assert explicit_no == {"completed": True, "discomfort": "no"}
+
+def test_unknown_completion_status_requests_context_instead_of_treating_session_as_incomplete():
+    from training.adaptation import assess_next_step
+    from training.adaptive_decision import decide_adaptation
+
+    history = [{
+        "session_date": "2026-11-06",
+        "session": {"difficulty": "moderate", "recovery": "normal"},
+    }]
+    simple = assess_next_step(history)
+    detailed = decide_adaptation(history)
+    assert simple["decision"] == "collect_context"
+    assert simple["reason_codes"] == ["completion_status_unknown"]
+    assert detailed["decision"] == "collect_context"
+    assert detailed["reason_codes"] == ["completion_status_unknown"]
+    assert detailed["automatic_program_changes"] is False
+
+
+def test_explicitly_incomplete_session_still_triggers_reason_review():
+    from training.adaptation import assess_next_step
+    from training.adaptive_decision import decide_adaptation
+
+    history = [{
+        "session_date": "2026-11-06",
+        "session": {"completed": False, "completion_reason": "time_constraint"},
+    }]
+    simple = assess_next_step(history)
+    detailed = decide_adaptation(history)
+    assert simple["decision"] == "review_volume_reduction"
+    assert detailed["decision"] == "restructure_session"
