@@ -313,3 +313,36 @@ def test_functional_bodyweight_profile_does_not_assume_household_furniture():
     ids = {item["exercise_id"] for session in result["sessions"] for item in session["exercises"]}
     assert "chair_sit_to_stand" not in ids
     assert "inverted_row_table" not in ids
+
+
+def test_functional_gym_program_uses_a_scalable_loaded_squat():
+    from training.program import generate_program
+
+    plan = generate_program({
+        "goal": "functional", "experience": "intermediate",
+        "sessions_per_week": 2, "session_minutes": 45,
+        "equipment": ["bodyweight", "dumbbell", "kettlebell", "bench", "barbell", "rack", "cable", "pull_up_bar"],
+    })
+    squat_ids = {
+        item["exercise_id"]
+        for session in plan["sessions"] for item in session["exercises"]
+        if item["pattern"] == "squat"
+    }
+    assert squat_ids.intersection({"squat_goblet", "dumbbell_squat_front_rack"})
+
+
+def test_functional_bodyweight_program_keeps_a_foundational_squat():
+    from training.program import generate_program
+
+    plan = generate_program({
+        "goal": "functional", "experience": "intermediate",
+        "sessions_per_week": 2, "session_minutes": 45,
+        "equipment": ["bodyweight"],
+    })
+    squat_ids = {
+        item["exercise_id"]
+        for session in plan["sessions"] for item in session["exercises"]
+        if item["pattern"] == "squat"
+    }
+    assert "air_squat" in squat_ids
+    assert "cossack_squat" not in squat_ids
