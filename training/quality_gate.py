@@ -171,8 +171,12 @@ def validate_generated_program(program: object, profile: object) -> list[str]:
                 not isinstance(rir, int) or isinstance(rir, bool) or not 0 <= rir <= 10
             ):
                 issues.append(f"{item_prefix}: RIR ni veljaven.")
-            if not isinstance(exercise.get("range_of_motion"), str) or not exercise["range_of_motion"].strip():
-                issues.append(f"{item_prefix}: manjka navodilo za amplitudo.")
+            # Exercise-specific ROM guidance is optional; generic repeated filler is not required.
+            rom_guidance = exercise.get("range_of_motion")
+            if rom_guidance is not None and (
+                not isinstance(rom_guidance, str) or not rom_guidance.strip()
+            ):
+                issues.append(f"{item_prefix}: navodilo za amplitudo ni veljavno.")
             if not isinstance(exercise.get("cues"), list) or not exercise["cues"]:
                 issues.append(f"{item_prefix}: manjkajo izvedbeni napotki.")
             coaching_logic = exercise.get("coaching_logic")
