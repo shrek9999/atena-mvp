@@ -1488,6 +1488,8 @@ def manage_coach_profile(profile_id):
             return jsonify({"profile": record}), 200
         except ProfileNotFound:
             return _profile_auth_error()
+        except ProfileStateMigrationError:
+            return jsonify({"error": "Shranjeni profil potrebuje preverjanje; podatki niso bili spremenjeni."}), 409
         except StorageUnavailable as exc:
             return _storage_error(exc)
     if request.method == "PUT":
@@ -1974,6 +1976,8 @@ def export_coach_profile(profile_id):
         return response, 200
     except ProfileNotFound:
         return _profile_auth_error()
+    except ProfileStateMigrationError:
+        return jsonify({"error": "Shranjeni profil potrebuje preverjanje; izvoz ni bil spremenjen."}), 409
     except StorageUnavailable as exc:
         return _storage_error(exc)
 
@@ -2077,6 +2081,8 @@ def coach_profile_program(profile_id):
         return jsonify({"blocked": True, "message": str(exc)}), 409
     except ProgramValidationError as exc:
         return jsonify({"error": str(exc)}), 400
+    except ProfileStateMigrationError:
+        return jsonify({"error": "Shranjeni profil potrebuje preverjanje; programa nisem ustvaril."}), 409
     except ProfileNotFound:
         return _profile_auth_error()
     except StorageUnavailable as exc:
