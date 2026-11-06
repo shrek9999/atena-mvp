@@ -2016,30 +2016,31 @@ def _build_profile_adaptation(sessions):
     if not session_data:
         return None, guidance
     last = session_data[0]
+    # Preserve only facts that were actually recorded. Missing feedback is
+    # unknown, not evidence of an easy, completed, pain-free session.
+    feedback = {}
     if last.get("discomfort_reported") is True:
-        # The profile-program route requires a fresh explicit confirmation that
-        # there is no current pain or restriction. Keep progression on hold,
-        # but do not permanently block a recovered user because of a past entry.
-        feedback = {
-            "difficulty": "right",
-            "completed": bool(last.get("completed", True)),
-            "discomfort": "no",
-            "recovery": last.get("recovery", "normal"),
-        }
-        return feedback, guidance
-    difficulty = {"easy": "easy", "moderate": "right", "hard": "hard"}.get(
-        last.get("difficulty"), "right"
-    )
-    if difficulty == "easy" and not guidance.get("progression_allowed", False):
-        difficulty = "right"
-    feedback = {
-        "difficulty": difficulty,
-        "completed": bool(last.get("completed", True)),
-        "discomfort": "no",
-        "recovery": last.get("recovery", "normal"),
-        "movement_control": "none",
-    }
-    return feedback, guidance
+        # A reported discomfort must remain an affirmative signal. It holds
+        # progression until a fresh safety review; never rewrite it as "no".
+        feedback["discomfort"] = "yes"
+    elif last.get("discomfort_reported") is False:
+        feedback["discomfort"] = "no"
+
+    if last.get("difficulty") in {"easy", "moderate", "hard"}:
+        difficulty = {"easy": "easy", "moderate": "right", "hard": "hard"}[
+            last["difficulty"]
+        ]
+        if difficulty == "easy" and not guidance.get("progression_allowed", False):
+            difficulty = "right"
+        feedback["difficulty"] = difficulty
+
+    if isinstance(last.get("completed"), bool):
+        feedback["completed"] = last["completed"]
+    if last.get("recovery") in {"good", "normal", "poor"}:
+        feedback["recovery"] = last["recovery"]
+    if last.get("movement_control") in {"spinal_flexion", "bracing", "both"}:
+        feedback["movement_control"] = last["movement_control"]
+    return (feedback or None), guidance
 
 
 @coach_bp.route("/coach/profile/<profile_id>/program", methods=["POST", "OPTIONS"])
