@@ -51,7 +51,7 @@ def test_realistic_onboarding_profile_generates_safe_catalogue_backed_plan(scena
                 assert profile.get("include_accessories") is True
 
 
-def test_loaded_hypertrophy_profile_exposes_straight_back_hinge_label():
+def test_loaded_hypertrophy_profile_exposes_neutral_spine_hinge_label():
     profile = {
         "goal": "hypertrophy",
         "experience": "intermediate",
@@ -67,4 +67,4 @@ def test_loaded_hypertrophy_profile_exposes_straight_back_hinge_label():
         if exercise["pattern"] == "hinge"
     ]
     assert hinges
-    assert all(exercise["pattern_label"] == "predklon z ravnim hrbtom" for exercise in hinges)
+    assert all(exercise["pattern_label"] == "predklon z nevtralnim položajem hrbtenice" for exercise in hinges)
