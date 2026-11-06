@@ -86,6 +86,7 @@ def create_athlete_state(
     sessions_per_week: int,
     session_duration_minutes: int | None = None,
     available_days: list[str] | None = None,
+    self_reported_capabilities: dict | None = None,
     movement_tasks: dict | None = None,
     symptoms: dict | None = None,
     excluded_patterns: list[str] | None = None,
@@ -119,6 +120,12 @@ def create_athlete_state(
     available_days = _validate_string_list(available_days or [], "available_days")
     if not set(available_days).issubset(AVAILABLE_DAYS):
         raise AthleteStateError("Razpoložljivi dnevi vsebujejo neveljavno vrednost.")
+    if self_reported_capabilities is None:
+        self_reported_capabilities = {}
+    if not isinstance(self_reported_capabilities, dict) or set(self_reported_capabilities) - {"pistol_squat"}:
+        raise AthleteStateError("Samoporočane gibalne sposobnosti vsebujejo neveljavna polja.")
+    if any(not isinstance(value, bool) for value in self_reported_capabilities.values()):
+        raise AthleteStateError("Samoporočane gibalne sposobnosti morajo biti true ali false.")
     excluded_patterns = _validate_string_list(excluded_patterns or [], "excluded_patterns")
     excluded_exercise_ids = _validate_string_list(
         excluded_exercise_ids or [], "excluded_exercise_ids"
@@ -204,6 +211,7 @@ def create_athlete_state(
             "session_duration_minutes": session_duration_minutes,
             "available_days": available_days,
         },
+        "capabilities": {"self_reported": dict(self_reported_capabilities)},
         "movement_assessment": {
             "version": 1,
             "tasks": normalized_tasks,
@@ -232,7 +240,7 @@ def validate_athlete_state(state: object) -> dict:
         raise AthleteStateError("Nepodprta različica podatkovnega modela športnika.")
     required = {
         "profile_id", "recorded_at", "goal", "experience", "equipment",
-        "availability", "movement_assessment", "symptoms", "constraints", "provenance",
+        "availability", "capabilities", "movement_assessment", "symptoms", "constraints", "provenance",
     }
     missing = required - set(state)
     if missing:
@@ -240,6 +248,12 @@ def validate_athlete_state(state: object) -> dict:
     availability = state["availability"]
     if not isinstance(availability, dict):
         raise AthleteStateError("availability mora biti objekt.")
+    capabilities = state["capabilities"]
+    if (
+        not isinstance(capabilities, dict)
+        or not isinstance(capabilities.get("self_reported"), dict)
+    ):
+        raise AthleteStateError("capabilities.self_reported mora biti objekt.")
     movement = state["movement_assessment"]
     if not isinstance(movement, dict) or not isinstance(movement.get("tasks"), dict):
         raise AthleteStateError("movement_assessment.tasks mora biti objekt.")
@@ -270,6 +284,7 @@ def validate_athlete_state(state: object) -> dict:
         sessions_per_week=availability.get("sessions_per_week"),
         session_duration_minutes=availability.get("session_duration_minutes"),
         available_days=availability.get("available_days", []),
+        self_reported_capabilities=capabilities["self_reported"],
         movement_tasks=movement["tasks"],
         symptoms=symptoms,
         excluded_patterns=constraints.get("excluded_patterns", []),
