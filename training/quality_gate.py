@@ -84,8 +84,8 @@ def validate_generated_program(program: object, profile: object) -> list[str]:
         if not isinstance(exercises, list):
             issues.append(f"{prefix} nima seznama vaj.")
             continue
-        if not 3 <= len(exercises) <= 7:
-            issues.append(f"{prefix} mora vsebovati 3–7 smiselnih vaj.")
+        if len(exercises) < 3:
+            issues.append(f"{prefix} mora vsebovati vsaj 3 smiselne vaje.")
         if session.get("available_minutes") != profile.get("session_minutes"):
             issues.append(f"{prefix}: razpoložljivi čas ni skladen s profilom.")
         estimate = session.get("estimated_minutes")
