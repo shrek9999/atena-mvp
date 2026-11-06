@@ -1424,6 +1424,13 @@ def _profile_record_with_state(record, token, *, persist_migration=False):
     if not isinstance(profile_id, str) or not profile_id:
         raise ProfileStateMigrationError("Shranjeni profil nima veljavnega identifikatorja.")
     if profile_needs_state_migration(profile):
+        required_fields = {
+            "goal", "experience", "equipment", "sessions_per_week", "session_minutes"
+        }
+        if not required_fields.issubset(profile):
+            # Some historical/test records are intentionally partial. Do not
+            # invent missing profile facts merely to satisfy the new schema.
+            return record
         upgraded = attach_athlete_state(profile, profile_id)
         if persist_migration and storage_enabled():
             return store_update_profile(profile_id, token, upgraded)
@@ -1926,6 +1933,8 @@ def coach_training_progress(profile_id):
     token = _profile_token()
     try:
         profile = store_get_profile(profile_id, token)
+        profile = _profile_record_with_state(profile, token, persist_migration=True)
+        legacy_profile = legacy_profile_view(profile["profile"])
         sessions = store_list_sessions(profile_id, token, limit=50)
         exercise_progressions = recommend_exercise_progression(sessions)
         longitudinal_progression = summarize_longitudinal_progression(sessions)
