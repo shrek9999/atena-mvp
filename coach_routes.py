@@ -499,8 +499,8 @@ def _coaching_guardrail_reply(messages):
 
     # Preserve empathetic handling of self-blame while keeping the safety check open.
     assistant_asked_safety = any(re.search(
-        r"(?:ali\\s+(?:imaš|trenutno|morda)|imaš\\s+(?:trenutno|kakšne|kakršne koli)|občutiš|opaziš).{0,100}"
-        r"(?:bolečin\\w*|poškodb\\w*|omejitv\\w*|zdravstven.{0,30}težav)",
+        r"(?:ali\s+(?:imaš|trenutno|morda)|imaš\s+(?:trenutno|kakšne|kakršne koli)|občutiš|opaziš).{0,100}"
+        r"(?:bolečin\w*|poškodb\w*|omejitv\w*|zdravstven.{0,30}težav)",
         item,
         re.IGNORECASE,
     ) for item in assistant_texts)
