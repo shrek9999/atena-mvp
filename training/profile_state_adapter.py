@@ -116,6 +116,9 @@ def attach_athlete_state(
             sessions_per_week=result.get("sessions_per_week"),
             session_duration_minutes=result.get("session_minutes"),
             available_days=result.get("available_days", []),
+            self_reported_capabilities={
+                "pistol_squat": result.get("pistol_squat_capable", False)
+            },
             movement_tasks=movement_tasks,
             symptoms=symptoms,
             excluded_patterns=excluded_patterns,
