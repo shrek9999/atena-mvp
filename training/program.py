@@ -779,7 +779,7 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                     continue
                 missing_patterns.add(pattern)
                 continue
-            if planning_goal == "functional" and pattern == "hinge" and session_index > 0:
+            if planning_goal == "functional" and pattern == "hinge" and session_index > 0 and movement_status not in {"needs_support", "uncertain"}:
                 # Rotate a hinge only when another unused, main-role, sufficiently
                 # loadable option is valid for this experience level. Never force
                 # a harder or poorly loaded variant merely for cosmetic variety.
