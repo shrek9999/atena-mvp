@@ -6,7 +6,8 @@ def test_poor_recovery_triggers_next_program_volume_reduction():
         "session_date": "2026-11-01",
         "session": {"completed": True, "difficulty": "moderate", "recovery": "poor"},
     }])
-    assert result["decision"] == "review_volume_reduction"
+    assert result["decision"] == "recovery_review"
+    assert result["volume_change"] == "maintain"
     assert result["progression_allowed"] is False
     assert result["volume_change"] == "reduce_next_program_sets"
     assert "poor_recovery" in result["reason_codes"]
