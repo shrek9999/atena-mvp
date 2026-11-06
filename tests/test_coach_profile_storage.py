@@ -826,3 +826,43 @@ def test_program_generator_receives_legacy_profile_view_not_canonical_envelope(m
     assert response.status_code == 200
     assert "athlete_state" not in captured["profile"]
     assert captured["profile"]["goal"] == "hypertrophy"
+
+
+def test_withdrawing_health_consent_erases_canonical_symptom_and_movement_data(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+
+    from coach_store import update_profile as store_update_profile
+    from training.profile_state_adapter import attach_athlete_state
+
+    profile = attach_athlete_state(created["profile"]["profile"], profile_id)
+    profile["athlete_state"]["symptoms"] = {
+        "status": "present_stable",
+        "items": [{"location": "rama", "side": "desno", "provoking_task": "potisk nad glavo"}],
+    }
+    profile["athlete_state"]["movement_assessment"]["tasks"]["overhead_press"] = {
+        "status": "needs_support",
+        "source": "observed",
+        "recorded_at": "2026-11-06T09:00:00+00:00",
+        "note": "opazovana omejitev nadzora",
+    }
+    profile["athlete_state"]["constraints"]["excluded_patterns"] = ["overhead_push"]
+    store_update_profile(profile_id, token, profile)
+
+    response = client.post(
+        f"/coach/profile/{profile_id}/consent",
+        headers={"X-Profile-Token": token},
+        json={"health_data_consent": False},
+    )
+    assert response.status_code == 200
+    state = response.get_json()["profile"]["profile"]["athlete_state"]
+    assert state["symptoms"] == {"status": "not_asked", "items": []}
+    assert state["movement_assessment"]["tasks"]["overhead_press"] == {
+        "status": "not_assessed",
+        "source": None,
+        "recorded_at": None,
+        "note": None,
+    }
+    assert state["constraints"]["excluded_patterns"] == []
