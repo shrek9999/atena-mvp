@@ -56,7 +56,7 @@ The default movement screen should use five recognisable tasks, explained in pla
 
 1. **Počep**
 2. **Izpadni korak**
-3. **Predklon z nevtralnim položajem hrbtenice**
+3. **Predklon z ravnim hrbtom**
 4. **Skleca**
 5. **Potisk nad glavo** (initially assess the controlled overhead position/reach; do not turn this automatically into a maximal strength test)
 
@@ -80,13 +80,13 @@ A separate pulling test is **not required in the basic movement screen**. The pu
 - differences between sides without assuming that asymmetry is pathology;
 - symptoms and confidence.
 
-**Predklon z nevtralnim položajem hrbtenice**
+**Predklon z ravnim hrbtom**
 - ability to perform a controlled forward bend while maintaining the person's natural spinal curves;
 - hip and trunk coordination;
 - whether the person can understand and reproduce the task;
 - symptoms, range and confidence.
 
-A light dowel, broomstick or similar implement can provide tactile and visual feedback at the head, thoracic region and sacrum. The cue is to maintain a comfortable **neutral spinal position**, not to force the back into a geometrically straight line. Avoid describing the task simply as “straight back”.
+A light dowel, broomstick or similar implement can provide tactile and visual feedback at the head, thoracic region and sacrum. The cue is to perform a controlled forward bend with a straight back while preserving the person's natural spinal curves; do not force the spine into a rigid or exaggerated position. Avoid describing the task simply as “straight back”.
 
 **Skleca**
 - select an appropriate incline or floor variation;
