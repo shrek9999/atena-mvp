@@ -169,3 +169,29 @@ def test_invalid_available_training_day_is_rejected():
             sessions_per_week=2,
             available_days=["holiday"],
         )
+
+
+def test_self_reported_capabilities_are_separate_from_observed_assessment():
+    state = create_athlete_state(
+        profile_id="capability-1",
+        goal="strength_muscle",
+        experience="intermediate",
+        equipment=["bodyweight"],
+        sessions_per_week=2,
+        self_reported_capabilities={"pistol_squat": True},
+    )
+    assert state["capabilities"]["self_reported"]["pistol_squat"] is True
+    assert state["movement_assessment"]["tasks"]["squat"]["status"] == "not_assessed"
+    assert validate_athlete_state(state)["capabilities"]["self_reported"]["pistol_squat"] is True
+
+
+def test_unknown_self_reported_capability_is_rejected():
+    with pytest.raises(AthleteStateError):
+        create_athlete_state(
+            profile_id="capability-2",
+            goal="strength_muscle",
+            experience="intermediate",
+            equipment=["bodyweight"],
+            sessions_per_week=2,
+            self_reported_capabilities={"observed_squat_quality": True},
+        )
