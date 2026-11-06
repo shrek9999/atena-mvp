@@ -225,11 +225,15 @@ def recommend_exercise_progression(sessions):
                     item["exercise_id"] for item in exercises
                     if isinstance(item, dict) and isinstance(item.get("exercise_id"), str)
                 )
-        decision = "hold" if ordered[0][1].get("completed") is False else "collect_data"
+        incomplete_for_difficulty = (
+            ordered[0][1].get("completed") is False
+            and ordered[0][1].get("completion_reason") == "high_difficulty"
+        )
+        decision = "hold" if incomplete_for_difficulty else "collect_data"
         reason = (
-            "Zadnji trening ni bil zaključen. Pred progresijo je treba razjasniti razlog in pregledati celoten odziv."
-            if decision == "hold"
-            else "Ni potrjeno, ali je bil zadnji trening zaključen. Starejši rezultati zato še ne upravičujejo progresije."
+            "Zadnji trening je bil prekinjen zaradi previsoke zahtevnosti. Pred progresijo je treba pregledati odmerek in problematično vajo."
+            if incomplete_for_difficulty
+            else "Zaključek zadnjega treninga ni potrjen oziroma razlog prekinitve ni znan. Starejši rezultati zato še ne upravičujejo progresije."
         )
         return [{
             "exercise_id": exercise_id,
