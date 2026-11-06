@@ -214,6 +214,30 @@ def _classify(history):
 def recommend_exercise_progression(sessions):
     """Return one independently reasoned recommendation per exercise ID."""
     ordered = _ordered_sessions(sessions)
+    # Do not progress from older exposures while the most recent session is
+    # incomplete or its completion status is unknown. First resolve that record.
+    if ordered and ordered[0][1].get("completed") is not True:
+        recent_ids = set()
+        for _, session in ordered[:3]:
+            exercises = session.get("exercises", [])
+            if isinstance(exercises, list):
+                recent_ids.update(
+                    item["exercise_id"] for item in exercises
+                    if isinstance(item, dict) and isinstance(item.get("exercise_id"), str)
+                )
+        decision = "hold" if ordered[0][1].get("completed") is False else "collect_data"
+        reason = (
+            "Zadnji trening ni bil zaključen. Pred progresijo je treba razjasniti razlog in pregledati celoten odziv."
+            if decision == "hold"
+            else "Ni potrjeno, ali je bil zadnji trening zaključen. Starejši rezultati zato še ne upravičujejo progresije."
+        )
+        return [{
+            "exercise_id": exercise_id,
+            "decision": decision,
+            "exposures_recorded": 0,
+            "reason": reason,
+        } for exercise_id in sorted(recent_ids)]
+
     # A reported symptom is a global safety hold, not a signal to work around it.
     if any(session.get("discomfort_reported") is True for _, session in ordered[:3]):
         affected_ids = set()
