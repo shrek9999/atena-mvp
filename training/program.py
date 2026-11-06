@@ -782,6 +782,23 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                         return -30
                     if item["id"] in {"bear_crawl", "running_easy"}:
                         return 20
+                if planning_goal == "functional" and pattern == "squat":
+                    loaded_squat_available = bool({"dumbbell", "kettlebell", "barbell"} & available_equipment)
+                    if p["experience"] == "advanced" and {"barbell", "rack"}.issubset(available_equipment):
+                        if item["id"] == "back_squat":
+                            return -30
+                        if item["id"] == "front_squat":
+                            return -20
+                    elif loaded_squat_available:
+                        if item["id"] == "squat_goblet":
+                            return -30 if session_index % 2 == 0 else -20
+                        if item["id"] == "dumbbell_squat_front_rack":
+                            return -30 if session_index % 2 == 1 else -20
+                    else:
+                        if item["id"] == "air_squat":
+                            return -20
+                    if item["id"] == "cossack_squat":
+                        return 15
                 if movement_status == "needs_support":
                     preferred = SUPPORTED_VARIANTS.get(pattern, ())
                     if item["id"] in preferred:
