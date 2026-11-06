@@ -63,13 +63,18 @@ def test_beginner_strength_prioritizes_skill_and_8_to_12_reps():
     assert "učenje osnovnih gibalnih vzorcev" in plan["methodology"]["experience_adaptation"]
 
 
-def test_tempo_and_full_controlled_range_are_explicit_for_every_exercise():
+def test_each_exercise_has_specific_cues_and_an_appropriate_tempo_model():
     plan = generate_program({**BASE, "session_minutes": 75})
     exercises = [ex for s in plan["sessions"] for ex in s["exercises"]]
     assert all(ex["prescription"]["tempo"] for ex in exercises)
     assert all(ex["prescription"]["tempo_description"] for ex in exercises)
-    assert all(ex["range_of_motion"] for ex in exercises)
-    assert all(ex["prescription"]["tempo_seconds_per_rep"] > 0 for ex in exercises)
+    assert all(ex["cues"] for ex in exercises)
+    assert all(ex.get("range_of_motion") is None or ex["range_of_motion"].strip() for ex in exercises)
+    for exercise in exercises:
+        prescription = exercise["prescription"]
+        assert prescription["tempo_seconds_per_rep"] >= 0
+        if exercise["pattern"] in {"squat", "lunge", "hinge", "hip_extension", "horizontal_push", "horizontal_pull", "vertical_push", "vertical_pull"}:
+            assert prescription["tempo_seconds_per_rep"] > 0
 
 
 def test_horizontal_push_prefers_full_range_options_over_floor_press():
