@@ -77,6 +77,8 @@ def create_athlete_state(
     profile_id: str,
     goal: str,
     experience: str,
+    training_emphasis: str | None = None,
+    functional_focus: str | None = None,
     equipment: list[str],
     sessions_per_week: int,
     session_duration_minutes: int | None = None,
@@ -105,7 +107,10 @@ def create_athlete_state(
     ):
         raise AthleteStateError("Trajanje vadbe mora biti med 10 in 240 minutami.")
 
-    canonical_goal = canonicalize_goal(goal, experience=experience)
+    canonical_goal = canonicalize_goal(
+        goal, experience=experience, training_emphasis=training_emphasis,
+        functional_focus=functional_focus,
+    )
     equipment = _validate_string_list(equipment, "equipment")
     excluded_patterns = _validate_string_list(excluded_patterns or [], "excluded_patterns")
     excluded_exercise_ids = _validate_string_list(
@@ -235,17 +240,31 @@ def validate_athlete_state(state: object) -> dict:
         raise AthleteStateError("symptoms mora biti objekt.")
     # Recreate through the single constructor so persisted and new data share
     # exactly the same validation rules.
+    goal_data = state["goal"]
+    if isinstance(goal_data, dict):
+        goal_name = goal_data.get("canonical_goal")
+        training_emphasis = goal_data.get("strength_emphasis")
+        functional_focus = goal_data.get("functional_focus")
+    else:
+        goal_name = goal_data
+        training_emphasis = None
+        functional_focus = None
+    constraints = state["constraints"]
+    if not isinstance(constraints, dict):
+        raise AthleteStateError("constraints mora biti objekt.")
     rebuilt = create_athlete_state(
         profile_id=state["profile_id"],
-        goal=state["goal"].get("canonical_goal") if isinstance(state["goal"], dict) else state["goal"],
+        goal=goal_name,
         experience=state["experience"],
+        training_emphasis=training_emphasis,
+        functional_focus=functional_focus,
         equipment=state["equipment"],
         sessions_per_week=availability.get("sessions_per_week"),
         session_duration_minutes=availability.get("session_duration_minutes"),
         movement_tasks=movement["tasks"],
         symptoms=symptoms,
-        excluded_patterns=state["constraints"].get("excluded_patterns", []),
-        excluded_exercise_ids=state["constraints"].get("excluded_exercise_ids", []),
+        excluded_patterns=constraints.get("excluded_patterns", []),
+        excluded_exercise_ids=constraints.get("excluded_exercise_ids", []),
         provenance=state["provenance"],
         recorded_at=state["recorded_at"],
     )
