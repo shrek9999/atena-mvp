@@ -536,10 +536,12 @@ def _coaching_guardrail_reply(messages):
             "oteklini, zaklepanju, popuščanju ali nezmožnosti obremenitve poišči strokovno oceno."
         )
 
-    # Do not let a language model convert an unanswered safety question into clearance.
+    # An unanswered safety question is not clearance, but it must not freeze
+    # the conversation. Non-prescriptive context and general questions may continue;
+    # individualized prescriptions remain blocked by the explicit gate below.
     assistant_asked_safety = any(re.search(
-        r"(?:ali\s+(?:imaš|trenutno|morda)|imaš\s+(?:trenutno|kakšne|kakršne koli)|občutiš|opaziš).{0,100}"
-        r"(?:bolečin\w*|poškodb\w*|omejitv\w*|zdravstven.{0,30}težav)",
+        r"(?:ali\\s+(?:imaš|trenutno|morda)|imaš\\s+(?:trenutno|kakšne|kakršne koli)|občutiš|opaziš).{0,100}"
+        r"(?:bolečin\\w*|poškodb\\w*|omejitv\\w*|zdravstven.{0,30}težav)",
         item,
         re.IGNORECASE,
     ) for item in assistant_texts)
@@ -549,27 +551,11 @@ def _coaching_guardrail_reply(messages):
         latest,
         re.IGNORECASE,
     ))
-    if assistant_asked_safety and not _has_explicit_safety_clearance(history) and not latest_reports_health_issue:
-        if re.search(r"(vse sem pokvaril|vse pokvaril|pokvaril sem vse)", lowered):
-            return (
-                "Ničesar nisi pokvaril. En izpuščen trening ne izbriše napredka; pomembno je, "
-                "da se vrneš v ritem brez lovljenja zamujenega obsega. Varnostnega vprašanja "
-                "pa še nisi odgovoril, zato ne bom sklepal, da omejitev ni: ali imaš trenutno "
-                "kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
-            )
-        if re.search(r"(brez energije|utrujen|izčrpan)", lowered):
-            return (
-                "Razumem; utrujenost po službi je pomemben podatek in trening lahko prilagodiva, "
-                "namesto da siliš skozi izčrpanost. Pred individualnim načrtom mi manjka še "
-                "varnostni odgovor: ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne "
-                "omejitve ali zdravstvene zadržke?"
-            )
-        return (
-            "Zabeležil sem tvoj zadnji podatek in ga bom upošteval. Varnostnega vprašanja "
-            "pa še nisi odgovoril, zato ne bom sklepal, da omejitev ni. Ali imaš trenutno "
-            "kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke? "
-            "Če jih nimaš, to samo potrdi."
-        )
+    safety_clearance_pending = (
+        assistant_asked_safety
+        and not _has_explicit_safety_clearance(history)
+        and not latest_reports_health_issue
+    )
 
     balance_clarified = (
         bool(re.search(
@@ -776,7 +762,7 @@ Before prescribing an individualized workout or training plan, establish the min
 3) available equipment and realistic time;
 4) major health conditions, recent injuries, medical restrictions, and any discomfort that changes a movement;
 5) weekly availability and, only when relevant, age or other factors affecting exercise selection. Age alone is never an eligibility limit; adapt training to capacity, experience and recovery, not chronological age alone.
-Ask one concise, high-value question at a time. SAFETY-FIRST ORDER: before individualized programming, confirm whether any major health condition, recent injury, medical restriction or concerning symptom requires professional assessment. Do not demand that a user be completely pain-free. If the user has only mild, familiar discomfort, clarify the affected movement and use the dose/tolerance process below; do not automatically exclude all training. Do not ask about equipment, time or training frequency before this initial safety check. If the user confirms no major restriction, continue with the main goal, experience, equipment, realistic training time and weekly availability, one question at a time. Do not overwhelm the user with a long intake form. If the request is simple and low risk, you may give a clearly labelled general example while explaining that it is not yet individualized, and ask the most important follow-up question. If safety-relevant information is missing, ask before recommending demanding exercise.
+Ask one concise, high-value question at a time. SAFETY-FIRST ORDER: before individualized programming, confirm whether any major health condition, recent injury, medical restriction or concerning symptom requires professional assessment. Do not demand that a user be completely pain-free. If the user has only mild, familiar discomfort, clarify the affected movement and use the dose/tolerance process below; do not automatically exclude all training. Ask about safety early, before any individualized exercise prescription. If the user responds with another relevant fact (goal, experience, equipment, time or availability), acknowledge and retain it rather than repeating the same safety question mechanically. You may continue gathering non-prescriptive context and answer general educational questions while safety is pending, but do not prescribe individualized exercises, sets, loads or a training plan until the relevant safety information is clear. If the user reports pain, injury, a medical restriction or concerning symptoms, pause ordinary programming and clarify the issue appropriately. Do not overwhelm the user with a long intake form. If the request is simple and low risk, you may give a clearly labelled general example while explaining that it is not yet individualized, and ask the most important follow-up question. If safety-relevant information is missing, ask before recommending demanding exercise.
 
 CONVERSATIONAL EXPERIENCE AND GOAL CLARIFICATION
 - The conversation is the primary interface. Do not make the person feel they are completing an intake form. Build the picture gradually across turns.
