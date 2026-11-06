@@ -141,3 +141,31 @@ def test_functional_focus_survives_state_validation_round_trip():
         sessions_per_week=2,
     )
     assert validate_athlete_state(state)["goal"]["functional_focus"] == "power"
+
+
+
+def test_available_training_days_are_part_of_canonical_availability():
+    state = create_athlete_state(
+        profile_id="days-1",
+        goal="strength_muscle",
+        experience="intermediate",
+        equipment=["bodyweight"],
+        sessions_per_week=2,
+        available_days=["monday", "thursday"],
+    )
+    assert state["availability"]["available_days"] == ["monday", "thursday"]
+    assert validate_athlete_state(state)["availability"]["available_days"] == [
+        "monday", "thursday"
+    ]
+
+
+def test_invalid_available_training_day_is_rejected():
+    with pytest.raises(AthleteStateError):
+        create_athlete_state(
+            profile_id="days-2",
+            goal="strength_muscle",
+            experience="intermediate",
+            equipment=["bodyweight"],
+            sessions_per_week=2,
+            available_days=["holiday"],
+        )
