@@ -2126,7 +2126,7 @@
   },
   {
     "id": "bodyweight_hip_hinge",
-    "name": "Predklon z ravnim hrbtom (lastna teža)",
+    "name": "Predklon z nevtralnim položajem hrbtenice (lastna teža)",
     "name_en": "Bodyweight hip hinge",
     "pattern": "hinge",
     "joint_type": "multi_joint",
@@ -8099,7 +8099,7 @@
   },
   {
     "id": "wall_hip_hinge",
-    "name": "Predklon z ravnim hrbtom ob steni",
+    "name": "Predklon z nevtralnim položajem hrbtenice ob steni",
     "name_en": "Wall-supported hip hinge",
     "pattern": "hinge",
     "joint_type": "multi_joint",
