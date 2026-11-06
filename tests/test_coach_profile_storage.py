@@ -869,3 +869,29 @@ def test_withdrawing_health_consent_erases_canonical_symptom_and_movement_data(m
         "note": None,
     }
     assert state["constraints"]["excluded_patterns"] == []
+
+
+def test_profile_update_preserves_explicit_capability_without_inventing_false(monkeypatch, tmp_path):
+    from training.profile_state_adapter import attach_athlete_state
+
+    created = _create(_client(monkeypatch, tmp_path))
+    profile_id = created["profile"]["profile_id"]
+    original = created["profile"]["profile"]
+    original["pistol_squat_capable"] = True
+    stateful = attach_athlete_state(original, profile_id)
+    assert stateful["athlete_state"]["capabilities"]["self_reported"]["pistol_squat"] is True
+
+    edited = {
+        "goal": original["goal"],
+        "experience": original["experience"],
+        "equipment": original["equipment"],
+        "sessions_per_week": original["sessions_per_week"],
+        "session_minutes": original["session_minutes"],
+        "available_days": original["available_days"],
+        "pistol_squat_capable": False,
+    }
+    updated = attach_athlete_state(edited, profile_id, previous_profile=stateful)
+    assert updated["athlete_state"]["capabilities"]["self_reported"]["pistol_squat"] is True
+
+    unknown = attach_athlete_state({**edited, "pistol_squat_capable": False}, "new-profile")
+    assert unknown["athlete_state"]["capabilities"]["self_reported"] == {}
