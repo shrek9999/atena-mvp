@@ -116,9 +116,14 @@ def attach_athlete_state(
             sessions_per_week=result.get("sessions_per_week"),
             session_duration_minutes=result.get("session_minutes"),
             available_days=result.get("available_days", []),
-            self_reported_capabilities={
-                "pistol_squat": result.get("pistol_squat_capable", False)
-            },
+            # The legacy boolean defaults to False when omitted. Do not turn
+            # that default into a self-reported inability; only persist an
+            # affirmative capability when the user explicitly supplied it.
+            self_reported_capabilities=(
+                {"pistol_squat": True}
+                if result.get("pistol_squat_capable") is True
+                else {}
+            ),
             movement_tasks=movement_tasks,
             symptoms=symptoms,
             excluded_patterns=excluded_patterns,
