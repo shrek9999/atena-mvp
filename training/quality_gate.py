@@ -35,9 +35,6 @@ GOAL_PURPOSES = {
         "balance", "coordination",
     },
 }
-STABILITY_PATTERNS = {"trunk_stability", "anti_rotation"}
-
-
 def validate_generated_program(program: object, profile: object) -> list[str]:
     """Return all material quality failures in a generated programme.
 
@@ -59,11 +56,18 @@ def validate_generated_program(program: object, profile: object) -> list[str]:
 
     goal = profile.get("goal")
     experience = profile.get("experience")
+    if program.get("goal") != goal:
+        issues.append("Cilj v programu se ne ujema s profilom.")
+    if program.get("experience") != experience:
+        issues.append("Raven izkušenj v programu se ne ujema s profilom.")
+    if program.get("sessions_per_week") != expected_sessions:
+        issues.append("Pogostost treningov v povzetku se ne ujema s profilom.")
+    if program.get("session_minutes") != profile.get("session_minutes"):
+        issues.append("Trajanje treninga v povzetku se ne ujema s profilom.")
     allowed_purposes = GOAL_PURPOSES.get(goal, set())
     available = set(profile.get("equipment", [])) | {"bodyweight"}
     excluded_ids = set(profile.get("excluded_exercise_ids", []))
     excluded_patterns = set(profile.get("excluded_patterns", []))
-    include_accessories = profile.get("include_accessories", False)
     feedback = program.get("feedback_applied") or {}
     stability_was_requested = (
         isinstance(feedback, dict)
