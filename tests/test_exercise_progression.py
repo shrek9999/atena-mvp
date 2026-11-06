@@ -410,7 +410,7 @@ def test_latest_incomplete_session_holds_progression_even_if_older_exposures_qua
     ]
     result = decision(recommend_exercise_progression(sessions), "squat_goblet")
     assert result["decision"] == "hold"
-    assert "zadnji trening ni bil zaključen" in result["reason"].lower()
+    assert "zadnji trening je bil prekinjen zaradi previsoke zahtevnosti" in result["reason"].lower()
 
 
 def test_unknown_latest_completion_status_cannot_use_older_positive_exposures():
