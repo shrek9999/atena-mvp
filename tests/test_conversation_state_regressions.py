@@ -159,3 +159,12 @@ def test_duration_estimate_rounds_up_conservatively():
         }
     }]
     assert _estimated_minutes(exercises, warm_up_minutes=5) == 7
+
+
+def test_recurring_slovene_generation_typos_are_normalized():
+    from coach_routes import _normalize_slovene_coaching_terms
+
+    answer = "Prednoiva začneva, izboljšava srčno-žilne pripravljivosti."
+    normalized = _normalize_slovene_coaching_terms(answer)
+    assert "Preden začneva" in normalized
+    assert "pripravljenosti" in normalized
