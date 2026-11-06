@@ -34,7 +34,7 @@ def test_mobility_catalogue_includes_strength_through_range():
 def test_functional_week_covers_balance_coordination_carry_and_conditioning():
     week = [_session_patterns(i, 2, "functional") for i in range(2)]
     patterns = {pattern for session in week for pattern in session}
-    assert {"balance", "coordination", "carry", "conditioning", "squat", "hinge"} <= patterns
+    assert {"balance", "coordination", "carry", "locomotion", "squat", "hinge", "lunge"} <= patterns
     assert "jump" not in patterns
 
 
@@ -90,7 +90,7 @@ def test_functional_sessions_are_compact_and_distribute_all_capacities():
     assert all(len(session) <= 6 for session in week)
     patterns = {pattern for session in week for pattern in session}
     assert {"squat", "hinge", "horizontal_push", "horizontal_pull",
-            "balance", "coordination", "carry", "conditioning"} <= patterns
+            "balance", "coordination", "carry", "locomotion", "lunge"} <= patterns
     assert "jump" not in patterns
 
 
@@ -280,3 +280,36 @@ def test_beginner_combined_goal_methodology_summary_matches_exercise_tempo():
     assert "2–1–1–0" in result["methodology"]["tempo"]
     assert "3–1–2–0" not in result["methodology"]["tempo"]
     assert result["program_version"] == "3.0.0"
+
+
+def test_functional_program_uses_safe_locomotion_and_loaded_row_when_available():
+    from training.program import generate_program
+
+    result = generate_program({
+        "goal": "functional", "experience": "intermediate",
+        "sessions_per_week": 2, "session_minutes": 45,
+        "equipment": ["bodyweight", "dumbbell", "kettlebell", "bench", "barbell", "rack", "cable", "pull_up_bar"],
+    })
+    items = [item for session in result["sessions"] for item in session["exercises"]]
+    ids = {item["exercise_id"] for item in items}
+    assert "brisk_walking" in ids
+    assert "mountain_climber" not in ids
+    assert "inverted_row_table" not in ids
+    assert ids.intersection({"one_arm_row", "kettlebell_one_arm_row", "dumbbell_bent_over_row", "barbell_bent_over_row"})
+    carry = next(item for item in items if item["pattern"] == "carry")
+    assert carry["prescription"]["reps"] == "20–30 m"
+    assert carry["prescription"]["work_seconds"] > 0
+    assert carry["prescription"].get("rir") is None
+
+
+def test_functional_bodyweight_profile_does_not_assume_household_furniture():
+    from training.program import generate_program
+
+    result = generate_program({
+        "goal": "functional", "experience": "beginner",
+        "sessions_per_week": 2, "session_minutes": 45,
+        "equipment": ["bodyweight"],
+    })
+    ids = {item["exercise_id"] for session in result["sessions"] for item in session["exercises"]}
+    assert "chair_sit_to_stand" not in ids
+    assert "inverted_row_table" not in ids
