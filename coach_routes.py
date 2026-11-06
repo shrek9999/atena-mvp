@@ -496,6 +496,25 @@ def _coaching_guardrail_reply(messages):
         item.get("content", "") for item in messages
         if item.get("role") == "model" and isinstance(item.get("content"), str)
     ]
+
+    # Preserve empathetic handling of self-blame while keeping the safety check open.
+    assistant_asked_safety = any(re.search(
+        r"(?:ali\\s+(?:imaš|trenutno|morda)|imaš\\s+(?:trenutno|kakšne|kakršne koli)|občutiš|opaziš).{0,100}"
+        r"(?:bolečin\\w*|poškodb\\w*|omejitv\\w*|zdravstven.{0,30}težav)",
+        item,
+        re.IGNORECASE,
+    ) for item in assistant_texts)
+    if (
+        assistant_asked_safety
+        and not _has_explicit_safety_clearance(history)
+        and re.search(r"(vse sem pokvaril|vse pokvaril|pokvaril sem vse)", lowered)
+    ):
+        return (
+            "Ničesar nisi pokvaril. En izpuščen trening ne izbriše napredka; pomembno je, "
+            "da se vrneš v ritem brez lovljenja zamujenega obsega. Pred individualnim "
+            "programom morava še razjasniti varnost: ali imaš trenutno kakršne koli "
+            "bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
+        )
     assistant_asked_pain_details = any(
         re.search(r"kje natančno se pojavi bolečina|kakšna je in kako močna", item, re.IGNORECASE)
         for item in assistant_texts
