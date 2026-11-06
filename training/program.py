@@ -986,14 +986,14 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                     floor = 300 if pattern == "locomotion" else 10
                     prescription["work_seconds"] = max(floor, int(prescription["work_seconds"] * 0.85))
                 elif prescription.get("distance_based"):
-                    bounds = [int(value) for value in prescription.get("reps", "").split("–") if value.isdigit()]
+                    bounds = [int(value) for value in prescription.get("reps", "").replace(" m", "").split("–") if value.strip().isdigit()]
                     if len(bounds) == 2:
                         low, high = bounds
                         reduced_low = max(5, low - 5)
                         reduced_high = max(reduced_low, high - 5)
                         prescription["reps"] = f"{reduced_low}–{reduced_high} m"
                 else:
-                    bounds = [int(value) for value in prescription.get("reps", "").split("–") if value.isdigit()]
+                    bounds = [int(value) for value in prescription.get("reps", "").replace(" m", "").split("–") if value.strip().isdigit()]
                     if len(bounds) == 2:
                         low, high = bounds
                         prescription["reps"] = f"{low}–{max(low, high - 2)}"
@@ -1020,7 +1020,7 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                         "podaljšan za majhen korak. Ohrani predpisano ciljno intenzivnost."
                     )
                 elif prescription.get("distance_based"):
-                    bounds = [int(value) for value in prescription.get("reps", "").split("–") if value.isdigit()]
+                    bounds = [int(value) for value in prescription.get("reps", "").replace(" m", "").split("–") if value.strip().isdigit()]
                     if len(bounds) == 2:
                         low, high = bounds
                         prescription["reps"] = f"{low + 5}–{high + 5} m"
@@ -1029,7 +1029,7 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                         "povečana za 5 m. Ohrani pokončno držo in enakomeren korak."
                     )
                 else:
-                    bounds = [int(value) for value in prescription.get("reps", "").split("–") if value.isdigit()]
+                    bounds = [int(value) for value in prescription.get("reps", "").replace(" m", "").split("–") if value.strip().isdigit()]
                     if len(bounds) == 2 and bounds[0] < bounds[1]:
                         low, high = bounds
                         prescription["reps"] = f"{low + 1}–{high}"
