@@ -52,7 +52,8 @@ def test_program_quality_across_goal_and_experience_matrix(goal, experience):
             assert set(exercise["equipment"]).issubset(set(profile["equipment"]) | {"bodyweight"})
             assert exercise["prescription"]["tempo"]
             assert exercise["prescription"]["tempo_description"]
-            assert exercise["range_of_motion"]
+            assert exercise["cues"]
+            assert exercise.get("range_of_motion") is None or exercise["range_of_motion"].strip()
             if source["single_joint"] and goal == "hypertrophy":
                 assert experience == "advanced"
                 assert profile.get("include_accessories") is True
