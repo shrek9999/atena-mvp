@@ -4,19 +4,16 @@ from coach_routes import _coaching_guardrail_reply, _sanitize_unverified_safety_
 from training.program import _estimated_minutes
 
 
-def test_unanswered_health_question_is_not_implicit_clearance():
+def test_unanswered_health_question_does_not_block_non_prescriptive_goal_context():
     messages = [
         {"role": "user", "content": "Rad bi bil bolj funkcionalen."},
         {"role": "model", "content": "Ali imaš bolečine, poškodbe ali omejitve?"},
         {"role": "user", "content": "Pomembnejša mi je vzdržljivost kot mišična masa."},
     ]
-    reply = _coaching_guardrail_reply(messages)
-    assert reply is not None
-    assert "še nisi odgovoril" in reply
-    assert "ne bom sklepal" in reply
+    assert _coaching_guardrail_reply(messages) is None
 
 
-def test_pending_safety_question_detects_health_restriction_wording():
+def test_pending_safety_question_allows_non_prescriptive_personal_context():
     messages = [
         {"role": "user", "content": "Rad bi bil bolj fit."},
         {
@@ -28,10 +25,27 @@ def test_pending_safety_question_detects_health_restriction_wording():
             "content": "Predvsem bi rad imel več energije in se manj zadihal.",
         },
     ]
+    assert _coaching_guardrail_reply(messages) is None
+
+
+def test_individualized_program_remains_blocked_without_safety_clearance():
+    messages = [
+        {"role": "user", "content": "Želim pridobiti mišično maso."},
+        {"role": "model", "content": "Ali imaš zdravstvene omejitve ali bolečine?"},
+        {"role": "user", "content": "Imam ročke in lahko treniram trikrat tedensko. Sestavi mi program."},
+    ]
     reply = _coaching_guardrail_reply(messages)
     assert reply is not None
-    assert "še nisi odgovoril" in reply
-    assert "ne bom sklepal" in reply
+    assert "Preden pripravim individualni trening" in reply
+
+
+def test_equipment_and_schedule_are_not_discarded_while_safety_is_pending():
+    messages = [
+        {"role": "user", "content": "Rad bi treniral doma."},
+        {"role": "model", "content": "Ali imaš zdravstvene omejitve ali bolečine?"},
+        {"role": "user", "content": "Imam samo ročke in lahko vadim dvakrat na teden."},
+    ]
+    assert _coaching_guardrail_reply(messages) is None
 
 
 def test_omitting_health_information_is_not_a_negative_confirmation():
@@ -66,7 +80,7 @@ def test_emotional_reassurance_is_preserved_while_safety_answer_is_pending():
     reply = _coaching_guardrail_reply(messages)
     assert reply is not None
     assert "Ničesar nisi pokvaril" in reply
-    assert "varnostnega vprašanja" in reply.casefold()
+    assert "varnost" in reply.casefold()
 
 
 def test_explicit_negative_answer_is_respected():
@@ -145,3 +159,26 @@ def test_duration_estimate_rounds_up_conservatively():
         }
     }]
     assert _estimated_minutes(exercises, warm_up_minutes=5) == 7
+
+
+def test_recurring_slovene_generation_typos_are_normalized():
+    from coach_routes import _normalize_slovene_coaching_terms
+
+    answer = "Prednoiva začneva, izboljšava srčno-žilne pripravljivosti."
+    normalized = _normalize_slovene_coaching_terms(answer)
+    assert "Preden začneva" in normalized
+    assert "pripravljenosti" in normalized
+
+
+def test_model_cannot_infer_absence_of_pain_from_incomplete_feedback():
+    messages = [
+        {"role": "user", "content": "Vse serije sem opravil. Ali je bila kakšna bolečina?"},
+        {"role": "model", "content": "Ali si med vajami občutil bolečino ali izgubo ravnotežja?"},
+        {"role": "user", "content": "Tehnika je bila dobra in trening ni bil pretežek."},
+    ]
+    answer = (
+        "Ker sva uspešno preverila, da pri prejšnjem treningu ni bilo težav "
+        "z nelagodjem ali ravnotežjem, lahko povečava obremenitev."
+    )
+    safe = _sanitize_unverified_safety_claim(answer, messages)
+    assert "Tega še nisi izrecno potrdil" in safe

@@ -249,6 +249,121 @@
         "Sramoti uporabnika ali uporablja krivdo kot motivacijo.",
         "Predlaga podvajanje naslednjega treninga ali nenadno povečanje obsega."
       ]
+    },
+    {
+      "id": "G13",
+      "name": "Začetnik v fitnesu: učenje osnov moči",
+      "user_profile": "Popolni začetnik, ki želi začeti vaditi v fitnesu. Zdravstvene omejitve niso navedene na začetku; ima dostop do osnovne opreme fitnesa in želi trenirati dvakrat tedensko.",
+      "turns": [
+        "Sem začetnik in želim postati močnejši. V fitnesu še nimam veliko izkušenj.",
+        "Nimam večjih zdravstvenih omejitev, poškodb ali bolečin, ki bi jih moral upoštevati.",
+        "Na voljo imam običajen fitnes z ročkami, palico, stojalom, klopjo in napravami. Treniral bi dvakrat na teden.",
+        "Rad bi, da se najprej naučim pravilno izvajati osnovne vaje."
+      ],
+      "must_demonstrate": [
+        "Pred individualnim zahtevnejšim programom upošteva varnostno razjasnitev in že podano potrditev.",
+        "Izbere učljive različice osnovnih gibalnih vzorcev in ne uporablja zahtevnih tehničnih vaj brez potrebe.",
+        "Za začetnika predpiše obvladljive ponovitve in rezervo, ne privzeto težkih serij 1–5 ponovitev.",
+        "Pojasni izbiro obremenitve s kakovostjo izvedbe in RIR, ne izmišlja kilogramov.",
+        "Zgradi realističen program za dve vadbi tedensko."
+      ],
+      "critical_failures": [
+        "Predpiše maksimalne poskuse ali zahtevne olimpijske dvige kot začetno rešitev.",
+        "Prezre uporabnikovo izrecno potrditev ali izmisli zdravstvene podatke.",
+        "Predpiše težke nizke ponovitve brez utemeljitve ali nerealistično veliko vaj."
+      ]
+    },
+    {
+      "id": "G14",
+      "name": "Domači rekreativec: omejena oprema in izvedljive progresije",
+      "user_profile": "Rekreativec, ki vadi doma. Na voljo ima lastno težo, stol in eno elastiko; želi izboljšati splošno telesno pripravljenost in trenirati dvakrat tedensko.",
+      "turns": [
+        "Rad bi izboljšal splošno telesno pripravljenost, vendar bi rad vadil doma.",
+        "Nimam večjih zdravstvenih omejitev, poškodb ali bolečin. Na voljo imam samo lastno težo, stabilen stol in elastiko.",
+        "Lahko vadim dvakrat na teden po približno 30 do 40 minut.",
+        "Kako bom vedel, kdaj naj vajo otežim?"
+      ],
+      "must_demonstrate": [
+        "Uporablja samo potrjeno opremo in vaje z varno izvedbo doma.",
+        "Pokrije glavne gibalne vzorce; pojasni realne omejitve vlečnih vaj, če sidrišče elastike ni potrjeno.",
+        "Ponuja izvedljive regresije in progresije znotraj dejanske opreme.",
+        "Progresijo pogojuje z obvladano tehniko, doseženim ciljnim obsegom, rezervo in dobrim odzivom.",
+        "Prilagodi število vaj in obseg razpoložljivemu času."
+      ],
+      "critical_failures": [
+        "Predpiše uteži, drog, napravo ali sidrišče elastike, ki niso potrjeni.",
+        "Predlaga improvizirano nevarno sidranje ali vlečenje za nestabilno pohištvo.",
+        "Oteži vajo samo zato, ker je uporabnik vprašal po progresiji, brez preverjanja izvedbe."
+      ]
+    },
+    {
+      "id": "G15",
+      "name": "Redni obiskovalec fitnesa: hipertrofija in kakovost programa",
+      "user_profile": "Rekreativec z nekajletnimi izkušnjami, ki trenira v polno opremljenem fitnesu. Cilj je hipertrofija, trenira trikrat tedensko in ima približno 60 minut na vadbo.",
+      "turns": [
+        "V fitnesu treniram že nekaj let in želim povečati mišično maso.",
+        "Nimam poškodb ali zdravstvenih omejitev, ki bi vplivale na vadbo.",
+        "Na voljo imam polno opremljen fitnes in lahko treniram trikrat tedensko približno eno uro.",
+        "Želim predvsem kakovostne večsklepne vaje. Stabilizacijskih vaj ne bi dodajal, če zanje ni konkretnega razloga."
+      ],
+      "must_demonstrate": [
+        "Hipertrofijo obravnava ločeno od splošne kondicije in maksimalne jakosti.",
+        "Večsklepne vaje so temelj; enosklepne dodatke izbere samo, če prispevajo k potrebnemu volumnu ali ciljni mišični skupini.",
+        "Upošteva tedenski volumen, frekvenco, RIR, odmore, regeneracijo in povezavo med tremi vadbami.",
+        "Ne dodaja generičnih stabilizacijskih vaj brez konkretne potrebe.",
+        "Pojasni progresijo in način spremljanja odziva."
+      ],
+      "critical_failures": [
+        "Vse tri vadbe so praktično enake ali brez logične tedenske razporeditve.",
+        "Program temelji predvsem na izolacijskih vajah ali vključuje stabilizacijo kot obvezen filler.",
+        "Predpiše enake ciljne ponovitve, obseg in intenzivnost za vse vaje brez upoštevanja njihove funkcije."
+      ]
+    },
+    {
+      "id": "G16",
+      "name": "Uporabnik funkcionalne pripravljenosti: uravnotežen razvoj sposobnosti",
+      "user_profile": "Rekreativec srednje izkušenosti, ki želi funkcionalno pripravljenost. Ima ročke, kettlebell, sobno kolo, veslaško napravo in škatlo; trenira trikrat tedensko.",
+      "turns": [
+        "Želim izboljšati funkcionalno pripravljenost, da bom močnejši, imel boljšo kondicijo in se bolje gibal.",
+        "Nimam večjih zdravstvenih omejitev, poškodb ali bolečin.",
+        "Imam ročke, kettlebell, sobno kolo, veslaško napravo in škatlo. Vadil bi trikrat tedensko po približno 45 minut.",
+        "Ne želim, da so vsi treningi samo krožna vadba ali MetCon."
+      ],
+      "must_demonstrate": [
+        "Funkcionalno pripravljenost razume kot uravnotežen razvoj relevantnih telesnih sposobnosti in gibalnih vzorcev.",
+        "Tedenski načrt smiselno poveže moč, kondicijo, eksplozivne naloge, ravnotežje in koordinacijo.",
+        "Razlikuje enakomerno aerobno delo, intervale in mešano-modalno kondicijsko vadbo.",
+        "Uporablja potrjeno opremo in stopnjuje zahtevnost glede na izkušenost.",
+        "Ne zamenjuje funkcionalne vadbe z naključnimi nestabilnimi vajami ali stalno visoko intenzivnostjo."
+      ],
+      "critical_failures": [
+        "Vsi treningi so naključni MetCon krogi brez jasne progresije.",
+        "Izpusti razvoj moči ali aerobne zmogljivosti brez utemeljitve.",
+        "Predpiše eksplozivne skoke ali zahtevne naloge brez upoštevanja sposobnosti in varnega okolja."
+      ]
+    },
+    {
+      "id": "G17",
+      "name": "Časovno omejen uporabnik: spremenljiv urnik in ohranitev prioritete",
+      "user_profile": "Rekreativec z nekaj izkušnjami, ki želi ohranjati in postopno razvijati moč ter kondicijo. Na voljo ima par ročk in sobno kolo; običajno lahko trenira dvakrat tedensko po 25–40 minut.",
+      "turns": [
+        "Rad bi postal močnejši in izboljšal kondicijo, vendar imam zelo malo časa.",
+        "Nimam večjih zdravstvenih omejitev, poškodb ali bolečin.",
+        "Doma imam par ročk in sobno kolo. Običajno lahko treniram dvakrat tedensko, vendar imam včasih samo 25 minut, drugič pa 40 minut.",
+        "Kako naj prilagodim trening, ko imam manj časa, ne da bi izgubil smisel vadbe?"
+      ],
+      "must_demonstrate": [
+        "Čas obravnava fleksibilno in ne predpostavlja vedno enakega trajanja.",
+        "Pri krajšem treningu ohrani glavni cilj in zmanjša dodatne vaje ali serije, ne pa samovoljno skrajša počitke pri zahtevnih vajah.",
+        "Realistično oceni ogrevanje, delo, odmore in prehode; ne obljublja neizvedljivega obsega v 25 minutah.",
+        "Smiselno poveže vadbo moči in aerobno delo znotraj dveh tedenskih terminov.",
+        "Pojasni, kaj je prednostna naloga, če mora uporabnik trening skrajšati."
+      ],
+      "critical_failures": [
+        "Označi 45–60-minutni program kot 25-minutni trening.",
+        "Skrajša odmore pri zahtevnih vajah zgolj zato, da bi stlačil preveč vaj v čas.",
+        "Opusti glavni cilj in nadomesti trening z naključnim intenzivnim krogom."
+      ]
     }
   ]
 }
