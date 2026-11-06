@@ -2061,7 +2061,7 @@ def coach_profile_program(profile_id):
             conditioning_progression,
         )
         training_cycle = summarize_training_cycle(
-            profile["profile"], sessions, exercise_progressions,
+            legacy_profile, sessions, exercise_progressions,
             longitudinal_progression, conditioning_progression,
         )
         # Global session feedback is now advisory only. It must not silently
