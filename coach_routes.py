@@ -32,6 +32,11 @@ from training.periodization import summarize_training_cycle
 from training.proactive_checkin import build_proactive_checkin
 from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL
 from training.movement_assessment import MovementAssessmentError, assess_movement_competence
+from training.athlete_state import validate_athlete_state
+from training.profile_state_adapter import (
+    ProfileStateMigrationError, attach_athlete_state, legacy_profile_view,
+    profile_needs_state_migration,
+)
 
 logger = logging.getLogger(__name__)
 coach_bp = Blueprint("coach", __name__)
@@ -1409,6 +1414,26 @@ def _validate_profile(value):
     }
 
 
+
+def _profile_record_with_state(record, token, *, persist_migration=False):
+    """Validate canonical state and lazily migrate a legacy JSON profile."""
+    profile = record.get("profile")
+    if not isinstance(profile, dict):
+        raise ProfileStateMigrationError("Shranjeni profil ni veljaven.")
+    profile_id = record.get("profile_id")
+    if not isinstance(profile_id, str) or not profile_id:
+        raise ProfileStateMigrationError("Shranjeni profil nima veljavnega identifikatorja.")
+    if profile_needs_state_migration(profile):
+        upgraded = attach_athlete_state(profile, profile_id)
+        if persist_migration and storage_enabled():
+            return store_update_profile(profile_id, token, upgraded)
+        response_record = dict(record)
+        response_record["profile"] = upgraded
+        return response_record
+    validate_athlete_state(profile.get("athlete_state"))
+    return record
+
+
 def _profile_token():
     return request.headers.get("X-Profile-Token", "").strip()
 
@@ -1439,6 +1464,7 @@ def create_coach_profile():
     try:
         profile = _validate_profile(payload.get("profile"))
         profile_id = str(uuid.uuid4())
+        profile = attach_athlete_state(profile, profile_id)
         access_token = secrets.token_urlsafe(32)
         saved = store_create_profile(profile_id, access_token, profile, health_consent, notice_version)
         # The access token is returned once. Only its SHA-256 hash is stored.
@@ -1457,7 +1483,9 @@ def manage_coach_profile(profile_id):
     token = _profile_token()
     if request.method == "GET":
         try:
-            return jsonify({"profile": store_get_profile(profile_id, token)}), 200
+            record = store_get_profile(profile_id, token)
+            record = _profile_record_with_state(record, token, persist_migration=True)
+            return jsonify({"profile": record}), 200
         except ProfileNotFound:
             return _profile_auth_error()
         except StorageUnavailable as exc:
@@ -1467,7 +1495,11 @@ def manage_coach_profile(profile_id):
         if not isinstance(payload, dict):
             return jsonify({"error": "Pričakovan je JSON objekt."}), 400
         try:
+            previous = store_get_profile(profile_id, token)
             profile = _validate_profile(payload.get("profile"))
+            profile = attach_athlete_state(
+                profile, profile_id, previous_profile=previous.get("profile")
+            )
             updated = store_update_profile(profile_id, token, profile)
             return jsonify({"profile": updated}), 200
         except ValueError as exc:
@@ -1896,7 +1928,7 @@ def coach_training_progress(profile_id):
             conditioning_progression,
         )
         training_cycle = summarize_training_cycle(
-            profile["profile"], sessions, exercise_progressions,
+            legacy_profile, sessions, exercise_progressions,
             longitudinal_progression, conditioning_progression,
         )
         return jsonify({
@@ -1924,6 +1956,7 @@ def export_coach_profile(profile_id):
     token = _profile_token()
     try:
         profile = store_get_profile(profile_id, token)
+        profile = _profile_record_with_state(profile, token, persist_migration=True)
         sessions = store_list_sessions(profile_id, token, limit=5000)
         response = jsonify({
             "export_version": "1.0",
@@ -2005,6 +2038,8 @@ def coach_profile_program(profile_id):
     token = _profile_token()
     try:
         profile = store_get_profile(profile_id, token)
+        profile = _profile_record_with_state(profile, token, persist_migration=True)
+        legacy_profile = legacy_profile_view(profile["profile"])
         # Use enough history to enforce the same progression gate shown in the
         # adaptation endpoint: two completed, easy sessions with RIR >= 3.
         sessions = store_list_sessions(profile_id, token, limit=50)
@@ -2025,7 +2060,7 @@ def coach_profile_program(profile_id):
         # scope, while the exercise engine applies only independently justified
         # exercise-level rep guidance. A future user-confirmed session-level
         # adjustment can be applied through an explicit programme revision.
-        result = generate_program(profile["profile"])
+        result = generate_program(legacy_profile)
         result = apply_exercise_progression(result, exercise_progressions)
         return jsonify({
             "program": result,
