@@ -9,6 +9,7 @@ from training.movement_assessment import (
     MovementAssessmentError, SUPPORTED_VARIANTS, TASK_PATTERNS,
     assess_movement_competence,
 )
+from training.quality_gate import validate_generated_program
 
 SUPPORTED_GOALS = {"hypertrophy", "strength", "strength_hypertrophy", "fat_loss", "general_fitness", "functional", "power", "endurance", "mobility"}
 SUPPORTED_LEVELS = {"beginner", "intermediate", "advanced"}
@@ -1177,7 +1178,7 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 pattern_session_frequency[item["pattern"]] += 1
                 session_patterns_seen.add(item["pattern"])
             pattern_work_sets[item["pattern"]] += item["prescription"]["sets"]
-    return {
+    program = {
         "program_version": "3.0.0",
         "movement_adaptation": {
             "source": "self_reported_movement_assessment",
@@ -1267,3 +1268,9 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
             else []
         ),
     }
+    quality_issues = validate_generated_program(program, p)
+    if quality_issues:
+        raise ProgramValidationError(
+            "Program ni prestal končnega preverjanja kakovosti: " + "; ".join(quality_issues[:8])
+        )
+    return program
