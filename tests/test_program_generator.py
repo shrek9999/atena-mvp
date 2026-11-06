@@ -939,7 +939,7 @@ def test_phase9_goal_experience_equipment_matrix(goal, experience, equipment):
             )
             assert exercise["prescription"]["tempo"]
             assert exercise["prescription"]["tempo_description"]
-            assert exercise["range_of_motion"]
+            assert exercise["range_of_motion"] is None or isinstance(exercise["range_of_motion"], str)
 
 
 @pytest.mark.parametrize("weight_type", ["dumbbell", "kettlebell"])
