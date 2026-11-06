@@ -65,6 +65,8 @@ def test_program_quality_across_goal_and_experience_matrix(goal, experience):
                     if exercise["pattern"] == "carry":
                         assert exercise["prescription"]["distance_based"] is True
                         assert exercise["prescription"]["reps"].endswith("m")
+                        assert exercise["prescription"]["estimated_work_seconds"] > 0
+                        assert "work_seconds" not in exercise["prescription"]
                     else:
                         assert exercise["time_based"] is True
                         assert exercise["prescription"]["work_seconds"] > 0
