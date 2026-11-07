@@ -1882,6 +1882,13 @@ def coach_training_sessions(profile_id):
         session["adaptation_response"] = adaptation_response
     try:
         profile = store_get_profile(profile_id, token)
+        if any(
+            isinstance(block, dict) and "average_heart_rate" in block
+            for block in clean_conditioning
+        ) and not profile["health_data_consent"]:
+            return jsonify({
+                "error": "Za shranjevanje srčnega utripa je potrebna ločena privolitev za zdravstvene podatke."
+            }), 403
         if discomfort is not None:
             if not profile["health_data_consent"]:
                 return jsonify({"error": "Za shranjevanje podatka o nelagodju je potrebna ločena privolitev za zdravstvene podatke."}), 403
@@ -2186,7 +2193,13 @@ def coach_profile_program(profile_id):
             or any(
                 isinstance(item, dict)
                 and isinstance(item.get("session"), dict)
-                and "discomfort_reported" in item["session"]
+                and (
+                    "discomfort_reported" in item["session"]
+                    or any(
+                        isinstance(block, dict) and "average_heart_rate" in block
+                        for block in item["session"].get("conditioning", [])
+                    )
+                )
                 for item in sessions
             )
         )
