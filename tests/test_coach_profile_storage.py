@@ -523,6 +523,14 @@ def test_profile_program_keeps_global_feedback_out_of_generator_and_exposes_adap
     # incomplete-session reason, so the engine requests a recovery review.
     assert data["adaptive_decision"]["decision"] == "recovery_review"
     assert data["adaptive_decision"]["clarifying_question"]
+    assert data["program_version_id"]
+    history = client.get(
+        f"/coach/profile/{profile_id}/programs",
+        headers={"X-Profile-Token": token},
+    )
+    assert history.status_code == 200
+    assert len(history.get_json()["program_versions"]) == 1
+    assert history.get_json()["program_versions"][0]["program_version_id"] == data["program_version_id"]
 
 
 def test_profile_program_holds_progression_after_logged_discomfort_and_fresh_safety_recheck(monkeypatch, tmp_path):
