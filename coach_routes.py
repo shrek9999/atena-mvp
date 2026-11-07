@@ -1926,6 +1926,13 @@ def update_coach_health_consent(profile_id):
 
 
 
+def _apply_progression_with_decision_gate(program, exercise_progressions, adaptive_decision):
+    """Apply exercise-level progression only when the final decision explicitly permits it."""
+    if not isinstance(adaptive_decision, dict) or adaptive_decision.get("progression_allowed") is not True:
+        return program
+    return apply_exercise_progression(program, exercise_progressions)
+
+
 def _build_adaptive_decision(sessions, exercise_progressions=None,
                              longitudinal_progression=None,
                              conditioning_progression=None,
@@ -2141,7 +2148,9 @@ def coach_profile_program(profile_id):
         # symptom-aware selection. The legacy profile remains the generator's
         # compatibility view; stale or contradictory state fails closed.
         result = generate_program_for_athlete(profile["profile"])
-        result = apply_exercise_progression(result, exercise_progressions)
+        result = _apply_progression_with_decision_gate(
+            result, exercise_progressions, adaptive_decision
+        )
         return jsonify({
             "program": result,
             "profile": profile["profile"],
