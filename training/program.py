@@ -406,7 +406,9 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
             sets, reps, rir, rest = 3, "8–12", 3, 90
         else:
             sets, reps, rir, rest = 3, "6–10", 2, 120
-    if pattern == "mobility_stretch":
+    if pattern == "carry":
+        tempo, tempo_description, tempo_seconds = "tekoče", "Hodi z enakomernim, nadzorovanim korakom; breme naj ne spremeni drže ali kakovosti hoje.", 0
+    elif pattern == "mobility_stretch":
         tempo, tempo_description, tempo_seconds = "zadržanje", "Zadrži blag do zmeren razteg, dihaj sproščeno in ne sili v končni položaj.", 0
     elif goal == "mobility" or pattern == "mobility":
         tempo, tempo_description, tempo_seconds = "kontrolirano", "Aktivno raziskuj razpoložljivo amplitudo brez sunkov in prisiljevanja.", 4
@@ -446,10 +448,22 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         "tempo_seconds_per_rep": tempo_seconds,
     }
     if pattern == "carry":
-        sides = 2 if (unilateral or exercise.get("reps_per_side")) else 1
+        carry_distance = {
+            "beginner": "15–20 m",
+            "intermediate": "20–30 m",
+            "advanced": "25–40 m",
+        }[level]
+        carry_seconds = {"beginner": 20, "intermediate": 25, "advanced": 35}[level]
+        if unilateral or exercise.get("reps_per_side"):
+            carry_distance += " na stran"
         prescription.update({
-            "reps": "20–30 m na stran" if (unilateral or exercise.get("reps_per_side")) else "20–30 m", "work_seconds": 20, "distance_based": True,
-            "time_label": "nošenja", "tempo_label": "enakomeren korak",
+            "reps": carry_distance,
+            "distance_based": True,
+            # Used only for realistic session-time estimation; the prescribed
+            # training dose remains distance-based and is never converted to time.
+            "estimated_work_seconds": carry_seconds,
+            "time_label": "razdalje",
+            "tempo_label": "enakomeren korak",
             "effort_target": "Izberi breme, ki ga lahko neseš z naravno hojo, stabilnim trupom in normalnim dihanjem; končaj, preden se položaj poslabša.",
         })
     elif goal == "functional" and pattern == "locomotion":
@@ -520,6 +534,10 @@ def _estimated_minutes(exercises: list[dict], warm_up_minutes: int = 7) -> int:
         sides = 2 if prescription.get("rep_unit") == "per_side" else 1
         if prescription.get("work_seconds") is not None:
             execution = prescription["work_seconds"] * sets * sides
+        elif prescription.get("estimated_work_seconds") is not None:
+            # Distance-based carries keep a distance prescription. This separate
+            # estimate is used only to calculate the session's approximate duration.
+            execution = prescription["estimated_work_seconds"] * sets * sides
         else:
             rep_bounds = [int(value) for value in prescription["reps"].split("–")]
             reps = round(sum(rep_bounds) / len(rep_bounds))
