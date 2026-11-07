@@ -1222,3 +1222,37 @@ def test_profile_deletion_cascades_to_decision_events(monkeypatch, tmp_path):
     finally:
         conn.close()
     assert remaining == 0
+
+
+def test_postgres_store_connections_switch_to_least_privilege_role(monkeypatch):
+    import psycopg
+    import coach_store
+
+    statements = []
+
+    class FakeCursor:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def execute(self, statement):
+            statements.append(statement)
+
+    class FakeConnection:
+        def cursor(self):
+            return FakeCursor()
+
+        def close(self):
+            pass
+
+    monkeypatch.setenv("ATENA_DATABASE_URL", "postgresql://app:secret@example.test:5432/db")
+    monkeypatch.setenv("ATENA_DATA_STORAGE_ENABLED", "true")
+    monkeypatch.setenv("ATENA_PRIVACY_NOTICE_APPROVED", "true")
+    monkeypatch.setattr(psycopg, "connect", lambda *args, **kwargs: FakeConnection())
+
+    conn, dialect = coach_store._connect()
+    assert conn is not None
+    assert dialect == "postgres"
+    assert statements == ["SET ROLE atena_app"]
