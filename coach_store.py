@@ -369,23 +369,58 @@ def update_profile(profile_id: str, token: str, profile: dict, *, event: dict | 
     finally:
         conn.close()
 
-def add_session(profile_id: str, token: str, session_id: str, session_date: str, session: dict, *, event: dict | None = None):
+def add_session(
+    profile_id: str,
+    token: str,
+    session_id: str,
+    session_date: str,
+    session: dict,
+    *,
+    program_version_id: str | None = None,
+    event: dict | None = None,
+):
     conn, dialect = _connect()
     try:
         _init(conn, dialect)
         authorized = _authorized_profile(conn, dialect, profile_id, token)
+        if program_version_id is not None:
+            if not isinstance(program_version_id, str) or not program_version_id.strip() or len(program_version_id) > 128:
+                raise ValueError("Različica programa ni veljavna.")
+            version = _execute(
+                conn, dialect,
+                "SELECT data_classification FROM atena_program_versions WHERE program_version_id = %s AND profile_id = %s",
+                (program_version_id, profile_id),
+            ).fetchone()
+            if not version:
+                raise ValueError("Različica programa ne pripada temu profilu ali ne obstaja.")
+            if version[0] == "health_sensitive" and authorized["health_data_consent"] is not True:
+                raise DecisionEventError("Za povezavo zdravstveno prilagojenega programa je potrebna veljavna privolitev.")
+        if event is not None and program_version_id is not None:
+            event = dict(event)
+            if event.get("program_version_id") not in {None, program_version_id}:
+                raise DecisionEventError("Dogodek in trening kažeta na različni različici programa.")
+            event["program_version_id"] = program_version_id
         now = _now()
         _execute(conn, dialect, """INSERT INTO atena_training_sessions
-            (session_id, profile_id, session_date, session_json, created_at)
-            VALUES (%s, %s, %s, %s, %s)""",
-            (session_id, profile_id, session_date, _encode_json(session, dialect), now))
+            (session_id, profile_id, session_date, session_json, program_version_id, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s)""",
+            (
+                session_id, profile_id, session_date,
+                _encode_json(session, dialect), program_version_id, now,
+            ))
         if event is not None:
             _insert_decision_event(
                 conn, dialect, profile_id, event,
                 health_consent_verified=authorized["health_data_consent"] is True,
             )
         conn.commit()
-        return {"session_id": session_id, "session_date": session_date, "session": session, "created_at": now}
+        return {
+            "session_id": session_id,
+            "session_date": session_date,
+            "session": session,
+            "program_version_id": program_version_id,
+            "created_at": now,
+        }
     finally:
         conn.close()
 
@@ -394,12 +429,15 @@ def list_sessions(profile_id: str, token: str, limit: int = 50):
     try:
         _init(conn, dialect)
         _authorized_profile(conn, dialect, profile_id, token)
-        rows = _execute(conn, dialect, """SELECT session_id, session_date, session_json, created_at
+        rows = _execute(conn, dialect, """SELECT session_id, session_date, session_json, program_version_id, created_at
             FROM atena_training_sessions WHERE profile_id = %s
             ORDER BY session_date DESC, created_at DESC LIMIT %s""",
             (profile_id, limit)).fetchall()
-        return [{"session_id": row[0], "session_date": row[1],
-                 "session": _decode_json(row[2]), "created_at": row[3]} for row in rows]
+        return [{
+            "session_id": row[0], "session_date": row[1],
+            "session": _decode_json(row[2]), "program_version_id": row[3],
+            "created_at": row[4],
+        } for row in rows]
     finally:
         conn.close()
 
@@ -522,6 +560,13 @@ def set_health_data_consent(profile_id: str, token: str, consent: bool):
             _execute(
                 conn, dialect,
                 "DELETE FROM atena_decision_events WHERE profile_id = %s AND data_classification = %s",
+                (profile_id, "health_sensitive"),
+            )
+            # Program snapshots derived from health-sensitive assessment data are
+            # erased too; FK ON DELETE SET NULL keeps non-health session history.
+            _execute(
+                conn, dialect,
+                "DELETE FROM atena_program_versions WHERE profile_id = %s AND data_classification = %s",
                 (profile_id, "health_sensitive"),
             )
             # Health/movement observations are consent-gated. On withdrawal,
