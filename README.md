@@ -21,6 +21,12 @@ ATENA returns a structured decision, action, monitoring targets, uncertainty, co
 
 Production URL: https://atena-mvp.onrender.com
 
+## ATENA Coach product track
+
+ATENA Coach is the separate end-user training product: it manages athlete onboarding, safe programme generation, actual training history, feedback and consent. ATENA Decision Engine remains the separate agent/API product described above. Shared decision logic does not mean shared user-data ownership or a single commercial onboarding flow.
+
+The Coach storage model, event contract, privacy boundaries and controlled migration sequence are documented in [ATENA Coach data model](ATENA_COACH_DATA_MODEL.md).
+
 ## Decision loop
 GOAL → CONTEXT → CONSTRAINTS → PRIORITY → STATE → STIMULUS → COST → HYPOTHESES → OPTIONS → DECISION → ACTION → MEASURE → INTERPRET → ADAPT
 
