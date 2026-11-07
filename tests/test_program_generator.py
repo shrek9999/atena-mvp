@@ -1022,3 +1022,53 @@ def test_carry_uses_distance_dose_and_separate_time_estimate(experience, expecte
     assert "work_seconds" not in prescription
     assert prescription["tempo"] == "tekoče"
     assert all(session["estimated_minutes"] <= profile["session_minutes"] for session in plan["sessions"])
+
+
+def _functional_carry(profile, feedback=None):
+    plan = generate_program({**profile, "goal": "functional"}, feedback=feedback)
+    return next(
+        exercise
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+        if exercise["pattern"] == "carry"
+    )
+
+
+def test_easy_feedback_progresses_carry_distance_not_timed_work():
+    baseline = _functional_carry(BASE)
+    progressed = _functional_carry(
+        BASE,
+        feedback={
+            "difficulty": "easy",
+            "completed": True,
+            "discomfort": "no",
+            "recovery": "normal",
+        },
+    )
+
+    assert baseline["prescription"]["reps"] == "20–30 m"
+    assert progressed["prescription"]["reps"] == "22–32 m"
+    assert progressed["prescription"]["estimated_work_seconds"] == 27
+    assert "work_seconds" not in progressed["prescription"]
+    assert "razdalja" in progressed["prescription"]["adjustment_note"]
+
+
+def test_hard_feedback_regresses_carry_distance_not_timed_work():
+    baseline = _functional_carry(BASE)
+    regressed = _functional_carry(
+        BASE,
+        feedback={
+            "difficulty": "hard",
+            "completed": True,
+            "discomfort": "no",
+            "recovery": "normal",
+        },
+    )
+
+    assert baseline["prescription"]["reps"] == "20–30 m"
+    assert regressed["prescription"]["reps"] == "18–28 m"
+    assert regressed["prescription"]["estimated_work_seconds"] == 23
+    assert "work_seconds" not in regressed["prescription"]
+    assert "work_seconds" not in regressed["prescription"]
+    assert "konservativno zmanjšan" in regressed["prescription"]["adjustment_note"]
+
