@@ -164,6 +164,11 @@ def create_athlete_state(
         symptoms = {}
     if not isinstance(symptoms, dict):
         raise AthleteStateError("symptoms mora biti objekt.")
+    unknown_symptom_fields = set(symptoms) - {"status", "items"}
+    if unknown_symptom_fields:
+        raise AthleteStateError(
+            "Neznana polja simptomov: " + ", ".join(sorted(unknown_symptom_fields))
+        )
     symptom_status = symptoms.get("status", "not_asked")
     if symptom_status not in SYMPTOM_STATUSES:
         raise AthleteStateError("Status simptomov ni veljaven.")
