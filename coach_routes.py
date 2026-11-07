@@ -97,7 +97,7 @@ def _profile_event_payload(profile):
     }
 
 
-def _programme_data_classification(athlete_state):
+def _programme_data_classification(athlete_state, sessions=None):
     """Classify a snapshot as sensitive if any movement/health screen informed it."""
     if not isinstance(athlete_state, dict):
         return "health_sensitive"
@@ -113,6 +113,10 @@ def _programme_data_classification(athlete_state):
         for item in tasks.values()
     ):
         return "health_sensitive"
+    for session in sessions or []:
+        record = session.get("session") if isinstance(session, dict) else None
+        if isinstance(record, dict) and record.get("discomfort_reported") is not None:
+            return "health_sensitive"
     return "operational"
 
 
@@ -2283,7 +2287,7 @@ def coach_profile_program(profile_id):
         )
         program_version_id = str(uuid.uuid4())
         data_classification = _programme_data_classification(
-            profile["profile"].get("athlete_state")
+            profile["profile"].get("athlete_state"), sessions
         )
         program_event = _decision_event(
             profile_id,
