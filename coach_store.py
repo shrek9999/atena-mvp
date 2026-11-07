@@ -14,6 +14,8 @@ import sqlite3
 from datetime import datetime, timezone
 from urllib.parse import quote, unquote, urlsplit
 
+from training.decision_event import DecisionEventError, validate_decision_event
+
 
 def _normalize_supabase_pooler_username(url: str) -> str:
     """Normalize shared Supabase pooler credentials without exposing or changing the password."""
@@ -145,12 +147,8 @@ def _execute(conn, dialect, sql, params=()):
 
 
 def _encode_json(value, dialect):
-    """Use psycopg's native JSONB adapter for hosted PostgreSQL."""
-    if dialect == "postgres":
-        from psycopg.types.json import Jsonb
-        return Jsonb(value)
-    return json.dumps(value, ensure_ascii=False)
-
+    """Serialize consistently for the TEXT columns used by both supported stores."""
+    return json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
 
 def _decode_json(value):
     """psycopg returns decoded JSONB values; SQLite returns serialized text."""
