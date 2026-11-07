@@ -171,8 +171,8 @@ def update_athlete_assessment(
 
     tasks = deepcopy(previous["movement_assessment"]["tasks"])
     if movement_tasks is not None:
-        if not isinstance(movement_tasks, dict):
-            raise ProfileStateMigrationError("movement_tasks mora biti objekt.")
+        if not isinstance(movement_tasks, dict) or not movement_tasks:
+            raise ProfileStateMigrationError("movement_tasks mora biti neprazen objekt.")
         allowed_tasks = set(tasks)
         if set(movement_tasks) - allowed_tasks:
             raise ProfileStateMigrationError("Ocena vsebuje neznano gibalno nalogo.")
