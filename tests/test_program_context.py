@@ -85,7 +85,7 @@ def test_multiple_stable_symptoms_omit_only_their_linked_patterns():
         "status": "present_stable",
         "items": [
             {"location": "knee", "provoking_task": "squat"},
-            {"location": "shoulder", "provoking_task": "overhead_press"},
+            {"location": "shoulder", "provoking_task": "push_up"},
         ],
     })
     plan = generate_program_for_athlete(profile)
@@ -95,4 +95,4 @@ def test_multiple_stable_symptoms_omit_only_their_linked_patterns():
         for event in events
         if event["action"] == "omitted_pending_symptom_review"
     }
-    assert {"squat", "vertical_push"}.issubset(omitted)
+    assert {"squat", "horizontal_push"}.issubset(omitted)
