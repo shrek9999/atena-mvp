@@ -1034,9 +1034,9 @@ def _functional_carry(profile, feedback=None):
     )
 
 
-def test_easy_feedback_progresses_carry_distance_not_timed_work():
+def test_single_easy_feedback_does_not_progress_carry_without_history():
     baseline = _functional_carry(BASE)
-    progressed = _functional_carry(
+    unchanged = _functional_carry(
         BASE,
         feedback={
             "difficulty": "easy",
@@ -1047,11 +1047,37 @@ def test_easy_feedback_progresses_carry_distance_not_timed_work():
     )
 
     assert baseline["prescription"]["reps"] == "20–30 m"
-    assert progressed["prescription"]["reps"] == "22–32 m"
-    assert progressed["prescription"]["estimated_work_seconds"] == 27
-    assert "work_seconds" not in progressed["prescription"]
-    assert "razdalja" in progressed["prescription"]["adjustment_note"]
+    assert unchanged["prescription"]["reps"] == "20–30 m"
+    assert "adjustment_note" not in unchanged["prescription"]
 
+
+def test_two_consecutive_easy_sessions_progress_carry_distance_not_timed_work():
+    progressed = generate_program(
+        {**BASE, "goal": "functional"},
+        feedback={
+            "difficulty": "easy",
+            "completed": True,
+            "discomfort": "no",
+            "recovery": "normal",
+        },
+        feedback_history=[{
+            "difficulty": "easy",
+            "completed": True,
+            "discomfort": "no",
+            "recovery": "normal",
+        }],
+    )
+    carry = next(
+        exercise
+        for session in progressed["sessions"]
+        for exercise in session["exercises"]
+        if exercise["pattern"] == "carry"
+    )
+
+    assert carry["prescription"]["reps"] == "22–32 m"
+    assert carry["prescription"]["estimated_work_seconds"] == 27
+    assert "work_seconds" not in carry["prescription"]
+    assert "razdalja" in carry["prescription"]["adjustment_note"]
 
 def test_hard_feedback_regresses_carry_distance_not_timed_work():
     baseline = _functional_carry(BASE)
