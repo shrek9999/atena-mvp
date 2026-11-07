@@ -14,6 +14,8 @@ import sqlite3
 from datetime import datetime, timezone
 from urllib.parse import quote, unquote, urlsplit
 
+from training.decision_event import DecisionEventError, validate_decision_event
+
 
 def _normalize_supabase_pooler_username(url: str) -> str:
     """Normalize shared Supabase pooler credentials without exposing or changing the password."""
@@ -101,7 +103,19 @@ def _connect(require_enabled=True):
         raise StorageUnavailable("PostgreSQL driver is not installed.") from exc
     url = _normalize_supabase_pooler_username(url)
     try:
-        return psycopg.connect(url, connect_timeout=8), "postgres"
+        conn = psycopg.connect(url, connect_timeout=8)
+        try:
+            # Use a dedicated NOLOGIN, NOBYPASSRLS application role. The role
+            # is provisioned by the reviewed Supabase migration; the postgres
+            # login is only the transport identity and must not run app queries.
+            with conn.cursor() as cursor:
+                cursor.execute("SET ROLE atena_app")
+            return conn, "postgres"
+        except Exception as exc:
+            conn.close()
+            raise _classify_database_error(exc) from exc
+    except StorageUnavailable:
+        raise
     except Exception as exc:
         raise _classify_database_error(exc) from exc
 
@@ -115,7 +129,7 @@ def _classify_database_error(exc):
         reason = "database_temporarily_unavailable"
     elif sqlstate and sqlstate.startswith("08"):
         reason = "database_network_connection_failed"
-    elif sqlstate in {"42P01", "42703", "42804", "42883"}:
+    elif sqlstate in {"42P01", "42703", "42804", "42883", "42704"}:
         reason = "database_schema_mismatch"
     elif sqlstate == "23505":
         reason = "database_record_conflict"
@@ -162,6 +176,13 @@ def _now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 def _init(conn, dialect):
+    """Initialize only disposable local SQLite stores.
+
+    Hosted PostgreSQL schema is managed exclusively through reviewed migrations.
+    Request handlers must never perform DDL or change grants/privileges.
+    """
+    if dialect != "sqlite":
+        return
     statements = [
         """CREATE TABLE IF NOT EXISTS atena_profiles (
             profile_id TEXT PRIMARY KEY,
@@ -181,22 +202,24 @@ def _init(conn, dialect):
             session_json TEXT NOT NULL,
             created_at TEXT NOT NULL
         )""",
-        "CREATE INDEX IF NOT EXISTS atena_sessions_profile_date ON atena_training_sessions(profile_id, session_date)"
+        """CREATE TABLE IF NOT EXISTS atena_decision_events (
+            event_id TEXT PRIMARY KEY,
+            profile_id TEXT NOT NULL REFERENCES atena_profiles(profile_id) ON DELETE CASCADE,
+            schema_version INTEGER NOT NULL,
+            event_type TEXT NOT NULL,
+            occurred_at TEXT NOT NULL,
+            source TEXT NOT NULL,
+            data_classification TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            program_version_id TEXT,
+            correlation_id TEXT,
+            created_at TEXT NOT NULL
+        )""",
+        "CREATE INDEX IF NOT EXISTS atena_sessions_profile_date ON atena_training_sessions(profile_id, session_date)",
+        "CREATE INDEX IF NOT EXISTS atena_events_profile_occurred ON atena_decision_events(profile_id, occurred_at)",
     ]
     for statement in statements:
         _execute(conn, dialect, statement)
-    if dialect == "postgres":
-        # These tables live in Supabase's exposed public schema. The app connects
-        # through the server-side database role; browser/API roles must never
-        # be able to read or mutate profile data directly.
-        postgres_safety = [
-            "ALTER TABLE atena_profiles ENABLE ROW LEVEL SECURITY",
-            "ALTER TABLE atena_training_sessions ENABLE ROW LEVEL SECURITY",
-            "REVOKE ALL PRIVILEGES ON TABLE atena_profiles FROM PUBLIC, anon, authenticated",
-            "REVOKE ALL PRIVILEGES ON TABLE atena_training_sessions FROM PUBLIC, anon, authenticated",
-        ]
-        for statement in postgres_safety:
-            _execute(conn, dialect, statement)
 
 
 def check_database_connection():
@@ -335,6 +358,88 @@ def list_sessions(profile_id: str, token: str, limit: int = 50):
     finally:
         conn.close()
 
+def append_decision_event(profile_id: str, token: str, event: dict):
+    """Append one validated event after authenticating profile and checking consent."""
+    conn, dialect = _connect()
+    try:
+        _init(conn, dialect)
+        authorized = _authorized_profile(conn, dialect, profile_id, token)
+        if not isinstance(event, dict) or event.get("profile_id") != profile_id:
+            raise DecisionEventError("Dogodek mora pripadati preverjenemu profilu.")
+        normalized = validate_decision_event(
+            event,
+            health_consent_verified=authorized["health_data_consent"] is True,
+        )
+        cursor = _execute(
+            conn, dialect,
+            """INSERT INTO atena_decision_events
+                (event_id, profile_id, schema_version, event_type, occurred_at,
+                 source, data_classification, payload_json, program_version_id,
+                 correlation_id, created_at)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+               ON CONFLICT(event_id) DO NOTHING""",
+            (
+                normalized["event_id"], profile_id, normalized["schema_version"],
+                normalized["event_type"], normalized["occurred_at"],
+                normalized["source"], normalized["data_classification"],
+                _encode_json(normalized["payload"], dialect),
+                normalized.get("program_version_id"), normalized.get("correlation_id"),
+                _now(),
+            ),
+        )
+        if cursor.rowcount == 0:
+            raise DecisionEventError("Dogodek s tem identifikatorjem že obstaja.")
+        conn.commit()
+        return normalized
+    finally:
+        conn.close()
+
+
+def list_decision_events(profile_id: str, token: str, limit: int = 50):
+    """Return a bounded, authenticated event history for one profile."""
+    if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 100:
+        raise ValueError("Omejitev dogodkov mora biti med 1 in 100.")
+    conn, dialect = _connect(require_enabled=False)
+    try:
+        _init(conn, dialect)
+        _authorized_profile(conn, dialect, profile_id, token)
+        rows = _execute(
+            conn, dialect,
+            """SELECT event_id, schema_version, event_type, occurred_at, source,
+                      data_classification, payload_json, program_version_id,
+                      correlation_id, created_at
+                 FROM atena_decision_events
+                WHERE profile_id = %s
+                ORDER BY occurred_at DESC, created_at DESC, event_id DESC
+                LIMIT %s""",
+            (profile_id, limit),
+        ).fetchall()
+        events = []
+        for row in rows:
+            occurred_at = row[3]
+            created_at = row[9]
+            if hasattr(occurred_at, "isoformat"):
+                occurred_at = occurred_at.isoformat()
+            if hasattr(created_at, "isoformat"):
+                created_at = created_at.isoformat()
+            events.append({
+                "event_id": row[0],
+                "schema_version": row[1],
+                "profile_id": profile_id,
+                "event_type": row[2],
+                "occurred_at": occurred_at,
+                "source": row[4],
+                "data_classification": row[5],
+                "payload": _decode_json(row[6]),
+                "program_version_id": row[7],
+                "correlation_id": row[8],
+                "created_at": created_at,
+            })
+        return events
+    finally:
+        conn.close()
+
+
 def delete_profile(profile_id: str, token: str):
     conn, dialect = _connect(require_enabled=False)
     try:
@@ -358,6 +463,12 @@ def set_health_data_consent(profile_id: str, token: str, consent: bool):
                  "UPDATE atena_profiles SET health_data_consent = %s, health_data_consent_at = %s, updated_at = %s WHERE profile_id = %s",
                  (bool(consent), now if consent else None, now, profile_id))
         if not consent:
+            # Remove consent-gated longitudinal records in the same transaction.
+            _execute(
+                conn, dialect,
+                "DELETE FROM atena_decision_events WHERE profile_id = %s AND data_classification = %s",
+                (profile_id, "health_sensitive"),
+            )
             # Health/movement observations are consent-gated. On withdrawal,
             # erase them from the canonical state as well as legacy session flags.
             profile_data = authorized["profile"]

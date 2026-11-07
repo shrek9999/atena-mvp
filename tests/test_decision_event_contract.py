@@ -118,3 +118,8 @@ def test_boolean_schema_version_is_not_accepted_as_integer_version_one():
 def test_unhashable_enum_values_are_rejected_cleanly():
     with pytest.raises(DecisionEventError):
         validate_decision_event(event(event_type=[]))
+
+
+def test_health_sensitive_event_types_cannot_be_misclassified_as_operational():
+    with pytest.raises(DecisionEventError, match="zdravstveno občutljiva"):
+        validate_decision_event(event(event_type="movement_assessment_recorded"))

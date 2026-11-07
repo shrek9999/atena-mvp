@@ -408,7 +408,7 @@ def test_saved_profile_limits_match_program_generator():
             _validate_profile(invalid)
 
 
-def test_postgres_profile_tables_enable_rls_and_revoke_public_access(monkeypatch):
+def test_postgres_runtime_init_does_not_execute_schema_or_privilege_ddl(monkeypatch):
     import coach_store
 
     statements = []
@@ -418,11 +418,25 @@ def test_postgres_profile_tables_enable_rls_and_revoke_public_access(monkeypatch
         lambda conn, dialect, sql, params=(): statements.append(sql),
     )
     coach_store._init(object(), "postgres")
+    assert statements == []
 
-    assert "ALTER TABLE atena_profiles ENABLE ROW LEVEL SECURITY" in statements
-    assert "ALTER TABLE atena_training_sessions ENABLE ROW LEVEL SECURITY" in statements
-    assert any("atena_profiles FROM PUBLIC, anon, authenticated" in sql for sql in statements)
-    assert any("atena_training_sessions FROM PUBLIC, anon, authenticated" in sql for sql in statements)
+
+def test_sqlite_runtime_init_creates_local_event_store(monkeypatch, tmp_path):
+    import coach_store
+
+    monkeypatch.setenv("ATENA_ALLOW_SQLITE_STORAGE", "true")
+    conn = sqlite3.connect(tmp_path / "init-test.sqlite3")
+    try:
+        conn.execute("PRAGMA foreign_keys = ON")
+        coach_store._init(conn, "sqlite")
+        tables = {
+            row[0] for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            )
+        }
+        assert "atena_decision_events" in tables
+    finally:
+        conn.close()
 
 
 
@@ -1080,3 +1094,165 @@ def test_saved_profile_program_blocks_when_persisted_symptoms_conflict_with_clea
     )
     assert response.status_code == 409
     assert response.get_json()["blocked"] is True
+
+
+def _event(profile_id, *, event_id="event-001", classification="operational", event_type="session_completed"):
+    return {
+        "schema_version": 1,
+        "event_id": event_id,
+        "profile_id": profile_id,
+        "event_type": event_type,
+        "occurred_at": "2026-11-07T10:15:00+01:00",
+        "source": "system",
+        "data_classification": classification,
+        "payload": {"completed": True, "duration_minutes": 45},
+    }
+
+
+def test_operational_decision_event_is_authenticated_and_persisted(monkeypatch, tmp_path):
+    from coach_store import append_decision_event, list_decision_events
+
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+
+    saved = append_decision_event(profile_id, token, _event(profile_id))
+    history = list_decision_events(profile_id, token)
+    assert saved["event_id"] == "event-001"
+    assert len(history) == 1
+    assert history[0]["payload"]["completed"] is True
+    assert history[0]["data_classification"] == "operational"
+
+
+def test_health_sensitive_event_requires_stored_profile_consent(monkeypatch, tmp_path):
+    import pytest
+    from coach_store import append_decision_event
+    from training.decision_event import DecisionEventError
+
+    client = _client(monkeypatch, tmp_path, health_consent=False)
+    created = _create(client, health_consent=False)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    with pytest.raises(DecisionEventError, match="privolitev"):
+        append_decision_event(
+            profile_id, token,
+            _event(profile_id, classification="health_sensitive", event_type="symptom_context_recorded"),
+        )
+
+
+def test_health_sensitive_event_is_erased_when_consent_is_withdrawn(monkeypatch, tmp_path):
+    from coach_store import append_decision_event, list_decision_events
+
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    append_decision_event(
+        profile_id, token,
+        _event(profile_id, classification="health_sensitive", event_type="symptom_context_recorded"),
+    )
+    append_decision_event(profile_id, token, _event(profile_id, event_id="event-002"))
+    assert len(list_decision_events(profile_id, token)) == 2
+
+    withdrawn = client.post(
+        f"/coach/profile/{profile_id}/consent",
+        headers={"X-Profile-Token": token},
+        json={"health_data_consent": False},
+    )
+    assert withdrawn.status_code == 200
+    history = list_decision_events(profile_id, token)
+    assert [item["event_id"] for item in history] == ["event-002"]
+
+
+def test_event_store_rejects_cross_profile_and_duplicate_events(monkeypatch, tmp_path):
+    import pytest
+    from coach_store import append_decision_event
+    from training.decision_event import DecisionEventError
+
+    client = _client(monkeypatch, tmp_path)
+    first = _create(client)
+    second = _create(client)
+    first_id = first["profile"]["profile_id"]
+    first_token = first["profile_access_token"]
+
+    with pytest.raises(DecisionEventError, match="prip"):
+        append_decision_event(first_id, first_token, _event(second["profile"]["profile_id"]))
+    append_decision_event(first_id, first_token, _event(first_id))
+    with pytest.raises(DecisionEventError, match="že obstaja"):
+        append_decision_event(first_id, first_token, _event(first_id))
+
+
+def test_event_history_requires_correct_profile_token_and_bounded_limit(monkeypatch, tmp_path):
+    import pytest
+    from coach_store import ProfileNotFound, list_decision_events
+
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+
+    with pytest.raises(ProfileNotFound):
+        list_decision_events(profile_id, "wrong-token")
+    with pytest.raises(ValueError):
+        list_decision_events(profile_id, token, limit=101)
+
+
+def test_profile_deletion_cascades_to_decision_events(monkeypatch, tmp_path):
+    import sqlite3
+    from coach_store import append_decision_event
+
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    append_decision_event(profile_id, token, _event(profile_id))
+
+    deleted = client.delete(
+        f"/coach/profile/{profile_id}",
+        headers={"X-Profile-Token": token},
+    )
+    assert deleted.status_code == 200
+    conn = sqlite3.connect(tmp_path / "atena-test.sqlite3")
+    try:
+        remaining = conn.execute(
+            "SELECT COUNT(*) FROM atena_decision_events WHERE profile_id = ?",
+            (profile_id,),
+        ).fetchone()[0]
+    finally:
+        conn.close()
+    assert remaining == 0
+
+
+def test_postgres_store_connections_switch_to_least_privilege_role(monkeypatch):
+    import psycopg
+    import coach_store
+
+    statements = []
+
+    class FakeCursor:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def execute(self, statement):
+            statements.append(statement)
+
+    class FakeConnection:
+        def cursor(self):
+            return FakeCursor()
+
+        def close(self):
+            pass
+
+    monkeypatch.setenv("ATENA_DATABASE_URL", "postgresql://app:secret@example.test:5432/db")
+    monkeypatch.setenv("ATENA_DATA_STORAGE_ENABLED", "true")
+    monkeypatch.setenv("ATENA_PRIVACY_NOTICE_APPROVED", "true")
+    monkeypatch.setattr(psycopg, "connect", lambda *args, **kwargs: FakeConnection())
+
+    conn, dialect = coach_store._connect()
+    assert conn is not None
+    assert dialect == "postgres"
+    assert statements == ["SET ROLE atena_app"]
