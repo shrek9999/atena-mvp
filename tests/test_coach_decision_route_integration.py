@@ -1,3 +1,4 @@
+import coach_routes
 from coach_routes import _build_adaptive_decision
 from training.athlete_state import create_athlete_state
 
@@ -42,3 +43,30 @@ def test_legacy_call_without_canonical_state_keeps_compatibility_path():
     assert decision["decision"] == "collect_baseline"
     assert "decision_authority" not in decision
     assert decision["adaptation_id"]
+
+
+def test_final_safety_decision_blocks_exercise_progression(monkeypatch):
+    called = []
+    monkeypatch.setattr(
+        coach_routes, "apply_exercise_progression",
+        lambda program, progressions: called.append(True) or {"changed": True},
+    )
+    original = {"program": "unchanged"}
+    result = coach_routes._apply_progression_with_decision_gate(
+        original, [{"exercise_id": "squat", "decision": "increase_load"}],
+        {"progression_allowed": False},
+    )
+    assert result is original
+    assert called == []
+
+
+def test_final_decision_must_explicitly_allow_progression(monkeypatch):
+    monkeypatch.setattr(
+        coach_routes, "apply_exercise_progression",
+        lambda program, progressions: {"applied": len(progressions)},
+    )
+    result = coach_routes._apply_progression_with_decision_gate(
+        {"program": "baseline"}, [{"exercise_id": "squat"}],
+        {"progression_allowed": True},
+    )
+    assert result == {"applied": 1}
