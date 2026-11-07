@@ -96,3 +96,9 @@ def test_multiple_stable_symptoms_omit_only_their_linked_patterns():
         if event["action"] == "omitted_pending_symptom_review"
     }
     assert {"squat", "horizontal_push"}.issubset(omitted)
+
+
+def test_horizontal_push_assessment_does_not_automatically_cover_overhead_press():
+    from training.movement_assessment import TASK_PATTERNS
+    assert TASK_PATTERNS["push"] == {"horizontal_push"}
+    assert TASK_PATTERNS["overhead"] == {"vertical_push"}
