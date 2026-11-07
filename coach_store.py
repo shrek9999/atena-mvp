@@ -692,7 +692,7 @@ def list_decision_events(profile_id: str, token: str, limit: int = 50):
     conn, dialect = _connect(require_enabled=False)
     try:
         _init(conn, dialect)
-        _authorized_profile(conn, dialect, profile_id, token)
+        authorized = _authorized_profile(conn, dialect, profile_id, token)
         rows = _execute(
             conn, dialect,
             """SELECT event_id, schema_version, event_type, occurred_at, source,
@@ -700,9 +700,10 @@ def list_decision_events(profile_id: str, token: str, limit: int = 50):
                       correlation_id, created_at
                  FROM atena_decision_events
                 WHERE profile_id = %s
+                  AND (%s OR data_classification = 'operational')
                 ORDER BY occurred_at DESC, created_at DESC, event_id DESC
                 LIMIT %s""",
-            (profile_id, limit),
+            (profile_id, authorized["health_data_consent"] is True, limit),
         ).fetchall()
         events = []
         for row in rows:
