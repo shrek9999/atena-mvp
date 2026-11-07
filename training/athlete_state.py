@@ -164,6 +164,11 @@ def create_athlete_state(
         symptoms = {}
     if not isinstance(symptoms, dict):
         raise AthleteStateError("symptoms mora biti objekt.")
+    unknown_symptom_fields = set(symptoms) - {"status", "items"}
+    if unknown_symptom_fields:
+        raise AthleteStateError(
+            "Neznana polja simptomov: " + ", ".join(sorted(unknown_symptom_fields))
+        )
     symptom_status = symptoms.get("status", "not_asked")
     if symptom_status not in SYMPTOM_STATUSES:
         raise AthleteStateError("Status simptomov ni veljaven.")
@@ -177,7 +182,20 @@ def create_athlete_state(
             raise AthleteStateError(
                 "Neznana polja konteksta simptomov: " + ", ".join(sorted(unknown_fields))
             )
-        normalized_symptom_items.append(deepcopy(item))
+        normalized_item = deepcopy(item)
+        for field, value in normalized_item.items():
+            if field == "intensity":
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(value, (int, float))
+                    or not 0 <= value <= 10
+                ):
+                    raise AthleteStateError("Intenzivnost simptoma mora biti število med 0 in 10.")
+            elif not isinstance(value, str) or not value.strip() or len(value) > 300:
+                raise AthleteStateError(f"Polje konteksta simptoma {field} mora biti neprazen niz do 300 znakov.")
+            else:
+                normalized_item[field] = value.strip()
+        normalized_symptom_items.append(normalized_item)
     if symptom_status == "denied" and normalized_symptom_items:
         raise AthleteStateError("Status denied ne sme vsebovati prijavljenih simptomov.")
     if symptom_status in {"present_stable", "new_or_worsening", "concerning"} and not normalized_symptom_items:

@@ -7,6 +7,7 @@ them under athlete_state.
 from __future__ import annotations
 
 from copy import deepcopy
+from datetime import datetime, timezone
 
 from training.athlete_state import (
     AthleteStateError,
@@ -146,3 +147,76 @@ def attach_athlete_state(
 def profile_needs_state_migration(profile: dict) -> bool:
     """Identify legacy records that do not yet persist the canonical state."""
     return not isinstance(profile, dict) or "athlete_state" not in profile
+
+
+def update_athlete_assessment(
+    profile: dict,
+    profile_id: str,
+    *,
+    movement_tasks: dict | None = None,
+    symptoms: dict | None = None,
+) -> dict:
+    """Update only explicitly supplied assessment fields in a stored profile.
+
+    The canonical state is rebuilt through its constructor so the same
+    validation rules apply to new and persisted observations.
+    """
+    if movement_tasks is None and symptoms is None:
+        raise ProfileStateMigrationError("Navedi vsaj oceno gibanja ali kontekst simptomov.")
+    if not isinstance(profile, dict):
+        raise ProfileStateMigrationError("Profil mora biti objekt.")
+    previous = _existing_state(profile, profile_id)
+    if previous is None:
+        raise ProfileStateMigrationError("Profil še nima kanoničnega stanja športnika.")
+
+    tasks = deepcopy(previous["movement_assessment"]["tasks"])
+    if movement_tasks is not None:
+        if not isinstance(movement_tasks, dict) or not movement_tasks:
+            raise ProfileStateMigrationError("movement_tasks mora biti neprazen objekt.")
+        allowed_tasks = set(tasks)
+        if set(movement_tasks) - allowed_tasks:
+            raise ProfileStateMigrationError("Ocena vsebuje neznano gibalno nalogo.")
+        recorded_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        for task, value in movement_tasks.items():
+            if isinstance(value, str):
+                value = {"status": value}
+            if not isinstance(value, dict) or set(value) - {"status", "note"}:
+                raise ProfileStateMigrationError("Podatek gibalne naloge vsebuje nepodprta polja.")
+            status = value.get("status", "not_assessed")
+            note = value.get("note")
+            if note is not None and (not isinstance(note, str) or len(note) > 500):
+                raise ProfileStateMigrationError("Opomba gibalne naloge je neveljavna.")
+            tasks[task] = {
+                "status": status,
+                "source": "self_reported" if status != "not_assessed" else None,
+                "recorded_at": recorded_at if status != "not_assessed" else None,
+                "note": note,
+            }
+
+    symptom_data = deepcopy(previous["symptoms"] if symptoms is None else symptoms)
+    goal = previous["goal"]
+    goal_name = goal.get("canonical_goal") if isinstance(goal, dict) else goal
+    try:
+        updated_state = create_athlete_state(
+            profile_id=previous["profile_id"],
+            goal=goal_name,
+            experience=previous["experience"],
+            training_emphasis=goal.get("strength_emphasis") if isinstance(goal, dict) else None,
+            functional_focus=goal.get("functional_focus") if isinstance(goal, dict) else None,
+            equipment=previous["equipment"],
+            sessions_per_week=previous["availability"]["sessions_per_week"],
+            session_duration_minutes=previous["availability"]["session_duration_minutes"],
+            available_days=previous["availability"]["available_days"],
+            self_reported_capabilities=previous["capabilities"]["self_reported"],
+            movement_tasks=tasks,
+            symptoms=symptom_data,
+            excluded_patterns=previous["constraints"]["excluded_patterns"],
+            excluded_exercise_ids=previous["constraints"]["excluded_exercise_ids"],
+            provenance=previous["provenance"],
+        )
+    except (AthleteStateError, TypeError) as exc:
+        raise ProfileStateMigrationError("Ocene ali konteksta simptomov ni mogoče varno shraniti.") from exc
+
+    result = deepcopy(profile)
+    result["athlete_state"] = updated_state
+    return result

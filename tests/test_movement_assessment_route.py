@@ -53,7 +53,7 @@ def test_program_route_returns_assessment_as_context_without_changing_program(mo
 
     called = {}
 
-    def fake_generate_program(profile, feedback=None, movement_assessment=None):
+    def fake_generate_program(profile, feedback=None, movement_assessment=None, feedback_history=None):
         called["profile"] = profile
         called["feedback"] = feedback
         called["movement_assessment"] = movement_assessment

@@ -486,11 +486,10 @@ def test_profile_program_keeps_global_feedback_out_of_generator_and_exposes_adap
 
     import coach_routes
     captured = {}
-    def fake_generate(profile, feedback=None):
+    def fake_generate(profile):
         captured["profile"] = profile
-        captured["feedback"] = feedback
-        return {"goal": profile["goal"], "feedback_applied": feedback, "sessions": []}
-    monkeypatch.setattr(coach_routes, "generate_program", fake_generate)
+        return {"goal": profile["goal"], "feedback_applied": None, "sessions": []}
+    monkeypatch.setattr(coach_routes, "generate_program_for_athlete", fake_generate)
 
     response = client.post(
         f"/coach/profile/{profile_id}/program",
@@ -499,9 +498,9 @@ def test_profile_program_keeps_global_feedback_out_of_generator_and_exposes_adap
     )
     assert response.status_code == 200
     assert captured["profile"]["goal"] == "hypertrophy"
+    assert "athlete_state" in captured["profile"]
     # Session feedback is consumed by the explainable decision layer, not
     # applied globally to every exercise by the programme generator.
-    assert captured["feedback"] is None
     data = response.get_json()
     # Poor recovery is a higher-priority signal than an unspecified
     # incomplete-session reason, so the engine requests a recovery review.
@@ -807,7 +806,7 @@ def test_profile_update_preserves_existing_movement_and_symptom_context(monkeypa
     assert saved["athlete_state"]["symptoms"]["items"][0]["location"] == "koleno"
 
 
-def test_program_generator_receives_legacy_profile_view_not_canonical_envelope(monkeypatch, tmp_path):
+def test_saved_profile_program_adapter_receives_validated_canonical_envelope(monkeypatch, tmp_path):
     client = _client(monkeypatch, tmp_path)
     created = _create(client)
     profile_id = created["profile"]["profile_id"]
@@ -816,18 +815,18 @@ def test_program_generator_receives_legacy_profile_view_not_canonical_envelope(m
     import coach_routes
     captured = {}
 
-    def fake_generate(profile, feedback=None):
+    def fake_generate(profile):
         captured["profile"] = profile
         return {"goal": profile["goal"], "sessions": []}
 
-    monkeypatch.setattr(coach_routes, "generate_program", fake_generate)
+    monkeypatch.setattr(coach_routes, "generate_program_for_athlete", fake_generate)
     response = client.post(
         f"/coach/profile/{profile_id}/program",
         headers={"X-Profile-Token": token},
         json={"no_current_pain_or_restrictions": True},
     )
     assert response.status_code == 200
-    assert "athlete_state" not in captured["profile"]
+    assert "athlete_state" in captured["profile"]
     assert captured["profile"]["goal"] == "hypertrophy"
 
 
@@ -973,3 +972,111 @@ def test_explicitly_incomplete_session_still_triggers_reason_review():
     assert simple["decision"] == "maintain_and_reschedule"
     assert simple["volume_change"] == "maintain"
     assert detailed["decision"] == "restructure_session"
+
+
+def test_profile_assessment_requires_explicit_health_data_consent(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client, health_consent=False)
+    profile_id = created["profile"]["profile_id"]
+    response = client.put(
+        f"/coach/profile/{profile_id}/assessment",
+        headers={"X-Profile-Token": created["profile_access_token"]},
+        json={"movement_tasks": {"squat": "needs_support"}},
+    )
+    assert response.status_code == 403
+
+
+def test_profile_assessment_persists_movement_and_symptom_context_with_consent(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    response = client.put(
+        f"/coach/profile/{profile_id}/assessment",
+        headers={"X-Profile-Token": token},
+        json={
+            "movement_tasks": {
+                "squat": {"status": "needs_support", "note": "Potrebna je stabilna opora."},
+            },
+            "symptoms": {
+                "status": "present_stable",
+                "items": [{"location": "koleno", "side": "levo", "provoking_task": "squat"}],
+            },
+        },
+    )
+    assert response.status_code == 200
+    assert response.get_json()["assessment_stored"] is True
+
+    loaded = client.get(
+        f"/coach/profile/{profile_id}",
+        headers={"X-Profile-Token": token},
+    )
+    state = loaded.get_json()["profile"]["profile"]["athlete_state"]
+    squat = state["movement_assessment"]["tasks"]["squat"]
+    assert squat["status"] == "needs_support"
+    assert squat["source"] == "self_reported"
+    assert squat["note"] == "Potrebna je stabilna opora."
+    assert state["symptoms"]["status"] == "present_stable"
+    assert state["symptoms"]["items"][0]["provoking_task"] == "squat"
+
+
+def test_profile_assessment_rejects_unknown_movement_task_without_mutation(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    response = client.put(
+        f"/coach/profile/{profile_id}/assessment",
+        headers={"X-Profile-Token": token},
+        json={"movement_tasks": {"unknown_task": "needs_support"}},
+    )
+    assert response.status_code == 409
+    loaded = client.get(f"/coach/profile/{profile_id}", headers={"X-Profile-Token": token})
+    tasks = loaded.get_json()["profile"]["profile"]["athlete_state"]["movement_assessment"]["tasks"]
+    assert all(item["status"] == "not_assessed" for item in tasks.values())
+
+
+def test_saved_profile_program_uses_persisted_movement_assessment(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    updated = client.put(
+        f"/coach/profile/{profile_id}/assessment",
+        headers={"X-Profile-Token": token},
+        json={"movement_tasks": {"squat": "needs_support"}},
+    )
+    assert updated.status_code == 200
+
+    response = client.post(
+        f"/coach/profile/{profile_id}/program",
+        headers={"X-Profile-Token": token},
+        json={"no_current_pain_or_restrictions": True},
+    )
+    assert response.status_code == 200
+    events = response.get_json()["program"]["movement_adaptation"]["events"]
+    assert any(event["pattern"] == "squat" and event["action"] == "simpler_catalogue_variant_selected" for event in events)
+
+
+def test_saved_profile_program_blocks_when_persisted_symptoms_conflict_with_clearance(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    updated = client.put(
+        f"/coach/profile/{profile_id}/assessment",
+        headers={"X-Profile-Token": token},
+        json={"symptoms": {
+            "status": "new_or_worsening",
+            "items": [{"location": "koleno", "provoking_task": "squat"}],
+        }},
+    )
+    assert updated.status_code == 200
+
+    response = client.post(
+        f"/coach/profile/{profile_id}/program",
+        headers={"X-Profile-Token": token},
+        json={"no_current_pain_or_restrictions": True},
+    )
+    assert response.status_code == 409
+    assert response.get_json()["blocked"] is True

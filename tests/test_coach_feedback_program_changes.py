@@ -49,28 +49,33 @@ def test_endurance_is_a_distinct_conditioning_program_not_a_strength_template():
     assert endurance_patterns != strength_patterns
 
 
-def test_easy_feedback_changes_next_prescription_and_explains_why():
+def test_single_easy_feedback_holds_and_two_easy_exposures_progress():
     base = generate_program(profile("strength", "intermediate"))
-    adapted = generate_program(
+    feedback = {
+        "difficulty": "easy",
+        "completed": True,
+        "discomfort": "no",
+        "recovery": "normal",
+    }
+    single = generate_program(profile("strength", "intermediate"), feedback=feedback)
+    repeated = generate_program(
         profile("strength", "intermediate"),
-        feedback={
-            "difficulty": "easy",
-            "completed": True,
-            "discomfort": "no",
-            "recovery": "normal",
-        },
+        feedback=feedback,
+        feedback_history=[feedback],
     )
     before = {x["exercise_id"]: x["prescription"] for x in exercises(base)}
-    after = {x["exercise_id"]: x["prescription"] for x in exercises(adapted)}
+    after_single = {x["exercise_id"]: x["prescription"] for x in exercises(single)}
+    after_repeated = {x["exercise_id"]: x["prescription"] for x in exercises(repeated)}
 
+    assert all(before[key].get("reps") == after_single[key].get("reps") for key in before)
     changed = [
-        exercise_id for exercise_id in before
-        if before[exercise_id].get("reps") != after[exercise_id].get("reps")
-        or before[exercise_id].get("work_seconds") != after[exercise_id].get("work_seconds")
+        key for key in before
+        if before[key].get("reps") != after_repeated[key].get("reps")
+        or before[key].get("work_seconds") != after_repeated[key].get("work_seconds")
     ]
     assert changed
-    assert all(after[item].get("adjustment_note") for item in changed)
-    assert adapted["feedback_applied"]["difficulty"] == "easy"
+    assert all(after_repeated[item].get("adjustment_note") for item in changed)
+    assert single["feedback_applied"]["difficulty"] == "easy"
 
 
 def test_hard_feedback_changes_next_prescription_and_explains_why():
@@ -100,9 +105,11 @@ def test_hard_feedback_changes_next_prescription_and_explains_why():
 
 def test_easy_and_hard_feedback_also_change_endurance_work():
     base = generate_program(profile("endurance", "intermediate"))
+    easy_feedback = {"difficulty": "easy", "completed": True, "discomfort": "no", "recovery": "normal"}
     easy = generate_program(
         profile("endurance", "intermediate"),
-        feedback={"difficulty": "easy", "completed": True, "discomfort": "no", "recovery": "normal"},
+        feedback=easy_feedback,
+        feedback_history=[easy_feedback],
     )
     hard = generate_program(
         profile("endurance", "intermediate"),
@@ -233,3 +240,27 @@ def test_heel_elevated_squat_is_available_when_stable_support_is_selected():
 def test_carries_are_not_inserted_as_default_filler():
     plan = generate_program(profile("strength", "intermediate"))
     assert all(x["pattern"] != "carry" for x in exercises(plan))
+
+
+def test_missing_completion_recovery_or_symptom_confirmation_never_counts_as_easy_progress():
+    base = generate_program(profile("strength", "intermediate"))
+    baseline = {x["exercise_id"]: x["prescription"] for x in exercises(base)}
+    complete_easy = {
+        "difficulty": "easy",
+        "completed": True,
+        "discomfort": "no",
+        "recovery": "normal",
+    }
+    incomplete_current = generate_program(
+        profile("strength", "intermediate"),
+        feedback={"difficulty": "easy"},
+        feedback_history=[complete_easy],
+    )
+    incomplete_history = generate_program(
+        profile("strength", "intermediate"),
+        feedback=complete_easy,
+        feedback_history=[{"difficulty": "easy", "completed": True, "discomfort": "no"}],
+    )
+    for plan in (incomplete_current, incomplete_history):
+        prescriptions = {x["exercise_id"]: x["prescription"] for x in exercises(plan)}
+        assert all(baseline[key].get("reps") == prescriptions[key].get("reps") for key in baseline)
