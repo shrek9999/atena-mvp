@@ -58,6 +58,10 @@ def _movement_assessment(state: dict) -> dict:
 def _apply_symptom_context(state: dict, assessment: dict) -> dict:
     symptoms = state["symptoms"]
     status = symptoms["status"]
+    if status == "asked_unanswered":
+        raise ProgramSafetyBlock(
+            "Vprašanje o trenutnih simptomih še nima odgovora. Pred pripravo programa razjasni, ali so prisotne bolečine, nelagodje ali omejitve."
+        )
     if status in {"new_or_worsening", "concerning"}:
         raise ProgramSafetyBlock(
             "Simptomi so novi, se slabšajo ali zahtevajo dodatno presojo. "

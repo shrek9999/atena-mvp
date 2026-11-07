@@ -48,6 +48,12 @@ def test_stable_symptom_is_limited_to_its_reported_provoking_task():
     assert not any(event["pattern"] == "hinge" and event["action"] == "omitted_pending_symptom_review" for event in events)
 
 
+def test_unanswered_symptom_screen_blocks_programme_generation():
+    profile = _profile(symptoms={"status": "asked_unanswered", "items": []})
+    with pytest.raises(ProgramSafetyBlock, match="še nima odgovora"):
+        generate_program_for_athlete(profile)
+
+
 @pytest.mark.parametrize("status", ["new_or_worsening", "concerning"])
 def test_new_or_concerning_symptoms_block_automatic_programme_generation(status):
     profile = _profile(symptoms={

@@ -437,6 +437,7 @@ def test_postgres_profile_tables_enable_rls_and_revoke_public_access(monkeypatch
     assert "ALTER TABLE atena_profiles ENABLE ROW LEVEL SECURITY" in statements
     assert "ALTER TABLE atena_training_sessions ENABLE ROW LEVEL SECURITY" in statements
     assert "ALTER TABLE atena_decision_events ENABLE ROW LEVEL SECURITY" in statements
+    assert "ALTER TABLE atena_program_versions ENABLE ROW LEVEL SECURITY" in statements
     assert any("atena_profiles FROM PUBLIC, anon, authenticated" in sql for sql in statements)
     assert any("atena_training_sessions FROM PUBLIC, anon, authenticated" in sql for sql in statements)
     assert any("atena_decision_events FROM PUBLIC, anon, authenticated" in sql for sql in statements)
@@ -523,6 +524,14 @@ def test_profile_program_keeps_global_feedback_out_of_generator_and_exposes_adap
     # incomplete-session reason, so the engine requests a recovery review.
     assert data["adaptive_decision"]["decision"] == "recovery_review"
     assert data["adaptive_decision"]["clarifying_question"]
+    assert data["program_version_id"]
+    history = client.get(
+        f"/coach/profile/{profile_id}/programs",
+        headers={"X-Profile-Token": token},
+    )
+    assert history.status_code == 200
+    assert len(history.get_json()["program_versions"]) == 1
+    assert history.get_json()["program_versions"][0]["program_version_id"] == data["program_version_id"]
 
 
 def test_profile_program_holds_progression_after_logged_discomfort_and_fresh_safety_recheck(monkeypatch, tmp_path):
@@ -558,7 +567,23 @@ def test_profile_program_holds_progression_after_logged_discomfort_and_fresh_saf
     assert data["adaptive_decision"]["decision"] == "pause_and_review"
     assert data["adaptive_decision"]["automatic_program_changes"] is False
     assert data["program"]["feedback_applied"] is None
-
+    history = client.get(
+        f"/coach/profile/{profile_id}/programs",
+        headers={"X-Profile-Token": token},
+    )
+    assert history.status_code == 200
+    assert history.get_json()["program_versions"][0]["health_context_used"] is True
+    withdrawn = client.post(
+        f"/coach/profile/{profile_id}/consent",
+        headers={"X-Profile-Token": token},
+        json={"health_data_consent": False},
+    )
+    assert withdrawn.status_code == 200
+    after_withdrawal = client.get(
+        f"/coach/profile/{profile_id}/programs",
+        headers={"X-Profile-Token": token},
+    )
+    assert after_withdrawal.get_json()["program_versions"] == []
 
 
 def test_time_based_exercise_history_stores_seconds_without_faking_repetitions(monkeypatch, tmp_path):
@@ -1097,3 +1122,56 @@ def test_saved_profile_program_blocks_when_persisted_symptoms_conflict_with_clea
     )
     assert response.status_code == 409
     assert response.get_json()["blocked"] is True
+
+
+def test_heart_rate_requires_health_data_consent(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path, health_consent=False)
+    created = _create(client, health_consent=False)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    response = client.post(
+        f"/coach/profile/{profile_id}/sessions",
+        headers={"X-Profile-Token": token},
+        json={
+            "session_date": "2026-11-07", "duration_minutes": 30,
+            "difficulty": "moderate", "completed": True, "exercises": [],
+            "conditioning": [{
+                "modality": "aerobic_base", "protocol_id": "zone2-bike",
+                "work_seconds": 1200, "duration_seconds": 1500,
+                "intervals_completed": 1, "rpe": 4, "average_heart_rate": 130,
+            }],
+        },
+    )
+    assert response.status_code == 403
+
+
+def test_consent_withdrawal_removes_heart_rate_but_preserves_training_record(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    headers = {"X-Profile-Token": token}
+    logged = client.post(
+        f"/coach/profile/{profile_id}/sessions",
+        headers=headers,
+        json={
+            "session_date": "2026-11-07", "duration_minutes": 30,
+            "difficulty": "moderate", "completed": True, "exercises": [],
+            "conditioning": [{
+                "modality": "aerobic_base", "protocol_id": "zone2-bike",
+                "work_seconds": 1200, "duration_seconds": 1500,
+                "intervals_completed": 1, "rpe": 4, "average_heart_rate": 130,
+            }],
+        },
+    )
+    assert logged.status_code == 201
+    assert logged.get_json()["session"]["session"]["conditioning"][0]["average_heart_rate"] == 130
+    withdrawn = client.post(
+        f"/coach/profile/{profile_id}/consent", headers=headers,
+        json={"health_data_consent": False},
+    )
+    assert withdrawn.status_code == 200
+    history = client.get(f"/coach/profile/{profile_id}/sessions", headers=headers)
+    conditioning = history.get_json()["sessions"][0]["session"]["conditioning"][0]
+    assert "average_heart_rate" not in conditioning
+    assert conditioning["work_seconds"] == 1200

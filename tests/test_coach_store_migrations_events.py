@@ -11,6 +11,8 @@ from coach_store import (
     get_profile,
     list_decision_events,
     set_health_data_consent,
+    add_program_version,
+    list_program_versions,
 )
 
 
@@ -48,7 +50,7 @@ def test_migrations_are_versioned_idempotent_and_use_text_json(monkeypatch, tmp_
         versions = conn.execute(
             "SELECT version FROM atena_schema_migrations ORDER BY version"
         ).fetchall()
-        assert versions == [(1,), (2,)]
+        assert versions == [(1,), (2,), (3,)]
         assert conn.execute(
             "SELECT COUNT(*) FROM atena_decision_events"
         ).fetchone()[0] == 0
@@ -112,7 +114,7 @@ def test_existing_profile_and_session_schema_is_adopted_without_data_loss(monkey
         ).fetchone()[0] == '{"completed": true}'
         assert conn.execute(
             "SELECT MAX(version) FROM atena_schema_migrations"
-        ).fetchone()[0] == 2
+        ).fetchone()[0] == 3
     finally:
         conn.close()
 
@@ -210,3 +212,52 @@ def test_session_save_and_event_log_commit_together(monkeypatch, tmp_path):
     assert history[0]["event"]["event_type"] == "session_completed"
     assert history[0]["event"]["payload"]["session_id"] == "session-8"
     assert history[0]["event"]["payload"]["exercise_count"] == 1
+
+
+def test_program_version_is_saved_with_hash_decision_and_history(monkeypatch, tmp_path):
+    configure_sqlite(monkeypatch, tmp_path)
+    token = "program-version-test-token"
+    create_profile("profile-9", token, {}, False, "v1")
+    saved = add_program_version(
+        "profile-9", token, "program-v1",
+        {"goal": "strength", "sessions": [{"exercises": ["squat"]}]},
+        {"adaptive_decision": {"decision": "maintain_and_monitor"}},
+        athlete_state_version=1,
+    )
+    assert len(saved["program_hash"]) == 64
+    history = list_program_versions("profile-9", token)
+    assert len(history) == 1
+    assert history[0]["program_version_id"] == "program-v1"
+    assert history[0]["program"]["goal"] == "strength"
+    events = list_decision_events("profile-9", token)
+    assert events[-1]["event"]["event_type"] == "program_created"
+
+
+def test_program_created_from_health_context_requires_consent(monkeypatch, tmp_path):
+    configure_sqlite(monkeypatch, tmp_path)
+    token = "program-health-consent-token"
+    create_profile("profile-10", token, {}, False, "v1")
+    with pytest.raises(DecisionEventError, match="privolitev"):
+        add_program_version(
+            "profile-10", token, "program-health-v1", {"sessions": []}, {},
+            health_context_used=True,
+        )
+
+
+def test_consent_withdrawal_erases_programs_derived_from_health_context_only(monkeypatch, tmp_path):
+    configure_sqlite(monkeypatch, tmp_path)
+    token = "program-withdraw-consent-token"
+    create_profile("profile-11", token, {}, True, "v1")
+    add_program_version(
+        "profile-11", token, "program-general", {"goal": "strength"}, {},
+        health_context_used=False,
+    )
+    add_program_version(
+        "profile-11", token, "program-health", {"goal": "functional", "adapted": True}, {},
+        health_context_used=True,
+    )
+    set_health_data_consent("profile-11", token, False)
+    history = list_program_versions("profile-11", token)
+    assert [item["program_version_id"] for item in history] == ["program-general"]
+    events = list_decision_events("profile-11", token)
+    assert all(item["event"]["data_classification"] == "operational" for item in events)
