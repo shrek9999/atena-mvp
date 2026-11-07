@@ -1149,7 +1149,11 @@ def test_endurance_feedback_keeps_displayed_locomotion_duration_synchronized():
         "discomfort": "no",
         "recovery": "normal",
     }
-    plan = generate_program({**BASE, "goal": "endurance"}, feedback=feedback)
+    plan = generate_program(
+        {**BASE, "goal": "endurance"},
+        feedback=feedback,
+        feedback_history=[feedback],
+    )
     locomotion = next(
         exercise
         for session in plan["sessions"]
