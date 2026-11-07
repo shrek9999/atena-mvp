@@ -200,11 +200,23 @@ def _init(conn, dialect):
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
         )""",
+        """CREATE TABLE IF NOT EXISTS atena_program_versions (
+            program_version_id TEXT PRIMARY KEY,
+            profile_id TEXT NOT NULL REFERENCES atena_profiles(profile_id) ON DELETE CASCADE,
+            version_number INTEGER NOT NULL CHECK (version_number > 0),
+            goal TEXT NOT NULL,
+            experience TEXT NOT NULL,
+            data_classification TEXT NOT NULL,
+            program_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            UNIQUE(profile_id, version_number)
+        )""",
         """CREATE TABLE IF NOT EXISTS atena_training_sessions (
             session_id TEXT PRIMARY KEY,
             profile_id TEXT NOT NULL REFERENCES atena_profiles(profile_id) ON DELETE CASCADE,
             session_date TEXT NOT NULL,
             session_json TEXT NOT NULL,
+            program_version_id TEXT REFERENCES atena_program_versions(program_version_id) ON DELETE SET NULL,
             created_at TEXT NOT NULL
         )""",
         """CREATE TABLE IF NOT EXISTS atena_decision_events (
@@ -216,15 +228,26 @@ def _init(conn, dialect):
             source TEXT NOT NULL,
             data_classification TEXT NOT NULL,
             payload_json TEXT NOT NULL,
-            program_version_id TEXT,
+            program_version_id TEXT REFERENCES atena_program_versions(program_version_id) ON DELETE SET NULL,
             correlation_id TEXT,
             created_at TEXT NOT NULL
         )""",
         "CREATE INDEX IF NOT EXISTS atena_sessions_profile_date ON atena_training_sessions(profile_id, session_date)",
         "CREATE INDEX IF NOT EXISTS atena_events_profile_occurred ON atena_decision_events(profile_id, occurred_at)",
+        "CREATE INDEX IF NOT EXISTS atena_program_versions_profile_created ON atena_program_versions(profile_id, created_at)",
     ]
     for statement in statements:
         _execute(conn, dialect, statement)
+
+    # Upgrade older disposable SQLite test databases without requiring a reset.
+    session_columns = {
+        row[1] for row in conn.execute("PRAGMA table_info(atena_training_sessions)")
+    }
+    if "program_version_id" not in session_columns:
+        conn.execute(
+            "ALTER TABLE atena_training_sessions ADD COLUMN program_version_id "
+            "TEXT REFERENCES atena_program_versions(program_version_id) ON DELETE SET NULL"
+        )
 
 
 def check_database_connection():
