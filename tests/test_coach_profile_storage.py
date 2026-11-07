@@ -1551,3 +1551,53 @@ def test_program_version_routes_are_authenticated_private_and_exact(monkeypatch,
     )
     assert detail.status_code == 200
     assert detail.get_json()["program_version"]["program"]["goal"] == "hypertrophy"
+
+
+def test_operational_program_cannot_be_saved_when_health_context_informed_generation(monkeypatch, tmp_path):
+    import pytest
+    from coach_store import save_program_version, update_profile
+    from training.decision_event import DecisionEventError
+
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    profile = client.get(
+        f"/coach/profile/{profile_id}",
+        headers={"X-Profile-Token": token},
+    ).get_json()["profile"]
+    profile["athlete_state"]["symptoms"] = {"status": "denied", "items": []}
+    update_profile(profile_id, token, profile)
+
+    with pytest.raises(DecisionEventError, match="občutljiv"):
+        save_program_version(
+            profile_id, token, "misclassified-program",
+            {"goal": "hypertrophy", "sessions": []},
+            goal="hypertrophy", experience="intermediate",
+            data_classification="operational",
+            event=_program_event(profile_id, "misclassified-program"),
+        )
+
+
+def test_program_version_cannot_be_attached_to_another_athletes_session(monkeypatch, tmp_path):
+    import pytest
+    from coach_store import add_session, save_program_version
+
+    client = _client(monkeypatch, tmp_path)
+    first = _create(client)
+    second = _create(client)
+    first_id, first_token = first["profile"]["profile_id"], first["profile_access_token"]
+    second_id, second_token = second["profile"]["profile_id"], second["profile_access_token"]
+    version_id = "owned-by-first-profile"
+    save_program_version(
+        first_id, first_token, version_id,
+        {"goal": "hypertrophy", "sessions": []},
+        goal="hypertrophy", experience="intermediate",
+        data_classification="operational",
+        event=_program_event(first_id, version_id),
+    )
+    with pytest.raises(ValueError, match="ne pripada"):
+        add_session(
+            second_id, second_token, "cross-profile-session", "2026-11-07",
+            {"completed": True}, program_version_id=version_id,
+        )
