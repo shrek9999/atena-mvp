@@ -480,7 +480,13 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     elif pattern == "coordination":
         prescription.update({"work_seconds": 12, "time_label": "koordinacijskega intervala"})
     if goal == "fat_loss" and pattern == "locomotion":
-        prescription.update({"work_seconds": 480, "time_label": "kratka aerobna aktivnost", "effort_target": "Lahkoten do zmeren pogovorni tempo; izvedba naj ostane sproščena in ponovljiva."})
+        duration = {"beginner": 360, "intermediate": 480, "advanced": 600}[level]
+        prescription.update({
+            "reps": f"{duration // 60} min",
+            "work_seconds": duration,
+            "time_label": "kratka aerobna aktivnost",
+            "effort_target": "Lahkoten do zmeren pogovorni tempo; izvedba naj ostane sproščena in ponovljiva.",
+        })
     elif goal == "fat_loss" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
         work_seconds = 60 if kind == "aerobic" else (18 if kind == "anaerobic" else 25)
@@ -980,8 +986,11 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                     "message": movement_note,
                 })
             if planning_goal == "endurance" and effective_pattern == "locomotion":
-                # Reserve time for warm-up, transitions and interval work; locomotion is a flexible aerobic block.
-                    prescription["work_seconds"] = max(600, int(p["session_minutes"] * 15))
+                # Reserve time for warm-up, transitions and interval work; keep
+                # the visible duration synchronized with the internal estimate.
+                duration_minutes = max(10, int(p["session_minutes"] / 4 + 0.5))
+                prescription["work_seconds"] = duration_minutes * 60
+                prescription["reps"] = f"{duration_minutes} min"
             if reduce_load and response["recovery"] == "poor" and response["difficulty"] != "hard" and response["completed"]:
                 # Poor recovery alone trims only optional training cost; preserve
                 # accessory and non-compound work unless the session was also hard.
@@ -1015,6 +1024,8 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 elif prescription.get("work_seconds") is not None:
                     floor = 300 if pattern == "locomotion" else 10
                     prescription["work_seconds"] = max(floor, int(prescription["work_seconds"] * 0.85))
+                    if pattern == "locomotion":
+                        prescription["reps"] = f"{max(1, round(prescription['work_seconds'] / 60))} min"
                 else:
                     bounds = [int(value) for value in prescription.get("reps", "").split("–") if value.isdigit()]
                     if len(bounds) == 2:
@@ -1046,6 +1057,8 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                     prescription["work_seconds"] = min(
                         ceiling, int(prescription["work_seconds"] * 1.05)
                     )
+                    if pattern == "locomotion":
+                        prescription["reps"] = f"{max(1, round(prescription['work_seconds'] / 60))} min"
                     prescription["adjustment_note"] = (
                         "Ker je bil zadnji trening prelahek, je delovni interval "
                         "podaljšan za majhen korak. Ohrani predpisano ciljno intenzivnost."
