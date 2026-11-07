@@ -26,6 +26,7 @@ create table if not exists public.atena_decision_events (
   source text not null check (source in ('user', 'coach', 'system', 'import')),
   data_classification text not null check (data_classification in ('operational', 'health_sensitive')),
   payload jsonb not null check (jsonb_typeof(payload) = 'object'),
+  check (event_type not in ('movement_assessment_recorded', 'symptom_context_recorded', 'referral_recommended') or data_classification = 'health_sensitive'),
   program_version_id text,
   correlation_id text,
   created_at timestamptz not null default now()
