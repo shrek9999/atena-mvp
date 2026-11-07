@@ -1034,3 +1034,49 @@ def test_profile_assessment_rejects_unknown_movement_task_without_mutation(monke
     loaded = client.get(f"/coach/profile/{profile_id}", headers={"X-Profile-Token": token})
     tasks = loaded.get_json()["profile"]["profile"]["athlete_state"]["movement_assessment"]["tasks"]
     assert all(item["status"] == "not_assessed" for item in tasks.values())
+
+
+def test_saved_profile_program_uses_persisted_movement_assessment(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    updated = client.put(
+        f"/coach/profile/{profile_id}/assessment",
+        headers={"X-Profile-Token": token},
+        json={"movement_tasks": {"squat": "needs_support"}},
+    )
+    assert updated.status_code == 200
+
+    response = client.post(
+        f"/coach/profile/{profile_id}/program",
+        headers={"X-Profile-Token": token},
+        json={"no_current_pain_or_restrictions": True},
+    )
+    assert response.status_code == 200
+    events = response.get_json()["program"]["movement_adaptation"]["events"]
+    assert any(event["pattern"] == "squat" and event["action"] == "simpler_catalogue_variant_selected" for event in events)
+
+
+def test_saved_profile_program_blocks_when_persisted_symptoms_conflict_with_clearance(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    updated = client.put(
+        f"/coach/profile/{profile_id}/assessment",
+        headers={"X-Profile-Token": token},
+        json={"symptoms": {
+            "status": "new_or_worsening",
+            "items": [{"location": "koleno", "provoking_task": "squat"}],
+        }},
+    )
+    assert updated.status_code == 200
+
+    response = client.post(
+        f"/coach/profile/{profile_id}/program",
+        headers={"X-Profile-Token": token},
+        json={"no_current_pain_or_restrictions": True},
+    )
+    assert response.status_code == 409
+    assert response.get_json()["blocked"] is True
