@@ -103,7 +103,19 @@ def _connect(require_enabled=True):
         raise StorageUnavailable("PostgreSQL driver is not installed.") from exc
     url = _normalize_supabase_pooler_username(url)
     try:
-        return psycopg.connect(url, connect_timeout=8), "postgres"
+        conn = psycopg.connect(url, connect_timeout=8)
+        try:
+            # Use a dedicated NOLOGIN, NOBYPASSRLS application role. The role
+            # is provisioned by the reviewed Supabase migration; the postgres
+            # login is only the transport identity and must not run app queries.
+            with conn.cursor() as cursor:
+                cursor.execute("SET ROLE atena_app")
+            return conn, "postgres"
+        except Exception as exc:
+            conn.close()
+            raise _classify_database_error(exc) from exc
+    except StorageUnavailable:
+        raise
     except Exception as exc:
         raise _classify_database_error(exc) from exc
 
@@ -117,7 +129,7 @@ def _classify_database_error(exc):
         reason = "database_temporarily_unavailable"
     elif sqlstate and sqlstate.startswith("08"):
         reason = "database_network_connection_failed"
-    elif sqlstate in {"42P01", "42703", "42804", "42883"}:
+    elif sqlstate in {"42P01", "42703", "42804", "42883", "42704"}:
         reason = "database_schema_mismatch"
     elif sqlstate == "23505":
         reason = "database_record_conflict"
