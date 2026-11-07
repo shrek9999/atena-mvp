@@ -1288,7 +1288,7 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 "Intermediate: uporablja bolj specifične razpone glede na cilj; pri glavnih vajah za moč je običajen razpon 5–8 ponovitev, pri hipertrofiji večinoma 6–12. Advanced: pri glavnih vajah za moč lahko uporablja 3–6 ponovitev, ob večji obremenitvi pa zahteva ustrezno tehniko, regeneracijo in daljše odmore."
             ),
             "tempo": (
-                "Začetnik pri kombiniranem cilju moč + hipertrofija: pri osnovnih počepih in predklonih z ravnim hrbtom uporabi tempo 2–1–1–0 (2 s nadzorovan spust, 1 s nadzor v spodnjem položaju, 1 s dvig, brez premora v vrhu). Druge začetniške vaje in posebni vzorci ohranijo svoj namenski tempo."
+                "Začetnik pri kombiniranem cilju moč + hipertrofija: pri osnovnih počepih in predklonih z nevtralnim položajem hrbtenice uporabi tempo 2–1–1–0 (2 s nadzorovan spust, 1 s nadzor v spodnjem položaju, 1 s dvig, brez premora v vrhu). Druge začetniške vaje in posebni vzorci ohranijo svoj namenski tempo."
                 if p["experience"] == "beginner" and planning_goal == "strength_hypertrophy" else
                 "Začetnik: pri osnovnih vajah je privzeti tempo 3–1–1–0 (3 s nadzorovan spust, 1 s nadzor v spodnjem položaju, 1 s dvig, brez premora v vrhu). Eksplozivne, časovno določene, stabilizacijske in mobilnostne vaje imajo ustrezno specifičen tempo."
                 if p["experience"] == "beginner" else
