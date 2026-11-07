@@ -2000,6 +2000,10 @@ def coach_training_sessions(profile_id):
         return jsonify({"session": saved}), 201
     except ProfileNotFound:
         return _profile_auth_error()
+    except DecisionEventError as exc:
+        return jsonify({"error": str(exc)}), 409
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
     except StorageUnavailable as exc:
         return _storage_error(exc)
 
