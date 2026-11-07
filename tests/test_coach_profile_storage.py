@@ -1550,6 +1550,21 @@ def test_program_version_routes_are_authenticated_private_and_exact(monkeypatch,
     assert listed.status_code == 200
     assert listed.headers["Cache-Control"] == "no-store, private"
     assert listed.get_json()["program_versions"][0]["program_version_id"] == version_id
+    exercise_id = load_catalogue()[0]["id"]
+    logged = client.post(
+        f"/coach/profile/{profile_id}/sessions",
+        headers=headers,
+        json={
+            "session_date": "2026-11-07",
+            "duration_minutes": 45,
+            "difficulty": "moderate",
+            "completed": True,
+            "exercises": [{"exercise_id": exercise_id, "sets_completed": 3, "reps_completed": 8}],
+            "program_version_id": version_id,
+        },
+    )
+    assert logged.status_code == 201
+    assert logged.get_json()["session"]["program_version_id"] == version_id
     detail = client.get(
         f"/coach/profile/{profile_id}/programs/{version_id}",
         headers=headers,
