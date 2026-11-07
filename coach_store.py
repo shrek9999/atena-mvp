@@ -527,6 +527,11 @@ def set_health_data_consent(profile_id: str, token: str, consent: bool):
             for session_id, session_json in rows:
                 record = _decode_json(session_json)
                 record.pop("discomfort_reported", None)
+                conditioning = record.get("conditioning")
+                if isinstance(conditioning, list):
+                    for block in conditioning:
+                        if isinstance(block, dict):
+                            block.pop("average_heart_rate", None)
                 _execute(conn, dialect,
                          "UPDATE atena_training_sessions SET session_json = %s WHERE session_id = %s",
                          (_encode_json(record, dialect), session_id))
