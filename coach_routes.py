@@ -1244,6 +1244,7 @@ def coach_program():
         return jsonify({"error": "Pričakovan je JSON objekt s profilom vadečega."}), 400
     profile = payload.get("profile", payload)
     feedback = payload.get("feedback")
+    feedback_history = payload.get("feedback_history")
     movement_assessment = None
     if "movement_assessment" in payload:
         try:
@@ -1254,6 +1255,7 @@ def coach_program():
         result = generate_program(
             profile, feedback=feedback,
             movement_assessment=payload.get("movement_assessment"),
+            feedback_history=feedback_history,
         )
     except ProgramSafetyBlock as exc:
         return jsonify({"blocked": True, "message": str(exc)}), 409
