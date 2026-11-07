@@ -193,3 +193,20 @@ def test_event_history_is_deleted_with_profile(monkeypatch, tmp_path):
     delete_profile("profile-7", token)
     with pytest.raises(coach_store.ProfileNotFound):
         list_decision_events("profile-7", token)
+
+
+def test_session_save_and_event_log_commit_together(monkeypatch, tmp_path):
+    configure_sqlite(monkeypatch, tmp_path)
+    token = "session-event-atomic-test-token"
+    create_profile("profile-8", token, {}, False, "v1")
+    from coach_store import add_session
+    saved = add_session(
+        "profile-8", token, "session-8", "2026-11-07",
+        {"completed": True, "duration_minutes": 42, "exercises": [{"exercise_id": "squat"}]},
+    )
+    assert saved["session_id"] == "session-8"
+    history = list_decision_events("profile-8", token)
+    assert len(history) == 1
+    assert history[0]["event"]["event_type"] == "session_completed"
+    assert history[0]["event"]["payload"]["session_id"] == "session-8"
+    assert history[0]["event"]["payload"]["exercise_count"] == 1
