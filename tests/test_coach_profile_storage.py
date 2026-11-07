@@ -1606,3 +1606,30 @@ def test_program_version_cannot_be_attached_to_another_athletes_session(monkeypa
             second_id, second_token, "cross-profile-session", "2026-11-07",
             {"completed": True}, program_version_id=version_id,
         )
+
+
+def test_session_discomfort_context_requires_sensitive_program_classification(monkeypatch, tmp_path):
+    import pytest
+    from coach_store import add_session, save_program_version
+    from training.decision_event import DecisionEventError
+
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    add_session(
+        profile_id, token, "session-with-explicit-no-discomfort", "2026-11-07",
+        {"completed": True, "discomfort_reported": False},
+        event=_event(
+            profile_id, event_id="explicit-session-feedback",
+            classification="health_sensitive",
+        ),
+    )
+    with pytest.raises(DecisionEventError, match="občutljiv"):
+        save_program_version(
+            profile_id, token, "misclassified-session-program",
+            {"goal": "hypertrophy", "sessions": []},
+            goal="hypertrophy", experience="intermediate",
+            data_classification="operational",
+            event=_program_event(profile_id, "misclassified-session-program"),
+        )
