@@ -28,6 +28,11 @@ EVENT_TYPES = {
 }
 EVENT_SOURCES = {"user", "coach", "system", "import"}
 DATA_CLASSIFICATIONS = {"operational", "health_sensitive"}
+HEALTH_SENSITIVE_EVENT_TYPES = {
+    "movement_assessment_recorded",
+    "symptom_context_recorded",
+    "referral_recommended",
+}
 MAX_EVENT_JSON_BYTES = 16_384
 _REQUIRED_FIELDS = {
     "schema_version",
@@ -102,6 +107,8 @@ def validate_decision_event(event: object, *, health_consent_verified: bool = Fa
     classification = event["data_classification"]
     if not isinstance(classification, str) or classification not in DATA_CLASSIFICATIONS:
         raise DecisionEventError("Razvrstitev podatkov ni podprta.")
+    if event_type in HEALTH_SENSITIVE_EVENT_TYPES and classification != "health_sensitive":
+        raise DecisionEventError("Ta vrsta dogodka mora biti označena kot zdravstveno občutljiva.")
     if not isinstance(event["payload"], dict):
         raise DecisionEventError("payload mora biti objekt.")
 
