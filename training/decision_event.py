@@ -90,18 +90,18 @@ def validate_decision_event(event: object) -> dict:
         raise DecisionEventError("Manjkajo obvezna polja: " + ", ".join(sorted(missing)))
     if unknown:
         raise DecisionEventError("Neznana polja dogodka: " + ", ".join(sorted(unknown)))
-    if event["schema_version"] != EVENT_SCHEMA_VERSION:
+    if (not isinstance(event["schema_version"], int) or isinstance(event["schema_version"], bool) or event["schema_version"] != EVENT_SCHEMA_VERSION):
         raise DecisionEventError("Nepodprta različica dogodka.")
     event_id = _text(event["event_id"], "event_id", maximum=128)
     profile_id = _text(event["profile_id"], "profile_id", maximum=128)
     event_type = event["event_type"]
-    if event_type not in EVENT_TYPES:
+    if not isinstance(event_type, str) or event_type not in EVENT_TYPES:
         raise DecisionEventError("Vrsta dogodka ni podprta.")
     source = event["source"]
-    if source not in EVENT_SOURCES:
+    if not isinstance(source, str) or source not in EVENT_SOURCES:
         raise DecisionEventError("Vir dogodka ni podprt.")
     classification = event["data_classification"]
-    if classification not in DATA_CLASSIFICATIONS:
+    if not isinstance(classification, str) or classification not in DATA_CLASSIFICATIONS:
         raise DecisionEventError("Razvrstitev podatkov ni podprta.")
     if not isinstance(event["payload"], dict):
         raise DecisionEventError("payload mora biti objekt.")
