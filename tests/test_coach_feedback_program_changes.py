@@ -240,3 +240,27 @@ def test_heel_elevated_squat_is_available_when_stable_support_is_selected():
 def test_carries_are_not_inserted_as_default_filler():
     plan = generate_program(profile("strength", "intermediate"))
     assert all(x["pattern"] != "carry" for x in exercises(plan))
+
+
+def test_missing_completion_recovery_or_symptom_confirmation_never_counts_as_easy_progress():
+    base = generate_program(profile("strength", "intermediate"))
+    baseline = {x["exercise_id"]: x["prescription"] for x in exercises(base)}
+    complete_easy = {
+        "difficulty": "easy",
+        "completed": True,
+        "discomfort": "no",
+        "recovery": "normal",
+    }
+    incomplete_current = generate_program(
+        profile("strength", "intermediate"),
+        feedback={"difficulty": "easy"},
+        feedback_history=[complete_easy],
+    )
+    incomplete_history = generate_program(
+        profile("strength", "intermediate"),
+        feedback=complete_easy,
+        feedback_history=[{"difficulty": "easy", "completed": True, "discomfort": "no"}],
+    )
+    for plan in (incomplete_current, incomplete_history):
+        prescriptions = {x["exercise_id"]: x["prescription"] for x in exercises(plan)}
+        assert all(baseline[key].get("reps") == prescriptions[key].get("reps") for key in baseline)
