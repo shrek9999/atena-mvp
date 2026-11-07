@@ -121,8 +121,8 @@ def _validate_feedback_history(history: object) -> list[dict]:
         discomfort = item.get("discomfort")
         if difficulty not in {"easy", "right", "hard"}:
             raise ProgramValidationError(f"feedback_history[{index}].difficulty ni veljaven.")
-        if not isinstance(completed, bool):
-            raise ProgramValidationError(f"feedback_history[{index}].completed mora biti boolean.")
+        if completed is not None and not isinstance(completed, bool):
+            raise ProgramValidationError(f"feedback_history[{index}].completed mora biti boolean, če je podan.")
         if recovery is not None and recovery not in {"good", "normal", "poor"}:
             raise ProgramValidationError(f"feedback_history[{index}].recovery ni veljaven.")
         if discomfort is not None and discomfort not in {"yes", "no"}:
