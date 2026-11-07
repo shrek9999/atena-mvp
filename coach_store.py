@@ -383,6 +383,7 @@ def add_session(
     try:
         _init(conn, dialect)
         authorized = _authorized_profile(conn, dialect, profile_id, token)
+        program_classification = "operational"
         if program_version_id is not None:
             if not isinstance(program_version_id, str) or not program_version_id.strip() or len(program_version_id) > 128:
                 raise ValueError("Različica programa ni veljavna.")
@@ -393,13 +394,16 @@ def add_session(
             ).fetchone()
             if not version:
                 raise ValueError("Različica programa ne pripada temu profilu ali ne obstaja.")
-            if version[0] == "health_sensitive" and authorized["health_data_consent"] is not True:
+            program_classification = version[0]
+            if program_classification == "health_sensitive" and authorized["health_data_consent"] is not True:
                 raise DecisionEventError("Za povezavo zdravstveno prilagojenega programa je potrebna veljavna privolitev.")
         if event is not None and program_version_id is not None:
             event = dict(event)
             if event.get("program_version_id") not in {None, program_version_id}:
                 raise DecisionEventError("Dogodek in trening kažeta na različni različici programa.")
             event["program_version_id"] = program_version_id
+            if program_classification == "health_sensitive":
+                event["data_classification"] = "health_sensitive"
         now = _now()
         _execute(conn, dialect, """INSERT INTO atena_training_sessions
             (session_id, profile_id, session_date, session_json, program_version_id, created_at)
