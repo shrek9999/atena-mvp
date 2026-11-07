@@ -1185,14 +1185,14 @@ def test_event_store_rejects_cross_profile_and_duplicate_events(monkeypatch, tmp
 
 def test_event_history_requires_correct_profile_token_and_bounded_limit(monkeypatch, tmp_path):
     import pytest
-    from coach_store import list_decision_events
+    from coach_store import ProfileNotFound, list_decision_events
 
     client = _client(monkeypatch, tmp_path)
     created = _create(client)
     profile_id = created["profile"]["profile_id"]
     token = created["profile_access_token"]
 
-    with pytest.raises(Exception):
+    with pytest.raises(ProfileNotFound):
         list_decision_events(profile_id, "wrong-token")
     with pytest.raises(ValueError):
         list_decision_events(profile_id, token, limit=101)
