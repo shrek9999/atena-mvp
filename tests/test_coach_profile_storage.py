@@ -1120,9 +1120,11 @@ def test_operational_decision_event_is_authenticated_and_persisted(monkeypatch, 
     saved = append_decision_event(profile_id, token, _event(profile_id))
     history = list_decision_events(profile_id, token)
     assert saved["event_id"] == "event-001"
-    assert len(history) == 1
-    assert history[0]["payload"]["completed"] is True
-    assert history[0]["data_classification"] == "operational"
+    assert len(history) == 2
+    assert {item["event_type"] for item in history} == {"profile_created", "session_completed"}
+    saved_event = next(item for item in history if item["event_type"] == "session_completed")
+    assert saved_event["payload"]["completed"] is True
+    assert saved_event["data_classification"] == "operational"
 
 
 def test_health_sensitive_event_requires_stored_profile_consent(monkeypatch, tmp_path):
@@ -1153,7 +1155,7 @@ def test_health_sensitive_event_is_erased_when_consent_is_withdrawn(monkeypatch,
         _event(profile_id, classification="health_sensitive", event_type="symptom_context_recorded"),
     )
     append_decision_event(profile_id, token, _event(profile_id, event_id="event-002"))
-    assert len(list_decision_events(profile_id, token)) == 2
+    assert len(list_decision_events(profile_id, token)) == 3
 
     withdrawn = client.post(
         f"/coach/profile/{profile_id}/consent",
@@ -1162,7 +1164,8 @@ def test_health_sensitive_event_is_erased_when_consent_is_withdrawn(monkeypatch,
     )
     assert withdrawn.status_code == 200
     history = list_decision_events(profile_id, token)
-    assert [item["event_id"] for item in history] == ["event-002"]
+    assert {item["event_type"] for item in history} == {"profile_created", "session_completed", "consent_changed"}
+    assert all(item["data_classification"] == "operational" for item in history)
 
 
 def test_event_store_rejects_cross_profile_and_duplicate_events(monkeypatch, tmp_path):
@@ -1195,7 +1198,7 @@ def test_event_history_requires_correct_profile_token_and_bounded_limit(monkeypa
     with pytest.raises(ProfileNotFound):
         list_decision_events(profile_id, "wrong-token")
     with pytest.raises(ValueError):
-        list_decision_events(profile_id, token, limit=101)
+        list_decision_events(profile_id, token, limit=5001)
 
 
 def test_profile_deletion_cascades_to_decision_events(monkeypatch, tmp_path):
