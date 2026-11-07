@@ -17,6 +17,8 @@ from coach_store import (
     get_profile as store_get_profile, update_profile as store_update_profile,
     add_session as store_add_session, list_sessions as store_list_sessions,
     delete_profile as store_delete_profile, set_health_data_consent as store_set_health_data_consent,
+    add_program_version as store_add_program_version,
+    list_program_versions as store_list_program_versions,
     check_database_connection as store_check_database_connection, storage_enabled,
 )
 from training.catalogue import get_exercise, load_catalogue
@@ -2038,10 +2040,12 @@ def export_coach_profile(profile_id):
         profile = store_get_profile(profile_id, token)
         profile = _profile_record_with_state(profile, token, persist_migration=True)
         sessions = store_list_sessions(profile_id, token, limit=5000)
+        program_versions = store_list_program_versions(profile_id, token, limit=100)
         response = jsonify({
-            "export_version": "1.0",
+            "export_version": "1.1",
             "profile": profile,
             "sessions": sessions,
+            "program_versions": program_versions,
             "exported_at": __import__("datetime").datetime.now(
                 __import__("datetime").timezone.utc
             ).isoformat(timespec="seconds"),
@@ -2103,6 +2107,22 @@ def _build_profile_adaptation(sessions):
     return (feedback or None), guidance
 
 
+@coach_bp.route("/coach/profile/<profile_id>/programs", methods=["GET", "OPTIONS"])
+def coach_program_history(profile_id):
+    """Return the authenticated profile's saved programme versions."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    try:
+        versions = store_list_program_versions(profile_id, _profile_token(), limit=50)
+        response = jsonify({"program_versions": versions, "source": "saved_program_history"})
+        response.headers["Cache-Control"] = "no-store, private"
+        return response, 200
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
+
+
 @coach_bp.route("/coach/profile/<profile_id>/program", methods=["POST", "OPTIONS"])
 def coach_profile_program(profile_id):
     """Build the next programme from the saved profile and most recent logged feedback."""
@@ -2151,8 +2171,32 @@ def coach_profile_program(profile_id):
         result = _apply_progression_with_decision_gate(
             result, exercise_progressions, adaptive_decision
         )
+        athlete_state = profile["profile"].get("athlete_state", {})
+        symptom_state = athlete_state.get("symptoms", {}) if isinstance(athlete_state, dict) else {}
+        movement_state = athlete_state.get("movement_assessment", {}) if isinstance(athlete_state, dict) else {}
+        movement_tasks = movement_state.get("tasks", {}) if isinstance(movement_state, dict) else {}
+        health_context_used = (
+            symptom_state.get("status", "not_asked") != "not_asked"
+            or any(
+                isinstance(item, dict) and item.get("status", "not_assessed") != "not_assessed"
+                for item in movement_tasks.values()
+            )
+        )
+        saved_program = store_add_program_version(
+            profile_id, token, uuid.uuid4().hex, result,
+            {
+                "adaptive_decision": adaptive_decision,
+                "exercise_progressions": exercise_progressions,
+                "adaptation_guidance": adaptation,
+                "training_cycle": training_cycle,
+            },
+            athlete_state_version=athlete_state.get("schema_version") if isinstance(athlete_state, dict) else None,
+            health_context_used=health_context_used,
+        )
         return jsonify({
             "program": result,
+            "program_version_id": saved_program["program_version_id"],
+            "program_created_at": saved_program["created_at"],
             "profile": profile["profile"],
             "adaptation_guidance": adaptation,
             "adaptive_decision": adaptive_decision,
@@ -2168,6 +2212,8 @@ def coach_profile_program(profile_id):
         return jsonify({"blocked": True, "message": str(exc)}), 409
     except ProgramValidationError as exc:
         return jsonify({"error": str(exc)}), 400
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 409
     except ProfileStateMigrationError:
         return jsonify({"error": "Shranjeni profil potrebuje preverjanje; programa nisem ustvaril."}), 409
     except ProfileNotFound:
