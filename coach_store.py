@@ -82,6 +82,12 @@ def _config(require_enabled=True):
             raise StorageUnavailable("Profile storage is not enabled or approved.")
     return url
 
+def _set_application_role(conn):
+    """Restrict the current transaction to the non-login Coach database role."""
+    with conn.cursor() as cursor:
+        cursor.execute("SET LOCAL ROLE atena_app")
+
+
 def _connect(require_enabled=True):
     url = _config(require_enabled=require_enabled)
     if url.startswith("sqlite:///"):
@@ -108,8 +114,7 @@ def _connect(require_enabled=True):
             # Use a dedicated NOLOGIN, NOBYPASSRLS application role. The role
             # is provisioned by the reviewed Supabase migration; the postgres
             # login is only the transport identity and must not run app queries.
-            with conn.cursor() as cursor:
-                cursor.execute("SET ROLE atena_app")
+            _set_application_role(conn)
             return conn, "postgres"
         except Exception as exc:
             conn.close()
@@ -335,6 +340,8 @@ def update_profile(profile_id: str, token: str, profile: dict, *, event: dict | 
                 health_consent_verified=authorized["health_data_consent"] is True,
             )
         conn.commit()
+        if dialect == "postgres":
+            _set_application_role(conn)
         return _authorized_profile(conn, dialect, profile_id, token)
     finally:
         conn.close()
@@ -543,6 +550,8 @@ def set_health_data_consent(profile_id: str, token: str, consent: bool):
             health_consent_verified=bool(consent),
         )
         conn.commit()
+        if dialect == "postgres":
+            _set_application_role(conn)
         return _authorized_profile(conn, dialect, profile_id, token)
     finally:
         conn.close()
