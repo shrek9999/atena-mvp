@@ -436,6 +436,10 @@ def test_sqlite_runtime_init_creates_local_event_store(monkeypatch, tmp_path):
         }
         assert "atena_decision_events" in tables
         assert "atena_program_versions" in tables
+        program_columns = {
+            row[1] for row in conn.execute("PRAGMA table_info(atena_program_versions)")
+        }
+        assert "generation_context_json" in program_columns
         columns = {
             row[1] for row in conn.execute("PRAGMA table_info(atena_training_sessions)")
         }
@@ -1653,3 +1657,39 @@ def test_session_discomfort_context_requires_sensitive_program_classification(mo
             data_classification="operational",
             event=_program_event(profile_id, "misclassified-session-program"),
         )
+
+
+def test_sqlite_schema_upgrade_adds_program_link_and_generation_context(monkeypatch, tmp_path):
+    import coach_store
+
+    monkeypatch.setenv("ATENA_ALLOW_SQLITE_STORAGE", "true")
+    conn = sqlite3.connect(tmp_path / "legacy.sqlite3")
+    conn.execute("""CREATE TABLE atena_profiles (
+        profile_id TEXT PRIMARY KEY, token_hash TEXT NOT NULL, profile_json TEXT NOT NULL,
+        privacy_notice_version TEXT NOT NULL, privacy_acknowledged INTEGER NOT NULL,
+        health_data_consent INTEGER NOT NULL, health_data_consent_at TEXT,
+        created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )""")
+    conn.execute("""CREATE TABLE atena_training_sessions (
+        session_id TEXT PRIMARY KEY, profile_id TEXT NOT NULL,
+        session_date TEXT NOT NULL, session_json TEXT NOT NULL, created_at TEXT NOT NULL
+    )""")
+    conn.execute("""CREATE TABLE atena_decision_events (
+        event_id TEXT PRIMARY KEY, profile_id TEXT NOT NULL, schema_version INTEGER NOT NULL,
+        event_type TEXT NOT NULL, occurred_at TEXT NOT NULL, source TEXT NOT NULL,
+        data_classification TEXT NOT NULL, payload_json TEXT NOT NULL,
+        program_version_id TEXT, correlation_id TEXT, created_at TEXT NOT NULL
+    )""")
+    conn.commit()
+    try:
+        coach_store._init(conn, "sqlite")
+        session_columns = {
+            row[1] for row in conn.execute("PRAGMA table_info(atena_training_sessions)")
+        }
+        program_columns = {
+            row[1] for row in conn.execute("PRAGMA table_info(atena_program_versions)")
+        }
+        assert "program_version_id" in session_columns
+        assert "generation_context_json" in program_columns
+    finally:
+        conn.close()
