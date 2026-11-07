@@ -1642,11 +1642,11 @@
       "Breme naj lebdi zaradi iztega kolkov."
     ],
     "common_errors": [
-      "Počep namesto predklona z ravnim hrbtom.",
+      "Počep namesto predklona z nevtralnim položajem hrbtenice.",
       "Pretiran izteg v ledvenem delu."
     ],
     "regressions": [
-      "Učenje predklona z ravnim hrbtom s palico",
+      "Učenje predklona z nevtralnim položajem hrbtenice s palico",
       "Mrtvi dvig s kettlebellom"
     ],
     "progressions": [
@@ -2169,7 +2169,7 @@
       "Izguba nevtralnega položaja hrbtenice pri spuščanju."
     ],
     "regressions": [
-      "Predklon ob steni z ravnim hrbtom"
+      "Predklon ob steni z nevtralnim položajem hrbtenice"
     ],
     "progressions": [
       "Mrtvi dvig z ročkama",
