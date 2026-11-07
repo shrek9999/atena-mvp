@@ -30,7 +30,7 @@ TASK_PATTERNS = {
     "squat": {"squat"},
     "hinge": {"hinge"},
     "lunge": {"lunge"},
-    "push": {"horizontal_push", "vertical_push"},
+    "push": {"horizontal_push"},
     "pull": {"horizontal_pull", "vertical_pull"},
     "overhead": {"vertical_push"},
     "single_leg_balance": {"balance"},
