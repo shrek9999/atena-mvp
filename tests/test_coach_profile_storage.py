@@ -1425,6 +1425,10 @@ def test_program_versions_are_immutable_numbered_and_retrievable(monkeypatch, tm
         goal="hypertrophy", experience="intermediate",
         data_classification="operational",
         event=_program_event(profile_id, "program-version-1"),
+        generation_context={
+            "adaptive_decision": {"decision": "maintain", "progression_allowed": False},
+            "source_session_ids": ["session-001"],
+        },
     )
     second = save_program_version(
         profile_id, token, "program-version-2", second_program,
@@ -1438,6 +1442,7 @@ def test_program_versions_are_immutable_numbered_and_retrievable(monkeypatch, tm
     assert [item["version_number"] for item in history] == [2, 1]
     exact = get_program_version(profile_id, token, "program-version-1")
     assert exact["program"] == first_program
+    assert exact["generation_context"]["source_session_ids"] == ["session-001"]
 
 
 def test_health_sensitive_program_version_requires_consent(monkeypatch, tmp_path):
