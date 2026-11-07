@@ -1462,7 +1462,7 @@ def test_health_sensitive_program_version_requires_consent(monkeypatch, tmp_path
         save_program_version(
             profile_id, token, "sensitive-program-1",
             {"goal": "hypertrophy", "sessions": []},
-            goal="functional", experience="beginner",
+            goal="hypertrophy", experience="intermediate",
             data_classification="health_sensitive",
             event=_program_event(
                 profile_id, "sensitive-program-1", classification="health_sensitive",
@@ -1487,7 +1487,7 @@ def test_program_snapshot_and_event_roll_back_together_on_duplicate_event(monkey
         save_program_version(
             profile_id, token, "rolled-back-program",
             {"goal": "hypertrophy", "sessions": []},
-            goal="functional", experience="beginner",
+            goal="hypertrophy", experience="intermediate",
             data_classification="operational",
             event=_program_event(
                 profile_id, "rolled-back-program", event_id="duplicate-program-event",
@@ -1508,8 +1508,8 @@ def test_consent_withdrawal_erases_health_sensitive_programs_and_unlinks_session
     version_id = "sensitive-program-1"
     save_program_version(
         profile_id, token, version_id,
-        {"goal": "functional", "sessions": []},
-        goal="functional", experience="beginner",
+        {"goal": "hypertrophy", "sessions": []},
+        goal="hypertrophy", experience="intermediate",
         data_classification="health_sensitive",
         event=_program_event(profile_id, version_id, classification="health_sensitive"),
     )
@@ -1548,7 +1548,7 @@ def test_program_version_routes_are_authenticated_private_and_exact(monkeypatch,
     save_program_version(
         profile_id, token, version_id,
         {"goal": "hypertrophy", "sessions": [{"exercises": []}]},
-        goal="functional", experience="beginner",
+        goal="hypertrophy", experience="intermediate",
         data_classification="operational",
         event=_program_event(profile_id, version_id),
     )
