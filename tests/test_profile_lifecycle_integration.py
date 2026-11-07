@@ -161,6 +161,7 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     assert any(event["event_type"] == "profile_created" for event in export_data["decision_events"])
     assert export_data["program_versions"][0]["program_version_id"] == program_version_id
     assert export_data["program_versions"][0]["program"]["sessions"]
+    assert "adaptive_decision" in export_data["program_versions"][0]["generation_context"]
     assert len(export_data["sessions"]) == 1
     assert export_data["sessions"][0]["session"]["discomfort_reported"] is True
 
