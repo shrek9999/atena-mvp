@@ -151,7 +151,7 @@ def _encode_json(value, dialect):
     return json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
 
 def _decode_json(value):
-    """psycopg returns decoded JSONB values; SQLite returns serialized text."""
+    """Decode serialized JSON text returned by either supported database."""
     if isinstance(value, (str, bytes, bytearray)):
         return json.loads(value)
     return value
@@ -165,6 +165,23 @@ HEALTH_SENSITIVE_EVENT_TYPES = {
     "symptom_context_recorded",
     "referral_recommended",
 }
+
+def _table_exists(conn, dialect, table_name):
+    if dialect == "sqlite":
+        row = _execute(
+            conn, dialect,
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = %s",
+            (table_name,),
+        ).fetchone()
+        return row is not None
+    row = _execute(
+        conn, dialect,
+        "SELECT 1 FROM information_schema.tables "
+        "WHERE table_schema = current_schema() AND table_name = %s",
+        (table_name,),
+    ).fetchone()
+    return row is not None
+
 
 def _table_columns(conn, dialect, table_name):
     if dialect == "sqlite":
@@ -195,12 +212,13 @@ def _init(conn, dialect):
             _execute(conn, dialect, "SELECT pg_advisory_xact_lock(814273901)")
         else:
             conn.execute("BEGIN IMMEDIATE")
-        _execute(conn, dialect, """CREATE TABLE IF NOT EXISTS atena_schema_migrations (
-            version INTEGER PRIMARY KEY, migration_name TEXT NOT NULL, applied_at TEXT NOT NULL
-        )""")
-        if dialect == "postgres":
-            _execute(conn, dialect, "ALTER TABLE atena_schema_migrations ENABLE ROW LEVEL SECURITY")
-            _execute(conn, dialect, "REVOKE ALL PRIVILEGES ON TABLE atena_schema_migrations FROM PUBLIC, anon, authenticated")
+        if not _table_exists(conn, dialect, "atena_schema_migrations"):
+            _execute(conn, dialect, """CREATE TABLE atena_schema_migrations (
+                version INTEGER PRIMARY KEY, migration_name TEXT NOT NULL, applied_at TEXT NOT NULL
+            )""")
+            if dialect == "postgres":
+                _execute(conn, dialect, "ALTER TABLE atena_schema_migrations ENABLE ROW LEVEL SECURITY")
+                _execute(conn, dialect, "REVOKE ALL PRIVILEGES ON TABLE atena_schema_migrations FROM PUBLIC, anon, authenticated")
         row = _execute(conn, dialect, "SELECT MAX(version) FROM atena_schema_migrations").fetchone()
         current = row[0] or 0
         if current < 1:
