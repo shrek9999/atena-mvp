@@ -208,6 +208,7 @@ def _init(conn, dialect):
             experience TEXT NOT NULL,
             data_classification TEXT NOT NULL,
             program_json TEXT NOT NULL,
+            generation_context_json TEXT NOT NULL DEFAULT '{}',
             created_at TEXT NOT NULL,
             UNIQUE(profile_id, version_number)
         )""",
@@ -247,6 +248,15 @@ def _init(conn, dialect):
         conn.execute(
             "ALTER TABLE atena_training_sessions ADD COLUMN program_version_id "
             "TEXT REFERENCES atena_program_versions(program_version_id) ON DELETE SET NULL"
+        )
+
+    program_columns = {
+        row[1] for row in conn.execute("PRAGMA table_info(atena_program_versions)")
+    }
+    if "generation_context_json" not in program_columns:
+        conn.execute(
+            "ALTER TABLE atena_program_versions ADD COLUMN generation_context_json "
+            "TEXT NOT NULL DEFAULT '{}'"
         )
 
     conn.execute(
@@ -495,6 +505,7 @@ def save_program_version(
     experience: str,
     data_classification: str,
     event: dict,
+    generation_context: dict | None = None,
 ):
     """Persist an immutable programme snapshot and its creation event atomically."""
     if not isinstance(program_version_id, str) or not program_version_id.strip() or len(program_version_id) > 128:
@@ -513,6 +524,18 @@ def save_program_version(
         raise ValueError("Program vsebuje podatke, ki niso združljivi z JSON.") from exc
     if len(encoded_program) > 512 * 1024:
         raise ValueError("Program presega dovoljeno velikost 512 KB.")
+    if generation_context is None:
+        generation_context = {}
+    if not isinstance(generation_context, dict):
+        raise ValueError("Kontekst odločitve mora biti JSON objekt.")
+    try:
+        encoded_context = json.dumps(
+            generation_context, ensure_ascii=False, allow_nan=False, separators=(",", ":")
+        ).encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Kontekst odločitve ni združljiv z JSON.") from exc
+    if len(encoded_context) > 128 * 1024:
+        raise ValueError("Kontekst odločitve presega dovoljeno velikost 128 KB.")
     if not isinstance(event, dict) or event.get("program_version_id") != program_version_id:
         raise DecisionEventError("Dogodek mora biti povezan z isto različico programa.")
     if event.get("event_type") != "program_created" or event.get("data_classification") != data_classification:
@@ -548,12 +571,12 @@ def save_program_version(
             conn, dialect,
             """INSERT INTO atena_program_versions
                 (program_version_id, profile_id, version_number, goal, experience,
-                 data_classification, program_json, created_at)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+                 data_classification, program_json, generation_context_json, created_at)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
             (
                 program_version_id, profile_id, version_number, goal.strip(),
                 experience.strip(), data_classification,
-                _encode_json(program, dialect), now,
+                _encode_json(program, dialect), _encode_json(generation_context, dialect), now,
             ),
         )
         _insert_decision_event(
@@ -569,6 +592,7 @@ def save_program_version(
             "experience": experience.strip(),
             "data_classification": data_classification,
             "program": program,
+            "generation_context": generation_context,
             "created_at": now,
         }
     finally:
@@ -590,7 +614,7 @@ def list_program_versions(
     try:
         _init(conn, dialect)
         authorized = _authorized_profile(conn, dialect, profile_id, token)
-        program_column = ", program_json" if include_program else ""
+        program_column = ", program_json, generation_context_json" if include_program else ""
         rows = _execute(
             conn, dialect,
             f"""SELECT program_version_id, version_number, goal, experience,
@@ -617,6 +641,7 @@ def list_program_versions(
             }
             if include_program:
                 item["program"] = _decode_json(row[6])
+                item["generation_context"] = _decode_json(row[7])
             versions.append(item)
         return versions
     finally:
@@ -632,7 +657,7 @@ def get_program_version(profile_id: str, token: str, program_version_id: str):
         row = _execute(
             conn, dialect,
             """SELECT program_version_id, version_number, goal, experience,
-                      data_classification, program_json, created_at
+                      data_classification, program_json, generation_context_json, created_at
                  FROM atena_program_versions
                 WHERE profile_id = %s AND program_version_id = %s""",
             (profile_id, program_version_id),
@@ -641,7 +666,7 @@ def get_program_version(profile_id: str, token: str, program_version_id: str):
             return None
         if row[4] == "health_sensitive" and authorized["health_data_consent"] is not True:
             return None
-        created_at = row[6]
+        created_at = row[7]
         if hasattr(created_at, "isoformat"):
             created_at = created_at.isoformat()
         return {
@@ -652,6 +677,7 @@ def get_program_version(profile_id: str, token: str, program_version_id: str):
             "experience": row[3],
             "data_classification": row[4],
             "program": _decode_json(row[5]),
+            "generation_context": _decode_json(row[6]),
             "created_at": created_at,
         }
     finally:
