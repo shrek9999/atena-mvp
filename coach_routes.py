@@ -26,6 +26,7 @@ from training.program_context import ProgramContextError, generate_program_for_a
 from training.progress import summarize_progress
 from training.adaptation import assess_next_step
 from training.adaptive_decision import decide_adaptation
+from training.coach_decision_orchestrator import decide_coach_next_action
 from training.exercise_progression import recommend_exercise_progression, apply_exercise_progression
 from training.longitudinal_progression import summarize_longitudinal_progression
 from training.conditioning_progression import summarize_conditioning_progress
@@ -1925,9 +1926,17 @@ def update_coach_health_consent(profile_id):
 
 
 
+def _apply_progression_with_decision_gate(program, exercise_progressions, adaptive_decision):
+    """Apply exercise-level progression only when the final decision explicitly permits it."""
+    if not isinstance(adaptive_decision, dict) or adaptive_decision.get("progression_allowed") is not True:
+        return program
+    return apply_exercise_progression(program, exercise_progressions)
+
+
 def _build_adaptive_decision(sessions, exercise_progressions=None,
                              longitudinal_progression=None,
-                             conditioning_progression=None):
+                             conditioning_progression=None,
+                             athlete_state=None):
     """Combine the independent evidence streams into one narrow, explainable decision."""
     if exercise_progressions is None:
         exercise_progressions = recommend_exercise_progression(sessions)
@@ -1940,13 +1949,23 @@ def _build_adaptive_decision(sessions, exercise_progressions=None,
         if isinstance(item, dict) and isinstance(item.get("session"), dict)
     ), {})
     prior = latest.get("session", {}).get("adaptation_response")
-    decision = decide_adaptation(
-        sessions,
-        exercise_progressions=exercise_progressions,
-        longitudinal_progression=longitudinal_progression,
-        conditioning_progression=conditioning_progression,
-        prior_adaptation=prior,
-    )
+    if isinstance(athlete_state, dict):
+        decision = decide_coach_next_action(
+            athlete_state, sessions,
+            exercise_progressions=exercise_progressions,
+            longitudinal_progression=longitudinal_progression,
+            conditioning_progression=conditioning_progression,
+            prior_adaptation=prior,
+        )
+    else:
+        # Compatibility path for legacy profiles awaiting canonical-state migration.
+        decision = decide_adaptation(
+            sessions,
+            exercise_progressions=exercise_progressions,
+            longitudinal_progression=longitudinal_progression,
+            conditioning_progression=conditioning_progression,
+            prior_adaptation=prior,
+        )
     if decision.get("decision") == "confirm_previous_change" and isinstance(prior, dict):
         # Keep the original ID while a recommendation remains untried. This
         # prevents ATENA from creating a new, endlessly repeatable proposal.
@@ -1986,6 +2005,7 @@ def coach_training_progress(profile_id):
         adaptive_decision = _build_adaptive_decision(
             sessions, exercise_progressions, longitudinal_progression,
             conditioning_progression,
+            athlete_state=profile["profile"].get("athlete_state"),
         )
         training_cycle = summarize_training_cycle(
             legacy_profile, sessions, exercise_progressions,
@@ -2113,6 +2133,7 @@ def coach_profile_program(profile_id):
         adaptive_decision = _build_adaptive_decision(
             sessions, exercise_progressions, longitudinal_progression,
             conditioning_progression,
+            athlete_state=profile["profile"].get("athlete_state"),
         )
         training_cycle = summarize_training_cycle(
             legacy_profile, sessions, exercise_progressions,
@@ -2127,7 +2148,9 @@ def coach_profile_program(profile_id):
         # symptom-aware selection. The legacy profile remains the generator's
         # compatibility view; stale or contradictory state fails closed.
         result = generate_program_for_athlete(profile["profile"])
-        result = apply_exercise_progression(result, exercise_progressions)
+        result = _apply_progression_with_decision_gate(
+            result, exercise_progressions, adaptive_decision
+        )
         return jsonify({
             "program": result,
             "profile": profile["profile"],
@@ -2161,9 +2184,12 @@ def coach_training_adaptation(profile_id):
     token = _profile_token()
     try:
         profile = store_get_profile(profile_id, token)
+        profile = _profile_record_with_state(profile, token, persist_migration=True)
         sessions = store_list_sessions(profile_id, token, limit=50)
         _feedback, adaptation = _build_profile_adaptation(sessions)
-        adaptive_decision = _build_adaptive_decision(sessions)
+        adaptive_decision = _build_adaptive_decision(
+            sessions, athlete_state=profile["profile"].get("athlete_state")
+        )
         return jsonify({
             "adaptation": adaptation,
             "adaptive_decision": adaptive_decision,
