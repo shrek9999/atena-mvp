@@ -989,3 +989,36 @@ def test_hinge_pattern_uses_neutral_spine_terminology():
     from training.program import PATTERN_LABELS
 
     assert PATTERN_LABELS["hinge"] == "predklon z nevtralnim položajem hrbtenice"
+
+
+@pytest.mark.parametrize(
+    "experience,expected_seconds",
+    [("beginner", 20), ("intermediate", 25), ("advanced", 35)],
+)
+def test_carry_uses_distance_dose_and_separate_time_estimate(experience, expected_seconds):
+    profile = {
+        **BASE,
+        "goal": "functional",
+        "experience": experience,
+        "equipment": ["dumbbell", "kettlebell", "bench", "pull_up_bar", "cable", "box", "resistance_band"],
+        "session_minutes": 90,
+    }
+    plan = generate_program(profile)
+    carry = next(
+        exercise
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+        if exercise["pattern"] == "carry"
+    )
+    prescription = carry["prescription"]
+
+    assert prescription["distance_based"] is True
+    assert prescription["reps"] in {
+        "15–20 m", "15–20 m na stran",
+        "20–30 m", "20–30 m na stran",
+        "25–40 m", "25–40 m na stran",
+    }
+    assert prescription["estimated_work_seconds"] == expected_seconds
+    assert "work_seconds" not in prescription
+    assert prescription["tempo"] == "tekoče"
+    assert all(session["estimated_minutes"] <= profile["session_minutes"] for session in plan["sessions"])
