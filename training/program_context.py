@@ -23,7 +23,6 @@ CANONICAL_TO_ASSESSMENT_TASK = {
 PROVOKING_TASK_ALIASES = {
     "vstajanje s stola": "squat",
     "počep": "squat",
-    "počep": "squat",
     "pobiranje lahkega predmeta s tal": "hinge",
     "predklon z nevtralnim položajem hrbtenice": "hinge",
     "izpadni korak": "lunge",
@@ -69,24 +68,23 @@ def _apply_symptom_context(state: dict, assessment: dict) -> dict:
         return assessment
 
     items = symptoms["items"]
-    tasks = {item.get("provoking_task") for item in items if item.get("provoking_task")}
-    tasks.discard(None)
-    if len(tasks) != 1:
+    if not items or any(not item.get("provoking_task") for item in items):
         raise ProgramSafetyBlock(
             "Simptom je naveden, vendar povezava z določeno gibalno nalogo ni jasna. "
             "Pred izbiro vaj razjasni, pri katerem gibu ali opravilu se pojavi."
         )
-    provoking_task = next(iter(tasks))
-    provoking_task = PROVOKING_TASK_ALIASES.get(
-        str(provoking_task).strip().casefold(), provoking_task
-    )
-    if provoking_task not in CANONICAL_TO_ASSESSMENT_TASK:
-        raise ProgramSafetyBlock(
-            "Navedeni sprožilec simptoma še ni povezan s preverjeno gibalno nalogo. "
-            "ATENA ne bo ugibala, kateri vzorec je treba prilagoditi."
+    for item in items:
+        provoking_task = item["provoking_task"]
+        provoking_task = PROVOKING_TASK_ALIASES.get(
+            str(provoking_task).strip().casefold(), provoking_task
         )
-    assessment_task = CANONICAL_TO_ASSESSMENT_TASK[provoking_task]
-    assessment[assessment_task] = "symptoms_reported"
+        if provoking_task not in CANONICAL_TO_ASSESSMENT_TASK:
+            raise ProgramSafetyBlock(
+                "Navedeni sprožilec simptoma še ni povezan s preverjeno gibalno nalogo. "
+                "ATENA ne bo ugibala, kateri vzorec je treba prilagoditi."
+            )
+        assessment_task = CANONICAL_TO_ASSESSMENT_TASK[provoking_task]
+        assessment[assessment_task] = "symptoms_reported"
     return assessment
 
 
