@@ -435,6 +435,11 @@ def test_sqlite_runtime_init_creates_local_event_store(monkeypatch, tmp_path):
             )
         }
         assert "atena_decision_events" in tables
+        assert "atena_program_versions" in tables
+        columns = {
+            row[1] for row in conn.execute("PRAGMA table_info(atena_training_sessions)")
+        }
+        assert "program_version_id" in columns
     finally:
         conn.close()
 
