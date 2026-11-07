@@ -174,6 +174,7 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     assert "discomfort_reported" not in saved_session
     assert saved_session["exercises"]
     assert saved_session["conditioning"]
+    assert "average_heart_rate" not in saved_session["conditioning"][0]
 
     safe_export = client.get(f"/coach/profile/{profile_id}/export", headers=headers)
     assert safe_export.status_code == 200
