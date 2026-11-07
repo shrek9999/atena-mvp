@@ -425,6 +425,12 @@ def set_health_data_consent(profile_id: str, token: str, consent: bool):
                     _execute(conn, dialect,
                              "UPDATE atena_profiles SET profile_json = %s WHERE profile_id = %s",
                              (_encode_json(profile_data, dialect), profile_id))
+            # Consent withdrawal also erases longitudinal health-sensitive events.
+            _execute(
+                conn, dialect,
+                "DELETE FROM atena_decision_events WHERE profile_id = %s AND data_classification = %s",
+                (profile_id, "health_sensitive"),
+            )
             rows = _execute(conn, dialect,
                             "SELECT session_id, session_json FROM atena_training_sessions WHERE profile_id = %s",
                             (profile_id,)).fetchall()
@@ -436,5 +442,59 @@ def set_health_data_consent(profile_id: str, token: str, consent: bool):
                          (_encode_json(record, dialect), session_id))
         conn.commit()
         return _authorized_profile(conn, dialect, profile_id, token)
+    finally:
+        conn.close()
+
+def append_decision_event(profile_id: str, token: str, event: dict):
+    """Validate and append one immutable event after server-side profile authorization."""
+    conn, dialect = _connect()
+    try:
+        _init(conn, dialect)
+        profile = _authorized_profile(conn, dialect, profile_id, token)
+        if not isinstance(event, dict) or event.get("profile_id") != profile_id:
+            raise DecisionEventError("Dogodek ne pripada preverjenemu profilu.")
+        event_type = event.get("event_type")
+        classification = event.get("data_classification")
+        if event_type in HEALTH_SENSITIVE_EVENT_TYPES and classification != "health_sensitive":
+            raise DecisionEventError("Ta vrsta dogodka mora biti označena kot zdravstveno občutljiva.")
+        validated = validate_decision_event(
+            event, health_consent_verified=profile["health_data_consent"]
+        )
+        now = _now()
+        _execute(
+            conn, dialect,
+            """INSERT INTO atena_decision_events
+            (event_id, profile_id, event_type, occurred_at, source,
+             data_classification, event_json, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+            (validated["event_id"], profile_id, validated["event_type"],
+             validated["occurred_at"], validated["source"],
+             validated["data_classification"], _encode_json(validated, dialect), now),
+        )
+        conn.commit()
+        return {"event": validated, "created_at": now}
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def list_decision_events(profile_id: str, token: str, limit: int = 100):
+    """Read a profile's own append-only event history in chronological order."""
+    if not isinstance(limit, int) or isinstance(limit, bool):
+        raise ValueError("limit mora biti celo število.")
+    limit = max(1, min(limit, 200))
+    conn, dialect = _connect(require_enabled=False)
+    try:
+        _init(conn, dialect)
+        _authorized_profile(conn, dialect, profile_id, token)
+        rows = _execute(
+            conn, dialect,
+            """SELECT event_json, created_at FROM atena_decision_events
+            WHERE profile_id = %s ORDER BY occurred_at ASC, created_at ASC LIMIT %s""",
+            (profile_id, limit),
+        ).fetchall()
+        return [{"event": _decode_json(row[0]), "created_at": row[1]} for row in rows]
     finally:
         conn.close()
