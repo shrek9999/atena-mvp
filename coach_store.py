@@ -459,7 +459,7 @@ def save_program_version(
         raise ValueError("Program mora biti JSON objekt.")
     if not isinstance(goal, str) or not goal.strip() or not isinstance(experience, str) or not experience.strip():
         raise ValueError("Cilj in izkušnje programa morajo biti določeni.")
-    if data_classification not in {"operational", "health_sensitive"}:
+    if not isinstance(data_classification, str) or data_classification not in {"operational", "health_sensitive"}:
         raise ValueError("Razvrstitev programa ni veljavna.")
     try:
         encoded_program = json.dumps(
