@@ -1258,7 +1258,7 @@ def test_postgres_store_connections_switch_to_least_privilege_role(monkeypatch):
     conn, dialect = coach_store._connect()
     assert conn is not None
     assert dialect == "postgres"
-    assert statements == ["SET ROLE atena_app"]
+    assert statements == ["SET LOCAL ROLE atena_app"]
 
 
 def test_profile_create_and_update_are_atomically_audited(monkeypatch, tmp_path):
