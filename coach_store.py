@@ -11,8 +11,11 @@ import hashlib
 import json
 import os
 import sqlite3
+import uuid
 from datetime import datetime, timezone
 from urllib.parse import quote, unquote, urlsplit
+
+from training.decision_event import DecisionEventError, validate_decision_event
 
 
 def _normalize_supabase_pooler_username(url: str) -> str:
@@ -145,15 +148,11 @@ def _execute(conn, dialect, sql, params=()):
 
 
 def _encode_json(value, dialect):
-    """Use psycopg's native JSONB adapter for hosted PostgreSQL."""
-    if dialect == "postgres":
-        from psycopg.types.json import Jsonb
-        return Jsonb(value)
-    return json.dumps(value, ensure_ascii=False)
-
+    """Serialize consistently for the TEXT columns used by both supported stores."""
+    return json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
 
 def _decode_json(value):
-    """psycopg returns decoded JSONB values; SQLite returns serialized text."""
+    """Decode serialized JSON text returned by either supported database."""
     if isinstance(value, (str, bytes, bytearray)):
         return json.loads(value)
     return value
@@ -161,43 +160,108 @@ def _decode_json(value):
 def _now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
-def _init(conn, dialect):
-    statements = [
-        """CREATE TABLE IF NOT EXISTS atena_profiles (
-            profile_id TEXT PRIMARY KEY,
-            token_hash TEXT NOT NULL,
-            profile_json TEXT NOT NULL,
-            privacy_notice_version TEXT NOT NULL,
-            privacy_acknowledged INTEGER NOT NULL,
-            health_data_consent INTEGER NOT NULL,
-            health_data_consent_at TEXT,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL
-        )""",
-        """CREATE TABLE IF NOT EXISTS atena_training_sessions (
-            session_id TEXT PRIMARY KEY,
-            profile_id TEXT NOT NULL REFERENCES atena_profiles(profile_id) ON DELETE CASCADE,
-            session_date TEXT NOT NULL,
-            session_json TEXT NOT NULL,
-            created_at TEXT NOT NULL
-        )""",
-        "CREATE INDEX IF NOT EXISTS atena_sessions_profile_date ON atena_training_sessions(profile_id, session_date)"
-    ]
-    for statement in statements:
-        _execute(conn, dialect, statement)
-    if dialect == "postgres":
-        # These tables live in Supabase's exposed public schema. The app connects
-        # through the server-side database role; browser/API roles must never
-        # be able to read or mutate profile data directly.
-        postgres_safety = [
-            "ALTER TABLE atena_profiles ENABLE ROW LEVEL SECURITY",
-            "ALTER TABLE atena_training_sessions ENABLE ROW LEVEL SECURITY",
-            "REVOKE ALL PRIVILEGES ON TABLE atena_profiles FROM PUBLIC, anon, authenticated",
-            "REVOKE ALL PRIVILEGES ON TABLE atena_training_sessions FROM PUBLIC, anon, authenticated",
-        ]
-        for statement in postgres_safety:
-            _execute(conn, dialect, statement)
+SCHEMA_VERSION = 2
+HEALTH_SENSITIVE_EVENT_TYPES = {
+    "movement_assessment_recorded",
+    "symptom_context_recorded",
+    "referral_recommended",
+}
 
+def _table_exists(conn, dialect, table_name):
+    if dialect == "sqlite":
+        row = _execute(
+            conn, dialect,
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = %s",
+            (table_name,),
+        ).fetchone()
+        return row is not None
+    row = _execute(
+        conn, dialect,
+        "SELECT 1 FROM information_schema.tables "
+        "WHERE table_schema = current_schema() AND table_name = %s",
+        (table_name,),
+    ).fetchone()
+    return row is not None
+
+
+def _table_columns(conn, dialect, table_name):
+    if dialect == "sqlite":
+        rows = _execute(conn, dialect, f"PRAGMA table_info({table_name})").fetchall()
+        return {row[1] for row in rows}
+    rows = _execute(conn, dialect,
+        "SELECT column_name FROM information_schema.columns "
+        "WHERE table_schema = current_schema() AND table_name = %s",
+        (table_name,),
+    ).fetchall()
+    return {row[0] for row in rows}
+
+def _validate_schema(conn, dialect):
+    expected = {
+        "atena_profiles": {"profile_id", "token_hash", "profile_json", "privacy_notice_version", "privacy_acknowledged", "health_data_consent", "health_data_consent_at", "created_at", "updated_at"},
+        "atena_training_sessions": {"session_id", "profile_id", "session_date", "session_json", "created_at"},
+        "atena_decision_events": {"event_id", "profile_id", "event_type", "occurred_at", "source", "data_classification", "event_json", "created_at"},
+    }
+    for table, required in expected.items():
+        missing = required - _table_columns(conn, dialect, table)
+        if missing:
+            raise StorageUnavailable("Database schema is incomplete; a reviewed migration is required.", "database_schema_mismatch")
+
+def _init(conn, dialect):
+    """Apply ordered additive migrations; adopt existing profile/session tables without rewriting data."""
+    try:
+        if dialect == "postgres":
+            _execute(conn, dialect, "SELECT pg_advisory_xact_lock(814273901)")
+        else:
+            conn.execute("BEGIN IMMEDIATE")
+        if not _table_exists(conn, dialect, "atena_schema_migrations"):
+            _execute(conn, dialect, """CREATE TABLE atena_schema_migrations (
+                version INTEGER PRIMARY KEY, migration_name TEXT NOT NULL, applied_at TEXT NOT NULL
+            )""")
+            if dialect == "postgres":
+                _execute(conn, dialect, "ALTER TABLE atena_schema_migrations ENABLE ROW LEVEL SECURITY")
+                _execute(conn, dialect, "REVOKE ALL PRIVILEGES ON TABLE atena_schema_migrations FROM PUBLIC, anon, authenticated")
+        row = _execute(conn, dialect, "SELECT MAX(version) FROM atena_schema_migrations").fetchone()
+        current = row[0] or 0
+        if current < 1:
+            _execute(conn, dialect, """CREATE TABLE IF NOT EXISTS atena_profiles (
+                profile_id TEXT PRIMARY KEY, token_hash TEXT NOT NULL, profile_json TEXT NOT NULL,
+                privacy_notice_version TEXT NOT NULL, privacy_acknowledged INTEGER NOT NULL,
+                health_data_consent INTEGER NOT NULL, health_data_consent_at TEXT,
+                created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+            )""")
+            _execute(conn, dialect, """CREATE TABLE IF NOT EXISTS atena_training_sessions (
+                session_id TEXT PRIMARY KEY,
+                profile_id TEXT NOT NULL REFERENCES atena_profiles(profile_id) ON DELETE CASCADE,
+                session_date TEXT NOT NULL, session_json TEXT NOT NULL, created_at TEXT NOT NULL
+            )""")
+            _execute(conn, dialect, "CREATE INDEX IF NOT EXISTS atena_sessions_profile_date ON atena_training_sessions(profile_id, session_date)")
+            if dialect == "postgres":
+                _execute(conn, dialect, "ALTER TABLE atena_profiles ENABLE ROW LEVEL SECURITY")
+                _execute(conn, dialect, "ALTER TABLE atena_training_sessions ENABLE ROW LEVEL SECURITY")
+                _execute(conn, dialect, "REVOKE ALL PRIVILEGES ON TABLE atena_profiles FROM PUBLIC, anon, authenticated")
+                _execute(conn, dialect, "REVOKE ALL PRIVILEGES ON TABLE atena_training_sessions FROM PUBLIC, anon, authenticated")
+            _execute(conn, dialect, "INSERT INTO atena_schema_migrations (version, migration_name, applied_at) VALUES (%s, %s, %s)", (1, "adopt_existing_profile_and_session_storage", _now()))
+            current = 1
+        if current < 2:
+            _execute(conn, dialect, """CREATE TABLE IF NOT EXISTS atena_decision_events (
+                event_id TEXT PRIMARY KEY,
+                profile_id TEXT NOT NULL REFERENCES atena_profiles(profile_id) ON DELETE CASCADE,
+                event_type TEXT NOT NULL, occurred_at TEXT NOT NULL, source TEXT NOT NULL,
+                data_classification TEXT NOT NULL, event_json TEXT NOT NULL, created_at TEXT NOT NULL
+            )""")
+            _execute(conn, dialect, "CREATE INDEX IF NOT EXISTS atena_events_profile_time ON atena_decision_events(profile_id, occurred_at)")
+            if dialect == "postgres":
+                _execute(conn, dialect, "ALTER TABLE atena_decision_events ENABLE ROW LEVEL SECURITY")
+                _execute(conn, dialect, "REVOKE ALL PRIVILEGES ON TABLE atena_decision_events FROM PUBLIC, anon, authenticated")
+            _execute(conn, dialect, "INSERT INTO atena_schema_migrations (version, migration_name, applied_at) VALUES (%s, %s, %s)", (2, "add_append_only_decision_event_history", _now()))
+            current = 2
+        if current != SCHEMA_VERSION:
+            raise StorageUnavailable("Database schema version is newer than this application supports.", "database_schema_mismatch")
+        _validate_schema(conn, dialect)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
 
 def check_database_connection():
     """Verify hosted PostgreSQL reachability without enabling or creating user-data tables."""
@@ -316,11 +380,42 @@ def add_session(profile_id: str, token: str, session_id: str, session_date: str,
             (session_id, profile_id, session_date, session_json, created_at)
             VALUES (%s, %s, %s, %s, %s)""",
             (session_id, profile_id, session_date, _encode_json(session, dialect), now))
+        # Persist the training lifecycle event in the same transaction as the session.
+        if not isinstance(session, dict):
+            raise ValueError("session mora biti objekt.")
+        event_type = "session_completed" if session.get("completed") is True else "session_interrupted"
+        exercises = session.get("exercises", [])
+        conditioning = session.get("conditioning", [])
+        event = validate_decision_event({
+            "schema_version": 1,
+            "event_id": uuid.uuid4().hex,
+            "profile_id": profile_id,
+            "event_type": event_type,
+            "occurred_at": now,
+            "source": "user",
+            "data_classification": "operational",
+            "payload": {
+                "session_id": session_id,
+                "session_date": session_date,
+                "completed": session.get("completed") is True,
+                "duration_minutes": session.get("duration_minutes"),
+                "exercise_count": len(exercises) if isinstance(exercises, list) else 0,
+                "conditioning_block_count": len(conditioning) if isinstance(conditioning, list) else 0,
+            },
+        })
+        _execute(conn, dialect, """INSERT INTO atena_decision_events
+            (event_id, profile_id, event_type, occurred_at, source,
+             data_classification, event_json, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+            (event["event_id"], profile_id, event["event_type"], event["occurred_at"],
+             event["source"], event["data_classification"], _encode_json(event, dialect), now))
         conn.commit()
         return {"session_id": session_id, "session_date": session_date, "session": session, "created_at": now}
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
-
 def list_sessions(profile_id: str, token: str, limit: int = 50):
     conn, dialect = _connect(require_enabled=False)
     try:
@@ -383,6 +478,12 @@ def set_health_data_consent(profile_id: str, token: str, consent: bool):
                     _execute(conn, dialect,
                              "UPDATE atena_profiles SET profile_json = %s WHERE profile_id = %s",
                              (_encode_json(profile_data, dialect), profile_id))
+            # Consent withdrawal also erases longitudinal health-sensitive events.
+            _execute(
+                conn, dialect,
+                "DELETE FROM atena_decision_events WHERE profile_id = %s AND data_classification = %s",
+                (profile_id, "health_sensitive"),
+            )
             rows = _execute(conn, dialect,
                             "SELECT session_id, session_json FROM atena_training_sessions WHERE profile_id = %s",
                             (profile_id,)).fetchall()
@@ -394,5 +495,59 @@ def set_health_data_consent(profile_id: str, token: str, consent: bool):
                          (_encode_json(record, dialect), session_id))
         conn.commit()
         return _authorized_profile(conn, dialect, profile_id, token)
+    finally:
+        conn.close()
+
+def append_decision_event(profile_id: str, token: str, event: dict):
+    """Validate and append one immutable event after server-side profile authorization."""
+    conn, dialect = _connect()
+    try:
+        _init(conn, dialect)
+        profile = _authorized_profile(conn, dialect, profile_id, token)
+        if not isinstance(event, dict) or event.get("profile_id") != profile_id:
+            raise DecisionEventError("Dogodek ne pripada preverjenemu profilu.")
+        event_type = event.get("event_type")
+        classification = event.get("data_classification")
+        if isinstance(event_type, str) and event_type in HEALTH_SENSITIVE_EVENT_TYPES and classification != "health_sensitive":
+            raise DecisionEventError("Ta vrsta dogodka mora biti označena kot zdravstveno občutljiva.")
+        validated = validate_decision_event(
+            event, health_consent_verified=profile["health_data_consent"]
+        )
+        now = _now()
+        _execute(
+            conn, dialect,
+            """INSERT INTO atena_decision_events
+            (event_id, profile_id, event_type, occurred_at, source,
+             data_classification, event_json, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+            (validated["event_id"], profile_id, validated["event_type"],
+             validated["occurred_at"], validated["source"],
+             validated["data_classification"], _encode_json(validated, dialect), now),
+        )
+        conn.commit()
+        return {"event": validated, "created_at": now}
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def list_decision_events(profile_id: str, token: str, limit: int = 100):
+    """Read a profile's own append-only event history in chronological order."""
+    if not isinstance(limit, int) or isinstance(limit, bool):
+        raise ValueError("limit mora biti celo število.")
+    limit = max(1, min(limit, 200))
+    conn, dialect = _connect(require_enabled=False)
+    try:
+        _init(conn, dialect)
+        _authorized_profile(conn, dialect, profile_id, token)
+        rows = _execute(
+            conn, dialect,
+            """SELECT event_json, created_at FROM atena_decision_events
+            WHERE profile_id = %s ORDER BY occurred_at ASC, created_at ASC LIMIT %s""",
+            (profile_id, limit),
+        ).fetchall()
+        return [{"event": _decode_json(row[0]), "created_at": row[1]} for row in rows]
     finally:
         conn.close()
