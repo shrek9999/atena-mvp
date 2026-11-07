@@ -566,7 +566,23 @@ def test_profile_program_holds_progression_after_logged_discomfort_and_fresh_saf
     assert data["adaptive_decision"]["decision"] == "pause_and_review"
     assert data["adaptive_decision"]["automatic_program_changes"] is False
     assert data["program"]["feedback_applied"] is None
-
+    history = client.get(
+        f"/coach/profile/{profile_id}/programs",
+        headers={"X-Profile-Token": token},
+    )
+    assert history.status_code == 200
+    assert history.get_json()["program_versions"][0]["health_context_used"] is True
+    withdrawn = client.post(
+        f"/coach/profile/{profile_id}/consent",
+        headers={"X-Profile-Token": token},
+        json={"health_data_consent": False},
+    )
+    assert withdrawn.status_code == 200
+    after_withdrawal = client.get(
+        f"/coach/profile/{profile_id}/programs",
+        headers={"X-Profile-Token": token},
+    )
+    assert after_withdrawal.get_json()["program_versions"] == []
 
 
 def test_time_based_exercise_history_stores_seconds_without_faking_repetitions(monkeypatch, tmp_path):
