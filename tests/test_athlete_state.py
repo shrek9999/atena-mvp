@@ -195,3 +195,25 @@ def test_unknown_self_reported_capability_is_rejected():
             sessions_per_week=2,
             self_reported_capabilities={"observed_squat_quality": True},
         )
+
+
+@pytest.mark.parametrize("intensity", [-1, 10.1, True, "5"])
+def test_symptom_intensity_must_be_numeric_and_between_zero_and_ten(intensity):
+    with pytest.raises(AthleteStateError):
+        make_state(symptoms={
+            "status": "present_stable",
+            "items": [{"location": "koleno", "intensity": intensity}],
+        })
+
+
+def test_symptom_context_rejects_empty_or_oversized_text():
+    with pytest.raises(AthleteStateError):
+        make_state(symptoms={
+            "status": "present_stable",
+            "items": [{"location": " "}],
+        })
+    with pytest.raises(AthleteStateError):
+        make_state(symptoms={
+            "status": "present_stable",
+            "items": [{"location": "x" * 301}],
+        })
