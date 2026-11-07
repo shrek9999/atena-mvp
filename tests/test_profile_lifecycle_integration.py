@@ -149,6 +149,8 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     assert allowed.status_code == 200
     assert allowed.get_json()["source"] == "saved_profile_and_exercise_level_training_feedback"
     assert allowed.get_json()["pilot"] is True
+    assert allowed.get_json()["program_version"]["version_number"] == 1
+    program_version_id = allowed.get_json()["program_version"]["program_version_id"]
 
     exported = client.get(f"/coach/profile/{profile_id}/export", headers=headers)
     assert exported.status_code == 200
@@ -157,6 +159,8 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     export_data = exported.get_json()
     assert export_data["export_version"] == "1.1"
     assert any(event["event_type"] == "profile_created" for event in export_data["decision_events"])
+    assert export_data["program_versions"][0]["program_version_id"] == program_version_id
+    assert export_data["program_versions"][0]["program"]["sessions"]
     assert len(export_data["sessions"]) == 1
     assert export_data["sessions"][0]["session"]["discomfort_reported"] is True
 
@@ -196,7 +200,11 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     remaining_events = conn.execute(
         "SELECT COUNT(*) FROM atena_decision_events WHERE profile_id = ?", (profile_id,)
     ).fetchone()[0]
+    remaining_program_versions = conn.execute(
+        "SELECT COUNT(*) FROM atena_program_versions WHERE profile_id = ?", (profile_id,)
+    ).fetchone()[0]
     conn.close()
     assert remaining_profiles == 0
     assert remaining_sessions == 0
     assert remaining_events == 0
+    assert remaining_program_versions == 0
