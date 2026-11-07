@@ -276,7 +276,7 @@ def check_database_connection():
 def hash_access_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
-def create_profile(profile_id: str, token: str, profile: dict, health_data_consent: bool, notice_version: str):
+def create_profile(profile_id: str, token: str, profile: dict, health_data_consent: bool, notice_version: str, *, event: dict | None = None):
     conn, dialect = _connect()
     try:
         _init(conn, dialect)
@@ -287,6 +287,11 @@ def create_profile(profile_id: str, token: str, profile: dict, health_data_conse
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
             (profile_id, hash_access_token(token), _encode_json(profile, dialect),
              notice_version, True, bool(health_data_consent), now if health_data_consent else None, now, now))
+        if event is not None:
+            _insert_decision_event(
+                conn, dialect, profile_id, event,
+                health_consent_verified=bool(health_data_consent),
+            )
         conn.commit()
         return {"profile_id": profile_id, "profile": profile, "created_at": now, "updated_at": now,
                 "health_data_consent": bool(health_data_consent),
@@ -316,29 +321,39 @@ def get_profile(profile_id: str, token: str):
     finally:
         conn.close()
 
-def update_profile(profile_id: str, token: str, profile: dict):
+def update_profile(profile_id: str, token: str, profile: dict, *, event: dict | None = None):
     conn, dialect = _connect()
     try:
         _init(conn, dialect)
-        _authorized_profile(conn, dialect, profile_id, token)
+        authorized = _authorized_profile(conn, dialect, profile_id, token)
         now = _now()
         _execute(conn, dialect, "UPDATE atena_profiles SET profile_json = %s, updated_at = %s WHERE profile_id = %s",
                  (_encode_json(profile, dialect), now, profile_id))
+        if event is not None:
+            _insert_decision_event(
+                conn, dialect, profile_id, event,
+                health_consent_verified=authorized["health_data_consent"] is True,
+            )
         conn.commit()
         return _authorized_profile(conn, dialect, profile_id, token)
     finally:
         conn.close()
 
-def add_session(profile_id: str, token: str, session_id: str, session_date: str, session: dict):
+def add_session(profile_id: str, token: str, session_id: str, session_date: str, session: dict, *, event: dict | None = None):
     conn, dialect = _connect()
     try:
         _init(conn, dialect)
-        _authorized_profile(conn, dialect, profile_id, token)
+        authorized = _authorized_profile(conn, dialect, profile_id, token)
         now = _now()
         _execute(conn, dialect, """INSERT INTO atena_training_sessions
             (session_id, profile_id, session_date, session_json, created_at)
             VALUES (%s, %s, %s, %s, %s)""",
             (session_id, profile_id, session_date, _encode_json(session, dialect), now))
+        if event is not None:
+            _insert_decision_event(
+                conn, dialect, profile_id, event,
+                health_consent_verified=authorized["health_data_consent"] is True,
+            )
         conn.commit()
         return {"session_id": session_id, "session_date": session_date, "session": session, "created_at": now}
     finally:
@@ -358,41 +373,51 @@ def list_sessions(profile_id: str, token: str, limit: int = 50):
     finally:
         conn.close()
 
+def _insert_decision_event(conn, dialect, profile_id, event, *, health_consent_verified):
+    """Insert an event inside the caller's transaction after profile/consent validation."""
+    if not isinstance(event, dict) or event.get("profile_id") != profile_id:
+        raise DecisionEventError("Dogodek mora pripadati preverjenemu profilu.")
+    normalized = validate_decision_event(
+        event,
+        health_consent_verified=health_consent_verified is True,
+    )
+    cursor = _execute(
+        conn, dialect,
+        """INSERT INTO atena_decision_events
+            (event_id, profile_id, schema_version, event_type, occurred_at,
+             source, data_classification, payload_json, program_version_id,
+             correlation_id, created_at)
+           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+           ON CONFLICT(event_id) DO NOTHING""",
+        (
+            normalized["event_id"], profile_id, normalized["schema_version"],
+            normalized["event_type"], normalized["occurred_at"],
+            normalized["source"], normalized["data_classification"],
+            _encode_json(normalized["payload"], dialect),
+            normalized.get("program_version_id"), normalized.get("correlation_id"),
+            _now(),
+        ),
+    )
+    if cursor.rowcount == 0:
+        raise DecisionEventError("Dogodek s tem identifikatorjem že obstaja.")
+    return normalized
+
+
 def append_decision_event(profile_id: str, token: str, event: dict):
     """Append one validated event after authenticating profile and checking consent."""
     conn, dialect = _connect()
     try:
         _init(conn, dialect)
         authorized = _authorized_profile(conn, dialect, profile_id, token)
-        if not isinstance(event, dict) or event.get("profile_id") != profile_id:
-            raise DecisionEventError("Dogodek mora pripadati preverjenemu profilu.")
-        normalized = validate_decision_event(
-            event,
+        normalized = _insert_decision_event(
+            conn, dialect, profile_id, event,
             health_consent_verified=authorized["health_data_consent"] is True,
         )
-        cursor = _execute(
-            conn, dialect,
-            """INSERT INTO atena_decision_events
-                (event_id, profile_id, schema_version, event_type, occurred_at,
-                 source, data_classification, payload_json, program_version_id,
-                 correlation_id, created_at)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-               ON CONFLICT(event_id) DO NOTHING""",
-            (
-                normalized["event_id"], profile_id, normalized["schema_version"],
-                normalized["event_type"], normalized["occurred_at"],
-                normalized["source"], normalized["data_classification"],
-                _encode_json(normalized["payload"], dialect),
-                normalized.get("program_version_id"), normalized.get("correlation_id"),
-                _now(),
-            ),
-        )
-        if cursor.rowcount == 0:
-            raise DecisionEventError("Dogodek s tem identifikatorjem že obstaja.")
         conn.commit()
         return normalized
     finally:
         conn.close()
+
 
 
 def list_decision_events(profile_id: str, token: str, limit: int = 50):
@@ -503,6 +528,20 @@ def set_health_data_consent(profile_id: str, token: str, consent: bool):
                 _execute(conn, dialect,
                          "UPDATE atena_training_sessions SET session_json = %s WHERE session_id = %s",
                          (_encode_json(record, dialect), session_id))
+        consent_event = {
+            "schema_version": 1,
+            "event_id": __import__("uuid").uuid4().hex,
+            "profile_id": profile_id,
+            "event_type": "consent_changed",
+            "occurred_at": now,
+            "source": "user",
+            "data_classification": "operational",
+            "payload": {"health_data_consent": bool(consent)},
+        }
+        _insert_decision_event(
+            conn, dialect, profile_id, consent_event,
+            health_consent_verified=bool(consent),
+        )
         conn.commit()
         return _authorized_profile(conn, dialect, profile_id, token)
     finally:
