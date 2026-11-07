@@ -42,7 +42,6 @@ _REQUIRED_FIELDS = {
 _OPTIONAL_FIELDS = {
     "program_version_id",
     "correlation_id",
-    "consent_verified_by_server",
 }
 
 
@@ -76,11 +75,11 @@ def _json_safe(value: object, path: str = "payload") -> None:
     raise DecisionEventError(f"{path} vsebuje vrednost, ki ni združljiva z JSON.")
 
 
-def validate_decision_event(event: object) -> dict:
+def validate_decision_event(event: object, *, health_consent_verified: bool = False) -> dict:
     """Validate and defensively copy one immutable longitudinal event envelope.
 
     Health-sensitive payloads require an explicit server-side consent check.
-    The caller must perform authorization before setting that verification flag.
+    The verification is a trusted function argument, never a client payload field.
     """
     if not isinstance(event, dict):
         raise DecisionEventError("Dogodek mora biti objekt.")
@@ -122,13 +121,10 @@ def validate_decision_event(event: object) -> dict:
         if field in normalized:
             normalized[field] = _text(normalized[field], field, maximum=128)
 
-    consent_verified = normalized.get("consent_verified_by_server", False)
-    if not isinstance(consent_verified, bool):
-        raise DecisionEventError("consent_verified_by_server mora biti true ali false.")
-    if classification == "health_sensitive" and consent_verified is not True:
+    if not isinstance(health_consent_verified, bool):
+        raise DecisionEventError("Preverjanje zdravstvene privolitve mora biti true ali false.")
+    if classification == "health_sensitive" and health_consent_verified is not True:
         raise DecisionEventError("Zdravstveni dogodek zahteva predhodno preverjeno privolitev na strežniku.")
-    if classification == "operational" and consent_verified:
-        raise DecisionEventError("Operativni dogodek ne sme vsebovati nepotrebne zdravstvene privolitve.")
 
     _json_safe(normalized["payload"])
     try:
