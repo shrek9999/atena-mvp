@@ -20,6 +20,18 @@ CANONICAL_TO_ASSESSMENT_TASK = {
     "push_up": "push",
     "overhead_press": "overhead",
 }
+PROVOKING_TASK_ALIASES = {
+    "vstajanje s stola": "squat",
+    "počep": "squat",
+    "počep": "squat",
+    "pobiranje lahkega predmeta s tal": "hinge",
+    "predklon z nevtralnim položajem hrbtenice": "hinge",
+    "izpadni korak": "lunge",
+    "potisk": "push_up",
+    "skleca": "push_up",
+    "potisk nad glavo": "overhead_press",
+    "potisk nad višino ramen": "overhead_press",
+}
 ASSESSMENT_PRIORITY = {
     "comfortable": 0,
     "not_assessed": 0,
@@ -65,6 +77,9 @@ def _apply_symptom_context(state: dict, assessment: dict) -> dict:
             "Pred izbiro vaj razjasni, pri katerem gibu ali opravilu se pojavi."
         )
     provoking_task = next(iter(tasks))
+    provoking_task = PROVOKING_TASK_ALIASES.get(
+        str(provoking_task).strip().casefold(), provoking_task
+    )
     if provoking_task not in CANONICAL_TO_ASSESSMENT_TASK:
         raise ProgramSafetyBlock(
             "Navedeni sprožilec simptoma še ni povezan s preverjeno gibalno nalogo. "
