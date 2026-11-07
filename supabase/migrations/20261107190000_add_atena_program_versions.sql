@@ -14,11 +14,6 @@ create table if not exists public.atena_program_versions (
 
 create index if not exists atena_program_versions_profile_created
   on public.atena_program_versions(profile_id, created_at desc, version_number desc);
-create index if not exists atena_sessions_program_version
-  on public.atena_training_sessions(program_version_id);
-create index if not exists atena_events_program_version
-  on public.atena_decision_events(program_version_id);
-
 alter table public.atena_training_sessions
   add column if not exists program_version_id text;
 
@@ -33,6 +28,11 @@ alter table public.atena_decision_events
   foreign key (program_version_id)
   references public.atena_program_versions(program_version_id)
   on delete set null;
+
+create index if not exists atena_sessions_program_version
+  on public.atena_training_sessions(program_version_id);
+create index if not exists atena_events_program_version
+  on public.atena_decision_events(program_version_id);
 
 alter table public.atena_program_versions enable row level security;
 
