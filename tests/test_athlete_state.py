@@ -217,3 +217,12 @@ def test_symptom_context_rejects_empty_or_oversized_text():
             "status": "present_stable",
             "items": [{"location": "x" * 301}],
         })
+
+
+def test_symptom_envelope_rejects_unknown_fields():
+    with pytest.raises(AthleteStateError):
+        make_state(symptoms={
+            "status": "present_stable",
+            "items": [{"location": "koleno"}],
+            "diagnosis": "invented",
+        })
