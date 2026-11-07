@@ -44,3 +44,31 @@ alter table public.atena_decision_events enable row level security;
 revoke all privileges on table public.atena_profiles from public, anon, authenticated;
 revoke all privileges on table public.atena_training_sessions from public, anon, authenticated;
 revoke all privileges on table public.atena_decision_events from public, anon, authenticated;
+
+-- The Flask service authenticates individual profile tokens before every query.
+-- Give it a dedicated, non-login role that cannot bypass RLS. The postgres pooler
+-- login may SET ROLE to this role, but application SQL runs with these privileges.
+do $$
+begin
+  if not exists (select 1 from pg_roles where rolname = 'atena_app') then
+    create role atena_app
+      nologin nosuperuser nocreatedb nocreaterole noinherit nobypassrls;
+  end if;
+end
+$$;
+
+alter role atena_app nologin nosuperuser nocreatedb nocreaterole noinherit nobypassrls;
+grant atena_app to postgres;
+grant usage on schema public to atena_app;
+grant select, insert, update, delete on table
+  public.atena_profiles,
+  public.atena_training_sessions,
+  public.atena_decision_events
+to atena_app;
+
+create policy atena_app_server_access on public.atena_profiles
+  for all to atena_app using (true) with check (true);
+create policy atena_app_server_access on public.atena_training_sessions
+  for all to atena_app using (true) with check (true);
+create policy atena_app_server_access on public.atena_decision_events
+  for all to atena_app using (true) with check (true);
