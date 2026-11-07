@@ -8,6 +8,7 @@ create table if not exists public.atena_program_versions (
   experience text not null,
   data_classification text not null check (data_classification in ('operational', 'health_sensitive')),
   program_json jsonb not null check (jsonb_typeof(program_json) = 'object'),
+  generation_context_json jsonb not null default '{}'::jsonb check (jsonb_typeof(generation_context_json) = 'object'),
   created_at timestamptz not null default now(),
   unique (profile_id, version_number)
 );
