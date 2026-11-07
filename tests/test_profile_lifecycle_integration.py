@@ -159,6 +159,11 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     export_data = exported.get_json()
     assert export_data["export_version"] == "1.1"
     assert any(event["event_type"] == "profile_created" for event in export_data["decision_events"])
+    programme_event = next(
+        event for event in export_data["decision_events"]
+        if event["event_type"] == "program_created"
+    )
+    assert programme_event["data_classification"] == "health_sensitive"
     assert export_data["program_versions"][0]["program_version_id"] == program_version_id
     assert export_data["program_versions"][0]["program"]["sessions"]
     assert "adaptive_decision" in export_data["program_versions"][0]["generation_context"]
@@ -182,6 +187,11 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     safe_export = client.get(f"/coach/profile/{profile_id}/export", headers=headers)
     assert safe_export.status_code == 200
     assert "discomfort_reported" not in str(safe_export.get_json())
+    assert safe_export.get_json()["program_versions"] == []
+    assert all(
+        event["data_classification"] == "operational"
+        for event in safe_export.get_json()["decision_events"]
+    )
 
     # Deletion is authenticated and cascades to the stored training history.
     denied_delete = client.delete(f"/coach/profile/{profile_id}", headers=wrong)
