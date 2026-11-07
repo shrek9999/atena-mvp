@@ -422,8 +422,8 @@ def append_decision_event(profile_id: str, token: str, event: dict):
 
 def list_decision_events(profile_id: str, token: str, limit: int = 50):
     """Return a bounded, authenticated event history for one profile."""
-    if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 100:
-        raise ValueError("Omejitev dogodkov mora biti med 1 in 100.")
+    if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 5000:
+        raise ValueError("Omejitev dogodkov mora biti med 1 in 5000.")
     conn, dialect = _connect(require_enabled=False)
     try:
         _init(conn, dialect)
