@@ -2175,8 +2175,10 @@ def coach_profile_program(profile_id):
         symptom_state = athlete_state.get("symptoms", {}) if isinstance(athlete_state, dict) else {}
         movement_state = athlete_state.get("movement_assessment", {}) if isinstance(athlete_state, dict) else {}
         movement_tasks = movement_state.get("tasks", {}) if isinstance(movement_state, dict) else {}
+        constraints_state = athlete_state.get("constraints", {}) if isinstance(athlete_state, dict) else {}
         health_context_used = (
             symptom_state.get("status", "not_asked") != "not_asked"
+            or bool(constraints_state.get("excluded_patterns") or constraints_state.get("excluded_exercise_ids"))
             or any(
                 isinstance(item, dict) and item.get("status", "not_assessed") != "not_assessed"
                 for item in movement_tasks.values()
