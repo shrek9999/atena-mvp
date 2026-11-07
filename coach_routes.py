@@ -19,6 +19,9 @@ from coach_store import (
     delete_profile as store_delete_profile, set_health_data_consent as store_set_health_data_consent,
     check_database_connection as store_check_database_connection, storage_enabled,
     list_decision_events as store_list_decision_events,
+    save_program_version as store_save_program_version,
+    list_program_versions as store_list_program_versions,
+    get_program_version as store_get_program_version,
 )
 from training.catalogue import get_exercise, load_catalogue
 from flask import Blueprint, jsonify, request
@@ -36,6 +39,7 @@ from training.proactive_checkin import build_proactive_checkin
 from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL
 from training.movement_assessment import MovementAssessmentError, assess_movement_competence
 from training.athlete_state import AthleteStateError, validate_athlete_state
+from training.decision_event import DecisionEventError
 from training.profile_state_adapter import (
     ProfileStateMigrationError, attach_athlete_state, legacy_profile_view,
     profile_needs_state_migration, update_athlete_assessment,
@@ -91,6 +95,25 @@ def _profile_event_payload(profile):
         "session_minutes": profile.get("session_minutes"),
         "available_days": list(profile.get("available_days", [])),
     }
+
+
+def _programme_data_classification(athlete_state):
+    """Classify a snapshot as sensitive if any movement/health screen informed it."""
+    if not isinstance(athlete_state, dict):
+        return "health_sensitive"
+    symptoms = athlete_state.get("symptoms")
+    if not isinstance(symptoms, dict) or symptoms.get("status") != "not_asked":
+        return "health_sensitive"
+    movement = athlete_state.get("movement_assessment")
+    tasks = movement.get("tasks") if isinstance(movement, dict) else None
+    if not isinstance(tasks, dict):
+        return "health_sensitive"
+    if any(
+        not isinstance(item, dict) or item.get("status") != "not_assessed"
+        for item in tasks.values()
+    ):
+        return "health_sensitive"
+    return "operational"
 
 
 def _has_explicit_no_pain_confirmation(text):
@@ -1855,7 +1878,7 @@ def coach_training_sessions(profile_id):
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return jsonify({"error": "Pričakovan je JSON objekt."}), 400
-    allowed = {"session_date", "duration_minutes", "difficulty", "completed", "exercises", "conditioning", "discomfort_reported", "recovery", "completion_reason", "adaptation_response"}
+    allowed = {"session_date", "duration_minutes", "difficulty", "completed", "exercises", "conditioning", "discomfort_reported", "recovery", "completion_reason", "adaptation_response", "program_version_id"}
     if set(payload) - allowed:
         return jsonify({"error": "Vadbeni zapis vsebuje nepodprta polja; prosto besedilo ni dovoljeno."}), 400
     session_date = payload.get("session_date")
@@ -1883,6 +1906,12 @@ def coach_training_sessions(profile_id):
         return jsonify({"error": "Razlog nedokončanega treninga ni veljaven."}), 400
     if payload.get("completed") is False and completion_reason is None:
         completion_reason = "unknown"
+    program_version_id = payload.get("program_version_id")
+    if program_version_id is not None and (
+        not isinstance(program_version_id, str) or not program_version_id.strip()
+        or len(program_version_id) > 128
+    ):
+        return jsonify({"error": "Identifikator različice programa ni veljaven."}), 400
     adaptation_response = payload.get("adaptation_response")
     if adaptation_response is not None:
         if (
@@ -1952,14 +1981,17 @@ def coach_training_sessions(profile_id):
         }
         if discomfort is not None:
             event_payload["discomfort_reported"] = discomfort
+        if program_version_id is not None:
+            event_payload["program_version_id"] = program_version_id
         event_classification = "health_sensitive" if discomfort is not None else "operational"
         event_type = "session_completed" if payload["completed"] else "session_interrupted"
         saved = store_add_session(
             profile_id, token, session_id, session_date, session,
+            program_version_id=program_version_id,
             event=_decision_event(
                 profile_id, event_type, event_payload,
                 classification=event_classification,
-            ),
+            ) | ({"program_version_id": program_version_id} if program_version_id else {}),
         )
         return jsonify({"session": saved}), 201
     except ProfileNotFound:
@@ -2131,11 +2163,15 @@ def export_coach_profile(profile_id):
         profile = _profile_record_with_state(profile, token, persist_migration=True)
         sessions = store_list_sessions(profile_id, token, limit=5000)
         events = store_list_decision_events(profile_id, token, limit=5000)
+        program_versions = store_list_program_versions(
+            profile_id, token, limit=5000, include_program=True
+        )
         response = jsonify({
             "export_version": "1.1",
             "profile": profile,
             "sessions": sessions,
             "decision_events": events,
+            "program_versions": program_versions,
             "exported_at": __import__("datetime").datetime.now(
                 __import__("datetime").timezone.utc
             ).isoformat(timespec="seconds"),
@@ -2245,8 +2281,44 @@ def coach_profile_program(profile_id):
         result = _apply_progression_with_decision_gate(
             result, exercise_progressions, adaptive_decision
         )
+        program_version_id = str(uuid.uuid4())
+        data_classification = _programme_data_classification(
+            profile["profile"].get("athlete_state")
+        )
+        program_event = _decision_event(
+            profile_id,
+            "program_created",
+            {
+                "goal": profile["profile"].get("goal"),
+                "experience": profile["profile"].get("experience"),
+                "session_count": len(result.get("sessions", [])),
+                "exercise_count": sum(
+                    len(item.get("exercises", []))
+                    for item in result.get("sessions", [])
+                    if isinstance(item, dict)
+                ),
+                "source_session_count": len(sessions),
+            },
+            classification=data_classification,
+            source="system",
+        )
+        program_event["program_version_id"] = program_version_id
+        saved_program_version = store_save_program_version(
+            profile_id,
+            token,
+            program_version_id,
+            result,
+            goal=profile["profile"].get("goal"),
+            experience=profile["profile"].get("experience"),
+            data_classification=data_classification,
+            event=program_event,
+        )
         return jsonify({
             "program": result,
+            "program_version": {
+                key: value for key, value in saved_program_version.items()
+                if key != "program"
+            },
             "profile": profile["profile"],
             "adaptation_guidance": adaptation,
             "adaptive_decision": adaptive_decision,
@@ -2264,6 +2336,10 @@ def coach_profile_program(profile_id):
         return jsonify({"error": str(exc)}), 400
     except ProfileStateMigrationError:
         return jsonify({"error": "Shranjeni profil potrebuje preverjanje; programa nisem ustvaril."}), 409
+    except DecisionEventError as exc:
+        return jsonify({"blocked": True, "message": str(exc)}), 409
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
     except ProfileNotFound:
         return _profile_auth_error()
     except StorageUnavailable as exc:
