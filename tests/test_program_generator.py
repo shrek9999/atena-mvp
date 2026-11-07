@@ -1072,3 +1072,66 @@ def test_hard_feedback_regresses_carry_distance_not_timed_work():
     assert "work_seconds" not in regressed["prescription"]
     assert "konservativno zmanjšan" in regressed["prescription"]["adjustment_note"]
 
+
+
+@pytest.mark.parametrize("session_minutes", [45, 60, 90])
+def test_endurance_locomotion_display_matches_internal_duration(session_minutes):
+    plan = generate_program({
+        **BASE,
+        "goal": "endurance",
+        "session_minutes": session_minutes,
+    })
+    locomotion = next(
+        exercise
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+        if exercise["pattern"] == "locomotion"
+    )
+    prescription = locomotion["prescription"]
+
+    assert prescription["reps"].endswith(" min")
+    assert int(prescription["reps"].split()[0]) * 60 == prescription["work_seconds"]
+
+
+@pytest.mark.parametrize(
+    "experience,expected_seconds",
+    [("beginner", 360), ("intermediate", 480), ("advanced", 600)],
+)
+def test_fat_loss_locomotion_duration_matches_experience(experience, expected_seconds):
+    plan = generate_program({
+        **BASE,
+        "goal": "fat_loss",
+        "experience": experience,
+        "sessions_per_week": 3,
+    })
+    locomotion = next(
+        exercise
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+        if exercise["pattern"] == "locomotion"
+    )
+    prescription = locomotion["prescription"]
+
+    assert prescription["work_seconds"] == expected_seconds
+    assert prescription["reps"] == f"{expected_seconds // 60} min"
+
+
+def test_endurance_feedback_keeps_displayed_locomotion_duration_synchronized():
+    feedback = {
+        "difficulty": "easy",
+        "completed": True,
+        "discomfort": "no",
+        "recovery": "normal",
+    }
+    plan = generate_program({**BASE, "goal": "endurance"}, feedback=feedback)
+    locomotion = next(
+        exercise
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+        if exercise["pattern"] == "locomotion"
+    )
+    prescription = locomotion["prescription"]
+
+    assert int(prescription["reps"].split()[0]) == round(prescription["work_seconds"] / 60)
+    assert prescription["adjustment_note"]
+
