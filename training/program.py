@@ -98,7 +98,13 @@ def _validate_feedback(feedback: object) -> dict | None:
     recovery = feedback.get("recovery")
     if recovery is not None and recovery not in {"good", "normal", "poor"}:
         raise ProgramValidationError("recovery mora biti good, normal, poor ali izpuščen.")
-    return {"difficulty": difficulty, "completed": completed, "movement_control": movement_control, "recovery": recovery}
+    return {
+        "difficulty": difficulty,
+        "completed": completed,
+        "discomfort": discomfort,
+        "movement_control": movement_control,
+        "recovery": recovery,
+    }
 
 
 def _validate_feedback_history(history: object) -> list[dict]:
