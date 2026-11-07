@@ -12,9 +12,9 @@ import json
 import os
 import sqlite3
 from datetime import datetime, timezone
+from urllib.parse import quote, unquote, urlsplit
 
 from training.decision_event import DecisionEventError, validate_decision_event
-from urllib.parse import quote, unquote, urlsplit
 
 
 def _normalize_supabase_pooler_username(url: str) -> str:
