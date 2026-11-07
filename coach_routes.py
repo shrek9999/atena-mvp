@@ -2346,6 +2346,51 @@ def coach_profile_program(profile_id):
         return _storage_error(exc)
 
 
+@coach_bp.route("/coach/profile/<profile_id>/programs", methods=["GET", "OPTIONS"])
+def coach_program_versions(profile_id):
+    """List immutable programme versions for the authenticated athlete."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    raw_limit = request.args.get("limit", "20")
+    try:
+        limit = int(raw_limit)
+        if str(limit) != raw_limit or not 1 <= limit <= 100:
+            raise ValueError
+    except (TypeError, ValueError):
+        return jsonify({"error": "Omejitev različic programa mora biti med 1 in 100."}), 400
+    try:
+        versions = store_list_program_versions(profile_id, _profile_token(), limit=limit)
+        response = jsonify({"program_versions": versions, "limit": limit})
+        response.headers["Cache-Control"] = "no-store, private"
+        response.headers["Pragma"] = "no-cache"
+        return response, 200
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
+
+
+@coach_bp.route("/coach/profile/<profile_id>/programs/<program_version_id>", methods=["GET", "OPTIONS"])
+def coach_program_version_detail(profile_id, program_version_id):
+    """Retrieve one exact immutable programme version, never silently latest."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    try:
+        version = store_get_program_version(
+            profile_id, _profile_token(), program_version_id
+        )
+        if version is None:
+            return jsonify({"error": "Različica programa ne obstaja."}), 404
+        response = jsonify({"program_version": version})
+        response.headers["Cache-Control"] = "no-store, private"
+        response.headers["Pragma"] = "no-cache"
+        return response, 200
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
+
+
 @coach_bp.route("/coach/profile/<profile_id>/adaptation", methods=["GET", "OPTIONS"])
 def coach_training_adaptation(profile_id):
     """Return conservative next-step guidance from recent logged feedback."""
