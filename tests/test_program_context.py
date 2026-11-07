@@ -78,3 +78,21 @@ def test_stale_legacy_profile_is_rejected_instead_of_mixed_with_canonical_state(
     profile["equipment"] = ["dumbbell"]
     with pytest.raises(ProgramContextError, match="ne ujemata"):
         generate_program_for_athlete(profile)
+
+
+def test_multiple_stable_symptoms_omit_only_their_linked_patterns():
+    profile = _profile(symptoms={
+        "status": "present_stable",
+        "items": [
+            {"location": "knee", "provoking_task": "squat"},
+            {"location": "shoulder", "provoking_task": "overhead_press"},
+        ],
+    })
+    plan = generate_program_for_athlete(profile)
+    events = plan["movement_adaptation"]["events"]
+    omitted = {
+        event["pattern"]
+        for event in events
+        if event["action"] == "omitted_pending_symptom_review"
+    }
+    assert {"squat", "vertical_push"}.issubset(omitted)
