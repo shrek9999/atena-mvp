@@ -36,7 +36,7 @@ from training.movement_assessment import MovementAssessmentError, assess_movemen
 from training.athlete_state import AthleteStateError, validate_athlete_state
 from training.profile_state_adapter import (
     ProfileStateMigrationError, attach_athlete_state, legacy_profile_view,
-    profile_needs_state_migration,
+    profile_needs_state_migration, update_athlete_assessment,
 )
 
 logger = logging.getLogger(__name__)
@@ -1532,6 +1532,43 @@ def manage_coach_profile(profile_id):
         return jsonify({"deleted": True}), 200
     except ProfileNotFound:
         return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
+
+
+@coach_bp.route("/coach/profile/<profile_id>/assessment", methods=["PUT", "OPTIONS"])
+def update_coach_profile_assessment(profile_id):
+    """Persist user-reported movement and symptom context with explicit health-data consent."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict) or not payload or set(payload) - {"movement_tasks", "symptoms"}:
+        return jsonify({"error": "Navedi samo movement_tasks in/ali symptoms."}), 400
+    if "movement_tasks" not in payload and "symptoms" not in payload:
+        return jsonify({"error": "Navedi vsaj eno oceno gibanja ali kontekst simptomov."}), 400
+    try:
+        record = store_get_profile(profile_id, _profile_token())
+        record = _profile_record_with_state(record, _profile_token(), persist_migration=True)
+        if not record.get("health_data_consent"):
+            return jsonify({
+                "error": "Za shranjevanje ocene gibanja ali simptomov je potrebna izrecna privolitev za obdelavo zdravstvenih podatkov."
+            }), 403
+        updated_profile = update_athlete_assessment(
+            record["profile"],
+            profile_id,
+            movement_tasks=payload.get("movement_tasks"),
+            symptoms=payload.get("symptoms"),
+        )
+        saved = store_update_profile(profile_id, _profile_token(), updated_profile)
+        return jsonify({
+            "profile": saved,
+            "assessment_stored": True,
+            "note": "Podatki so samoporočani in ne predstavljajo diagnoze ali klinične presoje.",
+        }), 200
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except ProfileStateMigrationError as exc:
+        return jsonify({"error": str(exc)}), 409
     except StorageUnavailable as exc:
         return _storage_error(exc)
 
