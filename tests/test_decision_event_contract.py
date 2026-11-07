@@ -108,3 +108,13 @@ def test_event_input_is_not_mutated():
     before = copy.deepcopy(original)
     validate_decision_event(original)
     assert original == before
+
+
+def test_boolean_schema_version_is_not_accepted_as_integer_version_one():
+    with pytest.raises(DecisionEventError):
+        validate_decision_event(event(schema_version=True))
+
+
+def test_unhashable_enum_values_are_rejected_cleanly():
+    with pytest.raises(DecisionEventError):
+        validate_decision_event(event(event_type=[]))
