@@ -972,3 +972,65 @@ def test_explicitly_incomplete_session_still_triggers_reason_review():
     assert simple["decision"] == "maintain_and_reschedule"
     assert simple["volume_change"] == "maintain"
     assert detailed["decision"] == "restructure_session"
+
+
+def test_profile_assessment_requires_explicit_health_data_consent(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client, health_consent=False)
+    profile_id = created["profile"]["profile_id"]
+    response = client.put(
+        f"/coach/profile/{profile_id}/assessment",
+        headers={"X-Profile-Token": created["profile_access_token"]},
+        json={"movement_tasks": {"squat": "needs_support"}},
+    )
+    assert response.status_code == 403
+
+
+def test_profile_assessment_persists_movement_and_symptom_context_with_consent(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    response = client.put(
+        f"/coach/profile/{profile_id}/assessment",
+        headers={"X-Profile-Token": token},
+        json={
+            "movement_tasks": {
+                "squat": {"status": "needs_support", "note": "Potrebna je stabilna opora."},
+            },
+            "symptoms": {
+                "status": "present_stable",
+                "items": [{"location": "koleno", "side": "levo", "provoking_task": "squat"}],
+            },
+        },
+    )
+    assert response.status_code == 200
+    assert response.get_json()["assessment_stored"] is True
+
+    loaded = client.get(
+        f"/coach/profile/{profile_id}",
+        headers={"X-Profile-Token": token},
+    )
+    state = loaded.get_json()["profile"]["profile"]["athlete_state"]
+    squat = state["movement_assessment"]["tasks"]["squat"]
+    assert squat["status"] == "needs_support"
+    assert squat["source"] == "self_reported"
+    assert squat["note"] == "Potrebna je stabilna opora."
+    assert state["symptoms"]["status"] == "present_stable"
+    assert state["symptoms"]["items"][0]["provoking_task"] == "squat"
+
+
+def test_profile_assessment_rejects_unknown_movement_task_without_mutation(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    response = client.put(
+        f"/coach/profile/{profile_id}/assessment",
+        headers={"X-Profile-Token": token},
+        json={"movement_tasks": {"unknown_task": "needs_support"}},
+    )
+    assert response.status_code == 409
+    loaded = client.get(f"/coach/profile/{profile_id}", headers={"X-Profile-Token": token})
+    tasks = loaded.get_json()["profile"]["profile"]["athlete_state"]["movement_assessment"]["tasks"]
+    assert all(item["status"] == "not_assessed" for item in tasks.values())
