@@ -371,7 +371,7 @@ def _profile_has_health_context(profile, conn, dialect, profile_id):
     # the decision context, even if the canonical movement screen is unanswered.
     rows = _execute(
         conn, dialect,
-        "SELECT session_json FROM atena_training_sessions WHERE profile_id = %s ORDER BY session_date DESC LIMIT 50",
+        "SELECT session_json FROM atena_training_sessions WHERE profile_id = %s ORDER BY session_date DESC, created_at DESC LIMIT 50",
         (profile_id,),
     ).fetchall()
     for (session_json,) in rows:
