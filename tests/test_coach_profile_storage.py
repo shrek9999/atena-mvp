@@ -1122,3 +1122,56 @@ def test_saved_profile_program_blocks_when_persisted_symptoms_conflict_with_clea
     )
     assert response.status_code == 409
     assert response.get_json()["blocked"] is True
+
+
+def test_heart_rate_requires_health_data_consent(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path, health_consent=False)
+    created = _create(client, health_consent=False)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    response = client.post(
+        f"/coach/profile/{profile_id}/sessions",
+        headers={"X-Profile-Token": token},
+        json={
+            "session_date": "2026-11-07", "duration_minutes": 30,
+            "difficulty": "moderate", "completed": True, "exercises": [],
+            "conditioning": [{
+                "modality": "aerobic_base", "protocol_id": "zone2-bike",
+                "work_seconds": 1200, "duration_seconds": 1500,
+                "intervals_completed": 1, "rpe": 4, "average_heart_rate": 130,
+            }],
+        },
+    )
+    assert response.status_code == 403
+
+
+def test_consent_withdrawal_removes_heart_rate_but_preserves_training_record(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    headers = {"X-Profile-Token": token}
+    logged = client.post(
+        f"/coach/profile/{profile_id}/sessions",
+        headers=headers,
+        json={
+            "session_date": "2026-11-07", "duration_minutes": 30,
+            "difficulty": "moderate", "completed": True, "exercises": [],
+            "conditioning": [{
+                "modality": "aerobic_base", "protocol_id": "zone2-bike",
+                "work_seconds": 1200, "duration_seconds": 1500,
+                "intervals_completed": 1, "rpe": 4, "average_heart_rate": 130,
+            }],
+        },
+    )
+    assert logged.status_code == 201
+    assert logged.get_json()["session"]["session"]["conditioning"][0]["average_heart_rate"] == 130
+    withdrawn = client.post(
+        f"/coach/profile/{profile_id}/consent", headers=headers,
+        json={"health_data_consent": False},
+    )
+    assert withdrawn.status_code == 200
+    history = client.get(f"/coach/profile/{profile_id}/sessions", headers=headers)
+    conditioning = history.get_json()["sessions"][0]["session"]["conditioning"][0]
+    assert "average_heart_rate" not in conditioning
+    assert conditioning["work_seconds"] == 1200
