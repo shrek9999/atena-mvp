@@ -1968,6 +1968,30 @@ def coach_training_sessions(profile_id):
         return _storage_error(exc)
 
 
+@coach_bp.route("/coach/profile/<profile_id>/events", methods=["GET", "OPTIONS"])
+def coach_profile_events(profile_id):
+    """Return a bounded, authenticated and consent-aware event history."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    raw_limit = request.args.get("limit", "50")
+    try:
+        limit = int(raw_limit)
+        if str(limit) != raw_limit or not 1 <= limit <= 100:
+            raise ValueError
+    except (TypeError, ValueError):
+        return jsonify({"error": "Omejitev dogodkov mora biti med 1 in 100."}), 400
+    try:
+        events = store_list_decision_events(profile_id, _profile_token(), limit=limit)
+        response = jsonify({"events": events, "limit": limit})
+        response.headers["Cache-Control"] = "no-store, private"
+        response.headers["Pragma"] = "no-cache"
+        return response, 200
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
+
+
 @coach_bp.route("/coach/profile/<profile_id>/consent", methods=["POST", "OPTIONS"])
 def update_coach_health_consent(profile_id):
     if request.method == "OPTIONS":
