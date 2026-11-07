@@ -412,17 +412,34 @@ def test_postgres_profile_tables_enable_rls_and_revoke_public_access(monkeypatch
     import coach_store
 
     statements = []
+
+    class Cursor:
+        def fetchone(self):
+            return (0,)
+
+    class Connection:
+        def commit(self):
+            pass
+
+        def rollback(self):
+            pass
+
+    monkeypatch.setattr(coach_store, "_table_exists", lambda conn, dialect, name: False)
+    monkeypatch.setattr(coach_store, "_validate_schema", lambda conn, dialect: None)
     monkeypatch.setattr(
         coach_store,
         "_execute",
-        lambda conn, dialect, sql, params=(): statements.append(sql),
+        lambda conn, dialect, sql, params=(): statements.append(sql) or Cursor(),
     )
-    coach_store._init(object(), "postgres")
+    coach_store._init(Connection(), "postgres")
 
+    assert "ALTER TABLE atena_schema_migrations ENABLE ROW LEVEL SECURITY" in statements
     assert "ALTER TABLE atena_profiles ENABLE ROW LEVEL SECURITY" in statements
     assert "ALTER TABLE atena_training_sessions ENABLE ROW LEVEL SECURITY" in statements
+    assert "ALTER TABLE atena_decision_events ENABLE ROW LEVEL SECURITY" in statements
     assert any("atena_profiles FROM PUBLIC, anon, authenticated" in sql for sql in statements)
     assert any("atena_training_sessions FROM PUBLIC, anon, authenticated" in sql for sql in statements)
+    assert any("atena_decision_events FROM PUBLIC, anon, authenticated" in sql for sql in statements)
 
 
 
