@@ -341,6 +341,26 @@ def _authorized_profile(conn, dialect, profile_id: str, token: str):
             "updated_at": updated_at, "health_data_consent": bool(health_consent), "health_data_consent_at": health_consent_at,
             "privacy_notice_version": notice_version}
 
+def _profile_has_health_context(profile):
+    """Fail closed: any answered symptom screen or assessed movement task is sensitive."""
+    if not isinstance(profile, dict):
+        return True
+    state = profile.get("athlete_state")
+    if not isinstance(state, dict):
+        return True
+    symptoms = state.get("symptoms")
+    if not isinstance(symptoms, dict) or symptoms.get("status") != "not_asked":
+        return True
+    movement = state.get("movement_assessment")
+    tasks = movement.get("tasks") if isinstance(movement, dict) else None
+    if not isinstance(tasks, dict):
+        return True
+    return any(
+        not isinstance(item, dict) or item.get("status") != "not_assessed"
+        for item in tasks.values()
+    )
+
+
 def get_profile(profile_id: str, token: str):
     conn, dialect = _connect(require_enabled=False)
     try:
@@ -485,6 +505,11 @@ def save_program_version(
             conn.commit()
             conn.execute("BEGIN IMMEDIATE")
         authorized = _authorized_profile(conn, dialect, profile_id, token)
+        saved_profile = authorized["profile"]
+        if goal.strip() != saved_profile.get("goal") or experience.strip() != saved_profile.get("experience"):
+            raise DecisionEventError("Cilj ali izkušnje programa se ne ujemajo s shranjenim profilom.")
+        if _profile_has_health_context(saved_profile) and data_classification != "health_sensitive":
+            raise DecisionEventError("Program, ustvarjen na podlagi zdravstvenega ali gibalnega konteksta, mora biti označen kot občutljiv.")
         if data_classification == "health_sensitive" and authorized["health_data_consent"] is not True:
             raise DecisionEventError("Za shranjevanje zdravstveno prilagojenega programa je potrebna veljavna privolitev.")
         if dialect == "postgres":
@@ -544,7 +569,7 @@ def list_program_versions(
     conn, dialect = _connect(require_enabled=False)
     try:
         _init(conn, dialect)
-        _authorized_profile(conn, dialect, profile_id, token)
+        authorized = _authorized_profile(conn, dialect, profile_id, token)
         program_column = ", program_json" if include_program else ""
         rows = _execute(
             conn, dialect,
@@ -552,9 +577,10 @@ def list_program_versions(
                        data_classification, created_at{program_column}
                   FROM atena_program_versions
                  WHERE profile_id = %s
+                   AND (%s OR data_classification = 'operational')
                  ORDER BY version_number DESC
                  LIMIT %s""",
-            (profile_id, limit),
+            (profile_id, authorized["health_data_consent"] is True, limit),
         ).fetchall()
         versions = []
         for row in rows:
@@ -582,7 +608,7 @@ def get_program_version(profile_id: str, token: str, program_version_id: str):
     conn, dialect = _connect(require_enabled=False)
     try:
         _init(conn, dialect)
-        _authorized_profile(conn, dialect, profile_id, token)
+        authorized = _authorized_profile(conn, dialect, profile_id, token)
         row = _execute(
             conn, dialect,
             """SELECT program_version_id, version_number, goal, experience,
@@ -592,6 +618,8 @@ def get_program_version(profile_id: str, token: str, program_version_id: str):
             (profile_id, program_version_id),
         ).fetchone()
         if not row:
+            return None
+        if row[4] == "health_sensitive" and authorized["health_data_consent"] is not True:
             return None
         created_at = row[6]
         if hasattr(created_at, "isoformat"):
