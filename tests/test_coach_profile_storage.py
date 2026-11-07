@@ -435,6 +435,15 @@ def test_sqlite_runtime_init_creates_local_event_store(monkeypatch, tmp_path):
             )
         }
         assert "atena_decision_events" in tables
+        assert "atena_program_versions" in tables
+        program_columns = {
+            row[1] for row in conn.execute("PRAGMA table_info(atena_program_versions)")
+        }
+        assert "generation_context_json" in program_columns
+        columns = {
+            row[1] for row in conn.execute("PRAGMA table_info(atena_training_sessions)")
+        }
+        assert "program_version_id" in columns
     finally:
         conn.close()
 
@@ -1388,3 +1397,299 @@ def test_failed_atomic_event_insert_rolls_back_profile_update(monkeypatch, tmp_p
         update_profile(profile_id, token, changed, event=existing)
     after = get_profile(profile_id, token)["profile"]
     assert after["goal"] == original["goal"]
+
+
+def _program_event(profile_id, program_version_id, *, event_id="program-event-001", classification="operational"):
+    value = _event(
+        profile_id,
+        event_id=event_id,
+        classification=classification,
+        event_type="program_created",
+    )
+    value["source"] = "system"
+    value["program_version_id"] = program_version_id
+    value["payload"] = {"goal": "hypertrophy", "session_count": 2}
+    return value
+
+
+def test_program_versions_are_immutable_numbered_and_retrievable(monkeypatch, tmp_path):
+    from coach_store import (
+        get_program_version, list_program_versions, save_program_version,
+    )
+
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    first_program = {"goal": "hypertrophy", "sessions": [{"exercises": [{"exercise_id": "squat"}]}]}
+    second_program = {"goal": "hypertrophy", "sessions": [{"exercises": [{"exercise_id": "hinge"}]}]}
+
+    first = save_program_version(
+        profile_id, token, "program-version-1", first_program,
+        goal="hypertrophy", experience="intermediate",
+        data_classification="operational",
+        event=_program_event(profile_id, "program-version-1"),
+        generation_context={
+            "adaptive_decision": {"decision": "maintain", "progression_allowed": False},
+            "source_session_ids": ["session-001"],
+        },
+    )
+    second = save_program_version(
+        profile_id, token, "program-version-2", second_program,
+        goal="functional", experience="beginner",
+        data_classification="operational",
+        event=_program_event(profile_id, "program-version-2", event_id="program-event-002"),
+    )
+    assert first["version_number"] == 1
+    assert second["version_number"] == 2
+    history = list_program_versions(profile_id, token)
+    assert [item["version_number"] for item in history] == [2, 1]
+    exact = get_program_version(profile_id, token, "program-version-1")
+    assert exact["program"] == first_program
+    assert exact["generation_context"]["source_session_ids"] == ["session-001"]
+
+
+def test_health_sensitive_program_version_requires_consent(monkeypatch, tmp_path):
+    import pytest
+    from coach_store import save_program_version
+    from training.decision_event import DecisionEventError
+
+    client = _client(monkeypatch, tmp_path, health_consent=False)
+    created = _create(client, health_consent=False)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    with pytest.raises(DecisionEventError, match="privolitev"):
+        save_program_version(
+            profile_id, token, "sensitive-program-1",
+            {"goal": "hypertrophy", "sessions": []},
+            goal="functional", experience="beginner",
+            data_classification="health_sensitive",
+            event=_program_event(
+                profile_id, "sensitive-program-1", classification="health_sensitive",
+            ),
+        )
+
+
+def test_program_snapshot_and_event_roll_back_together_on_duplicate_event(monkeypatch, tmp_path):
+    import pytest
+    from coach_store import append_decision_event, list_program_versions, save_program_version
+    from training.decision_event import DecisionEventError
+
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    append_decision_event(
+        profile_id, token,
+        _event(profile_id, event_id="duplicate-program-event", event_type="feedback_recorded"),
+    )
+    with pytest.raises(DecisionEventError):
+        save_program_version(
+            profile_id, token, "rolled-back-program",
+            {"goal": "functional", "sessions": []},
+            goal="functional", experience="beginner",
+            data_classification="operational",
+            event=_program_event(
+                profile_id, "rolled-back-program", event_id="duplicate-program-event",
+            ),
+        )
+    assert list_program_versions(profile_id, token) == []
+
+
+def test_consent_withdrawal_erases_health_sensitive_programs_and_unlinks_sessions(monkeypatch, tmp_path):
+    from coach_store import (
+        add_session, list_decision_events, list_program_versions, save_program_version,
+    )
+
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    version_id = "sensitive-program-1"
+    save_program_version(
+        profile_id, token, version_id,
+        {"goal": "functional", "sessions": []},
+        goal="functional", experience="beginner",
+        data_classification="health_sensitive",
+        event=_program_event(profile_id, version_id, classification="health_sensitive"),
+    )
+    add_session(
+        profile_id, token, "session-linked-to-sensitive-program", "2026-11-07",
+        {"completed": True, "exercises": []},
+        program_version_id=version_id,
+        event=_event(profile_id, event_id="sensitive-session-event"),
+    )
+
+    withdrawn = client.post(
+        f"/coach/profile/{profile_id}/consent",
+        headers={"X-Profile-Token": token},
+        json={"health_data_consent": False},
+    )
+    assert withdrawn.status_code == 200
+    assert list_program_versions(profile_id, token) == []
+    sessions = client.get(
+        f"/coach/profile/{profile_id}/sessions",
+        headers={"X-Profile-Token": token},
+    ).get_json()["sessions"]
+    assert sessions[0]["program_version_id"] is None
+    events = list_decision_events(profile_id, token, limit=100)
+    assert all(item["data_classification"] == "operational" for item in events)
+    assert all(item.get("program_version_id") is None for item in events)
+
+
+def test_program_version_routes_are_authenticated_private_and_exact(monkeypatch, tmp_path):
+    from coach_store import save_program_version
+
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    version_id = "program-version-route"
+    save_program_version(
+        profile_id, token, version_id,
+        {"goal": "hypertrophy", "sessions": [{"exercises": []}]},
+        goal="functional", experience="beginner",
+        data_classification="operational",
+        event=_program_event(profile_id, version_id),
+    )
+    headers = {"X-Profile-Token": token}
+    denied = client.get(f"/coach/profile/{profile_id}/programs", headers={"X-Profile-Token": "wrong"})
+    assert denied.status_code == 404
+    listed = client.get(f"/coach/profile/{profile_id}/programs", headers=headers)
+    assert listed.status_code == 200
+    assert listed.headers["Cache-Control"] == "no-store, private"
+    assert listed.get_json()["program_versions"][0]["program_version_id"] == version_id
+    exercise_id = load_catalogue()[0]["id"]
+    logged = client.post(
+        f"/coach/profile/{profile_id}/sessions",
+        headers=headers,
+        json={
+            "session_date": "2026-11-07",
+            "duration_minutes": 45,
+            "difficulty": "moderate",
+            "completed": True,
+            "exercises": [{"exercise_id": exercise_id, "sets_completed": 3, "reps_completed": 8}],
+            "program_version_id": version_id,
+        },
+    )
+    assert logged.status_code == 201
+    assert logged.get_json()["session"]["program_version_id"] == version_id
+    detail = client.get(
+        f"/coach/profile/{profile_id}/programs/{version_id}",
+        headers=headers,
+    )
+    assert detail.status_code == 200
+    assert detail.get_json()["program_version"]["program"]["goal"] == "hypertrophy"
+
+
+def test_operational_program_cannot_be_saved_when_health_context_informed_generation(monkeypatch, tmp_path):
+    import pytest
+    from coach_store import save_program_version, update_profile
+    from training.decision_event import DecisionEventError
+
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    profile = client.get(
+        f"/coach/profile/{profile_id}",
+        headers={"X-Profile-Token": token},
+    ).get_json()["profile"]
+    profile["athlete_state"]["symptoms"] = {"status": "denied", "items": []}
+    update_profile(profile_id, token, profile)
+
+    with pytest.raises(DecisionEventError, match="občutljiv"):
+        save_program_version(
+            profile_id, token, "misclassified-program",
+            {"goal": "hypertrophy", "sessions": []},
+            goal="hypertrophy", experience="intermediate",
+            data_classification="operational",
+            event=_program_event(profile_id, "misclassified-program"),
+        )
+
+
+def test_program_version_cannot_be_attached_to_another_athletes_session(monkeypatch, tmp_path):
+    import pytest
+    from coach_store import add_session, save_program_version
+
+    client = _client(monkeypatch, tmp_path)
+    first = _create(client)
+    second = _create(client)
+    first_id, first_token = first["profile"]["profile_id"], first["profile_access_token"]
+    second_id, second_token = second["profile"]["profile_id"], second["profile_access_token"]
+    version_id = "owned-by-first-profile"
+    save_program_version(
+        first_id, first_token, version_id,
+        {"goal": "hypertrophy", "sessions": []},
+        goal="hypertrophy", experience="intermediate",
+        data_classification="operational",
+        event=_program_event(first_id, version_id),
+    )
+    with pytest.raises(ValueError, match="ne pripada"):
+        add_session(
+            second_id, second_token, "cross-profile-session", "2026-11-07",
+            {"completed": True}, program_version_id=version_id,
+        )
+
+
+def test_session_discomfort_context_requires_sensitive_program_classification(monkeypatch, tmp_path):
+    import pytest
+    from coach_store import add_session, save_program_version
+    from training.decision_event import DecisionEventError
+
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    add_session(
+        profile_id, token, "session-with-explicit-no-discomfort", "2026-11-07",
+        {"completed": True, "discomfort_reported": False},
+        event=_event(
+            profile_id, event_id="explicit-session-feedback",
+            classification="health_sensitive",
+        ),
+    )
+    with pytest.raises(DecisionEventError, match="občutljiv"):
+        save_program_version(
+            profile_id, token, "misclassified-session-program",
+            {"goal": "hypertrophy", "sessions": []},
+            goal="hypertrophy", experience="intermediate",
+            data_classification="operational",
+            event=_program_event(profile_id, "misclassified-session-program"),
+        )
+
+
+def test_sqlite_schema_upgrade_adds_program_link_and_generation_context(monkeypatch, tmp_path):
+    import coach_store
+
+    monkeypatch.setenv("ATENA_ALLOW_SQLITE_STORAGE", "true")
+    conn = sqlite3.connect(tmp_path / "legacy.sqlite3")
+    conn.execute("""CREATE TABLE atena_profiles (
+        profile_id TEXT PRIMARY KEY, token_hash TEXT NOT NULL, profile_json TEXT NOT NULL,
+        privacy_notice_version TEXT NOT NULL, privacy_acknowledged INTEGER NOT NULL,
+        health_data_consent INTEGER NOT NULL, health_data_consent_at TEXT,
+        created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+    )""")
+    conn.execute("""CREATE TABLE atena_training_sessions (
+        session_id TEXT PRIMARY KEY, profile_id TEXT NOT NULL,
+        session_date TEXT NOT NULL, session_json TEXT NOT NULL, created_at TEXT NOT NULL
+    )""")
+    conn.execute("""CREATE TABLE atena_decision_events (
+        event_id TEXT PRIMARY KEY, profile_id TEXT NOT NULL, schema_version INTEGER NOT NULL,
+        event_type TEXT NOT NULL, occurred_at TEXT NOT NULL, source TEXT NOT NULL,
+        data_classification TEXT NOT NULL, payload_json TEXT NOT NULL,
+        program_version_id TEXT, correlation_id TEXT, created_at TEXT NOT NULL
+    )""")
+    conn.commit()
+    try:
+        coach_store._init(conn, "sqlite")
+        session_columns = {
+            row[1] for row in conn.execute("PRAGMA table_info(atena_training_sessions)")
+        }
+        program_columns = {
+            row[1] for row in conn.execute("PRAGMA table_info(atena_program_versions)")
+        }
+        assert "program_version_id" in session_columns
+        assert "generation_context_json" in program_columns
+    finally:
+        conn.close()

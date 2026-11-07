@@ -200,11 +200,24 @@ def _init(conn, dialect):
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
         )""",
+        """CREATE TABLE IF NOT EXISTS atena_program_versions (
+            program_version_id TEXT PRIMARY KEY,
+            profile_id TEXT NOT NULL REFERENCES atena_profiles(profile_id) ON DELETE CASCADE,
+            version_number INTEGER NOT NULL CHECK (version_number > 0),
+            goal TEXT NOT NULL,
+            experience TEXT NOT NULL,
+            data_classification TEXT NOT NULL,
+            program_json TEXT NOT NULL,
+            generation_context_json TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL,
+            UNIQUE(profile_id, version_number)
+        )""",
         """CREATE TABLE IF NOT EXISTS atena_training_sessions (
             session_id TEXT PRIMARY KEY,
             profile_id TEXT NOT NULL REFERENCES atena_profiles(profile_id) ON DELETE CASCADE,
             session_date TEXT NOT NULL,
             session_json TEXT NOT NULL,
+            program_version_id TEXT REFERENCES atena_program_versions(program_version_id) ON DELETE SET NULL,
             created_at TEXT NOT NULL
         )""",
         """CREATE TABLE IF NOT EXISTS atena_decision_events (
@@ -216,15 +229,42 @@ def _init(conn, dialect):
             source TEXT NOT NULL,
             data_classification TEXT NOT NULL,
             payload_json TEXT NOT NULL,
-            program_version_id TEXT,
+            program_version_id TEXT REFERENCES atena_program_versions(program_version_id) ON DELETE SET NULL,
             correlation_id TEXT,
             created_at TEXT NOT NULL
         )""",
         "CREATE INDEX IF NOT EXISTS atena_sessions_profile_date ON atena_training_sessions(profile_id, session_date)",
         "CREATE INDEX IF NOT EXISTS atena_events_profile_occurred ON atena_decision_events(profile_id, occurred_at)",
+        "CREATE INDEX IF NOT EXISTS atena_program_versions_profile_created ON atena_program_versions(profile_id, created_at)",
     ]
     for statement in statements:
         _execute(conn, dialect, statement)
+
+    # Upgrade older disposable SQLite test databases without requiring a reset.
+    session_columns = {
+        row[1] for row in conn.execute("PRAGMA table_info(atena_training_sessions)")
+    }
+    if "program_version_id" not in session_columns:
+        conn.execute(
+            "ALTER TABLE atena_training_sessions ADD COLUMN program_version_id "
+            "TEXT REFERENCES atena_program_versions(program_version_id) ON DELETE SET NULL"
+        )
+
+    program_columns = {
+        row[1] for row in conn.execute("PRAGMA table_info(atena_program_versions)")
+    }
+    if "generation_context_json" not in program_columns:
+        conn.execute(
+            "ALTER TABLE atena_program_versions ADD COLUMN generation_context_json "
+            "TEXT NOT NULL DEFAULT '{}'"
+        )
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS atena_sessions_program_version ON atena_training_sessions(program_version_id)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS atena_events_program_version ON atena_decision_events(program_version_id)"
+    )
 
 
 def check_database_connection():
@@ -318,6 +358,39 @@ def _authorized_profile(conn, dialect, profile_id: str, token: str):
             "updated_at": updated_at, "health_data_consent": bool(health_consent), "health_data_consent_at": health_consent_at,
             "privacy_notice_version": notice_version}
 
+def _profile_has_health_context(profile, conn, dialect, profile_id):
+    """Fail closed: any answered symptom screen or assessed movement task is sensitive."""
+    if not isinstance(profile, dict):
+        return True
+    state = profile.get("athlete_state")
+    if not isinstance(state, dict):
+        return True
+    symptoms = state.get("symptoms")
+    if not isinstance(symptoms, dict) or symptoms.get("status") != "not_asked":
+        return True
+    movement = state.get("movement_assessment")
+    tasks = movement.get("tasks") if isinstance(movement, dict) else None
+    if not isinstance(tasks, dict):
+        return True
+    if any(
+        not isinstance(item, dict) or item.get("status") != "not_assessed"
+        for item in tasks.values()
+    ):
+        return True
+    # Explicit discomfort feedback in the stored session history also informed
+    # the decision context, even if the canonical movement screen is unanswered.
+    rows = _execute(
+        conn, dialect,
+        "SELECT session_json FROM atena_training_sessions WHERE profile_id = %s ORDER BY session_date DESC, created_at DESC LIMIT 50",
+        (profile_id,),
+    ).fetchall()
+    for (session_json,) in rows:
+        session = _decode_json(session_json)
+        if isinstance(session, dict) and session.get("discomfort_reported") is not None:
+            return True
+    return False
+
+
 def get_profile(profile_id: str, token: str):
     conn, dialect = _connect(require_enabled=False)
     try:
@@ -346,23 +419,62 @@ def update_profile(profile_id: str, token: str, profile: dict, *, event: dict | 
     finally:
         conn.close()
 
-def add_session(profile_id: str, token: str, session_id: str, session_date: str, session: dict, *, event: dict | None = None):
+def add_session(
+    profile_id: str,
+    token: str,
+    session_id: str,
+    session_date: str,
+    session: dict,
+    *,
+    program_version_id: str | None = None,
+    event: dict | None = None,
+):
     conn, dialect = _connect()
     try:
         _init(conn, dialect)
         authorized = _authorized_profile(conn, dialect, profile_id, token)
+        program_classification = "operational"
+        if program_version_id is not None:
+            if not isinstance(program_version_id, str) or not program_version_id.strip() or len(program_version_id) > 128:
+                raise ValueError("Različica programa ni veljavna.")
+            version = _execute(
+                conn, dialect,
+                "SELECT data_classification FROM atena_program_versions WHERE program_version_id = %s AND profile_id = %s",
+                (program_version_id, profile_id),
+            ).fetchone()
+            if not version:
+                raise ValueError("Različica programa ne pripada temu profilu ali ne obstaja.")
+            program_classification = version[0]
+            if program_classification == "health_sensitive" and authorized["health_data_consent"] is not True:
+                raise DecisionEventError("Za povezavo zdravstveno prilagojenega programa je potrebna veljavna privolitev.")
+        if event is not None and program_version_id is not None:
+            event = dict(event)
+            if event.get("program_version_id") not in {None, program_version_id}:
+                raise DecisionEventError("Dogodek in trening kažeta na različni različici programa.")
+            event["program_version_id"] = program_version_id
+            if program_classification == "health_sensitive":
+                event["data_classification"] = "health_sensitive"
         now = _now()
         _execute(conn, dialect, """INSERT INTO atena_training_sessions
-            (session_id, profile_id, session_date, session_json, created_at)
-            VALUES (%s, %s, %s, %s, %s)""",
-            (session_id, profile_id, session_date, _encode_json(session, dialect), now))
+            (session_id, profile_id, session_date, session_json, program_version_id, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s)""",
+            (
+                session_id, profile_id, session_date,
+                _encode_json(session, dialect), program_version_id, now,
+            ))
         if event is not None:
             _insert_decision_event(
                 conn, dialect, profile_id, event,
                 health_consent_verified=authorized["health_data_consent"] is True,
             )
         conn.commit()
-        return {"session_id": session_id, "session_date": session_date, "session": session, "created_at": now}
+        return {
+            "session_id": session_id,
+            "session_date": session_date,
+            "session": session,
+            "program_version_id": program_version_id,
+            "created_at": now,
+        }
     finally:
         conn.close()
 
@@ -371,14 +483,206 @@ def list_sessions(profile_id: str, token: str, limit: int = 50):
     try:
         _init(conn, dialect)
         _authorized_profile(conn, dialect, profile_id, token)
-        rows = _execute(conn, dialect, """SELECT session_id, session_date, session_json, created_at
+        rows = _execute(conn, dialect, """SELECT session_id, session_date, session_json, program_version_id, created_at
             FROM atena_training_sessions WHERE profile_id = %s
             ORDER BY session_date DESC, created_at DESC LIMIT %s""",
             (profile_id, limit)).fetchall()
-        return [{"session_id": row[0], "session_date": row[1],
-                 "session": _decode_json(row[2]), "created_at": row[3]} for row in rows]
+        return [{
+            "session_id": row[0], "session_date": row[1],
+            "session": _decode_json(row[2]), "program_version_id": row[3],
+            "created_at": row[4],
+        } for row in rows]
     finally:
         conn.close()
+
+def save_program_version(
+    profile_id: str,
+    token: str,
+    program_version_id: str,
+    program: dict,
+    *,
+    goal: str,
+    experience: str,
+    data_classification: str,
+    event: dict,
+    generation_context: dict | None = None,
+):
+    """Persist an immutable programme snapshot and its creation event atomically."""
+    if not isinstance(program_version_id, str) or not program_version_id.strip() or len(program_version_id) > 128:
+        raise ValueError("Identifikator različice programa ni veljaven.")
+    if not isinstance(program, dict):
+        raise ValueError("Program mora biti JSON objekt.")
+    if not isinstance(goal, str) or not goal.strip() or not isinstance(experience, str) or not experience.strip():
+        raise ValueError("Cilj in izkušnje programa morajo biti določeni.")
+    if not isinstance(data_classification, str) or data_classification not in {"operational", "health_sensitive"}:
+        raise ValueError("Razvrstitev programa ni veljavna.")
+    try:
+        encoded_program = json.dumps(
+            program, ensure_ascii=False, allow_nan=False, separators=(",", ":")
+        ).encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Program vsebuje podatke, ki niso združljivi z JSON.") from exc
+    if len(encoded_program) > 512 * 1024:
+        raise ValueError("Program presega dovoljeno velikost 512 KB.")
+    if generation_context is None:
+        generation_context = {}
+    if not isinstance(generation_context, dict):
+        raise ValueError("Kontekst odločitve mora biti JSON objekt.")
+    try:
+        encoded_context = json.dumps(
+            generation_context, ensure_ascii=False, allow_nan=False, separators=(",", ":")
+        ).encode("utf-8")
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Kontekst odločitve ni združljiv z JSON.") from exc
+    if len(encoded_context) > 128 * 1024:
+        raise ValueError("Kontekst odločitve presega dovoljeno velikost 128 KB.")
+    if not isinstance(event, dict) or event.get("program_version_id") != program_version_id:
+        raise DecisionEventError("Dogodek mora biti povezan z isto različico programa.")
+    if event.get("event_type") != "program_created" or event.get("data_classification") != data_classification:
+        raise DecisionEventError("Dogodek programa nima ustrezne vrste ali razvrstitve.")
+
+    conn, dialect = _connect()
+    try:
+        _init(conn, dialect)
+        if dialect == "sqlite":
+            conn.commit()
+            conn.execute("BEGIN IMMEDIATE")
+        authorized = _authorized_profile(conn, dialect, profile_id, token)
+        saved_profile = authorized["profile"]
+        if goal.strip() != saved_profile.get("goal") or experience.strip() != saved_profile.get("experience"):
+            raise DecisionEventError("Cilj ali izkušnje programa se ne ujemajo s shranjenim profilom.")
+        if _profile_has_health_context(saved_profile, conn, dialect, profile_id) and data_classification != "health_sensitive":
+            raise DecisionEventError("Program, ustvarjen na podlagi zdravstvenega ali gibalnega konteksta, mora biti označen kot občutljiv.")
+        if data_classification == "health_sensitive" and authorized["health_data_consent"] is not True:
+            raise DecisionEventError("Za shranjevanje zdravstveno prilagojenega programa je potrebna veljavna privolitev.")
+        if dialect == "postgres":
+            _execute(
+                conn, dialect,
+                "SELECT profile_id FROM atena_profiles WHERE profile_id = %s FOR UPDATE",
+                (profile_id,),
+            ).fetchone()
+        version_number = _execute(
+            conn, dialect,
+            "SELECT COALESCE(MAX(version_number), 0) + 1 FROM atena_program_versions WHERE profile_id = %s",
+            (profile_id,),
+        ).fetchone()[0]
+        now = _now()
+        _execute(
+            conn, dialect,
+            """INSERT INTO atena_program_versions
+                (program_version_id, profile_id, version_number, goal, experience,
+                 data_classification, program_json, generation_context_json, created_at)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+            (
+                program_version_id, profile_id, version_number, goal.strip(),
+                experience.strip(), data_classification,
+                _encode_json(program, dialect), _encode_json(generation_context, dialect), now,
+            ),
+        )
+        _insert_decision_event(
+            conn, dialect, profile_id, event,
+            health_consent_verified=authorized["health_data_consent"] is True,
+        )
+        conn.commit()
+        return {
+            "program_version_id": program_version_id,
+            "profile_id": profile_id,
+            "version_number": version_number,
+            "goal": goal.strip(),
+            "experience": experience.strip(),
+            "data_classification": data_classification,
+            "program": program,
+            "generation_context": generation_context,
+            "created_at": now,
+        }
+    finally:
+        conn.close()
+
+
+def list_program_versions(
+    profile_id: str,
+    token: str,
+    limit: int = 50,
+    *,
+    include_program: bool = False,
+):
+    """List a bounded programme history; snapshots are included only for exports."""
+    maximum = 5000 if include_program else 100
+    if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= maximum:
+        raise ValueError(f"Omejitev različic programa mora biti med 1 in {maximum}.")
+    conn, dialect = _connect(require_enabled=False)
+    try:
+        _init(conn, dialect)
+        authorized = _authorized_profile(conn, dialect, profile_id, token)
+        program_column = ", program_json, generation_context_json" if include_program else ""
+        rows = _execute(
+            conn, dialect,
+            f"""SELECT program_version_id, version_number, goal, experience,
+                       data_classification, created_at{program_column}
+                  FROM atena_program_versions
+                 WHERE profile_id = %s
+                   AND (%s OR data_classification = 'operational')
+                 ORDER BY version_number DESC
+                 LIMIT %s""",
+            (profile_id, authorized["health_data_consent"] is True, limit),
+        ).fetchall()
+        versions = []
+        for row in rows:
+            created_at = row[5]
+            if hasattr(created_at, "isoformat"):
+                created_at = created_at.isoformat()
+            item = {
+                "program_version_id": row[0],
+                "version_number": row[1],
+                "goal": row[2],
+                "experience": row[3],
+                "data_classification": row[4],
+                "created_at": created_at,
+            }
+            if include_program:
+                item["program"] = _decode_json(row[6])
+                item["generation_context"] = _decode_json(row[7])
+            versions.append(item)
+        return versions
+    finally:
+        conn.close()
+
+
+def get_program_version(profile_id: str, token: str, program_version_id: str):
+    """Fetch one immutable programme snapshot only within its owning profile."""
+    conn, dialect = _connect(require_enabled=False)
+    try:
+        _init(conn, dialect)
+        authorized = _authorized_profile(conn, dialect, profile_id, token)
+        row = _execute(
+            conn, dialect,
+            """SELECT program_version_id, version_number, goal, experience,
+                      data_classification, program_json, generation_context_json, created_at
+                 FROM atena_program_versions
+                WHERE profile_id = %s AND program_version_id = %s""",
+            (profile_id, program_version_id),
+        ).fetchone()
+        if not row:
+            return None
+        if row[4] == "health_sensitive" and authorized["health_data_consent"] is not True:
+            return None
+        created_at = row[7]
+        if hasattr(created_at, "isoformat"):
+            created_at = created_at.isoformat()
+        return {
+            "program_version_id": row[0],
+            "profile_id": profile_id,
+            "version_number": row[1],
+            "goal": row[2],
+            "experience": row[3],
+            "data_classification": row[4],
+            "program": _decode_json(row[5]),
+            "generation_context": _decode_json(row[6]),
+            "created_at": created_at,
+        }
+    finally:
+        conn.close()
+
 
 def _insert_decision_event(conn, dialect, profile_id, event, *, health_consent_verified):
     """Insert an event inside the caller's transaction after profile/consent validation."""
@@ -434,7 +738,7 @@ def list_decision_events(profile_id: str, token: str, limit: int = 50):
     conn, dialect = _connect(require_enabled=False)
     try:
         _init(conn, dialect)
-        _authorized_profile(conn, dialect, profile_id, token)
+        authorized = _authorized_profile(conn, dialect, profile_id, token)
         rows = _execute(
             conn, dialect,
             """SELECT event_id, schema_version, event_type, occurred_at, source,
@@ -442,9 +746,10 @@ def list_decision_events(profile_id: str, token: str, limit: int = 50):
                       correlation_id, created_at
                  FROM atena_decision_events
                 WHERE profile_id = %s
+                  AND (%s OR data_classification = 'operational')
                 ORDER BY occurred_at DESC, created_at DESC, event_id DESC
                 LIMIT %s""",
-            (profile_id, limit),
+            (profile_id, authorized["health_data_consent"] is True, limit),
         ).fetchall()
         events = []
         for row in rows:
@@ -499,6 +804,13 @@ def set_health_data_consent(profile_id: str, token: str, consent: bool):
             _execute(
                 conn, dialect,
                 "DELETE FROM atena_decision_events WHERE profile_id = %s AND data_classification = %s",
+                (profile_id, "health_sensitive"),
+            )
+            # Program snapshots derived from health-sensitive assessment data are
+            # erased too; FK ON DELETE SET NULL keeps non-health session history.
+            _execute(
+                conn, dialect,
+                "DELETE FROM atena_program_versions WHERE profile_id = %s AND data_classification = %s",
                 (profile_id, "health_sensitive"),
             )
             # Health/movement observations are consent-gated. On withdrawal,

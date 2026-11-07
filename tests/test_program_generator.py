@@ -1165,3 +1165,14 @@ def test_endurance_feedback_keeps_displayed_locomotion_duration_synchronized():
     assert int(prescription["reps"].split()[0]) == round(prescription["work_seconds"] / 60)
     assert prescription["adjustment_note"]
 
+
+
+def test_generated_program_is_strict_json_safe_for_immutable_version_storage():
+    import json
+
+    plan = generate_program(BASE)
+    encoded = json.dumps(
+        plan, ensure_ascii=False, allow_nan=False, separators=(",", ":")
+    ).encode("utf-8")
+    assert json.loads(encoded) == plan
+    assert len(encoded) <= 512 * 1024
