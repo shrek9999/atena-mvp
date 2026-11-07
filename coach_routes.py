@@ -2320,6 +2320,16 @@ def coach_profile_program(profile_id):
             experience=profile["profile"].get("experience"),
             data_classification=data_classification,
             event=program_event,
+            generation_context={
+                "source_session_ids": [
+                    item.get("session_id") for item in sessions
+                    if isinstance(item, dict) and isinstance(item.get("session_id"), str)
+                ],
+                "adaptive_decision": adaptive_decision,
+                "adaptation_guidance": adaptation,
+                "exercise_progressions": exercise_progressions,
+                "training_cycle": training_cycle,
+            },
         )
         return jsonify({
             "program": result,
