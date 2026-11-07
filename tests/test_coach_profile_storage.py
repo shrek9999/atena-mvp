@@ -437,6 +437,7 @@ def test_postgres_profile_tables_enable_rls_and_revoke_public_access(monkeypatch
     assert "ALTER TABLE atena_profiles ENABLE ROW LEVEL SECURITY" in statements
     assert "ALTER TABLE atena_training_sessions ENABLE ROW LEVEL SECURITY" in statements
     assert "ALTER TABLE atena_decision_events ENABLE ROW LEVEL SECURITY" in statements
+    assert "ALTER TABLE atena_program_versions ENABLE ROW LEVEL SECURITY" in statements
     assert any("atena_profiles FROM PUBLIC, anon, authenticated" in sql for sql in statements)
     assert any("atena_training_sessions FROM PUBLIC, anon, authenticated" in sql for sql in statements)
     assert any("atena_decision_events FROM PUBLIC, anon, authenticated" in sql for sql in statements)
