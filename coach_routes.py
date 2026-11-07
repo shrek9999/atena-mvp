@@ -22,6 +22,7 @@ from coach_store import (
 from training.catalogue import get_exercise, load_catalogue
 from flask import Blueprint, jsonify, request
 from training.program import ProgramSafetyBlock, ProgramValidationError, generate_program
+from training.program_context import ProgramContextError, generate_program_for_athlete
 from training.progress import summarize_progress
 from training.adaptation import assess_next_step
 from training.adaptive_decision import decide_adaptation
@@ -2083,7 +2084,10 @@ def coach_profile_program(profile_id):
         # scope, while the exercise engine applies only independently justified
         # exercise-level rep guidance. A future user-confirmed session-level
         # adjustment can be applied through an explicit programme revision.
-        result = generate_program(legacy_profile)
+        # Use the persisted canonical athlete state for movement competence and
+        # symptom-aware selection. The legacy profile remains the generator's
+        # compatibility view; stale or contradictory state fails closed.
+        result = generate_program_for_athlete(profile["profile"])
         result = apply_exercise_progression(result, exercise_progressions)
         return jsonify({
             "program": result,
@@ -2097,6 +2101,8 @@ def coach_profile_program(profile_id):
             "pilot": True,
         }), 200
     except ProgramSafetyBlock as exc:
+        return jsonify({"blocked": True, "message": str(exc)}), 409
+    except ProgramContextError as exc:
         return jsonify({"blocked": True, "message": str(exc)}), 409
     except ProgramValidationError as exc:
         return jsonify({"error": str(exc)}), 400
