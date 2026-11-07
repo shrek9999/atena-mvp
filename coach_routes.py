@@ -2335,7 +2335,7 @@ def coach_profile_program(profile_id):
             "program": result,
             "program_version": {
                 key: value for key, value in saved_program_version.items()
-                if key != "program"
+                if key not in {"program", "generation_context"}
             },
             "profile": profile["profile"],
             "adaptation_guidance": adaptation,
