@@ -1436,7 +1436,7 @@ def test_program_versions_are_immutable_numbered_and_retrievable(monkeypatch, tm
     )
     second = save_program_version(
         profile_id, token, "program-version-2", second_program,
-        goal="functional", experience="beginner",
+        goal="hypertrophy", experience="intermediate",
         data_classification="operational",
         event=_program_event(profile_id, "program-version-2", event_id="program-event-002"),
     )
@@ -1486,7 +1486,7 @@ def test_program_snapshot_and_event_roll_back_together_on_duplicate_event(monkey
     with pytest.raises(DecisionEventError):
         save_program_version(
             profile_id, token, "rolled-back-program",
-            {"goal": "functional", "sessions": []},
+            {"goal": "hypertrophy", "sessions": []},
             goal="functional", experience="beginner",
             data_classification="operational",
             event=_program_event(
@@ -1591,10 +1591,11 @@ def test_operational_program_cannot_be_saved_when_health_context_informed_genera
     created = _create(client, health_consent=True)
     profile_id = created["profile"]["profile_id"]
     token = created["profile_access_token"]
-    profile = client.get(
+    profile_record = client.get(
         f"/coach/profile/{profile_id}",
         headers={"X-Profile-Token": token},
     ).get_json()["profile"]
+    profile = profile_record["profile"]
     profile["athlete_state"]["symptoms"] = {"status": "denied", "items": []}
     update_profile(profile_id, token, profile)
 
