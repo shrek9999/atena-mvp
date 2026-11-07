@@ -74,10 +74,8 @@ def _apply_symptom_context(state: dict, assessment: dict) -> dict:
             "Pred izbiro vaj razjasni, pri katerem gibu ali opravilu se pojavi."
         )
     for item in items:
-        provoking_task = item["provoking_task"]
-        provoking_task = PROVOKING_TASK_ALIASES.get(
-            str(provoking_task).strip().casefold(), provoking_task
-        )
+        provoking_task = str(item["provoking_task"]).strip().casefold()
+        provoking_task = PROVOKING_TASK_ALIASES.get(provoking_task, provoking_task)
         if provoking_task not in CANONICAL_TO_ASSESSMENT_TASK:
             raise ProgramSafetyBlock(
                 "Navedeni sprožilec simptoma še ni povezan s preverjeno gibalno nalogo. "
