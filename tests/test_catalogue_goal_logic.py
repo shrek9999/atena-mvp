@@ -298,7 +298,8 @@ def test_functional_program_uses_safe_locomotion_and_loaded_row_when_available()
     assert ids.intersection({"one_arm_row", "kettlebell_one_arm_row", "dumbbell_bent_over_row", "barbell_bent_over_row"})
     carry = next(item for item in items if item["pattern"] == "carry")
     assert carry["prescription"]["reps"] == "20–30 m"
-    assert carry["prescription"]["work_seconds"] > 0
+    assert carry["prescription"]["estimated_work_seconds"] > 0
+    assert "work_seconds" not in carry["prescription"]
     assert carry["prescription"]["distance_based"] is True
     assert carry["prescription"].get("rir") is None
 

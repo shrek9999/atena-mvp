@@ -70,4 +70,4 @@ def test_loaded_hypertrophy_profile_exposes_straight_back_hinge_label():
         if exercise["pattern"] == "hinge"
     ]
     assert hinges
-    assert all(exercise["pattern_label"] == "predklon z ravnim hrbtom" for exercise in hinges)
+    assert all(exercise["pattern_label"] == "predklon z nevtralnim položajem hrbtenice" for exercise in hinges)

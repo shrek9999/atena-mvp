@@ -718,7 +718,7 @@ def test_hinge_pattern_uses_clear_coaching_term_predklon_z_ravnim_hrbtom():
         if exercise["pattern"] == "hinge"
     ]
     assert hinges
-    assert all(exercise["pattern_label"] == "predklon z ravnim hrbtom" for exercise in hinges)
+    assert all(exercise["pattern_label"] == "predklon z nevtralnim položajem hrbtenice" for exercise in hinges)
 
 
 
@@ -984,3 +984,154 @@ def test_functional_and_fat_loss_programmes_have_distinct_training_intent():
     assert {"balance", "coordination"}.intersection(functional_patterns)
     assert "conditioning" in fat_loss_patterns
     assert functional_patterns != fat_loss_patterns
+
+def test_hinge_pattern_uses_neutral_spine_terminology():
+    from training.program import PATTERN_LABELS
+
+    assert PATTERN_LABELS["hinge"] == "predklon z nevtralnim položajem hrbtenice"
+
+
+@pytest.mark.parametrize(
+    "experience,expected_seconds",
+    [("beginner", 20), ("intermediate", 25), ("advanced", 35)],
+)
+def test_carry_uses_distance_dose_and_separate_time_estimate(experience, expected_seconds):
+    profile = {
+        **BASE,
+        "goal": "functional",
+        "experience": experience,
+        "equipment": ["dumbbell", "kettlebell", "bench", "pull_up_bar", "cable", "box", "resistance_band"],
+        "session_minutes": 90,
+    }
+    plan = generate_program(profile)
+    carry = next(
+        exercise
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+        if exercise["pattern"] == "carry"
+    )
+    prescription = carry["prescription"]
+
+    assert prescription["distance_based"] is True
+    assert prescription["reps"] in {
+        "15–20 m", "15–20 m na stran",
+        "20–30 m", "20–30 m na stran",
+        "25–40 m", "25–40 m na stran",
+    }
+    assert prescription["estimated_work_seconds"] == expected_seconds
+    assert "work_seconds" not in prescription
+    assert prescription["tempo"] == "tekoče"
+    assert all(session["estimated_minutes"] <= profile["session_minutes"] for session in plan["sessions"])
+
+
+def _functional_carry(profile, feedback=None):
+    plan = generate_program({**profile, "goal": "functional"}, feedback=feedback)
+    return next(
+        exercise
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+        if exercise["pattern"] == "carry"
+    )
+
+
+def test_easy_feedback_progresses_carry_distance_not_timed_work():
+    baseline = _functional_carry(BASE)
+    progressed = _functional_carry(
+        BASE,
+        feedback={
+            "difficulty": "easy",
+            "completed": True,
+            "discomfort": "no",
+            "recovery": "normal",
+        },
+    )
+
+    assert baseline["prescription"]["reps"] == "20–30 m"
+    assert progressed["prescription"]["reps"] == "22–32 m"
+    assert progressed["prescription"]["estimated_work_seconds"] == 27
+    assert "work_seconds" not in progressed["prescription"]
+    assert "razdalja" in progressed["prescription"]["adjustment_note"]
+
+
+def test_hard_feedback_regresses_carry_distance_not_timed_work():
+    baseline = _functional_carry(BASE)
+    regressed = _functional_carry(
+        BASE,
+        feedback={
+            "difficulty": "hard",
+            "completed": True,
+            "discomfort": "no",
+            "recovery": "normal",
+        },
+    )
+
+    assert baseline["prescription"]["reps"] == "20–30 m"
+    assert regressed["prescription"]["reps"] == "18–28 m"
+    assert regressed["prescription"]["estimated_work_seconds"] == 23
+    assert "work_seconds" not in regressed["prescription"]
+    assert "work_seconds" not in regressed["prescription"]
+    assert "konservativno zmanjšan" in regressed["prescription"]["adjustment_note"]
+
+
+
+@pytest.mark.parametrize("session_minutes", [45, 60, 90])
+def test_endurance_locomotion_display_matches_internal_duration(session_minutes):
+    plan = generate_program({
+        **BASE,
+        "goal": "endurance",
+        "session_minutes": session_minutes,
+    })
+    locomotion = next(
+        exercise
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+        if exercise["pattern"] == "locomotion"
+    )
+    prescription = locomotion["prescription"]
+
+    assert prescription["reps"].endswith(" min")
+    assert int(prescription["reps"].split()[0]) * 60 == prescription["work_seconds"]
+
+
+@pytest.mark.parametrize(
+    "experience,expected_seconds",
+    [("beginner", 360), ("intermediate", 480), ("advanced", 600)],
+)
+def test_fat_loss_locomotion_duration_matches_experience(experience, expected_seconds):
+    plan = generate_program({
+        **BASE,
+        "goal": "fat_loss",
+        "experience": experience,
+        "sessions_per_week": 3,
+    })
+    locomotion = next(
+        exercise
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+        if exercise["pattern"] == "locomotion"
+    )
+    prescription = locomotion["prescription"]
+
+    assert prescription["work_seconds"] == expected_seconds
+    assert prescription["reps"] == f"{expected_seconds // 60} min"
+
+
+def test_endurance_feedback_keeps_displayed_locomotion_duration_synchronized():
+    feedback = {
+        "difficulty": "easy",
+        "completed": True,
+        "discomfort": "no",
+        "recovery": "normal",
+    }
+    plan = generate_program({**BASE, "goal": "endurance"}, feedback=feedback)
+    locomotion = next(
+        exercise
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+        if exercise["pattern"] == "locomotion"
+    )
+    prescription = locomotion["prescription"]
+
+    assert int(prescription["reps"].split()[0]) == round(prescription["work_seconds"] / 60)
+    assert prescription["adjustment_note"]
+

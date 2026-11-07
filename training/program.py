@@ -17,7 +17,7 @@ SUPPORTED_SESSIONS = {2, 3, 4}
 PATTERN_LABELS = {
     "squat": "počep",
     "lunge": "izpadni korak",
-    "hinge": "predklon z ravnim hrbtom",
+    "hinge": "predklon z nevtralnim položajem hrbtenice",
     "hip_extension": "izteg kolkov",
     "horizontal_push": "horizontalni potisk",
     "horizontal_pull": "horizontalni poteg",
@@ -406,7 +406,9 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
             sets, reps, rir, rest = 3, "8–12", 3, 90
         else:
             sets, reps, rir, rest = 3, "6–10", 2, 120
-    if pattern == "mobility_stretch":
+    if pattern == "carry":
+        tempo, tempo_description, tempo_seconds = "tekoče", "Hodi z enakomernim, nadzorovanim korakom; breme naj ne spremeni drže ali kakovosti hoje.", 0
+    elif pattern == "mobility_stretch":
         tempo, tempo_description, tempo_seconds = "zadržanje", "Zadrži blag do zmeren razteg, dihaj sproščeno in ne sili v končni položaj.", 0
     elif goal == "mobility" or pattern == "mobility":
         tempo, tempo_description, tempo_seconds = "kontrolirano", "Aktivno raziskuj razpoložljivo amplitudo brez sunkov in prisiljevanja.", 4
@@ -446,10 +448,22 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         "tempo_seconds_per_rep": tempo_seconds,
     }
     if pattern == "carry":
-        sides = 2 if (unilateral or exercise.get("reps_per_side")) else 1
+        carry_distance = {
+            "beginner": "15–20 m",
+            "intermediate": "20–30 m",
+            "advanced": "25–40 m",
+        }[level]
+        carry_seconds = {"beginner": 20, "intermediate": 25, "advanced": 35}[level]
+        if unilateral or exercise.get("reps_per_side"):
+            carry_distance += " na stran"
         prescription.update({
-            "reps": "20–30 m na stran" if (unilateral or exercise.get("reps_per_side")) else "20–30 m", "work_seconds": 20, "distance_based": True,
-            "time_label": "nošenja", "tempo_label": "enakomeren korak",
+            "reps": carry_distance,
+            "distance_based": True,
+            # Used only for realistic session-time estimation; the prescribed
+            # training dose remains distance-based and is never converted to time.
+            "estimated_work_seconds": carry_seconds,
+            "time_label": "razdalje",
+            "tempo_label": "enakomeren korak",
             "effort_target": "Izberi breme, ki ga lahko neseš z naravno hojo, stabilnim trupom in normalnim dihanjem; končaj, preden se položaj poslabša.",
         })
     elif goal == "functional" and pattern == "locomotion":
@@ -466,7 +480,13 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     elif pattern == "coordination":
         prescription.update({"work_seconds": 12, "time_label": "koordinacijskega intervala"})
     if goal == "fat_loss" and pattern == "locomotion":
-        prescription.update({"work_seconds": 480, "time_label": "kratka aerobna aktivnost", "effort_target": "Lahkoten do zmeren pogovorni tempo; izvedba naj ostane sproščena in ponovljiva."})
+        duration = {"beginner": 360, "intermediate": 480, "advanced": 600}[level]
+        prescription.update({
+            "reps": f"{duration // 60} min",
+            "work_seconds": duration,
+            "time_label": "kratka aerobna aktivnost",
+            "effort_target": "Lahkoten do zmeren pogovorni tempo; izvedba naj ostane sproščena in ponovljiva.",
+        })
     elif goal == "fat_loss" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
         work_seconds = 60 if kind == "aerobic" else (18 if kind == "anaerobic" else 25)
@@ -511,6 +531,20 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     return prescription
 
 
+def _adjust_distance_range(value: str, delta_m: int) -> str:
+    """Adjust a distance-based prescription without converting it into timed work."""
+    if not isinstance(value, str) or " m" not in value:
+        return value
+    bounds_text, suffix = value.split(" m", 1)
+    bounds = bounds_text.split("–")
+    if len(bounds) != 2 or not all(part.isdigit() for part in bounds):
+        return value
+    low, high = (int(part) for part in bounds)
+    low = max(5, low + delta_m)
+    high = max(low, high + delta_m)
+    return f"{low}–{high} m{suffix}"
+
+
 def _estimated_minutes(exercises: list[dict], warm_up_minutes: int = 7) -> int:
     # Approximation includes flexible 5–10 min warm-up, execution, rests and transitions.
     total_seconds = warm_up_minutes * 60
@@ -520,6 +554,10 @@ def _estimated_minutes(exercises: list[dict], warm_up_minutes: int = 7) -> int:
         sides = 2 if prescription.get("rep_unit") == "per_side" else 1
         if prescription.get("work_seconds") is not None:
             execution = prescription["work_seconds"] * sets * sides
+        elif prescription.get("estimated_work_seconds") is not None:
+            # Distance-based carries keep a distance prescription. This separate
+            # estimate is used only to calculate the session's approximate duration.
+            execution = prescription["estimated_work_seconds"] * sets * sides
         else:
             rep_bounds = [int(value) for value in prescription["reps"].split("–")]
             reps = round(sum(rep_bounds) / len(rep_bounds))
@@ -948,8 +986,11 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                     "message": movement_note,
                 })
             if planning_goal == "endurance" and effective_pattern == "locomotion":
-                # Reserve time for warm-up, transitions and interval work; locomotion is a flexible aerobic block.
-                    prescription["work_seconds"] = max(600, int(p["session_minutes"] * 15))
+                # Reserve time for warm-up, transitions and interval work; keep
+                # the visible duration synchronized with the internal estimate.
+                duration_minutes = max(10, int(p["session_minutes"] / 4 + 0.5))
+                prescription["work_seconds"] = duration_minutes * 60
+                prescription["reps"] = f"{duration_minutes} min"
             if reduce_load and response["recovery"] == "poor" and response["difficulty"] != "hard" and response["completed"]:
                 # Poor recovery alone trims only optional training cost; preserve
                 # accessory and non-compound work unless the session was also hard.
@@ -974,9 +1015,17 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 # including aerobic and mobility work, not only its explanatory text.
                 if prescription.get("sets", 1) > 2:
                     prescription["sets"] -= 1
+                elif prescription.get("distance_based"):
+                    prescription["reps"] = _adjust_distance_range(prescription["reps"], -2)
+                    if prescription.get("estimated_work_seconds") is not None:
+                        prescription["estimated_work_seconds"] = max(
+                            10, prescription["estimated_work_seconds"] - 2
+                        )
                 elif prescription.get("work_seconds") is not None:
                     floor = 300 if pattern == "locomotion" else 10
                     prescription["work_seconds"] = max(floor, int(prescription["work_seconds"] * 0.85))
+                    if pattern == "locomotion":
+                        prescription["reps"] = f"{max(1, round(prescription['work_seconds'] / 60))} min"
                 else:
                     bounds = [int(value) for value in prescription.get("reps", "").split("–") if value.isdigit()]
                     if len(bounds) == 2:
@@ -995,11 +1044,21 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 # One easy report earns only a small, reversible progression:
                 # one additional target rep or a small work-time increase. Never
                 # invent a kilogram increase without knowing the actual load.
-                if prescription.get("work_seconds") is not None:
+                if prescription.get("distance_based"):
+                    prescription["reps"] = _adjust_distance_range(prescription["reps"], 2)
+                    if prescription.get("estimated_work_seconds") is not None:
+                        prescription["estimated_work_seconds"] += 2
+                    prescription["adjustment_note"] = (
+                        "Ker je bilo nošenje izvedeno lahkotno in nadzorovano, je razdalja "
+                        "povečana za majhen korak. Ohrani naravno hojo in stabilno držo."
+                    )
+                elif prescription.get("work_seconds") is not None:
                     ceiling = 1800 if pattern == "locomotion" else 300
                     prescription["work_seconds"] = min(
                         ceiling, int(prescription["work_seconds"] * 1.05)
                     )
+                    if pattern == "locomotion":
+                        prescription["reps"] = f"{max(1, round(prescription['work_seconds'] / 60))} min"
                     prescription["adjustment_note"] = (
                         "Ker je bil zadnji trening prelahek, je delovni interval "
                         "podaljšan za majhen korak. Ohrani predpisano ciljno intenzivnost."
@@ -1256,7 +1315,7 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
             "exercise_scaling": "Vsaka vaja ima označen potencial obremenitve, vlogo, zahteve glede opreme in stopnjevanje. Nizko obremenljive učne vaje niso privzeta glavna izbira za hipertrofijo.",
             "equipment_policy": "Brez uteži ne pomeni brez običajnih stabilnih gospodinjskih opor. Stol, kavč, miza, stopnica, brisača ali palica so dovoljeni le, kadar jih profil izrecno vključuje in so varni za uporabo.",
             "endurance_policy": "Vzdržljivost je ločen cilj; aerobne aktivnosti, intervali in mišična vzdržljivost so označeni ločeno.",
-            "mobility_policy": "Mobilnost vključuje aktivne gibalne vaje, kontrolirano gibanje v končnih amplitudah in razvoj moči skozi čim večji nadzorovan in toleriran obseg (npr. predklon z ravnim hrbtom/RDL, ATG izpadni počep, Cossack squat in obremenjeni globoki počep), ne samo pasivnega raztezanja.",
+            "mobility_policy": "Mobilnost vključuje aktivne gibalne vaje, kontrolirano gibanje v končnih amplitudah in razvoj moči skozi čim večji nadzorovan in toleriran obseg (npr. predklon z nevtralnim položajem hrbtenice/RDL, ATG izpadni počep, Cossack squat in obremenjeni globoki počep), ne samo pasivnega raztezanja.",
             "fat_loss_policy": "Pri uravnavanju telesne teže združi vadbo moči za ohranitev mišične mase s kratkimi, odmerjenimi kondicijskimi intervali v istem treningu; ob treh ali štirih treningih je lahko dodatna enota pretežno aerobna. MetCon naj bo nadzorovan, ne maksimalen in ne na račun tehnike ali regeneracije. Za zmanjšanje telesne maščobe je potreben vzdržen energijski primanjkljaj; vadba sama ga ne zagotavlja.",
             "experience_adaptation": (
                 "Vzdržljivost: začetnik gradi predvsem enakomeren aerobni obseg v pogovornem tempu; intervale uvajaj postopno. Naprednejši lahko kombinira daljše aerobne enote, intervale in mišično vzdržljivost, vendar ne vsega maksimalno v isti vadbi."
@@ -1270,7 +1329,7 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 "Intermediate: uporablja bolj specifične razpone glede na cilj; pri glavnih vajah za moč je običajen razpon 5–8 ponovitev, pri hipertrofiji večinoma 6–12. Advanced: pri glavnih vajah za moč lahko uporablja 3–6 ponovitev, ob večji obremenitvi pa zahteva ustrezno tehniko, regeneracijo in daljše odmore."
             ),
             "tempo": (
-                "Začetnik pri kombiniranem cilju moč + hipertrofija: pri osnovnih počepih in predklonih z ravnim hrbtom uporabi tempo 2–1–1–0 (2 s nadzorovan spust, 1 s nadzor v spodnjem položaju, 1 s dvig, brez premora v vrhu). Druge začetniške vaje in posebni vzorci ohranijo svoj namenski tempo."
+                "Začetnik pri kombiniranem cilju moč + hipertrofija: pri osnovnih počepih in predklonih z nevtralnim položajem hrbtenice uporabi tempo 2–1–1–0 (2 s nadzorovan spust, 1 s nadzor v spodnjem položaju, 1 s dvig, brez premora v vrhu). Druge začetniške vaje in posebni vzorci ohranijo svoj namenski tempo."
                 if p["experience"] == "beginner" and planning_goal == "strength_hypertrophy" else
                 "Začetnik: pri osnovnih vajah je privzeti tempo 3–1–1–0 (3 s nadzorovan spust, 1 s nadzor v spodnjem položaju, 1 s dvig, brez premora v vrhu). Eksplozivne, časovno določene, stabilizacijske in mobilnostne vaje imajo ustrezno specifičen tempo."
                 if p["experience"] == "beginner" else

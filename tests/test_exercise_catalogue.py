@@ -207,7 +207,7 @@ def test_reaching_squat_is_an_accessible_squat_with_supporting_stability_role():
 
 def test_unloaded_hinge_uses_neutral_back_forward_bend_user_facing_name():
     item = get_exercise("bodyweight_hip_hinge")
-    assert item["name"] == "Predklon z ravnim hrbtom (lastna teža)"
+    assert item["name"] == "Predklon z nevtralnim položajem hrbtenice (lastna teža)"
     assert any("nevtralnega položaja hrbtenice" in cue for cue in item["cues"])
 
 
@@ -241,7 +241,7 @@ def test_hip_extension_variants_are_distinct_from_the_predklon_pattern():
 def test_programme_hinge_label_uses_neutral_back_predklon_wording():
     from training.program import PATTERN_LABELS
 
-    assert PATTERN_LABELS["hinge"] == "predklon z ravnim hrbtom"
+    assert PATTERN_LABELS["hinge"] == "predklon z nevtralnim položajem hrbtenice"
 
 
 
