@@ -984,3 +984,8 @@ def test_functional_and_fat_loss_programmes_have_distinct_training_intent():
     assert {"balance", "coordination"}.intersection(functional_patterns)
     assert "conditioning" in fat_loss_patterns
     assert functional_patterns != fat_loss_patterns
+
+def test_hinge_pattern_uses_neutral_spine_terminology():
+    from training.program import PATTERN_LABELS
+
+    assert PATTERN_LABELS["hinge"] == "predklon z nevtralnim položajem hrbtenice"
