@@ -198,6 +198,9 @@ def _init(conn, dialect):
         _execute(conn, dialect, """CREATE TABLE IF NOT EXISTS atena_schema_migrations (
             version INTEGER PRIMARY KEY, migration_name TEXT NOT NULL, applied_at TEXT NOT NULL
         )""")
+        if dialect == "postgres":
+            _execute(conn, dialect, "ALTER TABLE atena_schema_migrations ENABLE ROW LEVEL SECURITY")
+            _execute(conn, dialect, "REVOKE ALL PRIVILEGES ON TABLE atena_schema_migrations FROM PUBLIC, anon, authenticated")
         row = _execute(conn, dialect, "SELECT MAX(version) FROM atena_schema_migrations").fetchone()
         current = row[0] or 0
         if current < 1:
@@ -358,11 +361,40 @@ def add_session(profile_id: str, token: str, session_id: str, session_date: str,
             (session_id, profile_id, session_date, session_json, created_at)
             VALUES (%s, %s, %s, %s, %s)""",
             (session_id, profile_id, session_date, _encode_json(session, dialect), now))
+        # Persist the training lifecycle event in the same transaction as the session.
+        event_type = "session_completed" if session.get("completed") is True else "session_interrupted"
+        exercises = session.get("exercises", []) if isinstance(session, dict) else []
+        conditioning = session.get("conditioning", []) if isinstance(session, dict) else []
+        event = validate_decision_event({
+            "schema_version": 1,
+            "event_id": uuid.uuid4().hex,
+            "profile_id": profile_id,
+            "event_type": event_type,
+            "occurred_at": now,
+            "source": "user",
+            "data_classification": "operational",
+            "payload": {
+                "session_id": session_id,
+                "session_date": session_date,
+                "completed": session.get("completed") is True,
+                "duration_minutes": session.get("duration_minutes"),
+                "exercise_count": len(exercises) if isinstance(exercises, list) else 0,
+                "conditioning_block_count": len(conditioning) if isinstance(conditioning, list) else 0,
+            },
+        })
+        _execute(conn, dialect, """INSERT INTO atena_decision_events
+            (event_id, profile_id, event_type, occurred_at, source,
+             data_classification, event_json, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+            (event["event_id"], profile_id, event["event_type"], event["occurred_at"],
+             event["source"], event["data_classification"], _encode_json(event, dialect), now))
         conn.commit()
         return {"session_id": session_id, "session_date": session_date, "session": session, "created_at": now}
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
-
 def list_sessions(profile_id: str, token: str, limit: int = 50):
     conn, dialect = _connect(require_enabled=False)
     try:
@@ -455,7 +487,7 @@ def append_decision_event(profile_id: str, token: str, event: dict):
             raise DecisionEventError("Dogodek ne pripada preverjenemu profilu.")
         event_type = event.get("event_type")
         classification = event.get("data_classification")
-        if event_type in HEALTH_SENSITIVE_EVENT_TYPES and classification != "health_sensitive":
+        if isinstance(event_type, str) and event_type in HEALTH_SENSITIVE_EVENT_TYPES and classification != "health_sensitive":
             raise DecisionEventError("Ta vrsta dogodka mora biti označena kot zdravstveno občutljiva.")
         validated = validate_decision_event(
             event, health_consent_verified=profile["health_data_consent"]
