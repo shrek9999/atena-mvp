@@ -348,7 +348,7 @@ def _authorized_profile(conn, dialect, profile_id: str, token: str):
             "updated_at": updated_at, "health_data_consent": bool(health_consent), "health_data_consent_at": health_consent_at,
             "privacy_notice_version": notice_version}
 
-def _profile_has_health_context(profile):
+def _profile_has_health_context(profile, conn, dialect, profile_id):
     """Fail closed: any answered symptom screen or assessed movement task is sensitive."""
     if not isinstance(profile, dict):
         return True
@@ -362,10 +362,23 @@ def _profile_has_health_context(profile):
     tasks = movement.get("tasks") if isinstance(movement, dict) else None
     if not isinstance(tasks, dict):
         return True
-    return any(
+    if any(
         not isinstance(item, dict) or item.get("status") != "not_assessed"
         for item in tasks.values()
-    )
+    ):
+        return True
+    # Explicit discomfort feedback in the stored session history also informed
+    # the decision context, even if the canonical movement screen is unanswered.
+    rows = _execute(
+        conn, dialect,
+        "SELECT session_json FROM atena_training_sessions WHERE profile_id = %s",
+        (profile_id,),
+    ).fetchall()
+    for (session_json,) in rows:
+        session = _decode_json(session_json)
+        if isinstance(session, dict) and session.get("discomfort_reported") is not None:
+            return True
+    return False
 
 
 def get_profile(profile_id: str, token: str):
@@ -515,7 +528,7 @@ def save_program_version(
         saved_profile = authorized["profile"]
         if goal.strip() != saved_profile.get("goal") or experience.strip() != saved_profile.get("experience"):
             raise DecisionEventError("Cilj ali izkušnje programa se ne ujemajo s shranjenim profilom.")
-        if _profile_has_health_context(saved_profile) and data_classification != "health_sensitive":
+        if _profile_has_health_context(saved_profile, conn, dialect, profile_id) and data_classification != "health_sensitive":
             raise DecisionEventError("Program, ustvarjen na podlagi zdravstvenega ali gibalnega konteksta, mora biti označen kot občutljiv.")
         if data_classification == "health_sensitive" and authorized["health_data_consent"] is not True:
             raise DecisionEventError("Za shranjevanje zdravstveno prilagojenega programa je potrebna veljavna privolitev.")
