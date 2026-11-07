@@ -67,19 +67,19 @@ def test_health_sensitive_event_requires_server_verified_consent():
     )
     with pytest.raises(DecisionEventError, match="preverjeno privolitev"):
         validate_decision_event(value)
-    value["consent_verified_by_server"] = True
-    assert validate_decision_event(value)["consent_verified_by_server"] is True
+    assert validate_decision_event(value, health_consent_verified=True)["payload"] == value["payload"]
 
 
-def test_client_cannot_use_non_boolean_consent_marker():
-    value = event(data_classification="health_sensitive", consent_verified_by_server="yes")
-    with pytest.raises(DecisionEventError):
+def test_client_cannot_supply_server_consent_verification_field():
+    value = event(data_classification="health_sensitive", consent_verified_by_server=True)
+    with pytest.raises(DecisionEventError, match="Neznana polja"):
         validate_decision_event(value)
 
 
-def test_operational_event_rejects_unnecessary_health_consent_marker():
+def test_health_consent_verification_argument_must_be_boolean():
+    value = event(data_classification="health_sensitive")
     with pytest.raises(DecisionEventError):
-        validate_decision_event(event(consent_verified_by_server=True))
+        validate_decision_event(value, health_consent_verified="yes")
 
 
 @pytest.mark.parametrize("bad_payload", [
