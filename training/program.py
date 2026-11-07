@@ -78,14 +78,14 @@ def _validate_feedback(feedback: object) -> dict | None:
     if not isinstance(feedback, dict):
         raise ProgramValidationError("Povratna informacija mora biti JSON objekt.")
     difficulty = feedback.get("difficulty", "right")
-    completed = feedback.get("completed", True)
-    discomfort = feedback.get("discomfort", "no")
+    completed = feedback.get("completed")
+    discomfort = feedback.get("discomfort")
     if not isinstance(difficulty, str) or difficulty not in {"easy", "right", "hard"}:
         raise ProgramValidationError("Težavnost mora biti easy, right ali hard.")
-    if not isinstance(completed, bool):
-        raise ProgramValidationError("completed mora biti true ali false.")
-    if not isinstance(discomfort, str) or discomfort not in {"no", "yes"}:
-        raise ProgramValidationError("discomfort mora biti yes ali no.")
+    if completed is not None and not isinstance(completed, bool):
+        raise ProgramValidationError("completed mora biti true, false ali izpuščen.")
+    if discomfort is not None and discomfort not in {"no", "yes"}:
+        raise ProgramValidationError("discomfort mora biti no, yes ali izpuščen.")
     if discomfort == "yes":
         raise ProgramSafetyBlock(
             "Ob bolečini ali novem nelagodju ne bom samodejno spreminjal programa. " 
@@ -95,9 +95,9 @@ def _validate_feedback(feedback: object) -> dict | None:
     movement_control = feedback.get("movement_control", "none")
     if not isinstance(movement_control, str) or movement_control not in {"none", "spinal_flexion", "bracing", "both"}:
         raise ProgramValidationError("movement_control mora biti none, spinal_flexion, bracing ali both.")
-    recovery = feedback.get("recovery", "normal")
-    if not isinstance(recovery, str) or recovery not in {"good", "normal", "poor"}:
-        raise ProgramValidationError("recovery mora biti good, normal ali poor.")
+    recovery = feedback.get("recovery")
+    if recovery is not None and recovery not in {"good", "normal", "poor"}:
+        raise ProgramValidationError("recovery mora biti good, normal, poor ali izpuščen.")
     return {"difficulty": difficulty, "completed": completed, "movement_control": movement_control, "recovery": recovery}
 
 
@@ -117,15 +117,15 @@ def _validate_feedback_history(history: object) -> list[dict]:
             raise ProgramValidationError(f"feedback_history[{index}] mora biti objekt.")
         difficulty = item.get("difficulty")
         completed = item.get("completed")
-        recovery = item.get("recovery", "normal")
-        discomfort = item.get("discomfort", "no")
+        recovery = item.get("recovery")
+        discomfort = item.get("discomfort")
         if difficulty not in {"easy", "right", "hard"}:
             raise ProgramValidationError(f"feedback_history[{index}].difficulty ni veljaven.")
         if not isinstance(completed, bool):
             raise ProgramValidationError(f"feedback_history[{index}].completed mora biti boolean.")
-        if recovery not in {"good", "normal", "poor"}:
+        if recovery is not None and recovery not in {"good", "normal", "poor"}:
             raise ProgramValidationError(f"feedback_history[{index}].recovery ni veljaven.")
-        if discomfort not in {"yes", "no"}:
+        if discomfort is not None and discomfort not in {"yes", "no"}:
             raise ProgramValidationError(f"feedback_history[{index}].discomfort ni veljaven.")
         normalized.append({
             "difficulty": difficulty,
@@ -638,7 +638,7 @@ def generate_program(
                     movement_status_by_pattern[pattern] = status
                 movement_tasks_by_pattern.setdefault(pattern, []).append(task)
     reduce_load = bool(response and (
-        response["difficulty"] == "hard" or not response["completed"] or response["recovery"] == "poor"
+        response["difficulty"] == "hard" or response["completed"] is False or response["recovery"] == "poor"
     ))
     # A single easy report is not enough to progress the programme.
     # Require two consecutive successful exposures: the current session and
@@ -651,7 +651,9 @@ def generate_program(
     ))
     progress_load = bool(
         response and response["difficulty"] == "easy"
-        and response["completed"] and response["recovery"] in {"good", "normal"}
+        and response["completed"] is True
+        and response["recovery"] in {"good", "normal"}
+        and response["discomfort"] == "no"
         and previous_easy
     )
     include_stability = bool(response and response.get("movement_control", "none") != "none")
@@ -1044,7 +1046,7 @@ def generate_program(
                 duration_minutes = max(10, int(p["session_minutes"] / 4 + 0.5))
                 prescription["work_seconds"] = duration_minutes * 60
                 prescription["reps"] = f"{duration_minutes} min"
-            if reduce_load and response["recovery"] == "poor" and response["difficulty"] != "hard" and response["completed"]:
+            if reduce_load and response["recovery"] == "poor" and response["difficulty"] != "hard" and response["completed"] is True:
                 # Poor recovery alone trims only optional training cost; preserve
                 # accessory and non-compound work unless the session was also hard.
                 is_compound = (
