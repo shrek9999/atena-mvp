@@ -1388,3 +1388,166 @@ def test_failed_atomic_event_insert_rolls_back_profile_update(monkeypatch, tmp_p
         update_profile(profile_id, token, changed, event=existing)
     after = get_profile(profile_id, token)["profile"]
     assert after["goal"] == original["goal"]
+
+
+def _program_event(profile_id, program_version_id, *, event_id="program-event-001", classification="operational"):
+    value = _event(
+        profile_id,
+        event_id=event_id,
+        classification=classification,
+        event_type="program_created",
+    )
+    value["source"] = "system"
+    value["program_version_id"] = program_version_id
+    value["payload"] = {"goal": "functional", "session_count": 2}
+    return value
+
+
+def test_program_versions_are_immutable_numbered_and_retrievable(monkeypatch, tmp_path):
+    from coach_store import (
+        get_program_version, list_program_versions, save_program_version,
+    )
+
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    first_program = {"goal": "functional", "sessions": [{"exercises": [{"exercise_id": "squat"}]}]}
+    second_program = {"goal": "functional", "sessions": [{"exercises": [{"exercise_id": "hinge"}]}]}
+
+    first = save_program_version(
+        profile_id, token, "program-version-1", first_program,
+        goal="functional", experience="beginner",
+        data_classification="operational",
+        event=_program_event(profile_id, "program-version-1"),
+    )
+    second = save_program_version(
+        profile_id, token, "program-version-2", second_program,
+        goal="functional", experience="beginner",
+        data_classification="operational",
+        event=_program_event(profile_id, "program-version-2", event_id="program-event-002"),
+    )
+    assert first["version_number"] == 1
+    assert second["version_number"] == 2
+    history = list_program_versions(profile_id, token)
+    assert [item["version_number"] for item in history] == [2, 1]
+    exact = get_program_version(profile_id, token, "program-version-1")
+    assert exact["program"] == first_program
+
+
+def test_health_sensitive_program_version_requires_consent(monkeypatch, tmp_path):
+    import pytest
+    from coach_store import save_program_version
+    from training.decision_event import DecisionEventError
+
+    client = _client(monkeypatch, tmp_path, health_consent=False)
+    created = _create(client, health_consent=False)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    with pytest.raises(DecisionEventError, match="privolitev"):
+        save_program_version(
+            profile_id, token, "sensitive-program-1",
+            {"goal": "functional", "sessions": []},
+            goal="functional", experience="beginner",
+            data_classification="health_sensitive",
+            event=_program_event(
+                profile_id, "sensitive-program-1", classification="health_sensitive",
+            ),
+        )
+
+
+def test_program_snapshot_and_event_roll_back_together_on_duplicate_event(monkeypatch, tmp_path):
+    import pytest
+    from coach_store import append_decision_event, list_program_versions, save_program_version
+    from training.decision_event import DecisionEventError
+
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    append_decision_event(
+        profile_id, token,
+        _event(profile_id, event_id="duplicate-program-event", event_type="feedback_recorded"),
+    )
+    with pytest.raises(DecisionEventError):
+        save_program_version(
+            profile_id, token, "rolled-back-program",
+            {"goal": "functional", "sessions": []},
+            goal="functional", experience="beginner",
+            data_classification="operational",
+            event=_program_event(
+                profile_id, "rolled-back-program", event_id="duplicate-program-event",
+            ),
+        )
+    assert list_program_versions(profile_id, token) == []
+
+
+def test_consent_withdrawal_erases_health_sensitive_programs_and_unlinks_sessions(monkeypatch, tmp_path):
+    from coach_store import (
+        add_session, list_decision_events, list_program_versions, save_program_version,
+    )
+
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    version_id = "sensitive-program-1"
+    save_program_version(
+        profile_id, token, version_id,
+        {"goal": "functional", "sessions": []},
+        goal="functional", experience="beginner",
+        data_classification="health_sensitive",
+        event=_program_event(profile_id, version_id, classification="health_sensitive"),
+    )
+    add_session(
+        profile_id, token, "session-linked-to-sensitive-program", "2026-11-07",
+        {"completed": True, "exercises": []},
+        program_version_id=version_id,
+        event=_event(profile_id, event_id="sensitive-session-event"),
+    )
+
+    withdrawn = client.post(
+        f"/coach/profile/{profile_id}/consent",
+        headers={"X-Profile-Token": token},
+        json={"health_data_consent": False},
+    )
+    assert withdrawn.status_code == 200
+    assert list_program_versions(profile_id, token) == []
+    sessions = client.get(
+        f"/coach/profile/{profile_id}/sessions",
+        headers={"X-Profile-Token": token},
+    ).get_json()["sessions"]
+    assert sessions[0]["program_version_id"] is None
+    events = list_decision_events(profile_id, token, limit=100)
+    assert all(item["data_classification"] == "operational" for item in events)
+    assert all(item.get("program_version_id") is None for item in events)
+
+
+def test_program_version_routes_are_authenticated_private_and_exact(monkeypatch, tmp_path):
+    from coach_store import save_program_version
+
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    version_id = "program-version-route"
+    save_program_version(
+        profile_id, token, version_id,
+        {"goal": "functional", "sessions": [{"exercises": []}]},
+        goal="functional", experience="beginner",
+        data_classification="operational",
+        event=_program_event(profile_id, version_id),
+    )
+    headers = {"X-Profile-Token": token}
+    denied = client.get(f"/coach/profile/{profile_id}/programs", headers={"X-Profile-Token": "wrong"})
+    assert denied.status_code == 404
+    listed = client.get(f"/coach/profile/{profile_id}/programs", headers=headers)
+    assert listed.status_code == 200
+    assert listed.headers["Cache-Control"] == "no-store, private"
+    assert listed.get_json()["program_versions"][0]["program_version_id"] == version_id
+    detail = client.get(
+        f"/coach/profile/{profile_id}/programs/{version_id}",
+        headers=headers,
+    )
+    assert detail.status_code == 200
+    assert detail.get_json()["program_version"]["program"]["goal"] == "functional"
