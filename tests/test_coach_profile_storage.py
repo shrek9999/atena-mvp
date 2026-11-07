@@ -486,11 +486,10 @@ def test_profile_program_keeps_global_feedback_out_of_generator_and_exposes_adap
 
     import coach_routes
     captured = {}
-    def fake_generate(profile, feedback=None):
+    def fake_generate(profile):
         captured["profile"] = profile
-        captured["feedback"] = feedback
-        return {"goal": profile["goal"], "feedback_applied": feedback, "sessions": []}
-    monkeypatch.setattr(coach_routes, "generate_program", fake_generate)
+        return {"goal": profile["goal"], "feedback_applied": None, "sessions": []}
+    monkeypatch.setattr(coach_routes, "generate_program_for_athlete", fake_generate)
 
     response = client.post(
         f"/coach/profile/{profile_id}/program",
@@ -499,9 +498,9 @@ def test_profile_program_keeps_global_feedback_out_of_generator_and_exposes_adap
     )
     assert response.status_code == 200
     assert captured["profile"]["goal"] == "hypertrophy"
+    assert "athlete_state" in captured["profile"]
     # Session feedback is consumed by the explainable decision layer, not
     # applied globally to every exercise by the programme generator.
-    assert captured["feedback"] is None
     data = response.get_json()
     # Poor recovery is a higher-priority signal than an unspecified
     # incomplete-session reason, so the engine requests a recovery review.
@@ -807,7 +806,7 @@ def test_profile_update_preserves_existing_movement_and_symptom_context(monkeypa
     assert saved["athlete_state"]["symptoms"]["items"][0]["location"] == "koleno"
 
 
-def test_program_generator_receives_legacy_profile_view_not_canonical_envelope(monkeypatch, tmp_path):
+def test_saved_profile_program_adapter_receives_validated_canonical_envelope(monkeypatch, tmp_path):
     client = _client(monkeypatch, tmp_path)
     created = _create(client)
     profile_id = created["profile"]["profile_id"]
@@ -816,18 +815,18 @@ def test_program_generator_receives_legacy_profile_view_not_canonical_envelope(m
     import coach_routes
     captured = {}
 
-    def fake_generate(profile, feedback=None):
+    def fake_generate(profile):
         captured["profile"] = profile
         return {"goal": profile["goal"], "sessions": []}
 
-    monkeypatch.setattr(coach_routes, "generate_program", fake_generate)
+    monkeypatch.setattr(coach_routes, "generate_program_for_athlete", fake_generate)
     response = client.post(
         f"/coach/profile/{profile_id}/program",
         headers={"X-Profile-Token": token},
         json={"no_current_pain_or_restrictions": True},
     )
     assert response.status_code == 200
-    assert "athlete_state" not in captured["profile"]
+    assert "athlete_state" in captured["profile"]
     assert captured["profile"]["goal"] == "hypertrophy"
 
 
