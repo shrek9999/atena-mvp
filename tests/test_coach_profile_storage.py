@@ -1399,7 +1399,7 @@ def _program_event(profile_id, program_version_id, *, event_id="program-event-00
     )
     value["source"] = "system"
     value["program_version_id"] = program_version_id
-    value["payload"] = {"goal": "functional", "session_count": 2}
+    value["payload"] = {"goal": "hypertrophy", "session_count": 2}
     return value
 
 
@@ -1412,12 +1412,12 @@ def test_program_versions_are_immutable_numbered_and_retrievable(monkeypatch, tm
     created = _create(client)
     profile_id = created["profile"]["profile_id"]
     token = created["profile_access_token"]
-    first_program = {"goal": "functional", "sessions": [{"exercises": [{"exercise_id": "squat"}]}]}
-    second_program = {"goal": "functional", "sessions": [{"exercises": [{"exercise_id": "hinge"}]}]}
+    first_program = {"goal": "hypertrophy", "sessions": [{"exercises": [{"exercise_id": "squat"}]}]}
+    second_program = {"goal": "hypertrophy", "sessions": [{"exercises": [{"exercise_id": "hinge"}]}]}
 
     first = save_program_version(
         profile_id, token, "program-version-1", first_program,
-        goal="functional", experience="beginner",
+        goal="hypertrophy", experience="intermediate",
         data_classification="operational",
         event=_program_event(profile_id, "program-version-1"),
     )
@@ -1447,7 +1447,7 @@ def test_health_sensitive_program_version_requires_consent(monkeypatch, tmp_path
     with pytest.raises(DecisionEventError, match="privolitev"):
         save_program_version(
             profile_id, token, "sensitive-program-1",
-            {"goal": "functional", "sessions": []},
+            {"goal": "hypertrophy", "sessions": []},
             goal="functional", experience="beginner",
             data_classification="health_sensitive",
             event=_program_event(
@@ -1533,7 +1533,7 @@ def test_program_version_routes_are_authenticated_private_and_exact(monkeypatch,
     version_id = "program-version-route"
     save_program_version(
         profile_id, token, version_id,
-        {"goal": "functional", "sessions": [{"exercises": []}]},
+        {"goal": "hypertrophy", "sessions": [{"exercises": []}]},
         goal="functional", experience="beginner",
         data_classification="operational",
         event=_program_event(profile_id, version_id),
@@ -1550,4 +1550,4 @@ def test_program_version_routes_are_authenticated_private_and_exact(monkeypatch,
         headers=headers,
     )
     assert detail.status_code == 200
-    assert detail.get_json()["program_version"]["program"]["goal"] == "functional"
+    assert detail.get_json()["program_version"]["program"]["goal"] == "hypertrophy"
