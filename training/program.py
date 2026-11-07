@@ -525,6 +525,20 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
     return prescription
 
 
+def _adjust_distance_range(value: str, delta_m: int) -> str:
+    """Adjust a distance-based prescription without converting it into timed work."""
+    if not isinstance(value, str) or " m" not in value:
+        return value
+    bounds_text, suffix = value.split(" m", 1)
+    bounds = bounds_text.split("–")
+    if len(bounds) != 2 or not all(part.isdigit() for part in bounds):
+        return value
+    low, high = (int(part) for part in bounds)
+    low = max(5, low + delta_m)
+    high = max(low, high + delta_m)
+    return f"{low}–{high} m{suffix}"
+
+
 def _estimated_minutes(exercises: list[dict], warm_up_minutes: int = 7) -> int:
     # Approximation includes flexible 5–10 min warm-up, execution, rests and transitions.
     total_seconds = warm_up_minutes * 60
@@ -992,6 +1006,12 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 # including aerobic and mobility work, not only its explanatory text.
                 if prescription.get("sets", 1) > 2:
                     prescription["sets"] -= 1
+                elif prescription.get("distance_based"):
+                    prescription["reps"] = _adjust_distance_range(prescription["reps"], -2)
+                    if prescription.get("estimated_work_seconds") is not None:
+                        prescription["estimated_work_seconds"] = max(
+                            10, prescription["estimated_work_seconds"] - 2
+                        )
                 elif prescription.get("work_seconds") is not None:
                     floor = 300 if pattern == "locomotion" else 10
                     prescription["work_seconds"] = max(floor, int(prescription["work_seconds"] * 0.85))
@@ -1013,7 +1033,15 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 # One easy report earns only a small, reversible progression:
                 # one additional target rep or a small work-time increase. Never
                 # invent a kilogram increase without knowing the actual load.
-                if prescription.get("work_seconds") is not None:
+                if prescription.get("distance_based"):
+                    prescription["reps"] = _adjust_distance_range(prescription["reps"], 2)
+                    if prescription.get("estimated_work_seconds") is not None:
+                        prescription["estimated_work_seconds"] += 2
+                    prescription["adjustment_note"] = (
+                        "Ker je bilo nošenje izvedeno lahkotno in nadzorovano, je razdalja "
+                        "povečana za majhen korak. Ohrani naravno hojo in stabilno držo."
+                    )
+                elif prescription.get("work_seconds") is not None:
                     ceiling = 1800 if pattern == "locomotion" else 300
                     prescription["work_seconds"] = min(
                         ceiling, int(prescription["work_seconds"] * 1.05)
