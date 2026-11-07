@@ -108,3 +108,31 @@ def test_program_endpoint_blocks_automatic_adaptation_when_discomfort_reported(m
     )
     assert response.status_code == 409
     assert response.get_json()["blocked"] is True
+
+
+def test_program_endpoint_uses_supplied_prior_feedback_history_for_progression(monkeypatch):
+    client = _client(monkeypatch)
+    profile = {
+        "goal": "hypertrophy", "experience": "intermediate",
+        "equipment": ["dumbbell", "bench"], "sessions_per_week": 2,
+        "session_minutes": 60,
+    }
+    before = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-secret"},
+        json={"profile": profile},
+    )
+    feedback = {"difficulty": "easy", "completed": True, "discomfort": "no", "recovery": "normal"}
+    after = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-secret"},
+        json={
+            "profile": profile,
+            "feedback": feedback,
+            "feedback_history": [feedback],
+        },
+    )
+    assert before.status_code == after.status_code == 200
+    before_reps = before.get_json()["program"]["sessions"][0]["exercises"][0]["prescription"]["reps"]
+    after_reps = after.get_json()["program"]["sessions"][0]["exercises"][0]["prescription"]["reps"]
+    assert before_reps != after_reps
