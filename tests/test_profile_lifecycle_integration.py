@@ -193,6 +193,10 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     remaining_sessions = conn.execute(
         "SELECT COUNT(*) FROM atena_training_sessions WHERE profile_id = ?", (profile_id,)
     ).fetchone()[0]
+    remaining_events = conn.execute(
+        "SELECT COUNT(*) FROM atena_decision_events WHERE profile_id = ?", (profile_id,)
+    ).fetchone()[0]
     conn.close()
     assert remaining_profiles == 0
     assert remaining_sessions == 0
+    assert remaining_events == 0
