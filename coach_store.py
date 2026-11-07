@@ -362,9 +362,11 @@ def add_session(profile_id: str, token: str, session_id: str, session_date: str,
             VALUES (%s, %s, %s, %s, %s)""",
             (session_id, profile_id, session_date, _encode_json(session, dialect), now))
         # Persist the training lifecycle event in the same transaction as the session.
+        if not isinstance(session, dict):
+            raise ValueError("session mora biti objekt.")
         event_type = "session_completed" if session.get("completed") is True else "session_interrupted"
-        exercises = session.get("exercises", []) if isinstance(session, dict) else []
-        conditioning = session.get("conditioning", []) if isinstance(session, dict) else []
+        exercises = session.get("exercises", [])
+        conditioning = session.get("conditioning", [])
         event = validate_decision_event({
             "schema_version": 1,
             "event_id": uuid.uuid4().hex,
