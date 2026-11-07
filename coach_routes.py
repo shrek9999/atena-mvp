@@ -2181,6 +2181,12 @@ def coach_profile_program(profile_id):
                 isinstance(item, dict) and item.get("status", "not_assessed") != "not_assessed"
                 for item in movement_tasks.values()
             )
+            or any(
+                isinstance(item, dict)
+                and isinstance(item.get("session"), dict)
+                and "discomfort_reported" in item["session"]
+                for item in sessions
+            )
         )
         saved_program = store_add_program_version(
             profile_id, token, uuid.uuid4().hex, result,
