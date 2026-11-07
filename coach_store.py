@@ -235,8 +235,6 @@ def _init(conn, dialect):
         "CREATE INDEX IF NOT EXISTS atena_sessions_profile_date ON atena_training_sessions(profile_id, session_date)",
         "CREATE INDEX IF NOT EXISTS atena_events_profile_occurred ON atena_decision_events(profile_id, occurred_at)",
         "CREATE INDEX IF NOT EXISTS atena_program_versions_profile_created ON atena_program_versions(profile_id, created_at)",
-        "CREATE INDEX IF NOT EXISTS atena_sessions_program_version ON atena_training_sessions(program_version_id)",
-        "CREATE INDEX IF NOT EXISTS atena_events_program_version ON atena_decision_events(program_version_id)",
     ]
     for statement in statements:
         _execute(conn, dialect, statement)
@@ -250,6 +248,13 @@ def _init(conn, dialect):
             "ALTER TABLE atena_training_sessions ADD COLUMN program_version_id "
             "TEXT REFERENCES atena_program_versions(program_version_id) ON DELETE SET NULL"
         )
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS atena_sessions_program_version ON atena_training_sessions(program_version_id)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS atena_events_program_version ON atena_decision_events(program_version_id)"
+    )
 
 
 def check_database_connection():
