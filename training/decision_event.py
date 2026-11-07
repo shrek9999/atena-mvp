@@ -12,6 +12,7 @@ from datetime import datetime
 
 EVENT_SCHEMA_VERSION = 1
 EVENT_TYPES = {
+    "profile_created",
     "profile_updated",
     "movement_assessment_recorded",
     "symptom_context_recorded",

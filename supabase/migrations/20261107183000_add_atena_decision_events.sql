@@ -8,6 +8,7 @@ create table if not exists public.atena_decision_events (
   profile_id text not null references public.atena_profiles(profile_id) on delete cascade,
   schema_version integer not null check (schema_version > 0),
   event_type text not null check (event_type in (
+    'profile_created',
     'profile_updated',
     'movement_assessment_recorded',
     'symptom_context_recorded',

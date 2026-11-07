@@ -10,7 +10,7 @@ import secrets
 import socket
 import time
 import uuid
-from datetime import date
+from datetime import date, datetime, timezone
 
 from coach_store import (
     StorageUnavailable, ProfileNotFound, create_profile as store_create_profile,
@@ -18,6 +18,7 @@ from coach_store import (
     add_session as store_add_session, list_sessions as store_list_sessions,
     delete_profile as store_delete_profile, set_health_data_consent as store_set_health_data_consent,
     check_database_connection as store_check_database_connection, storage_enabled,
+    list_decision_events as store_list_decision_events,
 )
 from training.catalogue import get_exercise, load_catalogue
 from flask import Blueprint, jsonify, request
@@ -64,6 +65,32 @@ def add_cors_headers(response):
 
 MAX_MESSAGE_CHARS = 1800
 MAX_MESSAGES = 12
+
+
+def _decision_event(profile_id, event_type, payload, *, classification="operational", source="user"):
+    """Build a server-timestamped event; persistence validates consent and schema."""
+    return {
+        "schema_version": 1,
+        "event_id": str(uuid.uuid4()),
+        "profile_id": profile_id,
+        "event_type": event_type,
+        "occurred_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "source": source,
+        "data_classification": classification,
+        "payload": payload,
+    }
+
+
+def _profile_event_payload(profile):
+    """Record only the minimum operational profile facts needed for history."""
+    return {
+        "goal": profile.get("goal"),
+        "experience": profile.get("experience"),
+        "equipment": list(profile.get("equipment", [])),
+        "sessions_per_week": profile.get("sessions_per_week"),
+        "session_minutes": profile.get("session_minutes"),
+        "available_days": list(profile.get("available_days", [])),
+    }
 
 
 def _has_explicit_no_pain_confirmation(text):
@@ -1486,7 +1513,12 @@ def create_coach_profile():
         profile_id = str(uuid.uuid4())
         profile = attach_athlete_state(profile, profile_id)
         access_token = secrets.token_urlsafe(32)
-        saved = store_create_profile(profile_id, access_token, profile, health_consent, notice_version)
+        saved = store_create_profile(
+            profile_id, access_token, profile, health_consent, notice_version,
+            event=_decision_event(
+                profile_id, "profile_created", _profile_event_payload(profile)
+            ),
+        )
         # The access token is returned once. Only its SHA-256 hash is stored.
         return jsonify({"profile": saved, "profile_access_token": access_token,
                         "token_notice": "Ključ shrani varno; pozneje ga ni mogoče ponovno prikazati."}), 201
@@ -1522,7 +1554,12 @@ def manage_coach_profile(profile_id):
             profile = attach_athlete_state(
                 profile, profile_id, previous_profile=previous.get("profile")
             )
-            updated = store_update_profile(profile_id, token, profile)
+            updated = store_update_profile(
+                profile_id, token, profile,
+                event=_decision_event(
+                    profile_id, "profile_updated", _profile_event_payload(profile)
+                ),
+            )
             return jsonify({"profile": updated}), 200
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
@@ -1562,7 +1599,17 @@ def update_coach_profile_assessment(profile_id):
             movement_tasks=payload.get("movement_tasks"),
             symptoms=payload.get("symptoms"),
         )
-        saved = store_update_profile(profile_id, _profile_token(), updated_profile)
+        saved = store_update_profile(
+            profile_id, _profile_token(), updated_profile,
+            event=_decision_event(
+                profile_id, "movement_assessment_recorded",
+                {
+                    "movement_tasks": payload.get("movement_tasks"),
+                    "symptoms": payload.get("symptoms"),
+                },
+                classification="health_sensitive",
+            ),
+        )
         return jsonify({
             "profile": saved,
             "assessment_stored": True,
@@ -1892,8 +1939,53 @@ def coach_training_sessions(profile_id):
                     "error": "Odziv se ne nanaša na zadnjo prilagoditev, ki jo je izdala ATENA.",
                     "code": "adaptation_id_mismatch",
                 }), 409
-        saved = store_add_session(profile_id, token, str(uuid.uuid4()), session_date, session)
+        session_id = str(uuid.uuid4())
+        event_payload = {
+            "session_id": session_id,
+            "session_date": session_date,
+            "duration_minutes": duration,
+            "difficulty": difficulty,
+            "completed": payload["completed"],
+            "exercise_ids": [item["exercise_id"] for item in clean_exercises],
+            "sets_logged": sum(item["sets_completed"] for item in clean_exercises),
+            "conditioning_blocks": len(clean_conditioning),
+        }
+        if discomfort is not None:
+            event_payload["discomfort_reported"] = discomfort
+        event_classification = "health_sensitive" if discomfort is not None else "operational"
+        event_type = "session_completed" if payload["completed"] else "session_interrupted"
+        saved = store_add_session(
+            profile_id, token, session_id, session_date, session,
+            event=_decision_event(
+                profile_id, event_type, event_payload,
+                classification=event_classification,
+            ),
+        )
         return jsonify({"session": saved}), 201
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
+
+
+@coach_bp.route("/coach/profile/<profile_id>/events", methods=["GET", "OPTIONS"])
+def coach_profile_events(profile_id):
+    """Return a bounded, authenticated and consent-aware event history."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    raw_limit = request.args.get("limit", "50")
+    try:
+        limit = int(raw_limit)
+        if str(limit) != raw_limit or not 1 <= limit <= 100:
+            raise ValueError
+    except (TypeError, ValueError):
+        return jsonify({"error": "Omejitev dogodkov mora biti med 1 in 100."}), 400
+    try:
+        events = store_list_decision_events(profile_id, _profile_token(), limit=limit)
+        response = jsonify({"events": events, "limit": limit})
+        response.headers["Cache-Control"] = "no-store, private"
+        response.headers["Pragma"] = "no-cache"
+        return response, 200
     except ProfileNotFound:
         return _profile_auth_error()
     except StorageUnavailable as exc:
@@ -2038,10 +2130,12 @@ def export_coach_profile(profile_id):
         profile = store_get_profile(profile_id, token)
         profile = _profile_record_with_state(profile, token, persist_migration=True)
         sessions = store_list_sessions(profile_id, token, limit=5000)
+        events = store_list_decision_events(profile_id, token, limit=5000)
         response = jsonify({
-            "export_version": "1.0",
+            "export_version": "1.1",
             "profile": profile,
             "sessions": sessions,
+            "decision_events": events,
             "exported_at": __import__("datetime").datetime.now(
                 __import__("datetime").timezone.utc
             ).isoformat(timespec="seconds"),

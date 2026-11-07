@@ -155,7 +155,8 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     assert exported.headers["Cache-Control"] == "no-store, private"
     assert "attachment" in exported.headers["Content-Disposition"]
     export_data = exported.get_json()
-    assert export_data["export_version"] == "1.0"
+    assert export_data["export_version"] == "1.1"
+    assert any(event["event_type"] == "profile_created" for event in export_data["decision_events"])
     assert len(export_data["sessions"]) == 1
     assert export_data["sessions"][0]["session"]["discomfort_reported"] is True
 
@@ -192,6 +193,10 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     remaining_sessions = conn.execute(
         "SELECT COUNT(*) FROM atena_training_sessions WHERE profile_id = ?", (profile_id,)
     ).fetchone()[0]
+    remaining_events = conn.execute(
+        "SELECT COUNT(*) FROM atena_decision_events WHERE profile_id = ?", (profile_id,)
+    ).fetchone()[0]
     conn.close()
     assert remaining_profiles == 0
     assert remaining_sessions == 0
+    assert remaining_events == 0

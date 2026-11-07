@@ -1120,9 +1120,11 @@ def test_operational_decision_event_is_authenticated_and_persisted(monkeypatch, 
     saved = append_decision_event(profile_id, token, _event(profile_id))
     history = list_decision_events(profile_id, token)
     assert saved["event_id"] == "event-001"
-    assert len(history) == 1
-    assert history[0]["payload"]["completed"] is True
-    assert history[0]["data_classification"] == "operational"
+    assert len(history) == 2
+    assert {item["event_type"] for item in history} == {"profile_created", "session_completed"}
+    saved_event = next(item for item in history if item["event_type"] == "session_completed")
+    assert saved_event["payload"]["completed"] is True
+    assert saved_event["data_classification"] == "operational"
 
 
 def test_health_sensitive_event_requires_stored_profile_consent(monkeypatch, tmp_path):
@@ -1153,7 +1155,7 @@ def test_health_sensitive_event_is_erased_when_consent_is_withdrawn(monkeypatch,
         _event(profile_id, classification="health_sensitive", event_type="symptom_context_recorded"),
     )
     append_decision_event(profile_id, token, _event(profile_id, event_id="event-002"))
-    assert len(list_decision_events(profile_id, token)) == 2
+    assert len(list_decision_events(profile_id, token)) == 3
 
     withdrawn = client.post(
         f"/coach/profile/{profile_id}/consent",
@@ -1162,7 +1164,8 @@ def test_health_sensitive_event_is_erased_when_consent_is_withdrawn(monkeypatch,
     )
     assert withdrawn.status_code == 200
     history = list_decision_events(profile_id, token)
-    assert [item["event_id"] for item in history] == ["event-002"]
+    assert {item["event_type"] for item in history} == {"profile_created", "session_completed", "consent_changed"}
+    assert all(item["data_classification"] == "operational" for item in history)
 
 
 def test_event_store_rejects_cross_profile_and_duplicate_events(monkeypatch, tmp_path):
@@ -1195,7 +1198,7 @@ def test_event_history_requires_correct_profile_token_and_bounded_limit(monkeypa
     with pytest.raises(ProfileNotFound):
         list_decision_events(profile_id, "wrong-token")
     with pytest.raises(ValueError):
-        list_decision_events(profile_id, token, limit=101)
+        list_decision_events(profile_id, token, limit=5001)
 
 
 def test_profile_deletion_cascades_to_decision_events(monkeypatch, tmp_path):
@@ -1255,4 +1258,133 @@ def test_postgres_store_connections_switch_to_least_privilege_role(monkeypatch):
     conn, dialect = coach_store._connect()
     assert conn is not None
     assert dialect == "postgres"
-    assert statements == ["SET ROLE atena_app"]
+    assert statements == ["SET LOCAL ROLE atena_app"]
+
+
+def test_profile_create_and_update_are_atomically_audited(monkeypatch, tmp_path):
+    from coach_store import list_decision_events
+
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    events = list_decision_events(profile_id, token, limit=100)
+    assert [item["event_type"] for item in events] == ["profile_created"]
+    assert events[0]["payload"]["goal"] == "hypertrophy"
+
+    updated = client.put(
+        f"/coach/profile/{profile_id}",
+        headers={"X-Profile-Token": token},
+        json={"profile": {
+            "goal": "strength", "experience": "intermediate",
+            "equipment": ["barbell", "rack"], "sessions_per_week": 3,
+            "session_minutes": 75, "available_days": ["tuesday", "friday"],
+        }},
+    )
+    assert updated.status_code == 200
+    events = list_decision_events(profile_id, token, limit=100)
+    assert {item["event_type"] for item in events} == {"profile_created", "profile_updated"}
+    assert next(item for item in events if item["event_type"] == "profile_updated")["payload"]["goal"] == "strength"
+
+
+def test_assessment_update_is_recorded_as_health_sensitive_event(monkeypatch, tmp_path):
+    from coach_store import list_decision_events
+
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    response = client.put(
+        f"/coach/profile/{profile_id}/assessment",
+        headers={"X-Profile-Token": token},
+        json={
+            "movement_tasks": {"squat": {"status": "comfortable"}},
+            "symptoms": {"status": "denied", "items": []},
+        },
+    )
+    assert response.status_code == 200
+    events = list_decision_events(profile_id, token, limit=100)
+    assessment = next(item for item in events if item["event_type"] == "movement_assessment_recorded")
+    assert assessment["data_classification"] == "health_sensitive"
+    assert assessment["payload"]["movement_tasks"]["squat"]["status"] == "comfortable"
+
+
+def test_session_write_and_event_are_atomic_and_classified(monkeypatch, tmp_path):
+    from coach_store import list_decision_events
+
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    exercise_id = load_catalogue()[0]["id"]
+    response = client.post(
+        f"/coach/profile/{profile_id}/sessions",
+        headers={"X-Profile-Token": token},
+        json={
+            "session_date": "2026-11-07", "duration_minutes": 45,
+            "difficulty": "moderate", "recovery": "normal", "completed": True,
+            "exercises": [{"exercise_id": exercise_id, "sets_completed": 3, "reps_completed": 8}],
+            "discomfort_reported": False,
+        },
+    )
+    assert response.status_code == 201
+    events = list_decision_events(profile_id, token, limit=100)
+    session_event = next(item for item in events if item["event_type"] == "session_completed")
+    assert session_event["data_classification"] == "health_sensitive"
+    assert session_event["payload"]["discomfort_reported"] is False
+
+
+def test_event_history_endpoint_is_authenticated_private_and_bounded(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    headers = {"X-Profile-Token": token}
+
+    denied = client.get(f"/coach/profile/{profile_id}/events", headers={"X-Profile-Token": "wrong"})
+    assert denied.status_code == 404
+    invalid = client.get(f"/coach/profile/{profile_id}/events?limit=101", headers=headers)
+    assert invalid.status_code == 400
+    response = client.get(f"/coach/profile/{profile_id}/events", headers=headers)
+    assert response.status_code == 200
+    assert response.headers["Cache-Control"] == "no-store, private"
+    assert response.get_json()["events"][0]["event_type"] == "profile_created"
+
+
+def test_profile_export_includes_longitudinal_decision_events(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    response = client.get(
+        f"/coach/profile/{profile_id}/export",
+        headers={"X-Profile-Token": token},
+    )
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["export_version"] == "1.1"
+    assert payload["decision_events"][0]["event_type"] == "profile_created"
+
+
+def test_failed_atomic_event_insert_rolls_back_profile_update(monkeypatch, tmp_path):
+    import pytest
+    from coach_store import DecisionEventError, append_decision_event, get_profile, update_profile
+
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    existing = {
+        "schema_version": 1, "event_id": "same-event-id", "profile_id": profile_id,
+        "event_type": "feedback_recorded", "occurred_at": "2026-11-07T10:00:00Z",
+        "source": "system", "data_classification": "operational",
+        "payload": {"difficulty": "easy"},
+    }
+    append_decision_event(profile_id, token, existing)
+    original = get_profile(profile_id, token)["profile"]
+    changed = dict(original)
+    changed["goal"] = "strength"
+    with pytest.raises(DecisionEventError):
+        update_profile(profile_id, token, changed, event=existing)
+    after = get_profile(profile_id, token)["profile"]
+    assert after["goal"] == original["goal"]
