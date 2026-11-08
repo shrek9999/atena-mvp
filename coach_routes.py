@@ -1913,7 +1913,14 @@ def _build_adaptive_decision(sessions, exercise_progressions=None,
             ",".join(decision.get("reason_codes", [])),
         ])
         decision["adaptation_id"] = uuid.uuid5(uuid.NAMESPACE_URL, "atena:" + seed).hex[:24]
-    if decision.get("decision") not in {"collect_baseline", "collect_context", "collect_data"}:
+    feedback_decisions = {
+        "restructure_session", "recovery_review", "reduce_session_dose_review",
+        "reassess_previous_change", "confirm_previous_change",
+        "review_declining_exercise", "review_conditioning_dose",
+        "exercise_specific_progression_review", "review_session_dose",
+        "review_affected_exercise", "technique_review", "pause_and_review",
+    }
+    if decision.get("decision") in feedback_decisions:
         decision["feedback_contract"] = {
             "field": "adaptation_response",
             "outcomes": ["helped", "no_change", "worse", "not_tried"],
