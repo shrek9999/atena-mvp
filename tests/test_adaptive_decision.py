@@ -163,3 +163,18 @@ def test_only_valid_named_exercises_are_returned_as_progression_candidates():
     )
     assert result["decision"] == "exercise_specific_progression_review"
     assert result["eligible_exercises"] == ["squat", "press"]
+
+
+def test_named_difficult_exercise_limits_review_to_that_exercise():
+    result = decide_adaptation([
+        row(
+            "2026-11-03",
+            difficulty="hard",
+            difficulty_scope="exercise",
+            affected_exercise_id="push_up",
+        )
+    ])
+    assert result["decision"] == "review_affected_exercise"
+    assert result["scope"] == "affected_exercise"
+    assert result["affected_exercise_id"] == "push_up"
+    assert result["automatic_program_changes"] is False
