@@ -57,6 +57,15 @@ def _exercise_observation(exercise, session, day):
             rirs = [exercise["rir"]]
 
     catalogue_item = get_exercise(exercise["exercise_id"]) or {}
+    effective_difficulty = session.get("difficulty", "unknown")
+    if (
+        session.get("difficulty_scope") == "exercise"
+        and session.get("affected_exercise_id") != exercise["exercise_id"]
+        and effective_difficulty == "hard"
+    ):
+        # A hard rating caused by one named exercise must not suppress
+        # progression evidence for every other exercise in the same session.
+        effective_difficulty = "moderate"
     return {
         "date": day.isoformat(),
         "exercise_id": exercise["exercise_id"],
@@ -82,7 +91,7 @@ def _exercise_observation(exercise, session, day):
         "execution_quality": exercise.get("execution_quality", "unknown"),
         "tempo_control": exercise.get("tempo_control", "unknown"),
         "tempo_target": exercise.get("tempo_target"),
-        "difficulty": session.get("difficulty", "unknown"),
+        "difficulty": effective_difficulty,
         "recovery": session.get("recovery", "unknown"),
         "completed": session.get("completed") is True,
     }
