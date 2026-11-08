@@ -60,6 +60,9 @@ def _decision(decision, scope, reason_code, explanation, objective, *,
         "confirm_previous_change": [
             "Prejšnji predlog je dejansko preizkušen vsaj enkrat, preden se sprejme nova odločitev."
         ],
+        "confirm_successful_change": [
+            "Uspešna prilagoditev ostane nespremenjena še pri eni primerljivi izvedbi, brez hkratnega stopnjevanja iste vaje."
+        ],
         "review_declining_exercise": [
             "Pri prizadeti vaji se zmogljivost stabilizira ali izboljša, medtem ko ostale vaje ostanejo nespremenjene."
         ],
@@ -166,6 +169,13 @@ def decide_adaptation(sessions, *, exercise_progressions=None,
             "Prejšnji predlog še ni bil preizkušen. Nove spremembe bi onemogočile presojo, ali je prvi predlog deloval.",
             "Najprej preveriti izvedbo že predlaganega ukrepa.",
             question="Ali si prejšnjo prilagoditev preizkusil vsaj enkrat?",
+        ) | {"previous_adaptation_id": adaptation_id, "previous_outcome": outcome}
+
+    if outcome == "helped":
+        return _decision(
+            "confirm_successful_change", "previous_adjustment", "previous_adjustment_helped",
+            "Uporabnik poroča, da je prejšnja prilagoditev pomagala. ATENA jo bo za zdaj ohranila in ne bo takoj dodajala nove spremembe na istem mestu; učinek mora potrditi še primerljiva izvedba.",
+            "Ohraniti uspešno prilagoditev in preveriti, ali se boljša izvedba ali počutje ponovi.",
         ) | {"previous_adaptation_id": adaptation_id, "previous_outcome": outcome}
 
     # Reconcile recent global feedback with exercise-specific and multi-week signals.
