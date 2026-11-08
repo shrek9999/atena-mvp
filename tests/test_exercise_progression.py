@@ -427,3 +427,28 @@ def test_hard_rating_from_one_exercise_does_not_block_progression_of_other_exerc
     result = recommend_exercise_progression(sessions)
     assert decision(result, "squat_goblet")["decision"] == "increase_load"
     assert decision(result, "push_up")["decision"] == "hold"
+
+
+def test_incomplete_session_holds_only_the_named_difficult_exercise():
+    sessions = [
+        record(
+            "2026-11-04",
+            [],
+            difficulty="hard",
+            completed=False,
+            difficulty_scope="exercise",
+            affected_exercise_id="push_up",
+        ),
+        record("2026-11-03", [
+            exercise("squat_goblet", reps=(12, 12, 12), rir=(4, 4, 3)),
+            exercise("push_up", reps=(12, 12, 12), rir=(4, 4, 3)),
+        ]),
+        record("2026-10-30", [
+            exercise("squat_goblet", reps=(12, 12, 12), rir=(4, 4, 3)),
+            exercise("push_up", reps=(12, 12, 12), rir=(4, 4, 3)),
+        ]),
+    ]
+    result = recommend_exercise_progression(sessions)
+    assert decision(result, "squat_goblet")["decision"] == "increase_load"
+    assert decision(result, "push_up")["decision"] == "hold"
+    assert "Ostale vaje se presojajo ločeno" in decision(result, "push_up")["reason"]
