@@ -222,7 +222,7 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
     return patterns
 
 
-def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
+def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_minutes: int = 60) -> dict:
     """Prescribe by goal, training age and movement class; beginners build skill first."""
     unilateral = bool(exercise.get("unilateral"))
     is_stability = pattern in {"trunk_stability", "anti_rotation"}
@@ -257,8 +257,6 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         # Light, repeatable MetCon: conditioning supports the strength base and
         # must not turn a general functional session into an all-out test.
         sets = {"beginner": 2, "intermediate": 3, "advanced": 4}[level]
-        if session_minutes <= 30:
-            sets = min(sets, 2)
         kind = exercise.get("endurance_type")
         if kind == "aerobic":
             reps, rir, rest = "30–45 s", None, 45
@@ -427,6 +425,9 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         tempo, tempo_description, tempo_seconds = "3–1–2–0", "3 s ekscentrična faza · 1 s nadzor v spodnjem položaju · 2 s koncentrična faza · brez premora v vrhu.", 6
     else:
         tempo, tempo_description, tempo_seconds = "2–0–1–0", "2 s nadzorovan spust · 1 s dvig; ohrani tekočo, tehnično čisto izvedbo.", 3
+    if goal == "functional" and session_minutes <= 30 and pattern != "locomotion":
+        sets = min(sets, 2)
+
     prescription = {
         "sets": sets,
         "reps": reps,
@@ -885,7 +886,7 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
             ))
             effective_pattern = candidate["pattern"]
             used_counts[candidate["id"]] += 1
-            prescription = _prescription(planning_goal, p["experience"], effective_pattern, candidate)
+            prescription = _prescription(planning_goal, p["experience"], effective_pattern, candidate, p["session_minutes"])
             movement_note = None
             if movement_status == "needs_support":
                 if pattern == "balance":
