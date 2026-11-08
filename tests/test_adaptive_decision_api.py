@@ -192,7 +192,7 @@ def test_adaptive_decision_endpoint_bounds_history_size(monkeypatch):
 @pytest.mark.parametrize(
     ("outcome", "expected_decision"),
     [
-        ("helped", "confirm_successful_change"),
+        ("helped", "maintain_and_monitor"),
         ("no_change", "reassess_previous_change"),
     ],
 )
@@ -244,3 +244,26 @@ def test_adaptive_decision_endpoint_rejects_invalid_tempo_target(monkeypatch):
         },
     }])
     assert response.status_code == 400
+
+
+def test_monitoring_after_successful_feedback_does_not_ask_for_the_same_feedback_again(monkeypatch):
+    api = client(monkeypatch)
+    previous = session(
+        "2026-11-02",
+        completed=False,
+        difficulty="unknown",
+        completion_reason="time_constraint",
+    )
+    first = post(api, [previous]).get_json()["adaptive_decision"]
+    latest = session(
+        "2026-11-03",
+        adaptation_response={
+            "adaptation_id": first["adaptation_id"],
+            "outcome": "helped",
+        },
+    )
+    response = post(api, [latest, previous])
+    assert response.status_code == 200
+    decision = response.get_json()["adaptive_decision"]
+    assert decision["decision"] == "maintain_and_monitor"
+    assert "feedback_contract" not in decision
