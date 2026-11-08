@@ -379,6 +379,12 @@ def set_health_data_consent(profile_id: str, token: str, consent: bool):
             _execute(conn, dialect,
                      "DELETE FROM atena_movement_assessments WHERE profile_id = %s",
                      (profile_id,))
+            # Saved programme decisions can contain symptom-derived reason codes
+            # or exercise choices. Remove programme history on withdrawal rather
+            # than retaining a potentially health-inferred record.
+            _execute(conn, dialect,
+                     "DELETE FROM atena_program_versions WHERE profile_id = %s",
+                     (profile_id,))
             rows = _execute(conn, dialect,
                             "SELECT session_id, session_json FROM atena_training_sessions WHERE profile_id = %s",
                             (profile_id,)).fetchall()
