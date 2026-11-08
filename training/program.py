@@ -171,10 +171,10 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # Carry work, balance and controlled low-speed coordination preserve the
         # functional intent until landing/braking readiness can be assessed explicitly.
         functional_additions = [
-            ["balance", "mobility"],
+            ["balance", "carry", "mobility"],
             ["coordination", "conditioning"],
-            ["carry", "mobility"],
-            ["coordination", "conditioning"],
+            ["balance", "carry"],
+            ["coordination", "conditioning", "mobility"],
         ]
         patterns = base + functional_additions[session_index]
         if include_stability:
