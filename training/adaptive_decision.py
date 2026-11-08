@@ -134,6 +134,20 @@ def decide_adaptation(sessions, *, exercise_progressions=None,
         )
 
     latest_day, latest = recent[0]
+    affected_exercise_id = latest.get("affected_exercise_id")
+    if (
+        latest.get("difficulty") == "hard"
+        and latest.get("difficulty_scope") == "exercise"
+        and isinstance(affected_exercise_id, str)
+        and affected_exercise_id.strip()
+    ):
+        return _decision(
+            "review_affected_exercise", "affected_exercise", "exercise_specific_high_difficulty",
+            "Visoka zahtevnost je bila pripisana eni konkretni vaji. ATENA zato ne bo samodejno zmanjševala celotnega treninga; najprej pregleda samo označeno vajo.",
+            "Prilagoditi ali tehnično preveriti samo zadevno vajo, ostale vaje pa presojati po njihovih lastnih podatkih.",
+            question="Je bila zahtevnost omejena na to vajo ali se je podobna težava pojavila tudi pri drugih vajah?",
+            adjustment="hold_affected_exercise_and_review_context",
+        ) | {"affected_exercise_id": affected_exercise_id}
     # A failed previous adjustment takes precedence over routine progression.
     feedback = prior_adaptation if isinstance(prior_adaptation, dict) else {}
     outcome = feedback.get("outcome")
