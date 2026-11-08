@@ -154,6 +154,13 @@ def decide_adaptation(sessions, *, exercise_progressions=None,
             question="Ali si prejšnjo prilagoditev preizkusil vsaj enkrat?",
         ) | {"previous_adaptation_id": adaptation_id, "previous_outcome": outcome}
 
+    if outcome == "helped":
+        return _decision(
+            "maintain_and_monitor", "previous_adjustment", "previous_adjustment_helped",
+            "Uporabnik je potrdil, da je prejšnja prilagoditev pomagala. ATENA jo ohrani brez dodatnega stopnjevanja; učinek spremlja pri naslednji primerljivi izvedbi.",
+            "Ohraniti uspešno prilagoditev in preveriti, ali se dober učinek ponovi.",
+        ) | {"previous_adaptation_id": adaptation_id, "previous_outcome": outcome}
+
     # Reconcile recent global feedback with exercise-specific and multi-week signals.
     if any(s.get("recovery") == "poor" for _, s in recent[:2]):
         return _decision(
