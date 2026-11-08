@@ -49,7 +49,9 @@ def test_functional_goal_combines_strength_mobility_coordination_and_metcon(expe
     })
     exercises = [item for session in plan["sessions"] for item in session["exercises"]]
     patterns = {item["pattern"] for item in exercises}
-    assert {"squat", "hinge", "mobility", "conditioning", "coordination", "carry"}.issubset(patterns)
+    assert {"squat", "hinge", "conditioning", "coordination", "carry", "balance"}.issubset(patterns)
+    assert all(session.get("mobility_block", {}).get("exercises") for session in plan["sessions"])
+    assert all(session["exercise_count"] <= 6 for session in plan["sessions"])
 
 
 @pytest.mark.parametrize("experience", LEVELS)
