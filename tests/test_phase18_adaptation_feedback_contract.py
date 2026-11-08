@@ -23,9 +23,9 @@ def _profile_client(monkeypatch, tmp_path):
             "profile": {
                 "goal": "functional",
                 "experience": "beginner",
-                "equipment": ["bodyweight"],
+                "equipment": ["bodyweight", "resistance_band"],
                 "sessions_per_week": 2,
-                "session_minutes": 35,
+                "session_minutes": 45,
             },
         },
     )
