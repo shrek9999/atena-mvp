@@ -499,6 +499,28 @@ def add_program_version(profile_id: str, token: str, program_version_id: str,
         conn.close()
 
 
+def get_program_version(profile_id: str, token: str, program_version_id: str):
+    """Fetch one immutable programme snapshot owned by the authenticated profile."""
+    conn, dialect = _connect(require_enabled=False)
+    try:
+        _init(conn, dialect)
+        _authorized_profile(conn, dialect, profile_id, token)
+        row = _execute(conn, dialect, """SELECT program_version_id, program_json,
+            decision_json, created_at FROM atena_program_versions
+            WHERE program_version_id = %s AND profile_id = %s""",
+            (program_version_id, profile_id)).fetchone()
+        if not row:
+            return None
+        return {
+            "program_version_id": row[0],
+            "program": _decode_json(row[1]),
+            "decision": _decode_json(row[2]),
+            "created_at": row[3],
+        }
+    finally:
+        conn.close()
+
+
 def list_program_versions(profile_id: str, token: str, limit: int = 10):
     """List recent immutable programme versions for an authenticated profile."""
     conn, dialect = _connect(require_enabled=False)
