@@ -181,7 +181,20 @@ def _init(conn, dialect):
             session_json TEXT NOT NULL,
             created_at TEXT NOT NULL
         )""",
-        "CREATE INDEX IF NOT EXISTS atena_sessions_profile_date ON atena_training_sessions(profile_id, session_date)"
+        """CREATE TABLE IF NOT EXISTS atena_movement_assessments (
+            profile_id TEXT PRIMARY KEY REFERENCES atena_profiles(profile_id) ON DELETE CASCADE,
+            assessment_json TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )""",
+        """CREATE TABLE IF NOT EXISTS atena_program_versions (
+            program_version_id TEXT PRIMARY KEY,
+            profile_id TEXT NOT NULL REFERENCES atena_profiles(profile_id) ON DELETE CASCADE,
+            program_json TEXT NOT NULL,
+            decision_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )""",
+        "CREATE INDEX IF NOT EXISTS atena_sessions_profile_date ON atena_training_sessions(profile_id, session_date)",
+        "CREATE INDEX IF NOT EXISTS atena_program_versions_profile_created ON atena_program_versions(profile_id, created_at)"
     ]
     for statement in statements:
         _execute(conn, dialect, statement)
@@ -192,8 +205,12 @@ def _init(conn, dialect):
         postgres_safety = [
             "ALTER TABLE atena_profiles ENABLE ROW LEVEL SECURITY",
             "ALTER TABLE atena_training_sessions ENABLE ROW LEVEL SECURITY",
+            "ALTER TABLE atena_movement_assessments ENABLE ROW LEVEL SECURITY",
+            "ALTER TABLE atena_program_versions ENABLE ROW LEVEL SECURITY",
             "REVOKE ALL PRIVILEGES ON TABLE atena_profiles FROM PUBLIC, anon, authenticated",
             "REVOKE ALL PRIVILEGES ON TABLE atena_training_sessions FROM PUBLIC, anon, authenticated",
+            "REVOKE ALL PRIVILEGES ON TABLE atena_movement_assessments FROM PUBLIC, anon, authenticated",
+            "REVOKE ALL PRIVILEGES ON TABLE atena_program_versions FROM PUBLIC, anon, authenticated",
         ]
         for statement in postgres_safety:
             _execute(conn, dialect, statement)
@@ -356,16 +373,113 @@ def set_health_data_consent(profile_id: str, token: str, consent: bool):
                  "UPDATE atena_profiles SET health_data_consent = %s, health_data_consent_at = %s, updated_at = %s WHERE profile_id = %s",
                  (bool(consent), _now() if consent else None, _now(), profile_id))
         if not consent:
+            # Movement self-assessment, discomfort flags and heart-rate values
+            # are health-related data. Withdrawal erases those fields while
+            # retaining ordinary training-performance records.
+            _execute(conn, dialect,
+                     "DELETE FROM atena_movement_assessments WHERE profile_id = %s",
+                     (profile_id,))
             rows = _execute(conn, dialect,
                             "SELECT session_id, session_json FROM atena_training_sessions WHERE profile_id = %s",
                             (profile_id,)).fetchall()
             for session_id, session_json in rows:
                 record = _decode_json(session_json)
                 record.pop("discomfort_reported", None)
+                conditioning = record.get("conditioning")
+                if isinstance(conditioning, list):
+                    for block in conditioning:
+                        if isinstance(block, dict):
+                            block.pop("average_heart_rate", None)
                 _execute(conn, dialect,
                          "UPDATE atena_training_sessions SET session_json = %s WHERE session_id = %s",
                          (_encode_json(record, dialect), session_id))
         conn.commit()
         return _authorized_profile(conn, dialect, profile_id, token)
+    finally:
+        conn.close()
+
+
+def save_movement_assessment(profile_id: str, token: str, assessment: dict):
+    """Store the latest self-reported movement assessment with explicit health-data consent."""
+    conn, dialect = _connect()
+    try:
+        _init(conn, dialect)
+        profile = _authorized_profile(conn, dialect, profile_id, token)
+        if not profile["health_data_consent"]:
+            raise StorageUnavailable(
+                "Separate health-data consent is required.",
+                "health_data_consent_required",
+            )
+        now = _now()
+        _execute(conn, dialect, """INSERT INTO atena_movement_assessments
+            (profile_id, assessment_json, updated_at) VALUES (%s, %s, %s)
+            ON CONFLICT(profile_id) DO UPDATE SET
+                assessment_json = excluded.assessment_json,
+                updated_at = excluded.updated_at""",
+            (profile_id, _encode_json(assessment, dialect), now))
+        conn.commit()
+        return {"assessment": assessment, "updated_at": now}
+    finally:
+        conn.close()
+
+
+def get_movement_assessment(profile_id: str, token: str):
+    """Return the latest consented movement self-assessment, if one exists."""
+    conn, dialect = _connect(require_enabled=False)
+    try:
+        _init(conn, dialect)
+        profile = _authorized_profile(conn, dialect, profile_id, token)
+        if not profile["health_data_consent"]:
+            return None
+        row = _execute(conn, dialect,
+            "SELECT assessment_json, updated_at FROM atena_movement_assessments WHERE profile_id = %s",
+            (profile_id,)).fetchone()
+        if not row:
+            return None
+        return {"assessment": _decode_json(row[0]), "updated_at": row[1]}
+    finally:
+        conn.close()
+
+
+def add_program_version(profile_id: str, token: str, program_version_id: str,
+                        program: dict, decision: dict):
+    """Persist an immutable version of a generated programme and its decision context."""
+    conn, dialect = _connect()
+    try:
+        _init(conn, dialect)
+        _authorized_profile(conn, dialect, profile_id, token)
+        now = _now()
+        _execute(conn, dialect, """INSERT INTO atena_program_versions
+            (program_version_id, profile_id, program_json, decision_json, created_at)
+            VALUES (%s, %s, %s, %s, %s)""",
+            (program_version_id, profile_id, _encode_json(program, dialect),
+             _encode_json(decision, dialect), now))
+        conn.commit()
+        return {
+            "program_version_id": program_version_id,
+            "program": program,
+            "decision": decision,
+            "created_at": now,
+        }
+    finally:
+        conn.close()
+
+
+def list_program_versions(profile_id: str, token: str, limit: int = 10):
+    """List recent immutable programme versions for an authenticated profile."""
+    conn, dialect = _connect(require_enabled=False)
+    try:
+        _init(conn, dialect)
+        _authorized_profile(conn, dialect, profile_id, token)
+        rows = _execute(conn, dialect, """SELECT program_version_id, program_json,
+            decision_json, created_at FROM atena_program_versions
+            WHERE profile_id = %s ORDER BY created_at DESC LIMIT %s""",
+            (profile_id, limit)).fetchall()
+        return [{
+            "program_version_id": row[0],
+            "program": _decode_json(row[1]),
+            "decision": _decode_json(row[2]),
+            "created_at": row[3],
+        } for row in rows]
     finally:
         conn.close()
