@@ -171,10 +171,10 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # Carry work, balance and controlled low-speed coordination preserve the
         # functional intent until landing/braking readiness can be assessed explicitly.
         functional_additions = [
-            ["balance", "carry", "mobility"],
+            ["balance", "carry"],
             ["coordination", "conditioning"],
             ["balance", "carry"],
-            ["coordination", "conditioning", "mobility"],
+            ["coordination", "conditioning"],
         ]
         patterns = base + functional_additions[session_index]
         if include_stability:
@@ -669,6 +669,35 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
             p["experience"]
         )
         warm_up_minutes = 5 if p["session_minutes"] <= 30 else (7 if p["session_minutes"] <= 60 else 10)
+        mobility_block = None
+        if p["goal"] == "functional" and by_pattern.get("mobility") and "mobility" not in p["excluded_patterns"]:
+            # Keep the main session within its exercise cap. Functional mobility is
+            # delivered as a short, active warm-up block rather than a seventh lift.
+            mobility_candidates = sorted(by_pattern["mobility"], key=lambda item: item["id"])
+            start = (session_index * 2) % len(mobility_candidates)
+            selected_mobility = [
+                mobility_candidates[(start + offset) % len(mobility_candidates)]
+                for offset in range(min(2, len(mobility_candidates)))
+            ]
+            mobility_block = {
+                "purpose": "Aktivna mobilnost in priprava na polno, nadzorovano amplitudo glavnih vaj.",
+                "estimated_minutes": 2,
+                "amplitude_rule": "Gib izvedi skozi največjo trenutno nadzorovano in tolerirano amplitudo; brez sunkov in siljenja.",
+                "exercises": [
+                    {
+                        "exercise_id": item["id"],
+                        "name": item["name"],
+                        "sets": 1,
+                        "reps": 6 if item.get("unilateral") else 8,
+                        "reps_per_side": bool(item.get("unilateral") or item.get("reps_per_side")),
+                        "tempo": "počasi in nadzorovano",
+                        "equipment": item["equipment"],
+                        "cues": item["cues"],
+                        "warnings": item["warnings"],
+                    }
+                    for item in selected_mobility
+                ],
+            }
         selected = []
         seen_patterns = set()
         for pattern in patterns:
@@ -1151,6 +1180,7 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
             "title": (f"Trening {session_index + 1} – vzdržljivost" if planning_goal == "endurance" else f"Trening {session_index + 1} – mobilnost in gibljivost" if planning_goal == "mobility" else f"Trening {session_index + 1} – funkcionalna pripravljenost" if planning_goal == "functional" else f"Trening {session_index + 1} – aerobna in kondicijska priprava" if planning_goal == "fat_loss" and session_index >= 2 else f"Trening {session_index + 1} – celotno telo"),
             "warm_up_minutes": warm_up_minutes,
             "warm_up_range": "5–7 min" if p["session_minutes"] <= 30 else "5–10 min",
+            **({"mobility_block": mobility_block} if mobility_block else {}),
             "exercise_count": len(selected),
             "work_sets": sum(item["prescription"]["sets"] for item in selected),
             "estimated_minutes": estimated,
