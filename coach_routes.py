@@ -1911,6 +1911,29 @@ def _build_adaptive_decision(sessions, exercise_progressions=None,
     return decision
 
 
+def _confirmed_successful_exercise_ids(sessions):
+    """Return only exercises from the immediately preceding, positively confirmed adaptation."""
+    ordered = sorted(
+        [item for item in sessions if isinstance(item, dict) and isinstance(item.get("session"), dict)],
+        key=lambda item: item.get("session_date", ""),
+        reverse=True,
+    )
+    if len(ordered) < 2:
+        return []
+    response = ordered[0]["session"].get("adaptation_response")
+    if not isinstance(response, dict) or response.get("outcome") != "helped":
+        return []
+    previous_decision = _build_adaptive_decision(ordered[1:])
+    if not hmac.compare_digest(
+        str(response.get("adaptation_id", "")),
+        str(previous_decision.get("adaptation_id", "")),
+    ):
+        return []
+    eligible = previous_decision.get("eligible_exercises", [])
+    return list(dict.fromkeys(
+        exercise_id for exercise_id in eligible
+        if isinstance(exercise_id, str) and exercise_id.strip()
+    ))
 
 
 @coach_bp.route("/coach/profile/<profile_id>/assessment", methods=["PUT", "OPTIONS"])
@@ -1958,6 +1981,20 @@ def coach_training_progress(profile_id):
         profile = store_get_profile(profile_id, token)
         sessions = store_list_sessions(profile_id, token, limit=50)
         exercise_progressions = recommend_exercise_progression(sessions)
+        confirmed_successful_exercises = set(_confirmed_successful_exercise_ids(sessions))
+        for recommendation in exercise_progressions:
+            if (
+                isinstance(recommendation, dict)
+                and recommendation.get("exercise_id") in confirmed_successful_exercises
+                and recommendation.get("decision") in {
+                    "add_repetitions", "increase_load", "progress_variation", "increase_work_time"
+                }
+            ):
+                recommendation["decision"] = "hold"
+                recommendation["reason"] = (
+                    "Prejšnja prilagoditev te vaje je uporabniku pomagala. Ohranimo trenutni odmerek "
+                    "še eno primerljivo izvedbo in ne stopnjujemo iste vaje hkrati."
+                )
         longitudinal_progression = summarize_longitudinal_progression(sessions)
         conditioning_progression = summarize_conditioning_progress(sessions)
         adaptive_decision = _build_adaptive_decision(
@@ -2123,6 +2160,7 @@ def coach_profile_program(profile_id):
             "adaptation_guidance": adaptation,
             "adaptive_decision": adaptive_decision,
             "exercise_progressions": exercise_progressions,
+            "positive_feedback_hold_exercises": sorted(confirmed_successful_exercises),
             "training_cycle": training_cycle,
             "proactive_checkin": build_proactive_checkin(sessions),
             "source": "saved_profile_and_exercise_level_training_feedback",
