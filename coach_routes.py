@@ -36,6 +36,7 @@ from training.periodization import summarize_training_cycle
 from training.proactive_checkin import build_proactive_checkin
 from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL
 from training.movement_assessment import MovementAssessmentError, assess_movement_competence
+from training.goals import normalize_goal, public_goal_options
 
 logger = logging.getLogger(__name__)
 coach_bp = Blueprint("coach", __name__)
@@ -160,12 +161,16 @@ def _verified_exercise_catalogue_context(messages):
     goal_value = profile.get("goal")
     if isinstance(goal_value, str) and goal_value.strip():
         normalized_goal = goal_value.strip().casefold()
+        try:
+            normalized_goal = normalize_goal(normalized_goal)
+        except ValueError:
+            normalized_goal = ""
         if normalized_goal == "fat_loss":
             goals.update({"strength", "hypertrophy", "general_fitness", "endurance"})
         elif normalized_goal == "strength_hypertrophy":
             goals.update({"strength", "hypertrophy"})
-        else:
-            goals.add(normalized_goal)
+        elif normalized_goal == "functional":
+            goals.update({"functional", "general_fitness", "mobility", "endurance", "power"})
     else:
         if "hypertrophy" in lowered or "hipertrof" in lowered or "mišičn" in lowered:
             goals.add("hypertrophy")
@@ -1378,6 +1383,14 @@ def coach_storage_status():
         }), 503
 
 
+@coach_bp.route("/coach/goals", methods=["GET", "OPTIONS"])
+def coach_goal_options():
+    """Expose the three canonical goals used by the public onboarding flow."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    return jsonify({"goals": public_goal_options()}), 200
+
+
 # Longitudinal profile storage is opt-in and disabled by default. Hosted use
 # requires a persistent PostgreSQL database and an operator-approved notice.
 PROFILE_FIELDS = {"goal", "experience", "equipment", "sessions_per_week", "session_minutes", "available_days", "pistol_squat_capable"}
@@ -1395,7 +1408,10 @@ def _storage_error(exc):
 def _validate_profile(value):
     if not isinstance(value, dict) or set(value) - PROFILE_FIELDS:
         raise ValueError("Profil vsebuje neveljavna ali nepodprta polja.")
-    goal = value.get("goal")
+    try:
+        goal = normalize_goal(value.get("goal"))
+    except ValueError as exc:
+        raise ValueError("Izberi enega od treh glavnih ciljev ATENE.") from exc
     experience = value.get("experience")
     equipment = value.get("equipment")
     sessions = value.get("sessions_per_week")
