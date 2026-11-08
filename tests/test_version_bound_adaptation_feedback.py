@@ -44,6 +44,13 @@ def test_adaptation_feedback_contract_comes_from_exact_performed_programme(monke
     version_id, adaptation_id = "program-v1", "adaptation-12345678"
     _save_version(profile_id, token, version_id, adaptation_id)
 
+    before_performance = client.get(
+        f"/coach/profile/{profile_id}/adaptation",
+        headers={"X-Profile-Token": token},
+    )
+    assert before_performance.status_code == 200
+    assert "feedback_contract" not in before_performance.get_json()["adaptive_decision"]
+
     performed = _log(client, profile_id, token, program_version_id=version_id)
     assert performed.status_code == 201
 
