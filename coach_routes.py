@@ -22,6 +22,7 @@ from coach_store import (
     get_movement_assessment as store_get_movement_assessment,
     add_program_version as store_add_program_version,
     list_program_versions as store_list_program_versions,
+    get_program_version as store_get_program_version,
 )
 from training.catalogue import get_exercise, load_catalogue
 from flask import Blueprint, jsonify, request
@@ -1771,12 +1772,15 @@ def coach_training_sessions(profile_id):
     if adaptation_response is not None:
         if (
             not isinstance(adaptation_response, dict)
-            or set(adaptation_response) != {"adaptation_id", "outcome"}
+            or set(adaptation_response) != {"adaptation_id", "outcome", "program_version_id"}
             or not isinstance(adaptation_response.get("adaptation_id"), str)
             or not 8 <= len(adaptation_response["adaptation_id"]) <= 64
+            or not isinstance(adaptation_response.get("program_version_id"), str)
+            or not adaptation_response["program_version_id"].strip()
+            or len(adaptation_response["program_version_id"]) > 128
             or adaptation_response.get("outcome") not in {"helped", "no_change", "worse", "not_tried"}
         ):
-            return jsonify({"error": "Odziv na prejšnjo prilagoditev ni veljaven."}), 400
+            return jsonify({"error": "Odziv na prejšnjo prilagoditev ni veljaven ali ni vezan na različico programa."}), 400
     exercises = payload.get("exercises")
     if not isinstance(exercises, list) or len(exercises) > 20:
         return jsonify({"error": "Vadbeni zapis lahko vsebuje največ 20 vaj."}), 400
@@ -1819,12 +1823,21 @@ def coach_training_sessions(profile_id):
         if discomfort is not None:
             session["discomfort_reported"] = discomfort
         if adaptation_response is not None:
-            prior_sessions = store_list_sessions(profile_id, token, limit=50)
-            expected_adaptation_id = _build_adaptive_decision(prior_sessions)["adaptation_id"]
-            if adaptation_response["adaptation_id"] != expected_adaptation_id:
+            target_version = store_get_program_version(
+                profile_id, token, adaptation_response["program_version_id"]
+            )
+            stored_decision = (
+                target_version.get("decision", {}).get("adaptive_decision", {})
+                if isinstance(target_version, dict) else {}
+            )
+            if (
+                not isinstance(stored_decision, dict)
+                or stored_decision.get("adaptation_id") != adaptation_response["adaptation_id"]
+                or not isinstance(stored_decision.get("feedback_contract"), dict)
+            ):
                 return jsonify({
-                    "error": "Odziv se ne nanaša na zadnjo prilagoditev, ki jo je izdala ATENA.",
-                    "code": "adaptation_id_mismatch",
+                    "error": "Odziv se ne ujema z odločitvijo v shranjeni različici programa.",
+                    "code": "adaptation_version_mismatch",
                 }), 409
         saved = store_add_session(
             profile_id, token, str(uuid.uuid4()), session_date, session,
@@ -2164,11 +2177,49 @@ def coach_training_adaptation(profile_id):
         profile = store_get_profile(profile_id, token)
         sessions = store_list_sessions(profile_id, token, limit=50)
         _feedback, adaptation = _build_profile_adaptation(sessions)
+
+        # Feedback is requested only for a saved programme that was actually
+        # performed. The contract carries that exact immutable version ID.
+        versions = store_list_program_versions(profile_id, token, limit=50)
         adaptive_decision = _build_adaptive_decision(sessions)
+        feedback_target = None
+        for version in versions:
+            version_id = version.get("program_version_id")
+            decision_snapshot = (version.get("decision") or {}).get("adaptive_decision", {})
+            if not version_id or not isinstance(decision_snapshot, dict):
+                continue
+            if not any(item.get("program_version_id") == version_id for item in sessions):
+                continue
+            adaptation_id = decision_snapshot.get("adaptation_id")
+            if not isinstance(adaptation_id, str) or not isinstance(decision_snapshot.get("feedback_contract"), dict):
+                continue
+            already_answered = any(
+                isinstance(item.get("session"), dict)
+                and isinstance(item["session"].get("adaptation_response"), dict)
+                and item["session"]["adaptation_response"].get("program_version_id") == version_id
+                and item["session"]["adaptation_response"].get("adaptation_id") == adaptation_id
+                for item in sessions
+            )
+            if already_answered:
+                continue
+            feedback_target = (version_id, decision_snapshot)
+            break
+        if feedback_target:
+            version_id, snapshot = feedback_target
+            adaptive_decision = dict(snapshot)
+            adaptive_decision["feedback_contract"] = {
+                **snapshot["feedback_contract"],
+                "program_version_id": version_id,
+                "instruction": "Odziv shrani skupaj z naslednjim treningom in navedi to različico programa.",
+            }
+        else:
+            adaptive_decision = dict(adaptive_decision)
+            adaptive_decision.pop("feedback_contract", None)
         return jsonify({
             "adaptation": adaptation,
             "adaptive_decision": adaptive_decision,
-            "source": "recent_recorded_training_feedback_and_longitudinal_history",
+            "feedback_program_version_id": feedback_target[0] if feedback_target else None,
+            "source": "saved_programme_decision_and_linked_training_history",
             "automatic_program_changes": False,
         }), 200
     except ProfileNotFound:
