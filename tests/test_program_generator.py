@@ -978,3 +978,54 @@ def test_functional_and_fat_loss_programmes_have_distinct_training_intent():
     assert {"balance", "coordination"}.intersection(functional_patterns)
     assert "conditioning" in fat_loss_patterns
     assert functional_patterns != fat_loss_patterns
+
+
+
+def test_functional_beginner_uses_fundamental_patterns_and_light_metcon_not_balance_fillers():
+    plan = generate_program({
+        "goal": "functional",
+        "experience": "beginner",
+        "equipment": ["bodyweight"],
+        "sessions_per_week": 2,
+        "session_minutes": 45,
+    })
+    for session in plan["sessions"]:
+        patterns = {exercise["pattern"] for exercise in session["exercises"]}
+        assert {"squat", "hinge", "horizontal_push", "conditioning"} <= patterns
+        assert not {"balance", "coordination"} & patterns
+        conditioning = [ex for ex in session["exercises"] if ex["pattern"] == "conditioning"]
+        assert conditioning
+        assert all(ex["prescription"].get("work_seconds") for ex in conditioning)
+        assert all("submaksimalen" in ex["prescription"]["effort_target"] or "pogovorni tempo" in ex["prescription"]["effort_target"] for ex in conditioning)
+
+
+def test_functional_program_never_assumes_a_household_table_is_a_safe_row_anchor():
+    plan = generate_program({
+        "goal": "functional",
+        "experience": "beginner",
+        "equipment": ["bodyweight", "household_support"],
+        "sessions_per_week": 2,
+        "session_minutes": 45,
+    })
+    assert all(
+        ex["exercise_id"] != "inverted_row_table"
+        for session in plan["sessions"]
+        for ex in session["exercises"]
+    )
+
+
+def test_functional_beginner_strength_patterns_use_controlled_tempo():
+    plan = generate_program({
+        "goal": "functional",
+        "experience": "beginner",
+        "equipment": ["bodyweight", "dumbbell", "resistance_band"],
+        "sessions_per_week": 2,
+        "session_minutes": 45,
+    })
+    main = [
+        ex for session in plan["sessions"] for ex in session["exercises"]
+        if ex["pattern"] in {"squat", "hinge", "horizontal_push", "horizontal_pull", "lunge"}
+    ]
+    assert main
+    assert all(ex["prescription"]["tempo"] == "3–1–1–0" for ex in main)
+    assert all(ex["prescription"]["tempo_seconds_per_rep"] == 5 for ex in main)
