@@ -179,6 +179,7 @@ def _init(conn, dialect):
             profile_id TEXT NOT NULL REFERENCES atena_profiles(profile_id) ON DELETE CASCADE,
             session_date TEXT NOT NULL,
             session_json TEXT NOT NULL,
+            program_version_id TEXT,
             created_at TEXT NOT NULL
         )""",
         """CREATE TABLE IF NOT EXISTS atena_movement_assessments (
@@ -198,6 +199,11 @@ def _init(conn, dialect):
     ]
     for statement in statements:
         _execute(conn, dialect, statement)
+    if dialect == "sqlite":
+        session_columns = {row[1] for row in conn.execute("PRAGMA table_info(atena_training_sessions)")}
+        if "program_version_id" not in session_columns:
+            conn.execute("ALTER TABLE atena_training_sessions ADD COLUMN program_version_id TEXT REFERENCES atena_program_versions(program_version_id) ON DELETE SET NULL")
+    _execute(conn, dialect, "CREATE INDEX IF NOT EXISTS atena_sessions_program_version ON atena_training_sessions(program_version_id)")
     if dialect == "postgres":
         # These tables live in Supabase's exposed public schema. The app connects
         # through the server-side database role; browser/API roles must never
@@ -323,18 +329,25 @@ def update_profile(profile_id: str, token: str, profile: dict):
     finally:
         conn.close()
 
-def add_session(profile_id: str, token: str, session_id: str, session_date: str, session: dict):
+def add_session(profile_id: str, token: str, session_id: str, session_date: str, session: dict, *, program_version_id: str | None = None):
     conn, dialect = _connect()
     try:
         _init(conn, dialect)
         _authorized_profile(conn, dialect, profile_id, token)
+        if program_version_id is not None:
+            if not isinstance(program_version_id, str) or not program_version_id.strip() or len(program_version_id) > 128:
+                raise ValueError("Različica programa ni veljavna.")
+            version = _execute(conn, dialect, "SELECT 1 FROM atena_program_versions WHERE program_version_id = %s AND profile_id = %s", (program_version_id, profile_id)).fetchone()
+            if not version:
+                raise ValueError("Različica programa ne pripada temu profilu ali ne obstaja.")
         now = _now()
         _execute(conn, dialect, """INSERT INTO atena_training_sessions
-            (session_id, profile_id, session_date, session_json, created_at)
-            VALUES (%s, %s, %s, %s, %s)""",
-            (session_id, profile_id, session_date, _encode_json(session, dialect), now))
+            (session_id, profile_id, session_date, session_json, program_version_id, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s)""",
+            (session_id, profile_id, session_date, _encode_json(session, dialect), program_version_id, now))
         conn.commit()
-        return {"session_id": session_id, "session_date": session_date, "session": session, "created_at": now}
+        return {"session_id": session_id, "session_date": session_date, "session": session,
+                "program_version_id": program_version_id, "created_at": now}
     finally:
         conn.close()
 
@@ -343,12 +356,12 @@ def list_sessions(profile_id: str, token: str, limit: int = 50):
     try:
         _init(conn, dialect)
         _authorized_profile(conn, dialect, profile_id, token)
-        rows = _execute(conn, dialect, """SELECT session_id, session_date, session_json, created_at
+        rows = _execute(conn, dialect, """SELECT session_id, session_date, session_json, program_version_id, created_at
             FROM atena_training_sessions WHERE profile_id = %s
             ORDER BY session_date DESC, created_at DESC LIMIT %s""",
             (profile_id, limit)).fetchall()
-        return [{"session_id": row[0], "session_date": row[1],
-                 "session": _decode_json(row[2]), "created_at": row[3]} for row in rows]
+        return [{"session_id": row[0], "session_date": row[1], "session": _decode_json(row[2]),
+                 "program_version_id": row[3], "created_at": row[4]} for row in rows]
     finally:
         conn.close()
 
@@ -467,6 +480,19 @@ def add_program_version(profile_id: str, token: str, program_version_id: str,
             "decision": decision,
             "created_at": now,
         }
+    finally:
+        conn.close()
+
+
+def get_program_version(profile_id: str, token: str, program_version_id: str):
+    """Fetch one immutable programme snapshot owned by the authenticated profile."""
+    conn, dialect = _connect(require_enabled=False)
+    try:
+        _init(conn, dialect)
+        _authorized_profile(conn, dialect, profile_id, token)
+        row = _execute(conn, dialect, "SELECT program_version_id, program_json, decision_json, created_at FROM atena_program_versions WHERE program_version_id = %s AND profile_id = %s", (program_version_id, profile_id)).fetchone()
+        if not row: return None
+        return {"program_version_id": row[0], "program": _decode_json(row[1]), "decision": _decode_json(row[2]), "created_at": row[3]}
     finally:
         conn.close()
 

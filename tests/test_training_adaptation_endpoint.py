@@ -16,6 +16,7 @@ def test_adaptation_endpoint_is_authenticated_and_non_automatic(monkeypatch):
         return {"profile_id": profile_id, "profile": {"goal": "strength"}}
 
     monkeypatch.setattr(coach_routes, "store_get_profile", get_profile)
+    monkeypatch.setattr(coach_routes, "store_list_program_versions", lambda profile_id, token, limit=50: [])
     monkeypatch.setattr(coach_routes, "store_list_sessions", lambda profile_id, token, limit=50: [
         {"session_date": "2026-11-01", "session": {
             "completed": True, "difficulty": "hard", "exercises": [],
