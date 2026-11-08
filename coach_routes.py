@@ -18,6 +18,10 @@ from coach_store import (
     add_session as store_add_session, list_sessions as store_list_sessions,
     delete_profile as store_delete_profile, set_health_data_consent as store_set_health_data_consent,
     check_database_connection as store_check_database_connection, storage_enabled,
+    save_movement_assessment as store_save_movement_assessment,
+    get_movement_assessment as store_get_movement_assessment,
+    add_program_version as store_add_program_version,
+    list_program_versions as store_list_program_versions,
 )
 from training.catalogue import get_exercise, load_catalogue
 from flask import Blueprint, jsonify, request
@@ -1801,9 +1805,12 @@ def coach_training_sessions(profile_id):
         session["adaptation_response"] = adaptation_response
     try:
         profile = store_get_profile(profile_id, token)
+        includes_health_data = discomfort is not None or any(
+            block.get("average_heart_rate") is not None for block in clean_conditioning
+        )
+        if includes_health_data and not profile["health_data_consent"]:
+            return jsonify({"error": "Za shranjevanje podatka o nelagodju ali srčnem utripu je potrebna ločena privolitev za zdravstvene podatke."}), 403
         if discomfort is not None:
-            if not profile["health_data_consent"]:
-                return jsonify({"error": "Za shranjevanje podatka o nelagodju je potrebna ločena privolitev za zdravstvene podatke."}), 403
             session["discomfort_reported"] = discomfort
         if adaptation_response is not None:
             prior_sessions = store_list_sessions(profile_id, token, limit=50)
@@ -1891,6 +1898,43 @@ def _build_adaptive_decision(sessions, exercise_progressions=None,
     return decision
 
 
+
+
+@coach_bp.route("/coach/profile/<profile_id>/assessment", methods=["PUT", "OPTIONS"])
+def save_coach_movement_assessment(profile_id):
+    """Persist the latest task-specific self-report only with separate health-data consent."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict) or set(payload) != {"movement_tasks"}:
+        return jsonify({"error": "Pošlji samo strukturirano polje movement_tasks."}), 400
+    movement_tasks = payload.get("movement_tasks")
+    if not isinstance(movement_tasks, dict):
+        return jsonify({"error": "movement_tasks mora biti JSON objekt."}), 400
+    normalized = {}
+    for task, value in movement_tasks.items():
+        if not isinstance(value, dict) or set(value) != {"status"}:
+            return jsonify({"error": "Vsaka gibalna naloga mora vsebovati samo polje status."}), 400
+        normalized[task] = value.get("status")
+    try:
+        assessment = assess_movement_competence(normalized)
+        profile = store_get_profile(profile_id, _profile_token())
+        if not profile["health_data_consent"]:
+            return jsonify({"error": "Za shranjevanje samoocene gibanja je potrebna ločena privolitev za zdravstvene podatke."}), 403
+        saved = store_save_movement_assessment(profile_id, _profile_token(), normalized)
+        return jsonify({
+            "assessment": assessment,
+            "assessment_updated_at": saved["updated_at"],
+            "assessment_stored": True,
+            "source": "authenticated_self_reported_movement_assessment",
+        }), 200
+    except MovementAssessmentError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
+
 @coach_bp.route("/coach/profile/<profile_id>/progress", methods=["GET", "OPTIONS"])
 def coach_training_progress(profile_id):
     """Return descriptive training trends; never prescribe automatic load increases."""
@@ -1937,10 +1981,14 @@ def export_coach_profile(profile_id):
     try:
         profile = store_get_profile(profile_id, token)
         sessions = store_list_sessions(profile_id, token, limit=5000)
+        movement_assessment = store_get_movement_assessment(profile_id, token)
+        program_versions = store_list_program_versions(profile_id, token, limit=5000)
         response = jsonify({
-            "export_version": "1.0",
+            "export_version": "1.1",
             "profile": profile,
             "sessions": sessions,
+            "movement_assessment": movement_assessment,
+            "program_versions": program_versions,
             "exported_at": __import__("datetime").datetime.now(
                 __import__("datetime").timezone.utc
             ).isoformat(timespec="seconds"),
@@ -2012,7 +2060,7 @@ def coach_profile_program(profile_id):
     if payload.get("no_current_pain_or_restrictions") is not True:
         return jsonify({
             "blocked": True,
-            "message": "Programa nisem ustvaril. Ob trenutni bolečini, poškodbi ali zdravstveni omejitvi je potrebna individualna presoja ustreznega strokovnjaka.",
+            "message": "Programa nisem ustvaril. Ob novi, hudi, slabšajoči se ali nepojasnjeni bolečini, sveži poškodbi ali pomembni zdravstveni omejitvi je najprej potrebna presoja ustreznega zdravstvenega strokovnjaka. Blago, znano nelagodje samo po sebi ne pomeni prepovedi vse vadbe; prizadeti gibalni vzorec je treba posebej razjasniti in prilagoditi.",
         }), 409
     token = _profile_token()
     try:
@@ -2037,10 +2085,27 @@ def coach_profile_program(profile_id):
         # scope, while the exercise engine applies only independently justified
         # exercise-level rep guidance. A future user-confirmed session-level
         # adjustment can be applied through an explicit programme revision.
-        result = generate_program(profile["profile"])
+        movement_record = store_get_movement_assessment(profile_id, token)
+        movement_assessment = movement_record["assessment"] if movement_record else None
+        result = generate_program(
+            profile["profile"],
+            movement_assessment=movement_assessment,
+        )
         result = apply_exercise_progression(result, exercise_progressions)
+        program_version_id = str(uuid.uuid4())
+        decision_record = {
+            "adaptive_decision": adaptive_decision,
+            "adaptation_guidance": adaptation,
+            "training_cycle": training_cycle,
+        }
+        store_add_program_version(
+            profile_id, token, program_version_id, result, decision_record
+        )
         return jsonify({
             "program": result,
+            "program_version_id": program_version_id,
+            "program_stored": True,
+            "movement_assessment_applied": movement_assessment is not None,
             "profile": profile["profile"],
             "adaptation_guidance": adaptation,
             "adaptive_decision": adaptive_decision,
@@ -2059,6 +2124,24 @@ def coach_profile_program(profile_id):
     except StorageUnavailable as exc:
         return _storage_error(exc)
 
+
+
+
+@coach_bp.route("/coach/profile/<profile_id>/programs", methods=["GET", "OPTIONS"])
+def coach_program_versions(profile_id):
+    """Return recent saved programme versions for an authenticated profile."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    try:
+        versions = store_list_program_versions(profile_id, _profile_token(), limit=50)
+        return jsonify({
+            "program_versions": versions,
+            "source": "saved_programme_history",
+        }), 200
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
 
 @coach_bp.route("/coach/profile/<profile_id>/adaptation", methods=["GET", "OPTIONS"])
 def coach_training_adaptation(profile_id):
