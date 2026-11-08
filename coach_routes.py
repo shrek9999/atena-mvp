@@ -1733,7 +1733,7 @@ def coach_training_sessions(profile_id):
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return jsonify({"error": "Pričakovan je JSON objekt."}), 400
-    allowed = {"session_date", "duration_minutes", "difficulty", "completed", "exercises", "conditioning", "discomfort_reported", "recovery", "completion_reason", "adaptation_response"}
+    allowed = {"session_date", "duration_minutes", "difficulty", "completed", "exercises", "conditioning", "discomfort_reported", "recovery", "completion_reason", "adaptation_response", "difficulty_scope", "affected_exercise_id"}
     if set(payload) - allowed:
         return jsonify({"error": "Vadbeni zapis vsebuje nepodprta polja; prosto besedilo ni dovoljeno."}), 400
     session_date = payload.get("session_date")
@@ -1761,6 +1761,15 @@ def coach_training_sessions(profile_id):
         return jsonify({"error": "Razlog nedokončanega treninga ni veljaven."}), 400
     if payload.get("completed") is False and completion_reason is None:
         completion_reason = "unknown"
+    difficulty_scope = payload.get("difficulty_scope", "unknown")
+    affected_exercise_id = payload.get("affected_exercise_id")
+    if difficulty_scope not in {"unknown", "session", "exercise"}:
+        return jsonify({"error": "Obseg zahtevnosti mora biti unknown, session ali exercise."}), 400
+    if difficulty_scope == "exercise":
+        if not isinstance(affected_exercise_id, str) or get_exercise(affected_exercise_id) is None:
+            return jsonify({"error": "Pri zahtevnosti posamezne vaje izberi veljavno vajo iz kataloga."}), 400
+    elif affected_exercise_id is not None:
+        return jsonify({"error": "Prizadeta vaja je dovoljena samo, če je obseg zahtevnosti exercise."}), 400
     adaptation_response = payload.get("adaptation_response")
     if adaptation_response is not None:
         if (
@@ -1801,6 +1810,10 @@ def coach_training_sessions(profile_id):
     }
     if completion_reason is not None:
         session["completion_reason"] = completion_reason
+    if difficulty_scope != "unknown":
+        session["difficulty_scope"] = difficulty_scope
+    if affected_exercise_id is not None:
+        session["affected_exercise_id"] = affected_exercise_id
     if adaptation_response is not None:
         session["adaptation_response"] = adaptation_response
     try:
@@ -2187,6 +2200,7 @@ def _normalize_decision_history(value):
         allowed_session = {
             "completed", "difficulty", "recovery", "exercises",
             "completion_reason", "adaptation_response", "movement_control", "session_key",
+            "difficulty_scope", "affected_exercise_id",
         }
         if not isinstance(raw, dict) or set(raw) - allowed_session:
             raise ValueError("Zapis treninga vsebuje nepodprta polja.")
@@ -2202,6 +2216,15 @@ def _normalize_decision_history(value):
         reason = raw.get("completion_reason")
         if reason is not None and reason not in valid_reasons:
             raise ValueError("Razlog nedokončanega treninga ni veljaven.")
+        difficulty_scope = raw.get("difficulty_scope", "unknown")
+        affected_exercise_id = raw.get("affected_exercise_id")
+        if difficulty_scope not in {"unknown", "session", "exercise"}:
+            raise ValueError("Obseg zahtevnosti ni veljaven.")
+        if difficulty_scope == "exercise":
+            if not isinstance(affected_exercise_id, str) or get_exercise(affected_exercise_id) is None:
+                raise ValueError("Prizadeta vaja ni veljavna.")
+        elif affected_exercise_id is not None:
+            raise ValueError("Prizadeta vaja zahteva obseg exercise.")
         response = raw.get("adaptation_response")
         if response is not None and (
             not isinstance(response, dict)
@@ -2236,6 +2259,10 @@ def _normalize_decision_history(value):
             session["session_key"] = session_key
         if reason is not None:
             session["completion_reason"] = reason
+        if difficulty_scope != "unknown":
+            session["difficulty_scope"] = difficulty_scope
+        if affected_exercise_id is not None:
+            session["affected_exercise_id"] = affected_exercise_id
         if response is not None:
             session["adaptation_response"] = response
         normalized.append({"session_date": session_date, "session": session})
