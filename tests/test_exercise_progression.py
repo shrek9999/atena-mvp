@@ -4,13 +4,17 @@ from training.exercise_progression import (
 )
 
 
-def record(day, exercises, *, difficulty="moderate", recovery="good", completed=True, discomfort=False):
+def record(day, exercises, *, difficulty="moderate", recovery="good", completed=True,
+           discomfort=False, difficulty_scope="unknown", affected_exercise_id=None):
     session = {
         "difficulty": difficulty,
         "recovery": recovery,
         "completed": completed,
         "exercises": exercises,
+        "difficulty_scope": difficulty_scope,
     }
+    if affected_exercise_id is not None:
+        session["affected_exercise_id"] = affected_exercise_id
     if discomfort:
         session["discomfort_reported"] = True
     return {"session_date": day, "session": session}
@@ -401,3 +405,25 @@ def test_exercises_without_a_tempo_target_can_use_not_applicable():
         record("2026-10-30", [exercise("squat_goblet", tempo="not_applicable", tempo_target=None)]),
     ]
     assert decision(recommend_exercise_progression(sessions), "squat_goblet")["decision"] == "add_repetitions"
+
+
+def test_hard_rating_from_one_exercise_does_not_block_progression_of_other_exercises():
+    sessions = [
+        record(
+            "2026-11-03",
+            [
+                exercise("squat_goblet", reps=(12, 12, 12), rir=(4, 4, 3)),
+                exercise("push_up", reps=(12, 12, 12), rir=(4, 4, 3)),
+            ],
+            difficulty="hard",
+            difficulty_scope="exercise",
+            affected_exercise_id="push_up",
+        ),
+        record("2026-10-30", [
+            exercise("squat_goblet", reps=(12, 12, 12), rir=(4, 4, 3)),
+            exercise("push_up", reps=(12, 12, 12), rir=(4, 4, 3)),
+        ]),
+    ]
+    result = recommend_exercise_progression(sessions)
+    assert decision(result, "squat_goblet")["decision"] == "increase_load"
+    assert decision(result, "push_up")["decision"] == "hold"
