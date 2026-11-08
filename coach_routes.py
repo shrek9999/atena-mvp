@@ -1981,20 +1981,6 @@ def coach_training_progress(profile_id):
         profile = store_get_profile(profile_id, token)
         sessions = store_list_sessions(profile_id, token, limit=50)
         exercise_progressions = recommend_exercise_progression(sessions)
-        confirmed_successful_exercises = set(_confirmed_successful_exercise_ids(sessions))
-        for recommendation in exercise_progressions:
-            if (
-                isinstance(recommendation, dict)
-                and recommendation.get("exercise_id") in confirmed_successful_exercises
-                and recommendation.get("decision") in {
-                    "add_repetitions", "increase_load", "progress_variation", "increase_work_time"
-                }
-            ):
-                recommendation["decision"] = "hold"
-                recommendation["reason"] = (
-                    "Prejšnja prilagoditev te vaje je uporabniku pomagala. Ohranimo trenutni odmerek "
-                    "še eno primerljivo izvedbo in ne stopnjujemo iste vaje hkrati."
-                )
         longitudinal_progression = summarize_longitudinal_progression(sessions)
         conditioning_progression = summarize_conditioning_progress(sessions)
         adaptive_decision = _build_adaptive_decision(
@@ -2120,6 +2106,20 @@ def coach_profile_program(profile_id):
         sessions = store_list_sessions(profile_id, token, limit=50)
         feedback, adaptation = _build_profile_adaptation(sessions)
         exercise_progressions = recommend_exercise_progression(sessions)
+        confirmed_successful_exercises = set(_confirmed_successful_exercise_ids(sessions))
+        for recommendation in exercise_progressions:
+            if (
+                isinstance(recommendation, dict)
+                and recommendation.get("exercise_id") in confirmed_successful_exercises
+                and recommendation.get("decision") in {
+                    "add_repetitions", "increase_load", "progress_variation", "increase_work_time"
+                }
+            ):
+                recommendation["decision"] = "hold"
+                recommendation["reason"] = (
+                    "Prejšnja prilagoditev te vaje je uporabniku pomagala. Ohranimo trenutni odmerek "
+                    "še eno primerljivo izvedbo in ne stopnjujemo iste vaje hkrati."
+                )
         longitudinal_progression = summarize_longitudinal_progression(sessions)
         conditioning_progression = summarize_conditioning_progress(sessions)
         adaptive_decision = _build_adaptive_decision(
