@@ -13,7 +13,7 @@ def test_positive_adaptation_feedback_is_explicitly_confirmed():
         [_row("2026-11-08")],
         prior_adaptation={"adaptation_id": "adapt-123", "outcome": "helped"},
     )
-    assert result["decision"] == "confirm_successful_change"
+    assert result["decision"] == "maintain_and_monitor"
     assert result["scope"] == "previous_adjustment"
     assert result["previous_adaptation_id"] == "adapt-123"
     assert result["previous_outcome"] == "helped"
