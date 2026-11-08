@@ -178,6 +178,7 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     safe_export = client.get(f"/coach/profile/{profile_id}/export", headers=headers)
     assert safe_export.status_code == 200
     assert "discomfort_reported" not in str(safe_export.get_json())
+    assert safe_export.get_json()["program_versions"] == []
 
     # Deletion is authenticated and cascades to the stored training history.
     denied_delete = client.delete(f"/coach/profile/{profile_id}", headers=wrong)
