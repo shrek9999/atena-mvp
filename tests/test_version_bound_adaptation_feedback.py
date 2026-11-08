@@ -81,6 +81,25 @@ def test_feedback_must_match_saved_decision_and_can_refer_to_prior_programme(mon
     assert saved["session"]["adaptation_response"]["program_version_id"] == old_version
 
 
+def test_feedback_cannot_be_submitted_before_target_programme_is_performed(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id, token = created["profile"]["profile_id"], created["profile_access_token"]
+    version_id, adaptation_id = "program-v1", "adaptation-12345678"
+    _save_version(profile_id, token, version_id, adaptation_id)
+
+    response = _log(
+        client, profile_id, token,
+        adaptation_response={
+            "adaptation_id": adaptation_id,
+            "outcome": "helped",
+            "program_version_id": version_id,
+        },
+    )
+    assert response.status_code == 409
+    assert response.get_json()["code"] == "adaptation_program_not_performed"
+
+
 def test_feedback_rejects_forged_or_mismatched_programme_decision(monkeypatch, tmp_path):
     client = _client(monkeypatch, tmp_path)
     created = _create(client)
