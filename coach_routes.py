@@ -1923,8 +1923,29 @@ def _build_adaptive_decision(sessions, exercise_progressions=None,
         }
     return decision
 
-
-
+def _hold_successfully_confirmed_exercises(profile_id, token, sessions, recommendations):
+    """Hold only exercises covered by the exact positively confirmed programme decision."""
+    ordered = sorted([x for x in sessions if isinstance(x, dict) and isinstance(x.get("session"), dict)], key=lambda x: x.get("session_date", ""), reverse=True)
+    if not ordered: return []
+    response = ordered[0]["session"].get("adaptation_response")
+    if not isinstance(response, dict) or response.get("outcome") != "helped": return []
+    version_id, adaptation_id = response.get("program_version_id"), response.get("adaptation_id")
+    if not isinstance(version_id, str) or not version_id or not isinstance(adaptation_id, str): return []
+    version = store_get_program_version(profile_id, token, version_id)
+    if not isinstance(version, dict): return []
+    decision = (version.get("decision") or {}).get("adaptive_decision", {})
+    if not isinstance(decision, dict) or decision.get("adaptation_id") != adaptation_id or not isinstance(decision.get("feedback_contract"), dict): return []
+    eligible = decision.get("eligible_exercises", [])
+    if not isinstance(eligible, list): return []
+    held_ids = {x for x in eligible if isinstance(x, str) and x.strip()}
+    affected_id = decision.get("affected_exercise_id")
+    if isinstance(affected_id, str) and affected_id.strip(): held_ids.add(affected_id)
+    progression_decisions = {"add_repetitions", "increase_load", "progress_variation", "increase_work_time"}
+    for item in recommendations if isinstance(recommendations, list) else []:
+        if isinstance(item, dict) and item.get("exercise_id") in held_ids and item.get("decision") in progression_decisions:
+            item["decision"] = "hold"
+            item["reason"] = "Uporabnik je potrdil, da je prejšnja prilagoditev te vaje pomagala. Ohranimo trenutni odmerek še eno primerljivo izvedbo in preverimo, ali se dober učinek ponovi."
+    return sorted(held_ids)
 
 @coach_bp.route("/coach/profile/<profile_id>/assessment", methods=["PUT", "OPTIONS"])
 def save_coach_movement_assessment(profile_id):
@@ -2096,6 +2117,7 @@ def coach_profile_program(profile_id):
         sessions = store_list_sessions(profile_id, token, limit=50)
         feedback, adaptation = _build_profile_adaptation(sessions)
         exercise_progressions = recommend_exercise_progression(sessions)
+        positive_feedback_hold_exercises = _hold_successfully_confirmed_exercises(profile_id, token, sessions, exercise_progressions)
         longitudinal_progression = summarize_longitudinal_progression(sessions)
         conditioning_progression = summarize_conditioning_progress(sessions)
         adaptive_decision = _build_adaptive_decision(
@@ -2136,6 +2158,7 @@ def coach_profile_program(profile_id):
             "adaptation_guidance": adaptation,
             "adaptive_decision": adaptive_decision,
             "exercise_progressions": exercise_progressions,
+            "positive_feedback_hold_exercises": positive_feedback_hold_exercises,
             "training_cycle": training_cycle,
             "proactive_checkin": build_proactive_checkin(sessions),
             "source": "saved_profile_and_exercise_level_training_feedback",
