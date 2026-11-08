@@ -162,24 +162,19 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # add a short aerobic/conditioning session rather than more lifting volume.
         return ["locomotion", "lunge", "conditioning"]
     if goal == "functional":
-        # Keep sessions compact: distribute horizontal push and pull across the
-        # week while preserving squat, hinge and the functional capacities.
-        base = ["squat", "hinge", "horizontal_push" if session_index % 2 == 0 else "horizontal_pull"]
-        # Training history is not a movement-readiness screen. Do not prescribe
-        # plyometrics or rapid change-of-direction drills by default at any level.
-        # Carry work, balance and controlled low-speed coordination preserve the
-        # functional intent until landing/braking readiness can be assessed explicitly.
-        functional_additions = [
-            ["balance", "carry"],
-            ["coordination", "conditioning"],
-            ["balance", "carry"],
-            ["coordination", "conditioning"],
-        ]
-        patterns = base + functional_additions[session_index]
+        # Functional fitness is built from fundamental movement patterns and
+        # locomotion, not generic balance/coordination add-ons.
+        # Each 2-day session retains squat + hinge + horizontal push/pull;
+        # unilateral knee-dominant work and conditioning rotate across days.
+        patterns = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
+        patterns.append("lunge" if session_index % 2 == 0 else "locomotion")
+        patterns.append("conditioning")
         if include_stability:
             patterns.insert(0, "trunk_stability")
         if sessions >= 3:
-            patterns.append("lunge" if session_index % 2 == 0 else ("vertical_push" if session_index % 4 == 1 else "vertical_pull"))
+            patterns.append("vertical_push" if session_index % 2 == 0 else "vertical_pull")
+        # Power/jumps are deliberately gated until a dedicated landing/readiness
+        # assessment exists; experience level alone is not clearance.
         return patterns
     if goal == "endurance":
         # Keep a minimum viable session even when no loaded carry equipment exists.
@@ -254,6 +249,17 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
             reps, rir, rest = "20–30 s", None, 60
     elif goal == "endurance" and pattern == "locomotion":
         sets, reps, rir, rest = 1, "20–30 min", None, 0
+    elif goal == "functional" and pattern == "conditioning":
+        # Light, repeatable MetCon: conditioning supports the strength base and
+        # must not turn a general functional session into an all-out test.
+        sets = {"beginner": 2, "intermediate": 3, "advanced": 4}[level]
+        kind = exercise.get("endurance_type")
+        if kind == "aerobic":
+            reps, rir, rest = "30–45 s", None, 45
+        elif kind == "anaerobic":
+            reps, rir, rest = "10–15 s", None, 60
+        else:
+            reps, rir, rest = "20–30 s", None, 45
     elif goal == "endurance" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
         # Keep the agreed four-interval structure; scale interval duration by experience below.
@@ -438,6 +444,17 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         prescription.update({"work_seconds": work_seconds, "time_label": "kratek kondicijski interval", "effort_target": "Nadzorovana intenzivnost; ne izvajaj maksimalno in ne žrtvuj tehnike."})
     elif goal == "endurance" and pattern == "locomotion":
         prescription.update({"work_seconds": 1200, "time_label": "neprekinjene aerobne aktivnosti", "effort_target": "Zmeren pogovorni tempo; lahko govoriš v stavkih, vendar čutiš pospešeno dihanje."})
+    elif goal == "functional" and pattern == "conditioning":
+        kind = exercise.get("endurance_type")
+        duration = 40 if kind == "aerobic" else (12 if kind == "anaerobic" else 25)
+        target = (
+            "Lahkoten do zmeren, enakomeren napor; ohrani pogovorni tempo in kakovost gibanja."
+            if kind == "aerobic" else
+            "Kratek, submaksimalen interval; končaj, preden se poslabšata tehnika ali nadzor."
+            if kind == "anaerobic" else
+            "Ritem naj bo ponovljiv; ne izvajaj do odpovedi in ohrani kakovost vsake ponovitve."
+        )
+        prescription.update({"work_seconds": duration, "time_label": "light MetCon intervala", "effort_target": target})
     elif goal == "endurance" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
         duration = (
@@ -692,10 +709,10 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
             candidates = by_pattern.get(pattern, [])
             if planning_goal in {"endurance", "fat_loss"} and pattern == "locomotion":
                 candidates = [item for item in candidates if item.get("endurance_type") == "aerobic"]
-            if planning_goal == "functional" and pattern == "coordination":
-                # Lateral shuffle requires braking/change-of-direction competence;
-                # it is not inferred from the user's training-experience label.
-                candidates = [item for item in candidates if item["id"] != "lateral_shuffle"]
+            if planning_goal == "functional":
+                # Never infer that household furniture is a safe pulling anchor.
+                # Rows are selected only from explicit training equipment.
+                candidates = [item for item in candidates if item["id"] != "inverted_row_table"]
             if movement_status == "needs_support" and pattern != "balance":
                 preferred_ids = SUPPORTED_VARIANTS.get(pattern, ())
                 available_for_regression = set(p["equipment"]) | {"bodyweight"}
