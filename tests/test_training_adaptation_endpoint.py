@@ -24,6 +24,7 @@ def test_adaptation_endpoint_is_authenticated_and_non_automatic(monkeypatch):
             "completed": True, "difficulty": "hard", "exercises": [],
         }},
     ])
+    monkeypatch.setattr(coach_routes, "store_list_program_versions", lambda profile_id, token, limit=50: [])
 
     denied = client.get("/coach/profile/example/adaptation")
     assert denied.status_code == 404
