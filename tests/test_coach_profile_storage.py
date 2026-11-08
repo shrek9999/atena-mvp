@@ -486,9 +486,10 @@ def test_profile_program_keeps_global_feedback_out_of_generator_and_exposes_adap
 
     import coach_routes
     captured = {}
-    def fake_generate(profile, feedback=None):
+    def fake_generate(profile, feedback=None, movement_assessment=None):
         captured["profile"] = profile
         captured["feedback"] = feedback
+        captured["movement_assessment"] = movement_assessment
         return {"goal": profile["goal"], "feedback_applied": feedback, "sessions": []}
     monkeypatch.setattr(coach_routes, "generate_program", fake_generate)
 

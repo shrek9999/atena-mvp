@@ -29,6 +29,8 @@ def test_profile_export_requires_profile_token_and_disables_caching(monkeypatch)
 
     monkeypatch.setattr(coach_routes, "store_get_profile", get_profile)
     monkeypatch.setattr(coach_routes, "store_list_sessions", get_sessions)
+    monkeypatch.setattr(coach_routes, "store_get_movement_assessment", lambda profile_id, token: None)
+    monkeypatch.setattr(coach_routes, "store_list_program_versions", lambda profile_id, token, limit=10: [])
 
     denied = client.get("/coach/profile/example/export")
     assert denied.status_code == 404
@@ -41,6 +43,8 @@ def test_profile_export_requires_profile_token_and_disables_caching(monkeypatch)
     assert response.headers["Cache-Control"] == "no-store, private"
     assert "attachment" in response.headers["Content-Disposition"]
     payload = response.get_json()
-    assert payload["export_version"] == "1.0"
+    assert payload["export_version"] == "1.1"
+    assert payload["movement_assessment"] is None
+    assert payload["program_versions"] == []
     assert payload["profile"]["profile_id"] == "example"
     assert len(payload["sessions"]) == 1
