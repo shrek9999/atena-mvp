@@ -241,6 +241,16 @@ def recommend_exercise_progression(sessions):
             "reason": "Zabeleženo je bilo nelagodje. Samodejno napredovanje vseh vaj je ustavljeno do ustrezne presoje.",
         } for exercise_id in sorted(affected_ids)]
 
+    targeted_difficulty_ids = {
+        session.get("affected_exercise_id")
+        for _, session in ordered[:3]
+        if (
+            session.get("difficulty") == "hard"
+            and session.get("difficulty_scope") == "exercise"
+            and isinstance(session.get("affected_exercise_id"), str)
+        )
+    }
+
     by_exercise = defaultdict(list)
     for day, session in ordered:
         if session.get("completed") is not True:
@@ -272,6 +282,13 @@ def recommend_exercise_progression(sessions):
     for item in recommendations:
         exercise = get_exercise(item["exercise_id"])
         item["exercise_name"] = exercise.get("name") if isinstance(exercise, dict) else item["exercise_id"]
+        if item["exercise_id"] in targeted_difficulty_ids:
+            item["decision"] = "hold"
+            item["reason"] = (
+                "V zadnjem obdobju je bila visoka zahtevnost pripisana tej vaji. "
+                "Ne stopnjuj je, dokler ne preveriš izvedbe in ustreznega odmerka. "
+                "Ostale vaje se presojajo ločeno."
+            )
     return recommendations
 
 
