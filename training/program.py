@@ -5,6 +5,7 @@ from collections import Counter
 from typing import Any
 
 from training.catalogue import get_exercises
+from training.goals import CANONICAL_GOALS, normalize_goal
 from training.movement_assessment import (
     MovementAssessmentError, SUPPORTED_VARIANTS, TASK_PATTERNS,
     assess_movement_competence,
@@ -170,9 +171,9 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # Carry work, balance and controlled low-speed coordination preserve the
         # functional intent until landing/braking readiness can be assessed explicitly.
         functional_additions = [
-            ["balance", "carry"],
+            ["balance", "mobility"],
             ["coordination", "conditioning"],
-            ["balance", "carry"],
+            ["carry", "mobility"],
             ["coordination", "conditioning"],
         ]
         patterns = base + functional_additions[session_index]
@@ -1177,8 +1178,10 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 pattern_session_frequency[item["pattern"]] += 1
                 session_patterns_seen.add(item["pattern"])
             pattern_work_sets[item["pattern"]] += item["prescription"]["sets"]
+    canonical_goal = normalize_goal(p["goal"])
     return {
-        "program_version": "3.0.0",
+        "program_version": "3.1.0",
+        "goal_framework": CANONICAL_GOALS[canonical_goal],
         "movement_adaptation": {
             "source": "self_reported_movement_assessment",
             "is_diagnosis": False,
