@@ -155,7 +155,7 @@ def validate_profile(profile: object) -> dict:
     }
 
 
-def _session_patterns(session_index: int, sessions: int, goal: str, include_accessories: bool = False, include_stability: bool = False, experience: str = "intermediate") -> list[str]:
+def _session_patterns(session_index: int, sessions: int, goal: str, include_accessories: bool = False, include_stability: bool = False, experience: str = "intermediate", session_minutes: int = 60) -> list[str]:
     """Compact full-body templates; trunk-control work is added only when feedback supports it."""
     if goal == "fat_loss" and sessions >= 3 and session_index >= 2:
         # Two resistance-focused full-body days remain the foundation. Additional days
@@ -167,12 +167,16 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # Each 2-day session retains squat + hinge + horizontal push/pull;
         # unilateral knee-dominant work and conditioning rotate across days.
         patterns = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
+        # Short sessions prioritise the four foundational strength patterns and
+        # one unilateral/locomotor pattern. Conditioning is rotated in when time
+        # permits; it must not crowd out the main movement patterns.
         patterns.append("lunge" if session_index % 2 == 0 else "locomotion")
-        patterns.append("conditioning")
+        if session_minutes > 30:
+            patterns.append("conditioning")
         if include_stability:
             patterns.insert(0, "trunk_stability")
-        if sessions >= 3:
-            patterns.append("vertical_push" if session_index % 2 == 0 else "vertical_pull")
+        # More weekly sessions do not automatically mean more exercises per
+        # session. Vertical push/pull can be rotated into future dedicated blocks.
         # Power/jumps are deliberately gated until a dedicated landing/readiness
         # assessment exists; experience level alone is not clearance.
         return patterns
@@ -253,6 +257,8 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict) -> dict:
         # Light, repeatable MetCon: conditioning supports the strength base and
         # must not turn a general functional session into an all-out test.
         sets = {"beginner": 2, "intermediate": 3, "advanced": 4}[level]
+        if session_minutes <= 30:
+            sets = min(sets, 2)
         kind = exercise.get("endurance_type")
         if kind == "aerobic":
             reps, rir, rest = "30–45 s", None, 45
@@ -682,7 +688,7 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
         patterns = _session_patterns(
             session_index, p["sessions_per_week"], planning_goal,
             p["include_accessories"] and p["session_minutes"] >= 75 and not include_stability, include_stability,
-            p["experience"]
+            p["experience"], p["session_minutes"]
         )
         warm_up_minutes = 5 if p["session_minutes"] <= 30 else (7 if p["session_minutes"] <= 60 else 10)
         selected = []
