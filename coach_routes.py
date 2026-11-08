@@ -1408,10 +1408,9 @@ def _storage_error(exc):
 def _validate_profile(value):
     if not isinstance(value, dict) or set(value) - PROFILE_FIELDS:
         raise ValueError("Profil vsebuje neveljavna ali nepodprta polja.")
-    try:
-        goal = normalize_goal(value.get("goal"))
-    except ValueError as exc:
-        raise ValueError("Izberi enega od treh glavnih ciljev ATENE.") from exc
+    # Keep historical profile IDs readable; new onboarding uses the three canonical
+    # IDs returned by GET /coach/goals. Legacy profiles remain backward-compatible.
+    goal = value.get("goal")
     experience = value.get("experience")
     equipment = value.get("equipment")
     sessions = value.get("sessions_per_week")
