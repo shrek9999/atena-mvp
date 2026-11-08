@@ -1,7 +1,7 @@
 """Canonical three-goal framework for ATENA Digital Coach.
 
 The public onboarding exposes exactly three primary goals. Legacy identifiers
-remain accepted at API boundaries and are normalized before profile storage.
+remain accepted for backward compatibility and are interpreted as canonical goals.
 """
 from __future__ import annotations
 
