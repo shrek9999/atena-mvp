@@ -26,6 +26,13 @@ CANONICAL_GOALS = {
         "description": "Ohranjanje mišične mase z vadbo moči, razvoj vzdržljivosti in podpora vzdržni prehranski strategiji.",
         "pillars": ["strength", "hypertrophy", "muscular_endurance", "cardiorespiratory_conditioning", "weight_management", "nutrition"],
         "advanced_specialization": [],
+        "nutrition_guidance": [
+            "Ustvari zmeren in vzdržen energijski primanjkljaj; izogibaj se agresivnim dietam.",
+            "V vsakem glavnem obroku poskrbi za kakovosten vir beljakovin; količino prilagodi telesni masi, treningu in prehranskim omejitvam.",
+            "Večino prehrane naj sestavljajo hranilno bogata, pretežno minimalno predelana živila, zelenjava, sadje in viri vlaknin.",
+            "Spremljaj trend telesne mase in obseg pasu skozi več tednov, ne posameznih dnevnih nihanj.",
+            "Prehranski načrt prilagodi lakoti, počutju, spanju, regeneraciji in dolgoročni vzdržnosti."
+        ],
     },
 }
 
