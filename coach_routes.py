@@ -37,6 +37,7 @@ from training.periodization import summarize_training_cycle
 from training.proactive_checkin import build_proactive_checkin
 from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL
 from training.movement_assessment import MovementAssessmentError, assess_movement_competence
+from training.goals import normalize_goal, public_goal_options
 
 logger = logging.getLogger(__name__)
 coach_bp = Blueprint("coach", __name__)
@@ -161,12 +162,16 @@ def _verified_exercise_catalogue_context(messages):
     goal_value = profile.get("goal")
     if isinstance(goal_value, str) and goal_value.strip():
         normalized_goal = goal_value.strip().casefold()
+        try:
+            normalized_goal = normalize_goal(normalized_goal)
+        except ValueError:
+            normalized_goal = ""
         if normalized_goal == "fat_loss":
             goals.update({"strength", "hypertrophy", "general_fitness", "endurance"})
         elif normalized_goal == "strength_hypertrophy":
             goals.update({"strength", "hypertrophy"})
-        else:
-            goals.add(normalized_goal)
+        elif normalized_goal == "functional":
+            goals.update({"functional", "general_fitness", "mobility", "endurance", "power"})
     else:
         if "hypertrophy" in lowered or "hipertrof" in lowered or "mišičn" in lowered:
             goals.add("hypertrophy")
@@ -1377,6 +1382,14 @@ def coach_storage_status():
             "storage_enabled": False,
             "reason": exc.reason,
         }), 503
+
+
+@coach_bp.route("/coach/goals", methods=["GET", "OPTIONS"])
+def coach_goal_options():
+    """Expose the three canonical goals used by the public onboarding flow."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    return jsonify({"goals": public_goal_options()}), 200
 
 
 # Longitudinal profile storage is opt-in and disabled by default. Hosted use
