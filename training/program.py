@@ -1212,6 +1212,7 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
     return {
         "program_version": "3.1.0",
         "goal_framework": CANONICAL_GOALS[canonical_goal],
+        "nutrition_guidance": list(CANONICAL_GOALS[canonical_goal].get("nutrition_guidance", [])),
         "movement_adaptation": {
             "source": "self_reported_movement_assessment",
             "is_diagnosis": False,
