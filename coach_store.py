@@ -179,7 +179,7 @@ def _init(conn, dialect):
             profile_id TEXT NOT NULL REFERENCES atena_profiles(profile_id) ON DELETE CASCADE,
             session_date TEXT NOT NULL,
             session_json TEXT NOT NULL,
-            program_version_id TEXT REFERENCES atena_program_versions(program_version_id) ON DELETE SET NULL,
+            program_version_id TEXT,
             created_at TEXT NOT NULL
         )""",
         """CREATE TABLE IF NOT EXISTS atena_movement_assessments (
