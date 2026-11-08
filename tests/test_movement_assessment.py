@@ -14,7 +14,8 @@ def test_partial_assessment_keeps_unreported_tasks_unassessed():
     assert result["plyometric_readiness"] == "not_assessed"
     assert result["coaching_guidance"]["not_assessed_do_not_infer"] == [
         "hinge", "lunge", "push", "pull", "overhead",
-        "single_leg_balance", "locomotion",
+        "ankle_dorsiflexion", "hip_mobility", "shoulder_mobility",
+        "single_leg_balance", "coordination", "body_awareness", "locomotion",
     ]
 
 
@@ -46,6 +47,31 @@ def test_no_status_automatically_clears_jumping_or_impact_readiness():
     })
     assert result["plyometric_readiness"] == "not_assessed"
     assert result["automatic_programme_change"] == "none"
+
+
+def test_mobility_tasks_are_explicit_and_map_only_to_relevant_patterns():
+    from training.movement_assessment import TASK_PATTERNS
+
+    assert TASK_PATTERNS["ankle_dorsiflexion"] == {"squat", "lunge"}
+    assert TASK_PATTERNS["hip_mobility"] == {"squat", "hinge", "lunge"}
+    assert TASK_PATTERNS["shoulder_mobility"] == {"vertical_push"}
+
+
+def test_coordination_is_not_inferred_from_general_training_experience():
+    from training.movement_assessment import TASK_PATTERNS
+
+    assert TASK_PATTERNS["coordination"] == {"coordination"}
+    result = assess_movement_competence({"coordination": "uncertain"})
+    assert result["coaching_guidance"]["clarify_before_relying_on_observation"] == ["coordination"]
+
+
+def test_body_awareness_is_a_prompt_not_an_automatic_stability_prescription():
+    from training.movement_assessment import TASK_PATTERNS
+
+    assert TASK_PATTERNS["body_awareness"] == set()
+    result = assess_movement_competence({"body_awareness": "needs_support"})
+    assert result["coaching_guidance"]["consider_supported_or_simpler_variation"] == ["body_awareness"]
+    assert result["coaching_guidance"]["body_awareness_is_a_prompt_not_a_diagnosis"] is True
 
 
 @pytest.mark.parametrize("value", [None, [], "comfortable", 3])
@@ -84,3 +110,4 @@ def test_public_task_labels_match_everyday_activities_in_the_user_interface():
     assert MOVEMENT_TASKS["squat"] == "vstajanje s stola"
     assert MOVEMENT_TASKS["hinge"] == "pobiranje lahkega predmeta s tal"
     assert MOVEMENT_TASKS["overhead"] == "doseganje nad višino ramen"
+    assert MOVEMENT_TASKS["ankle_dorsiflexion"] == "pomik kolena naprej nad stopalo ob peti na tleh"
