@@ -192,7 +192,7 @@ def test_adaptive_decision_endpoint_bounds_history_size(monkeypatch):
 @pytest.mark.parametrize(
     ("outcome", "expected_decision"),
     [
-        ("helped", "maintain_and_monitor"),
+        ("helped", "confirm_successful_change"),
         ("no_change", "reassess_previous_change"),
     ],
 )
