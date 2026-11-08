@@ -183,14 +183,14 @@ def _init(conn, dialect):
         )""",
         """CREATE TABLE IF NOT EXISTS atena_movement_assessments (
             profile_id TEXT PRIMARY KEY REFERENCES atena_profiles(profile_id) ON DELETE CASCADE,
-            assessment_json TEXT NOT NULL,
+            assessment_json JSONB NOT NULL,
             updated_at TEXT NOT NULL
         )""",
         """CREATE TABLE IF NOT EXISTS atena_program_versions (
             program_version_id TEXT PRIMARY KEY,
             profile_id TEXT NOT NULL REFERENCES atena_profiles(profile_id) ON DELETE CASCADE,
-            program_json TEXT NOT NULL,
-            decision_json TEXT NOT NULL,
+            program_json JSONB NOT NULL,
+            decision_json JSONB NOT NULL,
             created_at TEXT NOT NULL
         )""",
         "CREATE INDEX IF NOT EXISTS atena_sessions_profile_date ON atena_training_sessions(profile_id, session_date)",
