@@ -1733,7 +1733,7 @@ def coach_training_sessions(profile_id):
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return jsonify({"error": "Pričakovan je JSON objekt."}), 400
-    allowed = {"session_date", "duration_minutes", "difficulty", "completed", "exercises", "conditioning", "discomfort_reported", "recovery", "completion_reason", "adaptation_response"}
+    allowed = {"session_date", "duration_minutes", "difficulty", "completed", "exercises", "conditioning", "discomfort_reported", "recovery", "completion_reason", "adaptation_response", "program_version_id"}
     if set(payload) - allowed:
         return jsonify({"error": "Vadbeni zapis vsebuje nepodprta polja; prosto besedilo ni dovoljeno."}), 400
     session_date = payload.get("session_date")
@@ -1761,6 +1761,12 @@ def coach_training_sessions(profile_id):
         return jsonify({"error": "Razlog nedokončanega treninga ni veljaven."}), 400
     if payload.get("completed") is False and completion_reason is None:
         completion_reason = "unknown"
+    program_version_id = payload.get("program_version_id")
+    if program_version_id is not None and (
+        not isinstance(program_version_id, str) or not program_version_id.strip()
+        or len(program_version_id) > 128
+    ):
+        return jsonify({"error": "Identifikator različice programa ni veljaven."}), 400
     adaptation_response = payload.get("adaptation_response")
     if adaptation_response is not None:
         if (
@@ -1820,8 +1826,13 @@ def coach_training_sessions(profile_id):
                     "error": "Odziv se ne nanaša na zadnjo prilagoditev, ki jo je izdala ATENA.",
                     "code": "adaptation_id_mismatch",
                 }), 409
-        saved = store_add_session(profile_id, token, str(uuid.uuid4()), session_date, session)
+        saved = store_add_session(
+            profile_id, token, str(uuid.uuid4()), session_date, session,
+            program_version_id=program_version_id,
+        )
         return jsonify({"session": saved}), 201
+    except ValueError as exc:
+        return jsonify({"error": str(exc), "code": "invalid_program_version"}), 400
     except ProfileNotFound:
         return _profile_auth_error()
     except StorageUnavailable as exc:
