@@ -187,3 +187,30 @@ def test_health_data_consent_withdrawal_erases_assessment_and_heart_rate(monkeyp
     conn.close()
     assert assessment_count == 0
     assert "average_heart_rate" not in session_json
+
+
+
+def test_average_heart_rate_requires_separate_health_data_consent(monkeypatch, tmp_path):
+    client, profile_id, token, _ = _client(monkeypatch, tmp_path, health_consent=False)
+    response = client.post(
+        f"/coach/profile/{profile_id}/sessions",
+        headers={"X-Profile-Token": token},
+        json={
+            "session_date": "2026-11-08",
+            "duration_minutes": 20,
+            "difficulty": "moderate",
+            "recovery": "good",
+            "completed": True,
+            "exercises": [],
+            "conditioning": [{
+                "modality": "aerobic_base",
+                "protocol_id": "walk-20",
+                "work_seconds": 1200,
+                "duration_seconds": 1200,
+                "intervals_completed": 1,
+                "rpe": 3,
+                "average_heart_rate": 110,
+            }],
+        },
+    )
+    assert response.status_code == 403
