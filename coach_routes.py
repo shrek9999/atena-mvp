@@ -1936,6 +1936,25 @@ def _confirmed_successful_exercise_ids(sessions):
     ))
 
 
+def _hold_successfully_confirmed_exercises(sessions, recommendations):
+    """Keep a positively confirmed exercise adjustment stable for one exposure."""
+    held_ids = set(_confirmed_successful_exercise_ids(sessions))
+    for recommendation in recommendations if isinstance(recommendations, list) else []:
+        if (
+            isinstance(recommendation, dict)
+            and recommendation.get("exercise_id") in held_ids
+            and recommendation.get("decision") in {
+                "add_repetitions", "increase_load", "progress_variation", "increase_work_time"
+            }
+        ):
+            recommendation["decision"] = "hold"
+            recommendation["reason"] = (
+                "Prejšnja prilagoditev te vaje je uporabniku pomagala. Ohranimo trenutni odmerek "
+                "še eno primerljivo izvedbo in ne stopnjujemo iste vaje hkrati."
+            )
+    return sorted(held_ids)
+
+
 @coach_bp.route("/coach/profile/<profile_id>/assessment", methods=["PUT", "OPTIONS"])
 def save_coach_movement_assessment(profile_id):
     """Persist the latest task-specific self-report only with separate health-data consent."""
@@ -2106,20 +2125,9 @@ def coach_profile_program(profile_id):
         sessions = store_list_sessions(profile_id, token, limit=50)
         feedback, adaptation = _build_profile_adaptation(sessions)
         exercise_progressions = recommend_exercise_progression(sessions)
-        confirmed_successful_exercises = set(_confirmed_successful_exercise_ids(sessions))
-        for recommendation in exercise_progressions:
-            if (
-                isinstance(recommendation, dict)
-                and recommendation.get("exercise_id") in confirmed_successful_exercises
-                and recommendation.get("decision") in {
-                    "add_repetitions", "increase_load", "progress_variation", "increase_work_time"
-                }
-            ):
-                recommendation["decision"] = "hold"
-                recommendation["reason"] = (
-                    "Prejšnja prilagoditev te vaje je uporabniku pomagala. Ohranimo trenutni odmerek "
-                    "še eno primerljivo izvedbo in ne stopnjujemo iste vaje hkrati."
-                )
+        confirmed_successful_exercises = _hold_successfully_confirmed_exercises(
+            sessions, exercise_progressions
+        )
         longitudinal_progression = summarize_longitudinal_progression(sessions)
         conditioning_progression = summarize_conditioning_progress(sessions)
         adaptive_decision = _build_adaptive_decision(
