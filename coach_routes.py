@@ -1823,8 +1823,19 @@ def coach_training_sessions(profile_id):
         if discomfort is not None:
             session["discomfort_reported"] = discomfort
         if adaptation_response is not None:
+            prior_sessions = store_list_sessions(profile_id, token, limit=50)
+            target_version_id = adaptation_response["program_version_id"]
+            target_was_performed = (
+                program_version_id == target_version_id
+                or any(item.get("program_version_id") == target_version_id for item in prior_sessions)
+            )
+            if not target_was_performed:
+                return jsonify({
+                    "error": "Povratne informacije lahko oddaš šele po vsaj eni zabeleženi izvedbi te različice programa.",
+                    "code": "adaptation_program_not_performed",
+                }), 409
             target_version = store_get_program_version(
-                profile_id, token, adaptation_response["program_version_id"]
+                profile_id, token, target_version_id
             )
             stored_decision = (
                 target_version.get("decision", {}).get("adaptive_decision", {})
