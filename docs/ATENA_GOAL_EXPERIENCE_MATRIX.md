@@ -42,4 +42,4 @@ Funkcionalnost ni sinonim za naključni krožni trening ali MetCon. Izbor in zah
 - Napredovanje ni avtomatično: temelji na izvedbi, RIR/RPE, regeneraciji in odzivu.
 - Začetniki ne dobijo programa za maksimalno moč zgolj zato, ker izberejo cilj Moč + mišična masa.
 - Pri naprednih je specializacija moči ali hipertrofije podcilj znotraj prvega glavnega cilja, ne četrti cilj.
-- Zgodovinski identifikatorji strength, hypertrophy, general_fitness, power, endurance, mobility in weight_management se na API meji normalizirajo v enega od treh glavnih ciljev. Ohranitev aliasov preprečuje prekinitev obstoječih profilov in integracij.
+- Zgodovinski identifikatorji strength, hypertrophy, general_fitness, power, endurance, mobility in weight_management ostanejo podprti zaradi združljivosti s shranjenimi profili. Pri interpretaciji cilja se preslikajo v enega od treh glavnih ciljev; obstoječi shranjeni podatki se ne prepisujejo samodejno.
