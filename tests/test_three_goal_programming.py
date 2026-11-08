@@ -67,6 +67,7 @@ def test_fat_loss_goal_preserves_strength_and_adds_conditioning_and_nutrition_fr
     patterns = {item["pattern"] for session in plan["sessions"] for item in session["exercises"]}
     assert {"squat", "hinge", "conditioning"}.issubset(patterns)
     assert "nutrition" in plan["goal_framework"]["pillars"]
+    assert len(plan["nutrition_guidance"]) >= 4
 
 
 def test_strength_and_mass_goal_only_allows_specialization_for_advanced_users():
