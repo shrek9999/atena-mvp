@@ -26,7 +26,7 @@ def _client(monkeypatch, tmp_path, *, health_consent=True):
             "profile": {
                 "goal": "functional",
                 "experience": "beginner",
-                "equipment": ["bodyweight", "band"],
+                "equipment": ["bodyweight", "resistance_band"],
                 "sessions_per_week": 2,
                 "session_minutes": 45,
             },
@@ -137,7 +137,7 @@ def test_health_data_consent_withdrawal_erases_assessment_and_heart_rate(monkeyp
     )
     assert assessment.status_code == 200
 
-    exercise_id = load_catalogue()[0]["id"]
+    exercise_id = next(item["id"] for item in load_catalogue() if item["id"] == "push_up")
     logged = client.post(
         f"/coach/profile/{profile_id}/sessions",
         headers=headers,
