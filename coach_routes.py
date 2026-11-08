@@ -2267,9 +2267,20 @@ def _normalize_decision_history(value):
         response = raw.get("adaptation_response")
         if response is not None and (
             not isinstance(response, dict)
-            or set(response) != {"adaptation_id", "outcome"}
+            or set(response) not in (
+                {"adaptation_id", "outcome"},
+                {"adaptation_id", "outcome", "program_version_id"},
+            )
             or not isinstance(response.get("adaptation_id"), str)
             or not 8 <= len(response["adaptation_id"]) <= 64
+            or (
+                "program_version_id" in response
+                and (
+                    not isinstance(response.get("program_version_id"), str)
+                    or not response["program_version_id"].strip()
+                    or len(response["program_version_id"]) > 128
+                )
+            )
             or response.get("outcome") not in {"helped", "no_change", "worse", "not_tried"}
         ):
             raise ValueError("Odziv na prejšnjo prilagoditev ni veljaven.")
