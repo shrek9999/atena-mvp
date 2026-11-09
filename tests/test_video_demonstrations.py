@@ -1,3 +1,4 @@
+from training.program import _learning_task_videos
 from training.video_demonstrations import (
     FUNCTIONAL_SKILL_CATEGORIES,
     VIDEO_DEMONSTRATIONS,
@@ -32,3 +33,16 @@ def test_future_functional_skills_are_taxonomy_not_fake_video_records():
     skills = get_functional_skill_categories()
     assert {"burpee", "box_jump", "wall_ball"}.issubset(skills)
     assert all("video_id" not in item for item in skills.values())
+
+
+
+def test_generic_squat_video_is_available_for_squat_learning_task():
+    videos = _learning_task_videos("squat", None, "reaching_squat")
+    assert len(videos) == 1
+    assert videos[0]["video_id"] == "CIwsqlgeNAs"
+    assert videos[0]["content_scope"] == "general_squat_demonstration"
+
+
+def test_squat_video_is_not_misapplied_to_other_patterns():
+    assert _learning_task_videos("hinge", None, None) == []
+    assert _learning_task_videos("horizontal_push", None, None) == []
