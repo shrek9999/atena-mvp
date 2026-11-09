@@ -89,9 +89,17 @@ Za začetno zbirko ciljamo na šest osnovnih vzorcev:
 
 Ne zahtevamo šestih videov na silo. Če za določen vzorec ni primernega in preverjenega FZS posnetka, ga označimo kot manjkajočega in uporabimo lastno demonstracijo ali pozneje odobren zunanji vir.
 
-## 8. Trenutno stanje raziskave
+## 8. Trenutno stanje in začetni video
 
-Uradni FZS kanal je bil najden, vendar iz javno indeksiranih rezultatov v tej raziskavi še ni bilo mogoče potrditi posameznih URL-jev videov za vseh šest vzorcev. Kanal:
+Uradni FZS kanal:
 https://www.youtube.com/@fitneszvezaslovenijefzs2912
 
-Zato posameznih video ID-jev ne izmišljamo in še ne dodajamo v produkcijski register. Ko so konkretni URL-ji preverjeni, jih vnesemo v register ter vsebinsko odobrimo.
+Uporabnik je posredoval in vsebinsko odobril kratek (približno 5 sekund) demonstracijski video počepa:
+- Naslov: `Počep`
+- URL: https://www.youtube.com/watch?v=CIwsqlgeNAs
+- Video ID: `CIwsqlgeNAs`
+- Uporabnikova uredniška ocena: zelo dober, kratek posnetek, ki prikazuje demonstracijo giba.
+
+Video je dodan v `training/video_demonstrations.py` kot začetni zapis z `review_status=owner_approved`. Ker ni bilo mogoče neposredno pregledati vseh sličic, natančna različica počepa še ni pripisana določenemu `exercise_id` ali `learning_method_id`. YouTube metapodatki potrjujejo naslov in standardni embed URL, ne pa dokončne razpoložljivosti vdelave v vseh okoljih. Pred javnim prikazom mora aplikacija preveriti delovanje predvajalnika in ohraniti povezavo do izvirnika.
+
+Naslednji videi se dodajo izključno iz konkretnih URL-jev, ki jih uporabnik posreduje ali ki so zanesljivo najdeni na FZS kanalu. Za osnovne vzorce ter poznejše funkcionalne veščine (burpee, box jump, wall ball ipd.) se uporabljajo enaka uredniška merila. Kategorije prihodnjih veščin so pripravljene v registru; nepreverjenih video ID-jev ni.
