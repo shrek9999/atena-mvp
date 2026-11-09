@@ -1,6 +1,7 @@
 import pytest
 
 from training.movement_assessment import (
+    MOVEMENT_TASKS,
     MovementAssessmentError,
     assess_movement_competence,
 )
