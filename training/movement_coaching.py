@@ -97,7 +97,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
     "horizontal_pull": {
         "label": "Horizontalni poteg – veslanje",
         "task_id": "bent_over_row",
-        "task": "Veslanje z lahkim pripomočkom; pri predklonu ohrani nadzorovan položaj trupa.",
+        "task": "Veslanje v predklonu z drogom, dvema ročkama, dvema kettlebelli ali lahko palico; pri predklonu ohrani nadzorovan položaj trupa in zabeleži pripomoček ter breme.",
         "exercise_ids": [
             "band_row", "trx_row", "ring_row", "one_arm_row",
             "kettlebell_one_arm_row", "dumbbell_bent_over_row", "barbell_bent_over_row",
