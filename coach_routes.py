@@ -271,6 +271,7 @@ def _normalize_slovene_coaching_terms(answer):
         (r"\bzglobom\b", "sklepom"),
         (r"\bravnomeren\b", "enakomeren"),
         (r"\b2 delovna sklopa na teden\b", "2 treninga na teden"),
+        (r"\b2-krat na tedensko\b", "dvakrat tedensko"),
         (r"\bNjen namen\b", "Namen"),
         (r"ali bi z veseljem nadaljevala z naslednjim načrtovanim treningom ali pa morava tokratni urnik morda malce prilagoditi tvojim obveznostim\?", "ali želiš nadaljevati z naslednjim načrtovanim treningom ali pa naj urnik prilagodiva tvojim obveznostim?"),
         (r"ali bi naslednji teden raje ohranila enak načrt z dvem treningoma ali pa začetni obseg malce prilagodiva", "ali naj naslednji teden ohraniva enak načrt z dvema treningoma ali pa začetni obseg nekoliko prilagodiva"),
@@ -322,8 +323,9 @@ def _sanitize_power_and_progression_claims(answer):
         answer = answer[:match.start()] + replacement + answer[match.end():]
     else:
         answer = re.sub(
-            r"(?is)[^.!?]*(?:naslednji teden|naslednjem treningu)[^.!?]*"
-            r"(?:poveč(?:aj|aš|ati|anje)|dodaj(?:anje|š)?)[^.!?]*[.!?]",
+            r"(?is)[^.!?]*(?:naslednji teden|naslednjem treningu|prihodnjič|"
+            r"naslednjič|v naslednji vadbi|pri naslednji vadbi|pri naslednjem treningu)[^.!?]*"
+            r"(?:poveč(?:aj|aš|ati|anje|a)|dod(?:aj|aš|ati|amo|a))[^.!?]*[.!?]",
             "Napredovanje je primerno šele, ko zgornjo mejo ciljnega razpona "
             "dosežeš v vsaj dveh primerljivih treningih z načrtovanim RIR, "
             "stabilno tehniko in ustrezno regeneracijo; sicer ohrani trenutno "
