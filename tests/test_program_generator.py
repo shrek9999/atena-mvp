@@ -978,3 +978,69 @@ def test_functional_and_fat_loss_programmes_have_distinct_training_intent():
     assert {"balance", "coordination"}.intersection(functional_patterns)
     assert "conditioning" in fat_loss_patterns
     assert functional_patterns != fat_loss_patterns
+
+
+def test_lunge_needs_support_selects_a_catalogue_verified_supported_variant():
+    profile = {
+        **BASE,
+        "goal": "strength_hypertrophy",
+        "experience": "beginner",
+        "equipment": ["bodyweight", "household_support"],
+        "session_minutes": 60,
+    }
+    plan = generate_program(profile, movement_assessment={"lunge": "needs_support"})
+    lunges = [
+        exercise
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+        if exercise["pattern"] == "lunge"
+    ]
+    assert lunges
+    assert all(exercise["exercise_id"] == "supported_split_squat" for exercise in lunges)
+    assert all(exercise["prescription"]["sets"] <= 2 for exercise in lunges)
+    assert all(exercise["prescription"]["rir"] >= 3 for exercise in lunges)
+    assert all("household_support" in exercise["equipment"] for exercise in lunges)
+    assert all(exercise["movement_adaptation_note"] for exercise in lunges)
+
+
+def test_lunge_needs_support_without_confirmed_support_equipment_is_omitted():
+    profile = {
+        **BASE,
+        "goal": "strength_hypertrophy",
+        "experience": "beginner",
+        "equipment": ["bodyweight"],
+        "session_minutes": 60,
+    }
+    plan = generate_program(profile, movement_assessment={"lunge": "needs_support"})
+    assert not any(
+        exercise["pattern"] == "lunge"
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+    )
+    events = plan["movement_adaptation"]["events"]
+    assert any(
+        event["pattern"] == "lunge"
+        and event["action"] == "omitted_no_verified_supported_variant"
+        for event in events
+    )
+
+
+def test_lunge_symptoms_are_not_replaced_with_an_automatic_regression():
+    profile = {
+        **BASE,
+        "goal": "strength_hypertrophy",
+        "experience": "beginner",
+        "equipment": ["bodyweight", "household_support"],
+        "session_minutes": 60,
+    }
+    plan = generate_program(profile, movement_assessment={"lunge": "symptoms_reported"})
+    assert not any(
+        exercise["pattern"] == "lunge"
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+    )
+    assert any(
+        event["pattern"] == "lunge"
+        and event["action"] == "omitted_pending_symptom_review"
+        for event in plan["movement_adaptation"]["events"]
+    )
