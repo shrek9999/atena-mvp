@@ -257,6 +257,8 @@ def _normalize_slovene_coaching_terms(answer):
         (r"\bmišične masa\b", "mišične mase"),
         (r"\bprilezi daljši počitek\b", "vzemi si daljši počitek"),
         (r"\bna session\b", "na vadbeni dan"),
+        (r"(?im)^\\s*[-*]?\\s*(?:kuei|cua|kosi/napotki)\\s*:", "Namigi:"),
+        (r"\\bdvodimenzionalni potisk za prsi\\b", "potisk ročk s tal"),
     )
     for pattern, replacement in replacements:
         def preserve_initial_case(match):
@@ -264,6 +266,47 @@ def _normalize_slovene_coaching_terms(answer):
                 return replacement[:1].upper() + replacement[1:]
             return replacement
         answer = re.sub(pattern, preserve_initial_case, answer, flags=re.IGNORECASE)
+    return answer
+
+
+def _sanitize_power_and_progression_claims(answer):
+    """Enforce two high-value coaching rules when Gemini phrases them inconsistently."""
+    answer = re.sub(
+        r"(?:ustrezno\\s+)?spočit(?:im|ega|emu)\\s+živčno[- ]mišičn(?:im|ega|emu)\\s+sistem(?:om|a|u)",
+        "dovolj dolgimi odmori za ohranjanje hitrosti in kakovosti ponovitev",
+        answer,
+        flags=re.IGNORECASE,
+    )
+    answer = re.sub(
+        r"(?:popoln(?:a|o)\\s+)?obnov(?:a|o|itev)\\s+živčn(?:ega|ega)\\s+sistem(?:a|u)",
+        "ohranjanje hitrosti in kakovosti ponovitev",
+        answer,
+        flags=re.IGNORECASE,
+    )
+    progression_section = re.compile(
+        r"(?is)(\\*\\*pravilo napredovanja[^*]*\\*\\*\\s*:?[ \\t]*)(.*?)(?=\\n\\s*\\n|$)"
+    )
+    match = progression_section.search(answer)
+    if match:
+        replacement = (
+            match.group(1)
+            + "Obremenitev ali zahtevnost povečaj šele, ko zgornjo mejo ciljnega "
+            "razpona dosežeš v vsaj dveh primerljivih treningih, z načrtovanim RIR, "
+            "stabilno tehniko in ustrezno regeneracijo. Če teh dveh uspešnih "
+            "izpostavitev še nimaš, ohrani trenutno obremenitev in najprej potrdi "
+            "ponovljivost."
+        )
+        answer = answer[:match.start()] + replacement + answer[match.end():]
+    else:
+        answer = re.sub(
+            r"(?is)[^.!?]*(?:naslednji teden|naslednjem treningu)[^.!?]*"
+            r"(?:poveč(?:aj|aš|ati|anje)|dodaj(?:anje|š)?)[^.!?]*[.!?]",
+            "Napredovanje je primerno šele, ko zgornjo mejo ciljnega razpona "
+            "dosežeš v vsaj dveh primerljivih treningih z načrtovanim RIR, "
+            "stabilno tehniko in ustrezno regeneracijo; sicer ohrani trenutno "
+            "obremenitev.",
+            answer,
+        )
     return answer
 
 
@@ -1213,6 +1256,7 @@ def coach_chat():
             logger.warning("Gemini returned no text for model %s", model)
             return jsonify({"error": "Model ni vrnil odgovora. Poskusi znova."}), 502
         answer = _normalize_slovene_coaching_terms(answer)
+        answer = _sanitize_power_and_progression_claims(answer)
         answer = _sanitize_unverified_safety_claim(answer, messages)
         answer = _sanitize_unlisted_support(answer, messages)
         bodyweight_note = _bodyweight_only_program_note(messages)
