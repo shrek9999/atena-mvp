@@ -44,7 +44,7 @@ def test_hinge_learning_method_preserves_three_contacts_and_fourth_lumbar_contro
     hinge = get_pattern_coaching("hinge")
     method = next(item for item in hinge["learning_methods"] if item["id"] == "dowel_four_point")
     assert method["exercise_id"] is None
-    assert "tri stične" in method["description"]
+    assert all(term in method["description"] for term in ("trtico", "torakalnim", "zadnjim delom glave"))
     assert "četrta kontrolna točka" in method["description"]
     assert "ledveni krivini" in method["description"]
     assert "ne sme spreminjati" in method["description"]
@@ -54,7 +54,7 @@ def test_supported_lunge_method_links_to_real_catalogue_exercise():
     lunge = get_pattern_coaching("lunge")
     method = next(item for item in lunge["learning_methods"] if item["id"] == "supported_split_squat")
     assert method["exercise"]["id"] == "supported_split_squat"
-    assert "oporo" in method["description"]
+    assert "opora" in method["description"].lower()
 
 
 def test_bent_over_row_is_separate_from_hinge_but_requires_trunk_position():
