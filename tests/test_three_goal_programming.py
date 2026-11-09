@@ -38,7 +38,7 @@ def test_three_canonical_goals_generate_distinct_valid_programs(goal, experience
 
 
 @pytest.mark.parametrize("experience", LEVELS)
-def test_functional_goal_combines_strength_mobility_coordination_and_metcon(experience):
+def test_functional_goal_prioritizes_fundamental_patterns_without_generic_add_ons(experience):
     plan = generate_program({
         "goal": "functional",
         "experience": experience,
@@ -49,7 +49,16 @@ def test_functional_goal_combines_strength_mobility_coordination_and_metcon(expe
     })
     exercises = [item for session in plan["sessions"] for item in session["exercises"]]
     patterns = {item["pattern"] for item in exercises}
-    assert {"squat", "hinge", "conditioning", "coordination", "carry", "balance"}.issubset(patterns)
+
+    # The functional template is grounded in the main movement patterns.
+    assert {"squat", "hinge", "horizontal_push", "horizontal_pull", "conditioning"}.issubset(patterns)
+    assert {"lunge", "locomotion"} & patterns
+
+    # Balance and coordination are assessed and trained when indicated,
+    # not inserted automatically as filler. Jumping requires a separate
+    # landing-readiness decision and is never inferred from experience level.
+    assert not {"balance", "coordination", "jump"} & patterns
+
     assert all(session.get("mobility_block", {}).get("exercises") for session in plan["sessions"])
     assert all(session["exercise_count"] <= 6 for session in plan["sessions"])
 
