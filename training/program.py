@@ -577,9 +577,14 @@ def generate_program(
                 raise ProgramValidationError(f"Učna metoda {method_id} ne pripada vzorcu {pattern}.")
             if decision in {"LEARN", "REGRESS"} and method is None and not record.get("selected_exercise_id"):
                 raise ProgramValidationError(f"Za {decision} pri {pattern} mora biti izbrana učna metoda ali različica vaje.")
-            available_options = get_exercise_options(
-                pattern, equipment=p["equipment"], experience=p["experience"], goal=None
-            )
+            if pattern in p["excluded_patterns"]:
+                raise ProgramValidationError(f"Gibalni vzorec {pattern} je izrecno izključen iz profila.")
+            available_options = [
+                item for item in get_exercise_options(
+                    pattern, equipment=p["equipment"], experience=p["experience"], goal=None
+                )
+                if item["id"] not in p["excluded_exercise_ids"]
+            ]
             available_ids = {item["id"] for item in available_options}
             selected_id = record.get("selected_exercise_id")
             method_exercise_id = method.get("exercise_id") if method else None
