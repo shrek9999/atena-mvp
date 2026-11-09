@@ -92,7 +92,7 @@ def test_power_language_is_normalized_to_output_and_technique_not_nervous_system
     answer = "Izvajaj z maksimalno hitrostjo in ustrezno spočitim živčno-mišičnim sistemom."
     cleaned = _sanitize_power_and_progression_claims(answer)
     assert "živčno-mišičnim sistemom" not in cleaned.casefold()
-    assert "ohranjanje hitrosti in kakovosti ponovitev" in cleaned.casefold()
+    assert "; med serijami pa si vzemi dovolj dolg odmor za ohranjanje hitrosti in kakovosti ponovitev" in cleaned.casefold()
 
 
 def test_progression_paragraph_requires_two_comparable_successful_exposures():
@@ -112,11 +112,11 @@ def test_unheaded_next_week_progression_promise_is_rewritten():
 
 
 def test_common_gemini_cue_heading_typos_are_normalized():
-    answer = "Kuei: Trup naj bo čvrst.\nCua: Gib naj bo nadzorovan."
+    answer = "Kuei: Trup naj bo čvrst.\nCua: Gib naj bo nadzorovan.\n- *Kuei:* Rebra ostanejo nadzorovana."
     cleaned = _normalize_slovene_coaching_terms(answer)
     assert "Kuei:" not in cleaned
     assert "Cua:" not in cleaned
-    assert cleaned.count("Namigi:") == 2
+    assert cleaned.count("Namigi:") == 3
 
 
 def test_generated_program_exposes_internal_regression_and_progression_decision_criteria():
