@@ -37,13 +37,15 @@ MOVEMENT_RUBRICS = {
         "criteria": {
             "hip_strategy": "Gibanje se začne s pomikom kolkov nazaj; kolena se prilagodijo nalogi.",
             "spine_pelvis_control": "Ohranja nadzorovan odnos trupa in medenice skozi amplitudo.",
+            "dowel_neutral_spine": "Pri učenju s palico ohranja tri stične točke (trtica oziroma križnično-sakralni predel, torakalni del hrbtenice, zadnji del glave) in nespremenjen položaj roke v ledveni krivini kot četrto kontrolno točko.",
             "foot_pressure": "Ohranja stabilno oporo stopal brez nenadzorovanega prenosa teže.",
             "load_path": "Breme, kadar je prisotno, ostaja blizu telesa in pod nadzorom.",
             "range_control": "Ustavi amplitudo, preden izgubi nadzor položaja.",
             "tempo_control": "Ohranja predpisani tempo brez sunkov ali pospeševanja skozi kritični del.",
         },
         "manipulations": [
-            "Vadi odmik kolkov proti steni.",
+            "Vadi predklon s palico: tri stične točke ostanejo v stiku, roka v ledveni krivini pa ohranja nespremenjen položaj kot četrta kontrolna točka.",
+            "Vadi odmik bokov proti steni.",
             "Zmanjšaj amplitudo in uporabi lahek predmet kot tarčo.",
             "Primerjaj izvedbo brez bremena in z lahkim kettlebellom.",
             "Uporabi podporo ene roke in preveri nadzor.",
