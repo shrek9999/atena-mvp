@@ -54,6 +54,7 @@ def test_mobility_tasks_are_explicit_and_map_only_to_relevant_patterns():
 
     assert TASK_PATTERNS["ankle_dorsiflexion"] == {"squat", "lunge"}
     assert TASK_PATTERNS["hip_mobility"] == {"squat", "hinge", "lunge"}
+    assert MOVEMENT_TASKS["hip_mobility"] == "aktivni upogib kolka v leže (koleno proti prsnemu košu)"
     assert TASK_PATTERNS["shoulder_mobility"] == {"vertical_push"}
 
 
