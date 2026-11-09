@@ -257,7 +257,7 @@ def _normalize_slovene_coaching_terms(answer):
         (r"\bmišične masa\b", "mišične mase"),
         (r"\bprilezi daljši počitek\b", "vzemi si daljši počitek"),
         (r"\bna session\b", "na vadbeni dan"),
-        (r"(?im)^\s*[-*]?\s*(?:kuei|cua|kosi/napotki)\s*:", "Namigi:"),
+        (r"\*{0,2}(?:kuei|cua|kosi/napotki):\*{0,2}", "Namigi:"),
         (r"\bdvodimenzionalni potisk za prsi\b", "potisk ročk s tal"),
     )
     for pattern, replacement in replacements:
@@ -272,8 +272,8 @@ def _normalize_slovene_coaching_terms(answer):
 def _sanitize_power_and_progression_claims(answer):
     """Enforce two high-value coaching rules when Gemini phrases them inconsistently."""
     answer = re.sub(
-        r"(?:ustrezno\s+)?spočit(?:im|ega|emu)\s+živčno[- ]mišičn(?:im|ega|emu)\s+sistem(?:om|a|u)",
-        "dovolj dolgimi odmori za ohranjanje hitrosti in kakovosti ponovitev",
+        r"\s+in\s+(?:ustrezno\s+)?spočit(?:im|ega|emu)\s+živčno[- ]mišičn(?:im|ega|emu)\s+sistem(?:om|a|u)",
+        "; med serijami pa si vzemi dovolj dolg odmor za ohranjanje hitrosti in kakovosti ponovitev",
         answer,
         flags=re.IGNORECASE,
     )
