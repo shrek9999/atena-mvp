@@ -57,6 +57,8 @@ def test_program_quality_across_goal_and_experience_matrix(goal, experience):
                 assert experience == "advanced"
                 assert profile.get("include_accessories") is True
             if experience == "beginner" and goal in {"hypertrophy", "strength", "general_fitness", "functional"}:
+                # RIR is meaningful for resistance repetitions, not timed conditioning
+                # or continuous locomotion prescriptions.
                 if exercise["pattern"] not in {"trunk_stability", "anti_rotation", "balance", "coordination", "conditioning", "locomotion"}:
                     assert exercise["prescription"]["rir"] >= 3
                     if exercise["pattern"] in {"jump", "hinge_power"}:
