@@ -249,15 +249,12 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
             reps, rir, rest = "20–30 s", None, 60
     elif goal == "functional" and pattern == "conditioning":
         # Light, repeatable MetCon supports the strength base; it is not an
-        # all-out finisher or a test of maximal capacity.
+        # all-out finisher or a test of maximal capacity. Timed work is stored
+        # as work_seconds (not a textual reps value) for duration calculations.
         sets = {"beginner": 2, "intermediate": 3, "advanced": 4}[level]
+        reps, rir = "1", None
         kind = exercise.get("endurance_type")
-        if kind == "aerobic":
-            reps, rir, rest = "30–45 s", None, 45
-        elif kind == "anaerobic":
-            reps, rir, rest = "10–15 s", None, 60
-        else:
-            reps, rir, rest = "20–30 s", None, 45
+        rest = 60 if kind == "anaerobic" else 45
     elif goal == "endurance" and pattern == "locomotion":
         sets, reps, rir, rest = 1, "20–30 min", None, 0
     elif goal == "endurance" and pattern == "conditioning":
@@ -442,6 +439,20 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         kind = exercise.get("endurance_type")
         work_seconds = 60 if kind == "aerobic" else (18 if kind == "anaerobic" else 25)
         prescription.update({"work_seconds": work_seconds, "time_label": "kratek kondicijski interval", "effort_target": "Nadzorovana intenzivnost; ne izvajaj maksimalno in ne žrtvuj tehnike."})
+    elif goal == "functional" and pattern == "conditioning":
+        kind = exercise.get("endurance_type")
+        work_seconds = (
+            {"beginner": 30, "intermediate": 40, "advanced": 45}[level]
+            if kind == "aerobic" else
+            {"beginner": 10, "intermediate": 12, "advanced": 15}[level]
+            if kind == "anaerobic" else
+            {"beginner": 20, "intermediate": 25, "advanced": 30}[level]
+        )
+        prescription.update({
+            "work_seconds": work_seconds,
+            "time_label": "nadzorovanega kondicijskega intervala",
+            "effort_target": "Zmeren, ponovljiv napor; zaključi interval, preden se poslabšata tehnika ali nadzor dihanja.",
+        })
     elif goal == "endurance" and pattern == "locomotion":
         prescription.update({"work_seconds": 1200, "time_label": "neprekinjene aerobne aktivnosti", "effort_target": "Zmeren pogovorni tempo; lahko govoriš v stavkih, vendar čutiš pospešeno dihanje."})
     elif goal == "endurance" and pattern == "conditioning":
