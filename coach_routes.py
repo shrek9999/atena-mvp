@@ -298,7 +298,7 @@ def _sanitize_power_and_progression_claims(answer):
     answer = re.sub(
         r"(?is)(?:da\s+se\s+)?(?:mišičn(?:i|ega)\s+sistem\s+in\s+)?"
         r"živčn(?:i|ega)\s+(?:odziv|sistem)(?:\s+v\s+celoti)?\s+"
-        r"(?:spočit(?:a|o|i)|obnov(?:i|ita|ijo)|regenerir(?:a|ata|ajo))",
+        r"(?:spoči\w*|obnov(?:i|ita|ijo)|regenerir(?:a|ata|ajo))",
         "ohranjanje hitrosti in kakovosti ponovitev",
         answer,
     )
