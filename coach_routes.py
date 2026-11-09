@@ -206,6 +206,10 @@ def _verified_exercise_catalogue_context(messages):
             continue
         required = set(exercise["equipment"])
         optional = set(exercise["equipment_any"])
+        # A resistance band alone is not a safe anchor. Only expose band rows
+        # when the profile explicitly confirms a stable anchor point.
+        if exercise["id"] == "band_row" and "anchor_point" not in available:
+            continue
         available_with_bodyweight = available | {"bodyweight"}
         if not required.issubset(available_with_bodyweight):
             continue
@@ -282,6 +286,13 @@ def _sanitize_power_and_progression_claims(answer):
         "ohranjanje hitrosti in kakovosti ponovitev",
         answer,
         flags=re.IGNORECASE,
+    )
+    answer = re.sub(
+        r"(?is)(?:da\s+se\s+)?(?:mišičn(?:i|ega)\s+sistem\s+in\s+)?"
+        r"živčn(?:i|ega)\s+(?:odziv|sistem)(?:\s+v\s+celoti)?\s+"
+        r"(?:spoči\w*|obnov(?:i|ita|ijo)|regenerir(?:a|ata|ajo))",
+        "ohranjanje hitrosti in kakovosti ponovitev",
+        answer,
     )
     progression_section = re.compile(
         r"(?is)(\*\*pravilo napredovanja[^*]*\*\*\s*:?[ \t]*)(.*?)(?=\n\s*\n|$)"
