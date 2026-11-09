@@ -13,7 +13,7 @@ Ocena je strukturiran, samoporočan pogovor o izkušnji pri osnovnih gibalnih na
 | Osnovni vzorci | Izpadni korak | Enostranski vzorec; brez izmišljene regresije, če je katalog ne vsebuje |
 | Zgornji del | Potisk in poteg | Ustrezni vzorci potiska/potega |
 | Gibljivost | Pomik kolena naprej nad stopalo ob peti na tleh | Počep in izpadni korak; ne pomeni diagnoze gležnja |
-| Gibljivost | Nadzorovan gib kolka v počepu in predklonu | Počep, predklon z ravnim hrbtom in izpadni korak |
+| Gibljivost | Aktivni upogib kolka v leže, s primerjavo leve in desne strani | Dodatni kontekst za počep, predklon z ravnim hrbtom in izpadni korak; brez sklepanja o vzroku omejitve |
 | Gibljivost | Dvig rok nad glavo brez siljenja | Vertikalni potisk |
 | Ravnotežje | Ravnotežje na eni nogi | Ravnotežje; ne potrjuje pripravljenosti za doskok |
 | Koordinacija | Izmenično dotikanje nasprotne dlani in kolena | Koordinacija; negotovost zahteva dodatno pojasnilo |
@@ -38,7 +38,7 @@ Manjkajoči podatki ostanejo not_assessed. Ne sklepamo, da je uporabnik nalogo o
 2. Če ustrezne preverjene različice ni, sistem vzorec izpusti in pojasni omejitev. Ne preimenuje običajne vaje v regresijo.
 3. Poročani simptomi ustavijo samodejno prilagajanje samo povezanega vzorca. Sistem ne ugiba o vzroku ali diagnozi.
 4. Negotovost sproži dodatno vprašanje; sama po sebi ni dokaz pomanjkljivosti.
-5. Ocena gležnja je povezana s počepom in izpadnim korakom; ocena kolka s počepom, predklonom in izpadnim korakom; ocena ramenskega giba z vertikalnim potiskom.
+5. Ocena gležnja je povezana s počepom in izpadnim korakom; ocena aktivnega upogiba kolka kot dodatni kontekst za počep, predklon in izpadni korak; ocena ramenskega giba z vertikalnim potiskom.
 6. Zavedanje telesa ostane pogovorni namig. Ne sproži samodejnega dodajanja vaj za stabilizacijo trupa.
 7. Koordinacija je samostojno področje. Ne sklepamo o njej na podlagi starosti, trening staža ali cilja.
 8. Udobna izvedba počepa, ravnotežja ali hoje ne potrjuje pripravljenosti za skoke, doskoke ali hitro zaviranje.
