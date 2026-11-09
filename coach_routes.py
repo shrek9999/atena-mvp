@@ -449,8 +449,9 @@ def _pending_safety_reply(latest):
         acknowledgement = "Hvala, ta podatek bom upošteval."
     return (
         acknowledgement
-        + " Varnostnega vprašanja pa še nisi odgovoril: ali imaš trenutno "
-        "kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
+        + " Varnostnega vprašanja pa še nisi odgovoril, zato ne bom sklepal, "
+        "da omejitev ni. Ali imaš trenutno kakršne koli bolečine, poškodbe, "
+        "gibalne omejitve ali zdravstvene zadržke?"
     )
 
 
