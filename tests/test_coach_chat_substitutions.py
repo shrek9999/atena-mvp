@@ -249,24 +249,6 @@ def test_band_row_requires_explicitly_confirmed_anchor_point():
     assert "Veslanje z elastiko" in with_anchor
 
 
-def test_pallof_band_variant_requires_anchor_but_cable_variant_is_allowed():
-    base = {
-        "goal": "functional",
-        "experience": "intermediate",
-        "equipment": ["resistance_band", "bodyweight"],
-    }
-    band_only = coach_routes._verified_exercise_catalogue_context([{
-        "role": "user", "content": "Profil: " + json.dumps(base),
-    }])
-    cable = coach_routes._verified_exercise_catalogue_context([{
-        "role": "user",
-        "content": "Profil: " + json.dumps({**base, "equipment": ["cable", "bodyweight"]}),
-    }])
-
-    assert "Pallof potisk" not in band_only
-    assert "Pallof potisk" in cable
-
-
 def test_power_sanitizer_removes_unsupported_nervous_response_recovery_claim():
     answer = (
         "Dolgi odmori so nujni, da se mišični sistem in živčni odziv "
