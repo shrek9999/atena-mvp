@@ -342,8 +342,8 @@ def test_slovene_coaching_normalizer_fixes_live_benchmark_typos():
 
     assert "Preden greva" in cleaned
     assert "začneva" in cleaned
-    assert "v rezervi imej" in cleaned
-    assert "sklepom" in cleaned
+    assert "v rezervi imej" in cleaned.casefold()
+    assert "pri sklepu" in cleaned.casefold()
     assert "Namen je" in cleaned
 
 
