@@ -262,6 +262,88 @@ def test_power_sanitizer_removes_unsupported_nervous_response_recovery_claim():
     assert "hitrosti in kakovosti ponovitev" in cleaned
 
 
+def test_onboarding_safety_gate_precedes_equipment_question():
+    messages = [
+        {"role": "user", "content": "Rad bi izboljšal splošno telesno pripravljenost doma."},
+        {"role": "model", "content": "Kakšno opremo imaš na voljo doma?"},
+    ]
+
+    reply = coach_routes._coaching_guardrail_reply(messages)
+
+    assert reply is not None
+    assert "najprej preveriti varnost" in reply
+    assert "bolečine, poškodbe" in reply
+    assert "kakšno opremo" not in reply
+
+
+def test_onboarding_safety_gate_precedes_time_question():
+    messages = [
+        {"role": "user", "content": "Želim redno trenirati, vendar nimam vedno enako časa."},
+        {"role": "model", "content": "Koliko časa imaš običajno na voljo za vadbo?"},
+    ]
+
+    reply = coach_routes._coaching_guardrail_reply(messages)
+
+    assert reply is not None
+    assert "najprej preveriti varnost" in reply
+
+
+def test_pending_safety_acknowledges_frequency_without_claiming_it_was_saved():
+    messages = [
+        {"role": "user", "content": "Rad bi bil bolj fit."},
+        {"role": "model", "content": "Ali imaš bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "Lahko vadim dvakrat na teden."},
+    ]
+
+    reply = coach_routes._coaching_guardrail_reply(messages)
+
+    assert reply is not None
+    assert "dvakrat tedensko" in reply
+    assert "Zabeležil sem" not in reply
+    assert "bolečine, poškodbe" in reply
+
+
+def test_pending_safety_acknowledges_equipment_context():
+    messages = [
+        {"role": "user", "content": "Rad bi izboljšal kondicijo."},
+        {"role": "model", "content": "Ali imaš bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "Doma imam sobno kolo in lahko hodim na sprehode."},
+    ]
+
+    reply = coach_routes._coaching_guardrail_reply(messages)
+
+    assert reply is not None
+    assert "Sobno kolo in sprehodi" in reply
+    assert "bolečine, poškodbe" in reply
+
+
+def test_slovene_coaching_normalizer_fixes_live_benchmark_typos():
+    answer = (
+        "Predeniva greva na prvi korak. Lahko varno začutiva. "
+        "V lasti imej 2 ponovitvi. Pri zglobom bodi pozoren. "
+        "Njen namen je umiritev."
+    )
+
+    cleaned = coach_routes._normalize_slovene_coaching_terms(answer)
+
+    assert "Preden greva" in cleaned
+    assert "začneva" in cleaned
+    assert "v rezervi imej" in cleaned
+    assert "sklepom" in cleaned
+    assert "Namen je" in cleaned
+
+
+def test_progression_sanitizer_separates_replacement_from_next_sentence():
+    answer = (
+        "Lahko počasi stopnjujemo dražaj, da bo napredek zvezan."
+        "Napredovanje je primerno šele po dveh uspešnih treningih."
+    )
+
+    cleaned = coach_routes._sanitize_power_and_progression_claims(answer)
+
+    assert "obremenitev.\n\nNapredovanje" in cleaned
+
+
 def test_structured_profile_equipment_is_authoritative_over_unavailable_mentions():
     messages = [{
         "role": "user",
