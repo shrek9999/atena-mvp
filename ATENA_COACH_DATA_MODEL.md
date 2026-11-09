@@ -11,7 +11,8 @@ ATENA Coach (the end-user training product) and ATENA Decision Engine (the separ
 | Table | Purpose | Current representation |
 |---|---|---|
 | `atena_profiles` | Authenticated athlete profile, canonical athlete state, privacy acknowledgement and health-data consent | Profile fields in JSONB; access token stored only as a SHA-256 hash |
-| `atena_training_sessions` | Actual completed or interrupted training sessions and exercise/set outcomes | Session envelope in JSONB; indexed by profile and session date |
+| `atena_training_sessions` | Actual completed or interrupted training sessions and exercise/set outcomes | Session envelope in JSONB; linked to the exact programme version attempted |
+| `atena_program_versions` | Immutable, numbered snapshots of every generated programme | Full JSONB snapshot plus structured generation rationale, profile-scoped version number and operational/health-sensitive classification |
 | `atena_decision_events` | Longitudinal audit trail of profile, assessment, session, feedback and consent changes | Typed event envelope plus JSONB payload |
 
 The event envelope is versioned independently from the athlete-state schema. Event payloads are strict JSON objects, have a bounded serialized size, use timezone-aware timestamps, and reject unknown fields and event types.
@@ -24,7 +25,11 @@ The event envelope is versioned independently from the athlete-state schema. Eve
 - Event source and data classification are explicit. Movement assessment, symptom context and referral events must be classified as health-sensitive.
 - Health-sensitive events require consent verified by the server against the stored profile, not a client-supplied flag.
 - Withdrawing health-data consent deletes health-sensitive events and removes stored movement/symptom observations and session discomfort flags. The operational consent-change event remains.
-- Deleting a profile cascades to its sessions and events.
+- Deleting a profile cascades to its sessions, programme versions and events.
+- A training session may reference the exact immutable programme version it followed. Deleting a health-sensitive programme on consent withdrawal sets the session reference to null but preserves the non-sensitive training record.
+- Each programme snapshot retains the generation context: source session IDs, final adaptive decision, adaptation guidance, exercise-level progression evidence and training-cycle summary. This makes later review explainable without copying full session records into every programme.
+- Programme versions are immutable through the application role; only creation, retrieval and privacy-driven deletion are supported.
+- Programme version numbers are serialized per profile using a profile-row lock in PostgreSQL (and an immediate write transaction in SQLite).
 - The user export includes the profile, sessions and decision-event history.
 
 ## Database access boundary
@@ -49,8 +54,8 @@ The event envelope is versioned independently from the athlete-state schema. Eve
 
 ## What is not yet complete
 
-- Generated programmes are not yet persisted as immutable, versioned programme snapshots. This is the next data-model milestone.
 - Session records are still JSONB envelopes; a separate relational set-result model may be justified after the programme-version link and user workflow are validated.
+- Programme-generation and session links now provide the prescribed-versus-performed anchor, but the frontend still needs to present programme history and submit the selected `program_version_id` when a session is logged.
 - Adaptation-decision events are not yet emitted by every decision path. Read-only GET requests do not create events.
 - Database backup configuration, point-in-time recovery and a real restoration drill have not been verified.
 - The production application connection has not yet been tested with the new `atena_app` role because the migration has not been applied.
