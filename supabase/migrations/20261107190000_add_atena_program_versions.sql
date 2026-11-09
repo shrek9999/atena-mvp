@@ -51,20 +51,26 @@ $$;
 -- classified as health-sensitive (fail closed), not silently exposed as
 -- ordinary training data. Current production table is empty, but this also
 -- makes the upgrade safe if legacy rows exist in another environment.
-with ranked as (
-  select program_version_id,
-         (coalesce(max(version_number) over (partition by profile_id), 0)
-          + row_number() over (
-              partition by profile_id
-              order by created_at asc, program_version_id asc
-            ))::integer as assigned_version
+with existing_max as (
+  select profile_id, coalesce(max(version_number), 0) as max_version
     from public.atena_program_versions
-   where version_number is null
+   group by profile_id
+),
+ranked_missing as (
+  select pv.program_version_id,
+         existing_max.max_version
+         + row_number() over (
+             partition by pv.profile_id
+             order by pv.created_at asc, pv.program_version_id asc
+           ) as assigned_version
+    from public.atena_program_versions as pv
+    join existing_max using (profile_id)
+   where pv.version_number is null
 )
 update public.atena_program_versions as pv
-   set version_number = ranked.assigned_version
-  from ranked
- where pv.program_version_id = ranked.program_version_id;
+   set version_number = ranked_missing.assigned_version
+  from ranked_missing
+ where pv.program_version_id = ranked_missing.program_version_id;
 
 update public.atena_program_versions as pv
    set goal = coalesce(nullif(pv.program_json ->> 'goal', ''),
