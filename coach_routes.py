@@ -267,6 +267,7 @@ def _normalize_slovene_coaching_terms(answer):
         (r"\bprednoiva\b", "Preden"),
         (r"\blahko varno začutiva\b", "lahko varno začneva"),
         (r"\bv lasti imej\b", "v rezervi imej"),
+        (r"\bpri zglobom\b", "pri sklepu"),
         (r"\bzglobom\b", "sklepom"),
         (r"\bravnomeren\b", "enakomeren"),
         (r"\b2 delovna sklopa na teden\b", "2 treninga na teden"),
@@ -448,9 +449,8 @@ def _pending_safety_reply(latest):
         acknowledgement = "Hvala, ta podatek bom upošteval."
     return (
         acknowledgement
-        + " Preden pripravim individualni program, moram preveriti še varnost: "
-        "ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve "
-        "ali zdravstvene zadržke?"
+        + " Varnostnega vprašanja pa še nisi odgovoril: ali imaš trenutno "
+        "kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
     )
 
 
