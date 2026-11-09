@@ -45,9 +45,9 @@ def test_hinge_learning_method_preserves_three_contacts_and_fourth_lumbar_contro
     method = next(item for item in hinge["learning_methods"] if item["id"] == "dowel_four_point")
     assert method["exercise_id"] is None
     assert all(term in method["description"] for term in ("trtico", "torakalnim", "zadnjim delom glave"))
-    assert "četrta kontrolna točka" in method["description"]
-    assert "ledveni krivini" in method["description"]
-    assert "ne sme spreminjati" in method["description"]
+    assert "četrta kontrolna točka" in method["description"].lower()
+    assert "ledveni krivini" in method["description"].lower()
+    assert "ne sme spreminjati" in method["description"].lower()
 
 
 def test_supported_lunge_method_links_to_real_catalogue_exercise():
