@@ -271,6 +271,80 @@
     ]
   },
   {
+    "id": "supported_split_squat",
+    "name": "Izpadni počep na mestu z oporo",
+    "name_en": "Supported split squat",
+    "pattern": "lunge",
+    "joint_type": "multi_joint",
+    "goals": [
+      "hypertrophy",
+      "strength",
+      "general_fitness"
+    ],
+    "equipment": [
+      "household_support"
+    ],
+    "level": "beginner",
+    "primary_muscles": [
+      "quadriceps",
+      "gluteus_maximus"
+    ],
+    "secondary_muscles": [
+      "adductors",
+      "calves",
+      "trunk"
+    ],
+    "cues": [
+      "Z eno ali obema rokama se rahlo oprimi stabilne, nepremične opore.",
+      "Ohrani stabilen položaj medenice in spuščaj se samo v nadzorovanem obsegu.",
+      "Obe nogi aktivno sodelujeta; oporo uporabi za ravnotežje, ne za vlečenje telesa navzgor."
+    ],
+    "common_errors": [
+      "Opiranje z vso težo na nestabilen predmet.",
+      "Izguba ravnotežja ali nenadzorovan spust."
+    ],
+    "regressions": [
+      "Manjša amplituda izpadnega počepa ob stabilni opori"
+    ],
+    "progressions": [
+      "split_squat"
+    ],
+    "alternatives": [
+      "chair_sit_to_stand"
+    ],
+    "warnings": [
+      "Uporabi samo stabilno, nepremično oporo, ki se ne more prevrniti ali zdrsniti.",
+      "Če se pojavi bolečina ali nelagodje, vajo prekini; opora ne pomeni dovoljenja za gib skozi simptome."
+    ],
+    "single_joint": false,
+    "equipment_any": [
+      "bodyweight",
+      "dumbbell"
+    ],
+    "unilateral": true,
+    "training_role": "main",
+    "loading_potential": "moderate",
+    "time_based": false,
+    "movement_family": "single_leg_knee_dominant",
+    "loading_mode": "mixed",
+    "mobility_strength": false,
+    "functional_components": [
+      "balance"
+    ],
+    "movement_pattern": "lunge",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness",
+      "balance"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control",
+      "balance"
+    ]
+  },
+  {
     "id": "reverse_lunge",
     "name": "Izpadni korak nazaj",
     "name_en": "Reverse lunge",
