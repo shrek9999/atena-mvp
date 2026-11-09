@@ -257,8 +257,8 @@ def _normalize_slovene_coaching_terms(answer):
         (r"\bmišične masa\b", "mišične mase"),
         (r"\bprilezi daljši počitek\b", "vzemi si daljši počitek"),
         (r"\bna session\b", "na vadbeni dan"),
-        (r"(?im)^\\s*[-*]?\\s*(?:kuei|cua|kosi/napotki)\\s*:", "Namigi:"),
-        (r"\\bdvodimenzionalni potisk za prsi\\b", "potisk ročk s tal"),
+        (r"(?im)^\s*[-*]?\s*(?:kuei|cua|kosi/napotki)\s*:", "Namigi:"),
+        (r"\bdvodimenzionalni potisk za prsi\b", "potisk ročk s tal"),
     )
     for pattern, replacement in replacements:
         def preserve_initial_case(match):
@@ -272,19 +272,19 @@ def _normalize_slovene_coaching_terms(answer):
 def _sanitize_power_and_progression_claims(answer):
     """Enforce two high-value coaching rules when Gemini phrases them inconsistently."""
     answer = re.sub(
-        r"(?:ustrezno\\s+)?spočit(?:im|ega|emu)\\s+živčno[- ]mišičn(?:im|ega|emu)\\s+sistem(?:om|a|u)",
+        r"(?:ustrezno\s+)?spočit(?:im|ega|emu)\s+živčno[- ]mišičn(?:im|ega|emu)\s+sistem(?:om|a|u)",
         "dovolj dolgimi odmori za ohranjanje hitrosti in kakovosti ponovitev",
         answer,
         flags=re.IGNORECASE,
     )
     answer = re.sub(
-        r"(?:popoln(?:a|o)\\s+)?obnov(?:a|o|itev)\\s+živčn(?:ega|ega)\\s+sistem(?:a|u)",
+        r"(?:popoln(?:a|o)\s+)?obnov(?:a|o|itev)\s+živčn(?:ega|ega)\s+sistem(?:a|u)",
         "ohranjanje hitrosti in kakovosti ponovitev",
         answer,
         flags=re.IGNORECASE,
     )
     progression_section = re.compile(
-        r"(?is)(\\*\\*pravilo napredovanja[^*]*\\*\\*\\s*:?[ \\t]*)(.*?)(?=\\n\\s*\\n|$)"
+        r"(?is)(\*\*pravilo napredovanja[^*]*\*\*\s*:?[ \t]*)(.*?)(?=\n\s*\n|$)"
     )
     match = progression_section.search(answer)
     if match:
