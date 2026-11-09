@@ -14,7 +14,7 @@ MOVEMENT_TASKS = {
     "pull": "poteg",
     "overhead": "doseganje nad višino ramen",
     "ankle_dorsiflexion": "pomik kolena naprej nad stopalo ob peti na tleh",
-    "hip_mobility": "nadzorovan gib kolka v počepu in predklonu",
+    "hip_mobility": "aktivni upogib kolka v leže (koleno proti prsnemu košu)",
     "shoulder_mobility": "dvig rok nad glavo brez siljenja",
     "single_leg_balance": "ravnotežje na eni nogi",
     "coordination": "izmenično dotikanje nasprotne dlani in kolena",
