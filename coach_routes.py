@@ -263,6 +263,19 @@ def _normalize_slovene_coaching_terms(answer):
         (r"\bna session\b", "na vadbeni dan"),
         (r"\*{0,2}(?:kuei|cua|kosi/napotki):\*{0,2}", "Namigi:"),
         (r"\bdvodimenzionalni potisk za prsi\b", "potisk ročk s tal"),
+        (r"\bpredeniva\b", "Preden"),
+        (r"\bprednoiva\b", "Preden"),
+        (r"\blahko varno začutiva\b", "lahko varno začneva"),
+        (r"\bv lasti imej\b", "v rezervi imej"),
+        (r"\bpri zglobom\b", "pri sklepu"),
+        (r"\bzglobom\b", "sklepom"),
+        (r"\bravnomeren\b", "enakomeren"),
+        (r"\b2 delovna sklopa na teden\b", "2 treninga na teden"),
+        (r"\b2-krat na tedensko\b", "dvakrat tedensko"),
+        (r"\bNjen namen\b", "Namen"),
+        (r"ali bi z veseljem nadaljevala z naslednjim načrtovanim treningom ali pa morava tokratni urnik morda malce prilagoditi tvojim obveznostim\?", "ali želiš nadaljevati z naslednjim načrtovanim treningom ali pa naj urnik prilagodiva tvojim obveznostim?"),
+        (r"ali bi naslednji teden raje ohranila enak načrt z dvem treningoma ali pa začetni obseg malce prilagodiva", "ali naj naslednji teden ohraniva enak načrt z dvema treningoma ali pa začetni obseg nekoliko prilagodiva"),
+
     )
     for pattern, replacement in replacements:
         def preserve_initial_case(match):
@@ -310,12 +323,13 @@ def _sanitize_power_and_progression_claims(answer):
         answer = answer[:match.start()] + replacement + answer[match.end():]
     else:
         answer = re.sub(
-            r"(?is)[^.!?]*(?:naslednji teden|naslednjem treningu)[^.!?]*"
-            r"(?:poveč(?:aj|aš|ati|anje)|dodaj(?:anje|š)?)[^.!?]*[.!?]",
+            r"(?is)[^.!?]*(?:naslednji teden|naslednjem treningu|prihodnjič|"
+            r"naslednjič|v naslednji vadbi|pri naslednji vadbi|pri naslednjem treningu)[^.!?]*"
+            r"(?:poveč(?:aj|aš|ati|anje|a)|dod(?:aj|aš|ati|amo|a))[^.!?]*[.!?]",
             "Napredovanje je primerno šele, ko zgornjo mejo ciljnega razpona "
             "dosežeš v vsaj dveh primerljivih treningih z načrtovanim RIR, "
             "stabilno tehniko in ustrezno regeneracijo; sicer ohrani trenutno "
-            "obremenitev.",
+            "obremenitev.\n\n",
             answer,
         )
     return answer
@@ -409,6 +423,37 @@ def _bodyweight_only_program_note(messages):
         "zgolj z lastno težo omejeno; zahtevnejši vzvodi, enostranske različice, nadzorovan "
         "tempo in premori lahko pomagajo, vendar ne nadomestijo vedno zunanje obremenitve. "
         "Tudi predklon z ravnim hrbtom brez dodatne obremenitve ni enakovreden obremenjenemu RDL."
+    )
+
+
+def _pending_safety_reply(latest):
+    """Acknowledge new intake information while keeping the unanswered safety gate."""
+    lowered = latest.casefold()
+    if re.search(r"\b(?:dvakrat|2[- ]krat|2x)\b.{0,30}(?:tedensko|na teden)|(?:tedensko|na teden).{0,30}\b(?:dvakrat|2[- ]krat|2x)\b", lowered):
+        acknowledgement = "Upošteval bom, da želiš vaditi dvakrat tedensko."
+    elif "vzdržljivost" in lowered and "mišičn" in lowered:
+        acknowledgement = "Razumem, trenutno je prednost vzdržljivost, ne mišična masa."
+    elif re.search(r"(?:25|50)\s*(?:minut|min)|(?:25|50)\s*(?:in|ali)\s*(?:25|50)", lowered):
+        acknowledgement = "Upošteval bom, da imaš različno dolg čas za vadbo."
+    elif "sobno kolo" in lowered or "sprehod" in lowered:
+        acknowledgement = "Sobno kolo in sprehodi so dobra osnova za razvoj kondicije."
+    elif "ročk" in lowered and "stol" in lowered:
+        acknowledgement = "Upošteval bom, da imaš doma lažje ročke in stol."
+    elif "lastno težo" in lowered and ("stol" in lowered or "elastik" in lowered):
+        acknowledgement = "Razumem, da imaš na voljo lastno težo, stol in elastiko."
+    elif re.search(r"(skoraj nič|ne treniram|začetnik|še nikoli).{0,40}(tren|utež)|"
+                   r"(tren|utež).{0,40}(skoraj nič|ne treniram|začetnik|še nikoli)", lowered):
+        acknowledgement = "Ker trenutno nimaš veliko trening izkušenj, bova začela postopno."
+    elif re.search(r"(tri leta|3 leta).{0,60}(fitnes|trenir)|"
+                   r"(fitnes|trenir).{0,60}(tri leta|3 leta)", lowered):
+        acknowledgement = "Upošteval bom tvoje približno triletne izkušnje in dostop do fitnesa."
+    else:
+        acknowledgement = "Hvala, ta podatek bom upošteval."
+    return (
+        acknowledgement
+        + " Varnostnega vprašanja pa še nisi odgovoril, zato ne bom sklepal, "
+        "da omejitev ni. Ali imaš trenutno kakršne koli bolečine, poškodbe, "
+        "gibalne omejitve ali zdravstvene zadržke?"
     )
 
 
@@ -607,6 +652,31 @@ def _coaching_guardrail_reply(messages):
         item,
         re.IGNORECASE,
     ) for item in assistant_texts)
+    assistant_asked_setup = any(
+        "?" in item and re.search(
+            r"(oprem\w*|koliko časa|časovn\w* okvir|minut|tedensk\w*|pogostost)",
+            item,
+            re.IGNORECASE,
+        )
+        for item in assistant_texts
+    )
+    fitness_intent = bool(re.search(
+        r"(bolj fit|telesn\w* pripravljenost|kondic\w*|močnejš\w*|mišičn\w* maso|"
+        r"redn\w* trenir|začnem trenir|program vadbe|vadbeni program)",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    if (
+        assistant_asked_setup
+        and not assistant_asked_safety
+        and not _has_explicit_safety_clearance(history)
+        and fitness_intent
+    ):
+        return (
+            "Preden se lotiva opreme in časovnega načrta, moram najprej preveriti varnost: "
+            "ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve "
+            "ali zdravstvene zadržke?"
+        )
     latest_reports_health_issue = bool(re.search(
         r"(imam|občutim|čutim|pojavlja se|pojavila se je).{0,70}"
         r"(boleč|poškodb|omejit|bolezen|operacij|simptom)",
@@ -614,26 +684,21 @@ def _coaching_guardrail_reply(messages):
         re.IGNORECASE,
     ))
     if assistant_asked_safety and not _has_explicit_safety_clearance(history) and not latest_reports_health_issue:
+        pending = _pending_safety_reply(latest)
+        safety_question = pending.split(". ", 1)[-1]
         if re.search(r"(vse sem pokvaril|vse pokvaril|pokvaril sem vse)", lowered):
             return (
                 "Ničesar nisi pokvaril. En izpuščen trening ne izbriše napredka; pomembno je, "
-                "da se vrneš v ritem brez lovljenja zamujenega obsega. Varnostnega vprašanja "
-                "pa še nisi odgovoril, zato ne bom sklepal, da omejitev ni: ali imaš trenutno "
-                "kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
+                "da se vrneš v ritem brez lovljenja zamujenega obsega. "
+                + safety_question
             )
         if re.search(r"(brez energije|utrujen|izčrpan)", lowered):
             return (
                 "Razumem; utrujenost po službi je pomemben podatek in trening lahko prilagodiva, "
-                "namesto da siliš skozi izčrpanost. Pred individualnim načrtom mi manjka še "
-                "varnostni odgovor: ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne "
-                "omejitve ali zdravstvene zadržke?"
+                "namesto da siliš skozi izčrpanost. "
+                + safety_question
             )
-        return (
-            "Zabeležil sem tvoj zadnji podatek in ga bom upošteval. Varnostnega vprašanja "
-            "pa še nisi odgovoril, zato ne bom sklepal, da omejitev ni. Ali imaš trenutno "
-            "kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke? "
-            "Če jih nimaš, to samo potrdi."
-        )
+        return pending
 
     balance_clarified = (
         bool(re.search(
