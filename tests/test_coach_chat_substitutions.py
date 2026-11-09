@@ -303,6 +303,20 @@ def test_pending_safety_acknowledges_frequency_without_claiming_it_was_saved():
     assert "bolečine, poškodbe" in reply
 
 
+def test_pending_safety_acknowledges_goal_change():
+    messages = [
+        {"role": "user", "content": "Rad bi bil bolj funkcionalen."},
+        {"role": "model", "content": "Ali imaš bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "Pomembnejša mi je vzdržljivost kot mišična masa."},
+    ]
+
+    reply = coach_routes._coaching_guardrail_reply(messages)
+
+    assert reply is not None
+    assert "prednost vzdržljivost" in reply
+    assert "bolečine, poškodbe" in reply
+
+
 def test_pending_safety_acknowledges_equipment_context():
     messages = [
         {"role": "user", "content": "Rad bi izboljšal kondicijo."},
