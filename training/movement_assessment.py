@@ -58,8 +58,8 @@ SUPPORTED_VARIANTS = {
     "vertical_push": ("band_overhead_press",),
     "horizontal_pull": ("band_row", "trx_row"),
     "vertical_pull": ("band_assisted_pull_up", "foot_assisted_pull_up", "band_lat_pulldown"),
-    # No verified supported lunge regression exists in the current catalogue.
-    # A report of needing a walking aid is not clearance for brisk walking.
+    "lunge": ("supported_split_squat",),
+    # A report of needing support for a lunge is not clearance for brisk walking.
 }
 
 
