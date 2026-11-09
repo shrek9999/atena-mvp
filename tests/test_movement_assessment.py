@@ -113,3 +113,11 @@ def test_public_task_labels_match_everyday_activities_in_the_user_interface():
     assert MOVEMENT_TASKS["hinge"] == "pobiranje lahkega predmeta s tal"
     assert MOVEMENT_TASKS["overhead"] == "doseganje nad višino ramen"
     assert MOVEMENT_TASKS["ankle_dorsiflexion"] == "pomik kolena naprej nad stopalo ob peti na tleh"
+
+
+
+def test_horizontal_push_assessment_does_not_restrict_vertical_press():
+    from training.movement_assessment import TASK_PATTERNS
+
+    assert TASK_PATTERNS["push"] == {"horizontal_push"}
+    assert TASK_PATTERNS["overhead"] == {"vertical_push"}
