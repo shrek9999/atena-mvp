@@ -13,6 +13,26 @@ from training.movement_assessment import (
 from training.movement_coaching import (
     PATTERN_DEFINITIONS, VALID_DECISIONS, get_exercise_options,
 )
+from training.video_demonstrations import get_video_demonstrations
+
+
+def _learning_task_videos(pattern: str, method_id: str | None, exercise_id: str | None) -> list[dict]:
+    """Prefer exact method/exercise videos; allow a clearly generic pattern demo as fallback."""
+    exact = []
+    if method_id:
+        exact = get_video_demonstrations(learning_method_id=method_id)
+    if not exact and exercise_id:
+        exact = get_video_demonstrations(exercise_id=exercise_id)
+    if exact:
+        return exact
+    if pattern == "squat":
+        return [
+            video for video in get_video_demonstrations(movement_pattern=pattern)
+            if video.get("exercise_id") is None
+            and video.get("learning_method_id") is None
+            and video.get("content_scope") == "general_squat_demonstration"
+        ]
+    return []
 
 SUPPORTED_GOALS = {"hypertrophy", "strength", "strength_hypertrophy", "fat_loss", "general_fitness", "functional", "power", "endurance", "mobility"}
 SUPPORTED_LEVELS = {"beginner", "intermediate", "advanced"}
@@ -1326,6 +1346,11 @@ def generate_program(
                         "",
                     ),
                     "exercise_id": record.get("resolved_exercise_id"),
+                    "demonstration_videos": _learning_task_videos(
+                        pattern_key,
+                        record.get("selected_learning_method"),
+                        record.get("resolved_exercise_id"),
+                    ),
                     "decision": record["decision"],
                 }
                 for pattern_key, record in movement_decisions_by_pattern.items()
