@@ -206,6 +206,21 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         extras = [["lunge", "vertical_push"], ["vertical_pull", "lunge"], ["lunge", "vertical_push"]]
     else:
         extras = [["lunge", "vertical_push"], ["vertical_pull", "lunge"], ["lunge", "vertical_push"], ["vertical_pull", "lunge"]]
+
+    # For strength and muscle-building plans of at least 60 minutes, distribute
+    # unilateral knee-dominant work and direct hip extension across the week.
+    # Keep the lunge in one session and replace its duplicate in the second
+    # session with hip extension; do not simply add another exercise or volume.
+    if (
+        session_minutes >= 60
+        and session_index == 1
+        and goal in {"strength", "hypertrophy", "strength_hypertrophy"}
+    ):
+        extras[session_index] = [
+            "hip_extension" if pattern == "lunge" else pattern
+            for pattern in extras[session_index]
+        ]
+
     patterns = base + (extras[session_index][:1] if include_stability else extras[session_index])
     if goal == "fat_loss":
         patterns.append("conditioning")
