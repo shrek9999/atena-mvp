@@ -98,14 +98,15 @@ def test_invalid_movement_assessment_is_rejected(assessment):
         generate_program(BASE, movement_assessment=assessment)
 
 
-def test_needs_support_lunge_is_omitted_until_a_verified_supported_variant_exists():
+def test_needs_support_lunge_selects_the_verified_supported_variant():
     plan = generate_program(BASE, movement_assessment={"lunge": "needs_support"})
-    assert not _exercises(plan, "lunge")
-    assert any(
-        event["pattern"] == "lunge"
-        and event["action"] == "omitted_no_verified_supported_variant"
-        for event in plan["movement_adaptation"]["events"]
-    )
+    lunges = _exercises(plan, "lunge")
+    assert lunges
+    assert all(exercise["exercise_id"] == "supported_split_squat" for exercise in lunges)
+    assert all(exercise["prescription"]["sets"] <= 2 for exercise in lunges)
+    assert all(exercise["prescription"]["rir"] >= 3 for exercise in lunges)
+    assert all("household_support" in exercise["equipment"] for exercise in lunges)
+    assert all(exercise["movement_adaptation_note"] for exercise in lunges)
 
 
 def test_needs_support_vertical_push_is_not_relabelled_as_an_unassisted_press():
