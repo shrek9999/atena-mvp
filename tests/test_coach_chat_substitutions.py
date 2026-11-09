@@ -335,7 +335,7 @@ def test_slovene_coaching_normalizer_fixes_live_benchmark_typos():
 
 def test_progression_sanitizer_separates_replacement_from_next_sentence():
     answer = (
-        "Lahko naslednji teden povečamo obremenitev."
+        "Če je bilo lahko, naslednji teden povečaj obremenitev."
         "Napredovanje je primerno šele po dveh uspešnih treningih."
     )
 
