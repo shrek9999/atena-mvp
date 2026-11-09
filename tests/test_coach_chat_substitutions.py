@@ -232,6 +232,54 @@ def test_verified_exercise_context_includes_only_declared_dumbbell_options():
     assert "Počep zadaj" not in context
 
 
+def test_band_row_requires_explicitly_confirmed_anchor_point():
+    base = {
+        "goal": "functional",
+        "experience": "intermediate",
+        "equipment": ["resistance_band", "dumbbell", "bodyweight"],
+    }
+    without_anchor = coach_routes._verified_exercise_catalogue_context([{
+        "role": "user", "content": "Profil: " + json.dumps(base),
+    }])
+    with_anchor = coach_routes._verified_exercise_catalogue_context([{
+        "role": "user", "content": "Profil: " + json.dumps({**base, "equipment": base["equipment"] + ["anchor_point"]}),
+    }])
+
+    assert "Veslanje z elastiko" not in without_anchor
+    assert "Veslanje z elastiko" in with_anchor
+
+
+def test_pallof_band_variant_requires_anchor_but_cable_variant_is_allowed():
+    base = {
+        "goal": "functional",
+        "experience": "intermediate",
+        "equipment": ["resistance_band", "bodyweight"],
+    }
+    band_only = coach_routes._verified_exercise_catalogue_context([{
+        "role": "user", "content": "Profil: " + json.dumps(base),
+    }])
+    cable = coach_routes._verified_exercise_catalogue_context([{
+        "role": "user",
+        "content": "Profil: " + json.dumps({**base, "equipment": ["cable", "bodyweight"]}),
+    }])
+
+    assert "Pallof potisk" not in band_only
+    assert "Pallof potisk" in cable
+
+
+def test_power_sanitizer_removes_unsupported_nervous_response_recovery_claim():
+    answer = (
+        "Dolgi odmori so nujni, da se mišični sistem in živčni odziv "
+        "v celoti spočijeta za naslednji poskus."
+    )
+
+    cleaned = coach_routes._sanitize_power_and_progression_claims(answer)
+
+    assert "živčni odziv" not in cleaned
+    assert "mišični sistem" not in cleaned
+    assert "hitrosti in kakovosti ponovitev" in cleaned
+
+
 def test_structured_profile_equipment_is_authoritative_over_unavailable_mentions():
     messages = [{
         "role": "user",
