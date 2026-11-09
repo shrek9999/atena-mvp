@@ -53,10 +53,11 @@ def test_program_route_returns_assessment_as_context_without_changing_program(mo
 
     called = {}
 
-    def fake_generate_program(profile, feedback=None, movement_assessment=None):
+    def fake_generate_program(profile, feedback=None, movement_assessment=None, movement_decisions=None):
         called["profile"] = profile
         called["feedback"] = feedback
         called["movement_assessment"] = movement_assessment
+        called["movement_decisions"] = movement_decisions
         return {"goal": "functional", "sessions": [{"session": 1, "exercises": []}]}
 
     monkeypatch.setattr(coach_routes, "generate_program", fake_generate_program)
@@ -96,3 +97,46 @@ def test_program_route_rejects_invalid_movement_assessment_without_generating(mo
     )
     assert response.status_code == 400
     assert "Neznane" in response.get_json()["error"]
+
+
+def test_program_route_passes_structured_six_pattern_decisions(monkeypatch, client):
+    import coach_routes
+    from training.movement_coaching import build_movement_decision
+
+    called = {}
+
+    def fake_generate_program(profile, feedback=None, movement_assessment=None, movement_decisions=None):
+        called["movement_decisions"] = movement_decisions
+        return {
+            "goal": "hypertrophy",
+            "sessions": [{"session": 1, "exercises": [], "learning_tasks": []}],
+            "movement_adaptation": {
+                "source": "structured_six_pattern_decisions",
+                "is_diagnosis": False,
+                "events": [],
+                "summary": None,
+            },
+        }
+
+    monkeypatch.setattr(coach_routes, "generate_program", fake_generate_program)
+    decision = build_movement_decision(
+        "squat", "READY",
+        decision_reason="Ponovljiva in nadzorovana izvedba.",
+    )
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-token"},
+        json={
+            "profile": {
+                "goal": "hypertrophy", "experience": "beginner",
+                "equipment": ["bodyweight"], "sessions_per_week": 2,
+                "session_minutes": 45,
+            },
+            "movement_decisions": {"squat": decision},
+        },
+    )
+    assert response.status_code == 200
+    body = response.get_json()
+    assert called["movement_decisions"]["squat"]["decision"] == "READY"
+    assert body["movement_decisions_stored"] is False
+    assert body["movement_adaptation"]["source"] == "structured_six_pattern_decisions"
