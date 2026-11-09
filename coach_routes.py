@@ -271,6 +271,8 @@ def _normalize_slovene_coaching_terms(answer):
         (r"\bravnomeren\b", "enakomeren"),
         (r"\b2 delovna sklopa na teden\b", "2 treninga na teden"),
         (r"\bNjen namen\b", "Namen"),
+        (r"ali bi z veseljem nadaljevala z naslednjim načrtovanim treningom ali pa morava tokratni urnik morda malce prilagoditi tvojim obveznostim\?", "ali želiš nadaljevati z naslednjim načrtovanim treningom ali pa naj urnik prilagodiva tvojim obveznostim?"),
+        (r"ali bi naslednji teden raje ohranila enak načrt z dvem treningoma ali pa začetni obseg malce prilagodiva", "ali naj naslednji teden ohraniva enak načrt z dvema treningoma ali pa začetni obseg nekoliko prilagodiva"),
 
     )
     for pattern, replacement in replacements:
@@ -426,10 +428,14 @@ def _pending_safety_reply(latest):
     lowered = latest.casefold()
     if re.search(r"\b(?:dvakrat|2[- ]krat|2x)\b.{0,30}(?:tedensko|na teden)|(?:tedensko|na teden).{0,30}\b(?:dvakrat|2[- ]krat|2x)\b", lowered):
         acknowledgement = "Upošteval bom, da želiš vaditi dvakrat tedensko."
+    elif "vzdržljivost" in lowered and "mišičn" in lowered:
+        acknowledgement = "Razumem, trenutno je prednost vzdržljivost, ne mišična masa."
     elif re.search(r"(?:25|50)\s*(?:minut|min)|(?:25|50)\s*(?:in|ali)\s*(?:25|50)", lowered):
         acknowledgement = "Upošteval bom, da imaš različno dolg čas za vadbo."
     elif "sobno kolo" in lowered or "sprehod" in lowered:
         acknowledgement = "Sobno kolo in sprehodi so dobra osnova za razvoj kondicije."
+    elif "ročk" in lowered and "stol" in lowered:
+        acknowledgement = "Upošteval bom, da imaš doma lažje ročke in stol."
     elif "lastno težo" in lowered and ("stol" in lowered or "elastik" in lowered):
         acknowledgement = "Razumem, da imaš na voljo lastno težo, stol in elastiko."
     elif re.search(r"(skoraj nič|ne treniram|začetnik|še nikoli).{0,40}(tren|utež)|"
