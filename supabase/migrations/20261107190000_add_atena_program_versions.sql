@@ -28,6 +28,8 @@ alter table public.atena_program_versions
   add column if not exists data_classification text;
 alter table public.atena_program_versions
   add column if not exists generation_context_json jsonb not null default '{}'::jsonb;
+alter table public.atena_training_sessions
+  add column if not exists program_version_id text;
 
 -- Preserve the legacy decision_json column if it exists, while allowing the
 -- new writer to use generation_context_json instead.
@@ -51,10 +53,11 @@ $$;
 -- makes the upgrade safe if legacy rows exist in another environment.
 with ranked as (
   select program_version_id,
-         row_number() over (
-           partition by profile_id
-           order by created_at asc, program_version_id asc
-         )::integer as assigned_version
+         (coalesce(max(version_number) over (partition by profile_id), 0)
+          + row_number() over (
+              partition by profile_id
+              order by created_at asc, program_version_id asc
+            ))::integer as assigned_version
     from public.atena_program_versions
    where version_number is null
 )
