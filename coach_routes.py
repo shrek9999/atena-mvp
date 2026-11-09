@@ -210,14 +210,6 @@ def _verified_exercise_catalogue_context(messages):
         # when the profile explicitly confirms a stable anchor point.
         if exercise["id"] == "band_row" and "anchor_point" not in available:
             continue
-        # A band Pallof press also needs an anchor; a cable station is stable.
-        if (
-            exercise["id"] == "pallof_press"
-            and "resistance_band" in available
-            and "cable" not in available
-            and "anchor_point" not in available
-        ):
-            continue
         available_with_bodyweight = available | {"bodyweight"}
         if not required.issubset(available_with_bodyweight):
             continue
