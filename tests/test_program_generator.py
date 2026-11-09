@@ -863,8 +863,8 @@ def test_functional_programme_uses_functional_capacity_purpose_tags():
     }
     assert exercises
     assert all(set(ex["training_purposes"]) & allowed for ex in exercises)
-    assert any(ex["movement_pattern"] == "carry" for ex in exercises)
-    assert any(ex["movement_pattern"] == "coordination" for ex in exercises)
+    assert any(ex["movement_pattern"] == "lunge" for ex in exercises)
+    assert any(ex["movement_pattern"] == "conditioning" for ex in exercises)
 
 
 def test_conditioning_programme_uses_cardiorespiratory_purpose_tags():
@@ -975,7 +975,8 @@ def test_functional_and_fat_loss_programmes_have_distinct_training_intent():
         for session in fat_loss["sessions"]
         for exercise in session["exercises"]
     }
-    assert {"balance", "coordination"}.intersection(functional_patterns)
+    assert {"lunge", "locomotion"}.issubset(functional_patterns)
+    assert "conditioning" in functional_patterns
     assert "conditioning" in fat_loss_patterns
     assert functional_patterns != fat_loss_patterns
 
