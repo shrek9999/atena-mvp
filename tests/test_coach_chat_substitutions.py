@@ -347,6 +347,19 @@ def test_slovene_coaching_normalizer_fixes_live_benchmark_typos():
     assert "Namen je" in cleaned
 
 
+def test_progression_sanitizer_blocks_single_session_prihodnjic_promise():
+    answer = (
+        "Ko z izbrano težo brez težav opraviš zgornjo mejo ponovitev pri vseh serijah, "
+        "lahko prihodnjič minimalno povečaš težo ali dodaš ponovitev."
+    )
+
+    cleaned = coach_routes._sanitize_power_and_progression_claims(answer)
+
+    assert "prihodnjič minimalno povečaš" not in cleaned
+    assert "vsaj dveh primerljivih treningih" in cleaned
+    assert "ustrezno regeneracijo" in cleaned
+
+
 def test_progression_sanitizer_separates_replacement_from_next_sentence():
     answer = (
         "Če je bilo lahko, naslednji teden povečaj obremenitev."
