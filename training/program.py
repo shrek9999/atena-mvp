@@ -10,6 +10,9 @@ from training.movement_assessment import (
     MovementAssessmentError, SUPPORTED_VARIANTS, TASK_PATTERNS,
     assess_movement_competence,
 )
+from training.movement_coaching import (
+    PATTERN_DEFINITIONS, VALID_DECISIONS, get_exercise_options,
+)
 
 SUPPORTED_GOALS = {"hypertrophy", "strength", "strength_hypertrophy", "fat_loss", "general_fitness", "functional", "power", "endurance", "mobility"}
 SUPPORTED_LEVELS = {"beginner", "intermediate", "advanced"}
@@ -516,7 +519,12 @@ def _display_exercise_reference(value: str, names: dict[str, str]) -> str:
     return names.get(value, value)
 
 
-def generate_program(profile: object, feedback: object = None, movement_assessment: object = None) -> dict:
+def generate_program(
+    profile: object,
+    feedback: object = None,
+    movement_assessment: object = None,
+    movement_decisions: object = None,
+) -> dict:
     """Generate a repeatable catalogue plan, conservatively adapting to the last session."""
     p = validate_profile(profile)
     planning_goal = p["goal"]
@@ -540,6 +548,56 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                 if current is None or status_priority[status] > status_priority[current]:
                     movement_status_by_pattern[pattern] = status
                 movement_tasks_by_pattern.setdefault(pattern, []).append(task)
+
+    # Structured six-pattern decisions are a separate, versioned input from
+    # legacy self-report. Do not combine two sources that could conflict.
+    movement_decisions_by_pattern: dict[str, dict] = {}
+    if movement_decisions is not None:
+        if movement_assessment is not None:
+            raise ProgramValidationError(
+                "Strukturirane ocene šestih vzorcev ne kombiniraj s staro samooceno v istem zahtevku."
+            )
+        if not isinstance(movement_decisions, dict) or not movement_decisions:
+            raise ProgramValidationError("movement_decisions mora biti neprazen JSON objekt.")
+        unknown_patterns = sorted(set(movement_decisions) - set(PATTERN_DEFINITIONS))
+        if unknown_patterns:
+            raise ProgramValidationError("Neznani gibalni vzorci: " + ", ".join(unknown_patterns))
+        for pattern, record in movement_decisions.items():
+            if not isinstance(record, dict):
+                raise ProgramValidationError(f"Ocena za {pattern} mora biti JSON objekt.")
+            if record.get("movement_pattern") != pattern:
+                raise ProgramValidationError(f"movement_pattern se ne ujema s ključem {pattern}.")
+            decision = record.get("decision")
+            if decision not in VALID_DECISIONS:
+                raise ProgramValidationError(f"Neveljavna odločitev za {pattern}.")
+            method_id = record.get("selected_learning_method")
+            method_options = PATTERN_DEFINITIONS[pattern]["learning_methods"]
+            method = next((item for item in method_options if item["id"] == method_id), None)
+            if method_id is not None and method is None:
+                raise ProgramValidationError(f"Učna metoda {method_id} ne pripada vzorcu {pattern}.")
+            if decision in {"LEARN", "REGRESS"} and method is None and not record.get("selected_exercise_id"):
+                raise ProgramValidationError(f"Za {decision} pri {pattern} mora biti izbrana učna metoda ali različica vaje.")
+            available_options = get_exercise_options(
+                pattern, equipment=p["equipment"], experience=p["experience"], goal=None
+            )
+            available_ids = {item["id"] for item in available_options}
+            selected_id = record.get("selected_exercise_id")
+            method_exercise_id = method.get("exercise_id") if method else None
+            target_id = selected_id or method_exercise_id
+            if target_id and target_id not in available_ids:
+                raise ProgramValidationError(
+                    f"Vaja {target_id} za {pattern} ni združljiva z opremo ali izkušnjami v profilu."
+                )
+            if decision in {"LEARN", "REGRESS"} and not target_id:
+                if not available_options:
+                    raise ProgramValidationError(f"Za učenje vzorca {pattern} ni ustrezne vaje v katalogu.")
+                target_id = available_options[0]["id"]
+            movement_decisions_by_pattern[pattern] = {
+                **record,
+                "decision": decision,
+                "selected_learning_method": method_id,
+                "resolved_exercise_id": target_id,
+            }
     reduce_load = bool(response and (
         response["difficulty"] == "hard" or not response["completed"] or response["recovery"] == "poor"
     ))
@@ -766,6 +824,14 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
                         "message": "Za ta gibalni vzorec ni na voljo preverjene lažje različice z izbrano opremo. Vzorec je zato izpuščen, namesto da bi ATENA ugibala.",
                     })
                     continue
+            structured_decision = movement_decisions_by_pattern.get(pattern)
+            if structured_decision and structured_decision["decision"] in {"LEARN", "REGRESS"}:
+                target_id = structured_decision.get("resolved_exercise_id")
+                target = next((item for item in reference_catalogue if item["id"] == target_id), None)
+                if target is None or target["pattern"] != pattern:
+                    raise ProgramValidationError(f"Izbrana učna različica {target_id} za {pattern} ni v potrjenem katalogu.")
+                candidates = [target]
+
             if not candidates:
                 # A vertical pull is not mandatory when the available catalogue/equipment cannot support it.
                 if pattern in {"vertical_pull", "vertical_push", "carry", "anti_rotation", "trunk_stability"}:
@@ -909,6 +975,44 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
             used_counts[candidate["id"]] += 1
             prescription = _prescription(planning_goal, p["experience"], effective_pattern, candidate, p["session_minutes"])
             movement_note = None
+            if structured_decision and structured_decision["decision"] in {"LEARN", "REGRESS"}:
+                prescription["sets"] = min(2, prescription.get("sets", 2))
+                if prescription.get("rir") is not None:
+                    prescription["rir"] = max(3, prescription["rir"])
+                if prescription.get("rir_range") is not None:
+                    prescription["rir_range"] = "3–4"
+                method_id = structured_decision.get("selected_learning_method")
+                method = next(
+                    (item for item in PATTERN_DEFINITIONS[pattern]["learning_methods"] if item["id"] == method_id),
+                    None,
+                )
+                movement_note = (
+                    f"Učni korak za vzorec {PATTERN_DEFINITIONS[pattern]['label']}: "
+                    f"{method['label'] if method else candidate['name']}. "
+                    "Začni z največ dvema nadzorovanima serijama; zahtevnost povečuj šele po ponovljivi izvedbi."
+                )
+                movement_adaptation_events.append({
+                    "pattern": pattern,
+                    "action": "learning_or_regression_variant_selected",
+                    "decision": structured_decision["decision"],
+                    "learning_method": method_id,
+                    "exercise_id": candidate["id"],
+                    "exercise_name": candidate["name"],
+                    "message": movement_note,
+                })
+            elif structured_decision and structured_decision["decision"] == "UNASSESSABLE":
+                movement_note = "Posnetek ali dokaz ni zadosten za sklep. ATENA ne sklepa o sposobnosti in ne spreminja različice na podlagi nejasnega opažanja."
+                movement_adaptation_events.append({
+                    "pattern": pattern,
+                    "action": "kept_selection_unassessable",
+                    "message": movement_note,
+                })
+            elif structured_decision and structured_decision["decision"] == "READY":
+                movement_adaptation_events.append({
+                    "pattern": pattern,
+                    "action": "ready_for_selected_variation_no_automatic_progression",
+                    "message": "Izvedba je ocenjena kot dovolj nadzorovana za izbrano različico; to samo po sebi ne sproži avtomatskega povečanja obremenitve.",
+                })
             if movement_status == "needs_support":
                 if pattern == "balance":
                     movement_note = "Izvedi ob stabilni opori, ki jo lahko z roko dosežeš; obseg in trajanje prilagodi tako, da ostaneta nadzorovana."
@@ -1201,6 +1305,28 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
             "estimated_minutes": estimated,
             "available_minutes": p["session_minutes"],
             "volume_adjustments": volume_adjustments,
+            "learning_tasks": [
+                {
+                    "movement_pattern": pattern_key,
+                    "task_id": PATTERN_DEFINITIONS[pattern_key]["task_id"],
+                    "method_id": record.get("selected_learning_method"),
+                    "method": next(
+                        (item["label"] for item in PATTERN_DEFINITIONS[pattern_key]["learning_methods"]
+                         if item["id"] == record.get("selected_learning_method")),
+                        "Izvedi izbrano učno metodo.",
+                    ),
+                    "description": next(
+                        (item["description"] for item in PATTERN_DEFINITIONS[pattern_key]["learning_methods"]
+                         if item["id"] == record.get("selected_learning_method")),
+                        "",
+                    ),
+                    "exercise_id": record.get("resolved_exercise_id"),
+                    "decision": record["decision"],
+                }
+                for pattern_key, record in movement_decisions_by_pattern.items()
+                if record["decision"] in {"LEARN", "REGRESS"}
+                and any(item["pattern"] == pattern_key for item in selected)
+            ],
             "exercises": selected,
         })
 
@@ -1229,12 +1355,16 @@ def generate_program(profile: object, feedback: object = None, movement_assessme
         "goal_framework": CANONICAL_GOALS[canonical_goal],
         "nutrition_guidance": list(CANONICAL_GOALS[canonical_goal].get("nutrition_guidance", [])),
         "movement_adaptation": {
-            "source": "self_reported_movement_assessment",
+            "source": (
+                "structured_six_pattern_decisions"
+                if movement_decisions_by_pattern else "self_reported_movement_assessment"
+            ),
             "is_diagnosis": False,
             "automatic_progression": "movement_assessment_does_not_trigger_progression",
             "events": movement_adaptation_events,
             "summary": movement_summary,
-        } if movement_summary is not None else None,
+            "structured_decisions": movement_decisions_by_pattern,
+        } if movement_summary is not None or movement_decisions_by_pattern else None,
         "goal": p["goal"],
         "training_emphasis": p["training_emphasis"],
         "experience": p["experience"],
