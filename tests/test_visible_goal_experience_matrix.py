@@ -62,14 +62,15 @@ def test_all_fifteen_visible_goal_experience_profiles_generate_valid_distinct_pl
 
     expected = {
         "strength_hypertrophy": {"squat", "hinge", "horizontal_push", "horizontal_pull"},
-        "functional": {"balance", "coordination", "conditioning"},
+        "functional": {"squat", "hinge", "horizontal_push", "horizontal_pull", "lunge", "locomotion", "conditioning"},
         "mobility": {"mobility", "mobility_stretch", "squat"},
         "endurance": {"locomotion", "conditioning"},
         "fat_loss": {"squat", "hinge", "conditioning"},
     }[goal]
     if goal == "functional":
-        expected.add("carry")
         assert "jump" not in patterns
+        assert "balance" not in patterns
+        assert "coordination" not in patterns
     assert expected.issubset(patterns), (goal, experience, patterns)
 
 
@@ -93,7 +94,7 @@ def test_five_visible_goals_have_distinct_program_pattern_signatures():
     assert len(set(signatures.values())) == len(VISIBLE_GOALS), signatures
 
 
-def test_functional_beginner_avoids_unassessed_jumps_and_uses_beginner_coordination():
+def test_functional_beginner_avoids_unassessed_jumps_and_uses_fundamental_patterns():
     plan = generate_program({
         "goal": "functional",
         "experience": "beginner",
@@ -104,10 +105,10 @@ def test_functional_beginner_avoids_unassessed_jumps_and_uses_beginner_coordinat
     })
     exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
     assert all(exercise["pattern"] != "jump" for exercise in exercises)
-    coordination = [exercise for exercise in exercises if exercise["pattern"] == "coordination"]
-    assert coordination
-    assert all(exercise["exercise_id"] == "controlled_lateral_step" for exercise in coordination)
-    assert all(get_exercise(exercise["exercise_id"])["level"] == "beginner" for exercise in coordination)
+    patterns = {exercise["pattern"] for exercise in exercises}
+    assert {"squat", "hinge", "horizontal_push", "horizontal_pull"}.issubset(patterns)
+    assert "balance" not in patterns
+    assert "coordination" not in patterns
 
 
 def test_functional_goal_adds_trunk_control_only_when_feedback_identifies_a_need():
@@ -240,6 +241,7 @@ def test_functional_profiles_do_not_assume_landing_or_braking_readiness(experien
 
     assert all(exercise["pattern"] != "jump" for exercise in exercises)
     assert all(exercise["exercise_id"] != "lateral_shuffle" for exercise in exercises)
-    assert any(exercise["pattern"] == "balance" for exercise in exercises)
-    assert any(exercise["pattern"] == "carry" for exercise in exercises)
-    assert any(exercise["exercise_id"] == "controlled_lateral_step" for exercise in exercises)
+    patterns = {exercise["pattern"] for exercise in exercises}
+    assert {"squat", "hinge", "horizontal_push", "horizontal_pull"}.issubset(patterns)
+    assert "balance" not in patterns
+    assert "coordination" not in patterns
