@@ -1,7 +1,7 @@
 """Regression tests for ATENA's general-population coaching standard."""
 
 from training.catalogue import get_exercise, load_catalogue
-from coach_routes import SYSTEM_PROMPT
+from coach_routes import SYSTEM_PROMPT, _normalize_slovene_coaching_terms, _sanitize_power_and_progression_claims
 from training.program import generate_program
 
 
@@ -86,6 +86,37 @@ def test_coach_prompt_requires_two_comparable_exposures_before_promising_progres
     prompt = SYSTEM_PROMPT.casefold()
     assert "at least two comparable exposures" in prompt
     assert "do not promise a fixed increase \"next week\"" in prompt
+
+
+def test_power_language_is_normalized_to_output_and_technique_not_nervous_system_claims():
+    answer = "Izvajaj z maksimalno hitrostjo in ustrezno spočitim živčno-mišičnim sistemom."
+    cleaned = _sanitize_power_and_progression_claims(answer)
+    assert "živčno-mišičnim sistemom" not in cleaned.casefold()
+    assert "ohranjanje hitrosti in kakovosti ponovitev" in cleaned.casefold()
+
+
+def test_progression_paragraph_requires_two_comparable_successful_exposures():
+    answer = ("**Pravilo napredovanja:** Ko dosežeš zgornjo mejo v vseh serijah, "
+              "lahko naslednji teden povečaš težo.\n\nSporoči, kako je šlo.")
+    cleaned = _sanitize_power_and_progression_claims(answer)
+    assert "vsaj dveh primerljivih treningih" in cleaned
+    assert "naslednji teden povečaš" not in cleaned
+    assert "Sporoči, kako je šlo." in cleaned
+
+
+def test_unheaded_next_week_progression_promise_is_rewritten():
+    answer = "Naslednji teden lahko povečaš obremenitev za malo."
+    cleaned = _sanitize_power_and_progression_claims(answer)
+    assert "vsaj dveh primerljivih treningih" in cleaned
+    assert "Naslednji teden lahko povečaš" not in cleaned
+
+
+def test_common_gemini_cue_heading_typos_are_normalized():
+    answer = "Kuei: Trup naj bo čvrst.\nCua: Gib naj bo nadzorovan."
+    cleaned = _normalize_slovene_coaching_terms(answer)
+    assert "Kuei:" not in cleaned
+    assert "Cua:" not in cleaned
+    assert cleaned.count("Namigi:") == 2
 
 
 def test_generated_program_exposes_internal_regression_and_progression_decision_criteria():
