@@ -60,6 +60,34 @@ def test_coach_prompt_requires_concise_non_repetitive_exercise_cues():
 
 
 
+def test_coach_prompt_uses_beginner_strength_repetition_ranges_consistently():
+    prompt = SYSTEM_PROMPT.casefold()
+    assert "default to 8–12 repetitions (often begin around 10)" in prompt
+    assert "about 2–3 repetitions in reserve" in prompt
+    assert "do not use 6–10, 4–6 or 5–8 as a generic beginner strength range" in prompt
+    assert "6–10 or 8–12 may be appropriate" not in prompt
+
+
+def test_coach_prompt_avoids_unsupported_nervous_system_claims_for_power_training():
+    prompt = SYSTEM_PROMPT.casefold()
+    assert "do not claim \"complete recovery of the nervous system\"" in prompt
+    assert "explain rest in terms of maintaining performance and movement speed" in prompt
+    assert "do not describe rest as complete nervous-system recovery" in prompt
+
+
+def test_coach_prompt_handles_poor_recovery_without_guessing_the_cause():
+    prompt = SYSTEM_PROMPT.casefold()
+    assert "poor recovery is an observed response, not a diagnosis of its cause" in prompt
+    assert "do not assume the user trained near failure if that was not reported" in prompt
+    assert "do not automatically change weekly frequency" in prompt
+
+
+def test_coach_prompt_requires_two_comparable_exposures_before_promising_progression():
+    prompt = SYSTEM_PROMPT.casefold()
+    assert "at least two comparable exposures" in prompt
+    assert "do not promise a fixed increase \"next week\"" in prompt
+
+
 def test_generated_program_exposes_internal_regression_and_progression_decision_criteria():
     plan = generate_program({
         "goal": "strength_hypertrophy",
