@@ -21,8 +21,10 @@ def _learning_task_videos(pattern: str, method_id: str | None, exercise_id: str 
     exact = []
     if method_id:
         exact = get_video_demonstrations(learning_method_id=method_id)
+        exact = [video for video in exact if video.get("movement_pattern") == pattern]
     if not exact and exercise_id:
         exact = get_video_demonstrations(exercise_id=exercise_id)
+        exact = [video for video in exact if video.get("movement_pattern") == pattern]
     if exact:
         return exact
     if pattern == "squat":
