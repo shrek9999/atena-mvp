@@ -193,7 +193,7 @@
     {
       "id": "G10",
       "name": "Progresija po uspešnih treningih",
-      "user_profile": "Uporabnik je uspešno opravil predpisane serije in ponovitve; varnostni podatki so že potrjeni.",
+      "user_profile": "Uporabnik je izrecno potrdil, da nima bolečin, poškodb ali gibalnih omejitev; uspešno je opravil predpisane serije in ponovitve.",
       "turns": [
         "Vse serije sem opravil. Na koncu vsake serije bi lahko naredil še približno tri ponovitve.",
         "Tehnika je bila dobra in trening ni bil pretežek."
@@ -373,7 +373,7 @@
     {
       "id": "G19",
       "name": "Zamenjava vaje ob spremembi razpoložljive opreme",
-      "user_profile": "Uporabnik želi ohraniti vzorec kolčnega iztega; na voljo ima ročke, nima pa palice ali klopi.",
+      "user_profile": "Uporabnik je izrecno potrdil, da nima bolečin, poškodb ali gibalnih omejitev; želi ohraniti vzorec kolčnega iztega; na voljo ima ročke, nima pa palice ali klopi.",
       "turns": [
         "Danes nimam dostopa do olimpijske palice. V programu imam mrtvi dvig. S čim ga lahko zamenjam?",
         "Na voljo imam samo ročke in lastno težo, klopi nimam.",
