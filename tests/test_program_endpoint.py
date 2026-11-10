@@ -97,6 +97,8 @@ def test_program_endpoint_holds_after_easy_feedback_instead_of_auto_progressing(
         "/coach/program",
         headers={"X-Pilot-Token": "test-only-secret"},
         json={
+            "movement_assessment_consent": True,
+            "movement_decisions": _six_pattern_decisions(),
             "profile": {
                 "goal": "hypertrophy", "experience": "intermediate",
                 "equipment": ["dumbbell", "bench"], "sessions_per_week": 2,
@@ -117,6 +119,8 @@ def test_program_endpoint_blocks_automatic_adaptation_when_discomfort_reported(m
         "/coach/program",
         headers={"X-Pilot-Token": "test-only-secret"},
         json={
+            "movement_assessment_consent": True,
+            "movement_decisions": _six_pattern_decisions(),
             "profile": {
                 "goal": "hypertrophy", "experience": "intermediate",
                 "equipment": ["dumbbell", "bench"], "sessions_per_week": 2,
