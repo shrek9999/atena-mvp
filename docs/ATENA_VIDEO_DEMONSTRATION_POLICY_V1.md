@@ -103,3 +103,23 @@ Uporabnik je posredoval in vsebinsko odobril kratek (približno 5 sekund) demons
 Video je dodan v `training/video_demonstrations.py` kot začetni zapis z `review_status=owner_approved`. Ker ni bilo mogoče neposredno pregledati vseh sličic, natančna različica počepa še ni pripisana določenemu `exercise_id` ali `learning_method_id`. YouTube metapodatki potrjujejo naslov in standardni embed URL, ne pa dokončne razpoložljivosti vdelave v vseh okoljih. Pred javnim prikazom mora aplikacija preveriti delovanje predvajalnika in ohraniti povezavo do izvirnika.
 
 Naslednji videi se dodajo izključno iz konkretnih URL-jev, ki jih uporabnik posreduje ali ki so zanesljivo najdeni na FZS kanalu. Za osnovne vzorce ter poznejše funkcionalne veščine (burpee, box jump, wall ball ipd.) se uporabljajo enaka uredniška merila. Kategorije prihodnjih veščin so pripravljene v registru; nepreverjenih video ID-jev ni.
+
+
+## 9. Dopolnitev začetne zbirke – 10 uporabniško posredovanih videov
+
+V register je dodanih še deset URL-jev, ki jih je posredoval uporabnik. Vsi so označeni kot `pending`, dokler ni preverjena dejanska vsebina posnetka in možnost vdelave. Trajanje ni ugibano. Video posnetki z različico, ki še nima samostojnega kataloškega ID-ja (bočni mrtvi dvig s kettlebellom in potisk nad glavo s kolutom), so ohranjeni kot ločeni zapisi in niso napačno pripeti sorodni vaji.
+
+| Video | Gibalni vzorec | Kataloška povezava |
+|---|---|---|
+| Mrtvi dvig s kettlebellom bočno | hinge | čaka na kataloški ID različice |
+| Izpadni korak nazaj | lunge | reverse_lunge |
+| Goblet squat | squat | squat_goblet |
+| Počep s podprtimi petami | squat | heel_elevated_squat |
+| Predklon | hinge | bodyweight_hip_hinge |
+| Potisk nad glavo z drogom | vertical_push | barbell_overhead_press |
+| Potisk nad glavo s kolutom | vertical_push | čaka na kataloški ID različice |
+| Reaching squat s kolutom v predročenju | squat | reaching_squat / reaching_counterbalance |
+| Skleca | horizontal_push | push_up |
+| Veslanje v predklonu | horizontal_pull | barbell_bent_over_row |
+
+Opomba: pri zadnjih dveh različicah, ki še nimata kataloškega ID-ja, mora ATENA pred priporočanjem vaje najprej dobiti ustrezno definicijo v katalogu. Sam video zapis ni dovoljenje, da aplikacija izmisli ali zamenja vajo.
