@@ -9,13 +9,13 @@ from training.video_demonstrations import (
 
 def test_all_ten_user_supplied_fzs_videos_are_registered():
     expected = {
-        "mzD6t7Yo0Sw": ("hinge", None),
+        "mzD6t7Yo0Sw": ("hinge", "kettlebell_lateral_deadlift"),
         "SRGGZKWG5rI": ("lunge", "reverse_lunge"),
         "dxHdegoDGPM": ("squat", "squat_goblet"),
         "rHUOqAQE_WE": ("squat", "heel_elevated_squat"),
         "he_fE0HwGNw": ("hinge", "bodyweight_hip_hinge"),
         "D5RhXg7ahfI": ("vertical_push", "barbell_overhead_press"),
-        "GrcA2Xh06x8": ("vertical_push", None),
+        "GrcA2Xh06x8": ("vertical_push", "plate_overhead_press"),
         "f6LSIpaDdSA": ("squat", "reaching_squat"),
         "4SXniOAEU5U": ("horizontal_push", "push_up"),
         "2QuHyICgWPU": ("horizontal_pull", "barbell_bent_over_row"),
@@ -60,3 +60,11 @@ def test_future_functional_skills_are_taxonomy_not_fake_video_records():
 def test_exact_video_links_are_not_cross_applied_to_other_patterns():
     assert _learning_task_videos("hinge", None, "reverse_lunge") == []
     assert _learning_task_videos("horizontal_push", None, "squat_goblet") == []
+
+
+def test_new_video_variations_are_real_catalogue_exercises():
+    from training.catalogue import get_exercise
+    assert get_exercise("kettlebell_lateral_deadlift")["equipment"] == ["kettlebell"]
+    assert get_exercise("plate_overhead_press")["equipment"] == ["weight_plate"]
+    assert get_video_demonstrations(exercise_id="kettlebell_lateral_deadlift")[0]["video_id"] == "mzD6t7Yo0Sw"
+    assert get_video_demonstrations(exercise_id="plate_overhead_press")[0]["video_id"] == "GrcA2Xh06x8"
