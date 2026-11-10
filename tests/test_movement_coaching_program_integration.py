@@ -73,17 +73,24 @@ def test_regress_decision_uses_verified_supported_split_squat():
     assert all(item["prescription"]["sets"] <= 2 for item in lunges)
 
 
-def test_ready_decision_does_not_trigger_automatic_progression_or_change_selection():
+def test_ready_decision_starts_conservatively_without_automatic_progression():
     baseline = generate_program(BASE)
     ready = build_movement_decision(
         "squat", "READY",
-        decision_reason="Osnovna različica je bila ponovljiva in nadzorovana.",
+        decision_reason="Osnovni vzorec je bil udoben in nadzorovan.",
     )
     assessed = generate_program(BASE, movement_decisions={"squat": ready})
-    assert [item["exercise_id"] for item in _pattern_exercises(assessed, "squat")] == [
+    selected = _pattern_exercises(assessed, "squat")
+    assert selected
+    assert all(item.get("loading_potential") != "high" for item in selected)
+    assert [item["exercise_id"] for item in selected] != [
         item["exercise_id"] for item in _pattern_exercises(baseline, "squat")
     ]
     assert assessed["movement_adaptation"]["automatic_progression"] == "movement_assessment_does_not_trigger_progression"
+    assert any(
+        event["action"] == "ready_for_conservative_starting_variation"
+        for event in assessed["movement_adaptation"]["events"]
+    )
 
 
 def test_unassessable_omits_pattern_until_assessment_is_available():
