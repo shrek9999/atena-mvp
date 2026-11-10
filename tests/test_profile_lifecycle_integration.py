@@ -141,6 +141,16 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     assert blocked.status_code == 409
     assert blocked.get_json()["blocked"] is True
 
+    assessment = client.put(
+        f"/coach/profile/{profile_id}/movement-assessment",
+        headers=headers,
+        json={"movement_patterns": {
+            pattern: {"status": "comfortable"}
+            for pattern in __import__("training.movement_coaching", fromlist=["PATTERN_DEFINITIONS"]).PATTERN_DEFINITIONS
+        }},
+    )
+    assert assessment.status_code == 200
+
     allowed = client.post(
         f"/coach/profile/{profile_id}/program",
         headers=headers,
