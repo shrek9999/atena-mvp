@@ -191,6 +191,9 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # Functional fitness is built from fundamental movement patterns and
         # locomotion, not generic balance/coordination add-ons.
         patterns = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
+        # Vertical pull is a required supplementary strength pattern, not a camera-assessment task.
+        if session_index == 0:
+            patterns.append("vertical_pull")
         # Rotate unilateral knee-dominant work and locomotion across sessions.
         patterns.append("lunge" if session_index % 2 == 0 else "locomotion")
         # Keep a short, submaximal conditioning dose only when the session
@@ -211,7 +214,7 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # of placing every mobility and strength pattern into one long session.
         mobility_templates = [
             ["mobility", "mobility", "mobility_stretch", "squat", "lunge", "horizontal_push"],
-            ["mobility", "mobility", "mobility_stretch", "hinge", "horizontal_pull", "accessory"],
+            ["mobility", "mobility", "mobility_stretch", "hinge", "horizontal_pull", "vertical_pull"],
         ]
         patterns = mobility_templates[session_index % len(mobility_templates)]
         if include_stability:
@@ -221,7 +224,7 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
     if goal == "fat_loss":
         # Preserve two resistance-focused full-body sessions plus a controlled
         # conditioning element without stacking both vertical patterns as well.
-        patterns = base + ["lunge", "conditioning"]
+        patterns = base + ["lunge", "vertical_pull", "conditioning"]
         if include_stability:
             patterns.insert(0, "trunk_stability")
         return patterns
@@ -880,7 +883,7 @@ def generate_program(
                 candidates = [target]
 
             if not candidates:
-                # A vertical pull is not mandatory when the available catalogue/equipment cannot support it.
+                # A vertical pull requires a safely available bar, band anchor or equivalent equipment.
                 if pattern in {"vertical_pull", "vertical_push", "carry", "anti_rotation", "trunk_stability"}:
                     missing_patterns.add(pattern)
                     continue
