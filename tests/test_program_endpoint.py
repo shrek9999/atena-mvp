@@ -17,6 +17,7 @@ def _six_pattern_decisions():
     return {
         pattern: build_movement_decision(
             pattern, "READY",
+            user_report={"status": "comfortable"},
             decision_reason="Osnovno gibanje je po samooceni udobno in nadzorovano.",
         )
         for pattern in PATTERN_DEFINITIONS
