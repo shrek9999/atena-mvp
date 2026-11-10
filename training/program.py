@@ -638,6 +638,14 @@ def generate_program(
                 "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed"
             }:
                 raise ProgramValidationError(f"Neveljaven status uporabnikovega poročila za {pattern}.")
+            if report_status in {"uncertain", "symptoms_reported", "not_assessed"} and decision != "UNASSESSABLE":
+                raise ProgramValidationError(
+                    f"Vzorec {pattern} je označen kot nejasen, simptomatski ali neocenjen, zato ne sme biti označen kot pripravljen."
+                )
+            if report_status == "needs_support" and decision == "READY":
+                raise ProgramValidationError(
+                    f"Vzorec {pattern} potrebuje oporo ali lažjo različico in ne sme biti označen kot READY."
+                )
             if report_status == "symptoms_reported":
                 # A symptom report takes precedence over any camera observation:
                 # omit this pattern pending clarification; never infer a diagnosis.
