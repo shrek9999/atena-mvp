@@ -2456,8 +2456,16 @@ def save_six_pattern_movement_assessment(profile_id):
     if request.method == "OPTIONS":
         return ("", 204)
     payload = request.get_json(silent=True)
-    if not isinstance(payload, dict) or set(payload) != {"movement_patterns"}:
-        return jsonify({"error": "Pošlji samo polje movement_patterns."}), 400
+    if not isinstance(payload, dict):
+        return jsonify({"error": "Telo zahteve ni veljavno."}), 400
+    if payload.get("movement_assessment_consent") is not True:
+        return jsonify({
+            "blocked": True,
+            "consent_required": True,
+            "error": "Za uporabo odgovorov o gibanju pri pripravi programa je potrebna ločena privolitev."
+        }), 403
+    if set(payload) != {"movement_assessment_consent", "movement_patterns"}:
+        return jsonify({"error": "Pošlji samo movement_assessment_consent in movement_patterns."}), 400
     supplied = payload.get("movement_patterns")
     required_patterns = set(PATTERN_DEFINITIONS)
     if not isinstance(supplied, dict) or set(supplied) != required_patterns:
