@@ -323,6 +323,7 @@ def test_foot_assisted_vertical_pull_supports_only_the_feet():
 
     assert "only the feet contact" in SYSTEM_PROMPT
     assert "Never describe the knees as resting" in SYSTEM_PROMPT
+    assert "A dumbbell row is a horizontal pull and never replaces a vertical pull-up" in SYSTEM_PROMPT
 
 
 
@@ -354,6 +355,64 @@ def test_verified_safety_clearance_allows_exercise_dose():
     answer = "Pri počepu izvedi 3 serije po 8 ponovitev."
     assert _sanitize_unverified_training_dose(answer, messages) == answer
 
+
+
+
+def test_partial_safety_clearance_does_not_allow_individualized_exercise_dose():
+    from coach_routes import _sanitize_unverified_training_dose
+
+    assert not _has_explicit_safety_clearance("Nimam bolečin.")
+    assert not _has_explicit_safety_clearance("Nimam poškodb.")
+    assert not _has_explicit_safety_clearance("Nimam zdravstvenih omejitev.")
+    assert not _has_explicit_safety_clearance("Nimam bolečin, vendar imam poškodbo in zdravstvene omejitve.")
+    messages = [
+        {"role": "user", "content": "Nimam bolečin."},
+        {"role": "user", "content": "Pri počepu lahko naredim 3 serije po 8 ponovitev?"},
+    ]
+    answer = "Pri počepu izvedi 3 serije po 8 ponovitev."
+    result = _sanitize_unverified_training_dose(answer, messages)
+    assert "3 serije" not in result
+    assert "Preden določim serije" in result
+
+
+def test_exercise_dose_gate_uses_the_full_conversation_context():
+    from coach_routes import _sanitize_unverified_training_dose
+
+    messages = [
+        {"role": "user", "content": "Rad bi izboljšal svoj počep."},
+        {"role": "model", "content": "Kaj te zanima glede izvedbe?"},
+        {"role": "user", "content": "Koliko serij in ponovitev naj naredim?"},
+    ]
+    answer = "Pri počepu naredi 3 serije po 8 ponovitev."
+    result = _sanitize_unverified_training_dose(answer, messages)
+    assert "3 serije" not in result
+    assert "Preden določim serije" in result
+
+
+def test_dumbbell_row_is_not_presented_as_a_vertical_pull_substitute():
+    messages = [
+        {"role": "user", "content": "V programu imam veslanje z ročkami v predklonu."},
+        {"role": "model", "content": "Ali je to isto kot zgib?"},
+        {"role": "user", "content": "Doma nimam droga za zgibe. Kako naj vseeno razmišljam o vadbi hrbta?"},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "horizontalni poteg" in reply
+    assert "ne nadomesti vertikalnega zgiba" in reply
+    assert "drog za zgibe" in reply
+
+
+def test_repeated_table_row_warning_becomes_a_concise_follow_up():
+    messages = [
+        {"role": "user", "content": "Lahko delam veslanje pod mizo? Doma nimam nobene opreme."},
+        {"role": "model", "content": "Veslanja pod mizo ne izvajaj, če ne moreš potrditi, da je miza stabilna."},
+        {"role": "user", "content": "Na voljo imam samo lastno težo in tla."},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert reply.startswith("Potem mize ne uporabljaj.")
+    assert "ne enakovredna zamenjava" in reply
+    assert len(reply) < 400
 
 def test_progression_sanitizer_does_not_duplicate_the_same_rule():
     from coach_routes import _sanitize_power_and_progression_claims

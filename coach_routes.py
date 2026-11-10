@@ -82,18 +82,32 @@ def _has_explicit_no_pain_confirmation(text):
 
 
 def _has_explicit_safety_clearance(text):
-    """Accept only direct negative answers, never an ambiguous mention of uncertainty."""
-    patterns = (
-        r"\bnimam\s+(?:(?:trenutno|nobenih|kakršnih koli|večjih)\s+)*(?:bolečin|poškodb|(?:zdravstvenih|gibalnih)\s+omejitev|omejitev|zdravstvenih težav)\b",
-        r"\b(?:uporabnik|oseba)\s+(?:je\s+)?(?:izrecno\s+)?potrdil\w*,?\s+da\s+nima\s+(?:(?:trenutno|nobenih|kakršnih koli|večjih)\s+)*(?:bolečin|poškodb|(?:zdravstvenih|gibalnih)\s+omejitev|omejitev|zdravstvenih težav)\b",
-        r"\bbrez\s+(?:(?:trenutnih|nobenih)\s+)*(?:bolečin|poškodb|(?:zdravstvenih|gibalnih)\s+omejitev|omejitev)\b",
-        # Exact structured profile wording from the website intake form.
+    """Require explicit negative confirmation for pain, injuries and limitations."""
+    normalized = " ".join(str(text or "").split()).casefold()
+    structured_profile = re.search(
         r"\btrenutna\s+bolečina\s*/\s*poškodba\s*/\s*zdravstvena\s+omejitev\s*:\s*ne\b",
-        r"\bno\s+(?:pain|injuries|limitations)\b",
+        normalized,
     )
-    return any(re.search(pattern, text, re.IGNORECASE) for pattern in patterns)
-
-
+    if structured_profile:
+        return True
+    statements = re.split(r"(?<=[.!?;])\s+|\n+", normalized)
+    for statement in statements:
+        negative = bool(re.search(r"\b(?:nimam|nima|brez|no|without)\b", statement))
+        pain = bool(re.search(r"\b(?:bolečin\w*|pain)\b", statement))
+        injury = bool(re.search(r"\b(?:poškodb\w*|injur\w*)\b", statement))
+        limitations = bool(re.search(
+            r"\b(?:omejit\w*|zdravstven\w*\s+težav\w*|health\s+(?:restrictions?|issues?)|limitations?)\b",
+            statement,
+        ))
+        positive_issue = bool(re.search(
+            r"\b(?:imam|občutim|čutim|me boli|boli me)\b.{0,60}(?:bolečin\w*|poškodb\w*|omejit\w*)|"
+            r"\bi have (?:a |an )?(?:pain|injury|limitation)|"
+            r"\bi am experiencing\b.{0,50}(?:pain|injury|limitation)",
+            statement,
+        ))
+        if negative and pain and injury and limitations and not positive_issue:
+            return True
+    return False
 def _profile_from_messages(messages):
     user_text = "\n".join(
         item.get("content", "") for item in messages if item.get("role") == "user"
@@ -365,7 +379,7 @@ def _sanitize_unverified_training_dose(answer, messages):
     latest = user_texts[-1].casefold()
     exercise_context = bool(re.search(
         r"(zgib|počep|počepu|veslan|mrtv\w* dvig|predklon|potisk|sklec|vajo|vaje|trening)",
-        latest,
+        "\n".join(user_texts),
         re.IGNORECASE,
     ))
     individualized_dose = bool(re.search(
@@ -522,6 +536,10 @@ def _coaching_guardrail_reply(messages):
         item.get("content", "") for item in messages
         if item.get("role") == "user" and isinstance(item.get("content"), str)
     ]
+    assistant_texts = [
+        item.get("content", "") for item in messages
+        if item.get("role") == "model" and isinstance(item.get("content"), str)
+    ]
     if not user_texts:
         return None
     history = "\n".join(user_texts)
@@ -599,6 +617,32 @@ def _coaching_guardrail_reply(messages):
             "kot shranjeno, dokler je ne potrdi namenski postopek za program oziroma profil."
         )
 
+    # A dumbbell row is horizontal pulling, never a substitute for a vertical pull-up.
+    no_pull_up_bar = bool(re.search(
+        r"(?:nimam|brez|not have|don't have).{0,40}(?:drog(?:a|om)?|pull.?up bar)",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    vertical_pull_context = bool(re.search(
+        r"(zgib\w*|pull.?up|vertikaln\w*.{0,20}(?:poteg|vlek))",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    asks_about_back_training = bool(re.search(
+        r"(vadb\w*.{0,25}hrbt|trening.{0,25}hrbt|krepit\w*.{0,25}hrbt|back training)",
+        lowered,
+        re.IGNORECASE,
+    ))
+    if no_pull_up_bar and vertical_pull_context and asks_about_back_training:
+        return (
+            "Veslanje z ročkami v predklonu je horizontalni poteg: trup je nagnjen naprej, "
+            "ročke vlečeš proti trupu. Zgib je vertikalni poteg. Veslanje je koristna vaja za "
+            "hrbet, vendar ne nadomesti vertikalnega zgiba in ni isti gibalni vzorec. Ker nimaš "
+            "droga za zgibe, za obremenjen vertikalni poteg bi potreboval drog ali elastiko z "
+            "namenskim varnim sidriščem. Veslanje z ročkami lahko ohraniš kot ločeno vajo za "
+            "horizontalni poteg. Ali imaš na voljo elastiko z varnim sidriščem?"
+        )
+
     # Furniture is not an assumed load-bearing anchor. Answer this safety question
     # directly even while the separate health-intake gate remains unanswered.
     table_row_intent = bool(re.search(
@@ -614,6 +658,17 @@ def _coaching_guardrail_reply(messages):
             re.IGNORECASE,
         ))
         if bodyweight_only:
+            already_warned = any(
+                re.search(r"veslanja pod mizo ne izvajaj", item, re.IGNORECASE)
+                for item in assistant_texts
+            )
+            if already_warned:
+                return (
+                    "Potem mize ne uporabljaj. Brez potrjenega sidrišča trenutno nimaš varne "
+                    "obremenjene različice horizontalnega vleka. Superman je lahko le "
+                    "dopolnilna talna vaja, ne enakovredna zamenjava za veslanje. Za obremenjeno "
+                    "vlečenje boš potreboval elastiko z namenskim varnim sidriščem ali drog za zgibe."
+                )
             return (
                 "Veslanja pod mizo ne izvajaj, če ne moreš potrditi, da je miza stabilna in "
                 "primerna za obremenitev s telesno težo; če nisi prepričan, je ne uporabljaj. "
@@ -622,8 +677,7 @@ def _coaching_guardrail_reply(messages):
                 "uporabiš vajo Superman (dvig trupa in okončin leže na trebuhu) v majhni, "
                 "nadzorovani amplitudi, če ti položaj ne povzroča nelagodja; ta vaja ni "
                 "enakovredna zamenjava za obremenjeno veslanje. Za ta vzorec bi potreboval "
-                "elastiko z varnim sidriščem ali drog "
-                "za zgibe."
+                "elastiko z varnim sidriščem ali drog za zgibe."
             )
         return (
             "Veslanja pod mizo ne izvajaj, dokler ni potrjeno, da je miza stabilna in "
@@ -771,10 +825,6 @@ def _coaching_guardrail_reply(messages):
             "oziroma nestabilnosti ali sveže poškodbe?"
         )
 
-    assistant_texts = [
-        item.get("content", "") for item in messages
-        if item.get("role") == "model" and isinstance(item.get("content"), str)
-    ]
     assistant_asked_pain_details = any(
         re.search(r"kje natančno se pojavi bolečina|kakšna je in kako močna", item, re.IGNORECASE)
         for item in assistant_texts
@@ -1193,6 +1243,7 @@ Do not ask for full names, exact addresses or unnecessary personal data. Use hea
 
 VERTICAL PULL VS HORIZONTAL ROW — CRITICAL MOVEMENT TERMINOLOGY
 - The catalogue exercise "Zgib z oporo stopal (navpični trup)" is a vertical pull-up regression.
+- A dumbbell row is a horizontal pull and never replaces a vertical pull-up; when no pull-up bar or safely anchored band is available, state that the vertical-pull pattern cannot currently be loaded with the available equipment.
 - For a foot-assisted vertical pull-up, the torso stays mostly upright beneath the bar; hips and knees are comfortably flexed; only the feet contact the floor or a confirmed stable step slightly forward of the bar's vertical line (not directly underneath it) and assist the vertical pull.
 - Never describe the knees as resting on the box or step; the feet provide the support. Do not invent an exact 90-degree joint angle: adjust hip and knee flexion to the user's body and support height.
 - A technique question may be answered with setup cues, but do not prescribe sets, repetitions or load until the user's safety and relevant experience are clear.
