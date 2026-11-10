@@ -236,14 +236,17 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         extras = [["lunge", "vertical_push"], ["vertical_pull", "lunge"], ["lunge", "vertical_push"]]
     else:
         extras = [["lunge", "vertical_push"], ["vertical_pull", "lunge"], ["lunge", "vertical_push"], ["vertical_pull", "lunge"]]
-    patterns = base + (extras[session_index][:1] if include_stability else extras[session_index])
+    # Keep advanced accessory work inside the six-exercise session cap.
+    # When stability or accessory work is explicitly requested, rotate only
+    # one optional pattern into this session rather than stacking all extras.
+    patterns = base + (extras[session_index][:1] if (include_stability or include_accessories) else extras[session_index])
     if goal == "fat_loss":
         patterns.append("conditioning")
     if include_stability:
         patterns.insert(0, "trunk_stability")
     if goal == "power":
         patterns += ["jump", "hinge_power"]
-    if include_accessories and len(patterns) < 7:
+    if include_accessories and len(patterns) < 6:
         patterns += ["accessory"]
     return patterns
 
