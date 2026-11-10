@@ -46,13 +46,13 @@ Allowed statuses and deterministic mapping:
 
 | User report | Structured decision | Programme behaviour |
 |---|---|---|
-| `comfortable` | `READY` | Normal catalogue selection; no automatic progression |
+| `comfortable` | `READY` | Conservative low/moderate-loading start; high-load variants require exercise-specific evidence |
 | `needs_support` | `LEARN` | Select a verified learning / easier variation |
 | `uncertain` | `UNASSESSABLE` | Omit the pattern pending reassessment |
 | `not_assessed` | `UNASSESSABLE` | Omit the pattern pending reassessment |
 | `symptoms_reported` | `UNASSESSABLE` | Omit only the affected pattern pending clarification |
 
-The service rejects incomplete or unknown pattern sets. It does not infer readiness from experience level, goals, equipment or conversation history.
+The service rejects incomplete or unknown pattern sets. It does not infer readiness from experience level, goals, equipment or conversation history. A comfortable basic pattern check is not treated as proof of tolerance for heavy loading: READY is capped at a conservative low/moderate-loading starting variation, and exercise-specific progression still requires recorded training evidence.
 
 ## Programme gate
 
