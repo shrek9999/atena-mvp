@@ -381,7 +381,7 @@ jobs:
               _, assessment = call(
                   f"/api/profile/{profile_id}/movement-assessment",
                   "PUT",
-                  {"movement_patterns": movement_patterns},
+                  {"movement_assessment_consent": True, "movement_patterns": movement_patterns},
                   profile_token,
               )
               if assessment.get("assessment_stored") is not True:
