@@ -90,7 +90,17 @@ jobs:
 
           origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
           url = origin + "/api/plan"
+          patterns = ["squat", "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge"]
           payload = {
+              "movement_assessment_consent": True,
+              "movement_decisions": {
+                  pattern: {
+                      "movement_pattern": pattern,
+                      "decision": "READY",
+                      "user_report": {"status": "comfortable"}
+                  }
+                  for pattern in patterns
+              },
               "profile": {
                   "goal": "moč in mišična masa",
                   "experience": "začetnik",
