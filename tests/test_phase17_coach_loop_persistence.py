@@ -68,9 +68,12 @@ def _save_six_pattern_assessment(client, profile_id, token):
     response = client.put(
         f"/coach/profile/{profile_id}/movement-assessment",
         headers={"X-Profile-Token": token},
-        json={"movement_patterns": {
-            pattern: {"status": "comfortable"} for pattern in PATTERN_DEFINITIONS
-        }},
+        json={
+            "movement_assessment_consent": True,
+            "movement_patterns": {
+                pattern: {"status": "comfortable"} for pattern in PATTERN_DEFINITIONS
+            },
+        },
     )
     assert response.status_code == 200, response.get_json()
     return response.get_json()
