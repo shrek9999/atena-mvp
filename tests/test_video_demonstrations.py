@@ -42,7 +42,7 @@ def test_reaching_squat_video_is_linked_to_exact_learning_method():
 
 def test_lookup_filters_by_movement_pattern():
     assert len(get_video_demonstrations(movement_pattern="squat")) == 4
-    assert get_video_demonstrations(movement_pattern="hinge")
+    assert len(get_video_demonstrations(movement_pattern="hinge")) == 2
 
 
 def test_video_lookup_returns_copies():
