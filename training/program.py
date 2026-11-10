@@ -836,6 +836,10 @@ def generate_program(
                 })
                 continue
             candidates = by_pattern.get(pattern, [])
+            if pattern == "horizontal_push":
+                # ATENA's coaching standard excludes wall push-ups; use floor or
+                # stable elevated support variations only.
+                candidates = [item for item in candidates if item["id"] != "wall_push_up"]
             if planning_goal in {"endurance", "fat_loss"} and pattern == "locomotion":
                 candidates = [item for item in candidates if item.get("endurance_type") == "aerobic"]
             if planning_goal == "functional":
@@ -848,6 +852,7 @@ def generate_program(
                     item for item in reference_catalogue
                     if item["id"] in preferred_ids
                     and item["pattern"] == pattern
+                    and not (pattern == "horizontal_push" and item["id"] == "wall_push_up")
                     and not item["single_joint"]
                     and item["level"] in {"beginner", p["experience"]}
                     and set(item["equipment"]).issubset(available_for_regression)
