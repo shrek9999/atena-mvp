@@ -9,7 +9,7 @@ A profile-based individual programme must not be generated from training goals, 
 | API pattern key | User-facing movement |
 |---|---|
 | `squat` | Počep |
-| `hinge` | Zgib v kolku |
+| `hinge` | Predklon v kolkih (hip hinge) |
 | `horizontal_push` | Horizontalni potisk |
 | `horizontal_pull` | Horizontalni poteg / veslanje |
 | `vertical_push` | Vertikalni potisk |
