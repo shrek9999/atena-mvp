@@ -196,9 +196,10 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
             patterns.append("vertical_pull")
         # Rotate unilateral knee-dominant work and locomotion across sessions.
         patterns.append("lunge" if session_index % 2 == 0 else "locomotion")
-        # Keep a short, submaximal conditioning dose only when the session
-        # duration leaves enough room for the four foundational patterns.
-        if session_minutes > 30:
+        # Rotate conditioning into the later session rather than stacking it
+        # on top of all six strength patterns in one workout. This preserves
+        # vertical pulling across the week and keeps each session <= 6 exercises.
+        if session_minutes > 30 and session_index > 0:
             patterns.append("conditioning")
         if include_stability:
             patterns.insert(0, "trunk_stability")
@@ -222,9 +223,10 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         return patterns
     base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
     if goal == "fat_loss":
-        # Preserve two resistance-focused full-body sessions plus a controlled
-        # conditioning element without stacking both vertical patterns as well.
-        patterns = base + ["lunge", "vertical_pull", "conditioning"]
+        # Keep both resistance sessions full-body, but cap the main exercise
+        # list at six. Alternate the unilateral knee-dominant pattern and
+        # vertical pull; conditioning remains present in both sessions.
+        patterns = base + (["vertical_pull"] if session_index == 0 else ["lunge"]) + ["conditioning"]
         if include_stability:
             patterns.insert(0, "trunk_stability")
         return patterns
