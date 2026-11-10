@@ -444,8 +444,8 @@ def _bodyweight_only_program_note(messages):
     )
 
 
-def _pending_safety_reply(latest):
-    """Acknowledge new intake information while keeping the unanswered safety gate."""
+def _pending_safety_reply(latest, *, repeat_question=True):
+    """Acknowledge intake information without nagging after the safety gate was repeated."""
     lowered = latest.casefold()
     if re.search(r"\b(?:dvakrat|2[- ]krat|2x)\b.{0,30}(?:tedensko|na teden)|(?:tedensko|na teden).{0,30}\b(?:dvakrat|2[- ]krat|2x)\b", lowered):
         acknowledgement = "Upošteval bom, da želiš vaditi dvakrat tedensko."
@@ -467,6 +467,14 @@ def _pending_safety_reply(latest):
         acknowledgement = "Upošteval bom tvoje približno triletne izkušnje in dostop do fitnesa."
     else:
         acknowledgement = "Hvala, ta podatek bom upošteval."
+    if not repeat_question:
+        return (
+            acknowledgement
+            + " Varnostnega vprašanja še nisi odgovoril. Brez te potrditve ne bom "
+            "sestavil individualnega programa ali določal obremenitev. Splošne informacije "
+            "lahko še vedno razložim; konkreten program pripravim, ko potrdiš, ali imaš "
+            "bolečine, poškodbe ali zdravstvene oziroma gibalne omejitve."
+        )
     return (
         acknowledgement
         + " Varnostnega vprašanja pa še nisi odgovoril, zato ne bom sklepal, "
@@ -803,12 +811,16 @@ def _coaching_guardrail_reply(messages):
         )
 
     # Do not let a language model convert an unanswered safety question into clearance.
-    assistant_asked_safety = any(re.search(
-        r"(?:ali\s+(?:imaš|trenutno|morda)|imaš\s+(?:trenutno|kakšne|kakršne koli)|občutiš|opaziš).{0,100}"
-        r"(?:bolečin\w*|poškodb\w*|omejitv\w*|zdravstven.{0,30}težav)",
-        item,
-        re.IGNORECASE,
-    ) for item in assistant_texts)
+    safety_question_count = sum(
+        1 for item in assistant_texts
+        if "?" in item and re.search(
+            r"(?:ali\s+(?:imaš|trenutno|morda)|imaš\s+(?:trenutno|kakšne|kakršne koli)|občutiš|opaziš).{0,100}"
+            r"(?:bolečin\w*|poškodb\w*|omejitv\w*|zdravstven.{0,30}težav)",
+            item,
+            re.IGNORECASE,
+        )
+    )
+    assistant_asked_safety = safety_question_count > 0
     assistant_asked_setup = any(
         "?" in item and re.search(
             r"(oprem\w*|koliko časa|časovn\w* okvir|minut|tedensk\w*|pogostost)",
@@ -841,7 +853,12 @@ def _coaching_guardrail_reply(messages):
         re.IGNORECASE,
     ))
     if assistant_asked_safety and not _has_explicit_safety_clearance(history) and not latest_reports_health_issue:
-        pending = _pending_safety_reply(latest)
+        # Ask the safety question at most twice (the original ask plus one reminder).
+        # After that, acknowledge further intake details and explain the boundary
+        # without repeating the same question on every turn.
+        pending = _pending_safety_reply(latest, repeat_question=safety_question_count < 2)
+        if safety_question_count >= 2:
+            return pending
         safety_question = pending.split(". ", 1)[-1]
         if re.search(r"(vse sem pokvaril|vse pokvaril|pokvaril sem vse)", lowered):
             return (
@@ -1090,7 +1107,7 @@ MANDATORY DECISION GATES – NON-NEGOTIABLE
 - BODYWEIGHT-ONLY HYPERTROPHY LIMITS: Without external equipment, do not call an unloaded hip hinge an RDL or imply it provides the same loading potential as a loaded hinge. Call it "predklon z ravnim hrbtom brez dodatne obremenitve". Explicitly explain when a meaningful horizontal pulling movement cannot be loaded safely without a confirmed anchor or equipment; never invent table rows, door anchors or improvised supports. Explain realistic progression options and their limits.
 - LOADED BALANCE REGRESSION: If a bodyweight squat is stable but instability appears only after adding load, do not move the load to the shoulders or prescribe a harder variation as the first step. Keep the person at the stable bodyweight variation, do not increase load, and ask which load triggered the loss of control before considering progression.
 - ANKLE DORSIFLEXION: Do not recommend a front squat as an automatic way to reduce ankle dorsiflexion demand. Its more upright torso and forward knee travel can require as much or more ankle dorsiflexion. If the heel lifts, check whether a stable heel support is actually available before suggesting heel elevation. Heel support changes the effective ankle angle; it does not increase actual ankle mobility.
-- LOAD PROGRESSION: Do not prescribe a fixed kilogram increase when the exact exercise, current load and completed repetitions are unknown. Confirm stable technique and successful completion of the target repetitions; change one variable at a time and make only a small, conditional progression. For a repeatable progression, require the top of the target range at the intended RIR across at least two comparable exposures with good recovery. If only one exposure is known, say that confirmation is still needed; do not promise a fixed increase "next week".
+- LOAD PROGRESSION: Do not prescribe a fixed kilogram increase when the exact exercise, current load and completed repetitions are unknown. Confirm stable technique and successful completion of the target repetitions; change one variable at a time and make only a small, conditional progression. For a repeatable progression, require the top of the target range at the intended RIR across at least two comparable exposures with good recovery. If only one exposure is known, say that confirmation is still needed; do not promise a fixed increase "next week". Once the user has met the upper limit in two comparable exposures, increase load by the smallest practical increment and return to the lower part of the existing rep range. Do not prescribe repetitions above the stated upper limit unless you explicitly agree a new rep range with the user.
 - RECOVERY AND FATIGUE: Poor recovery is an observed response, not a diagnosis of its cause. Do not state that the user has accumulated fatigue, CNS fatigue, overtraining or a specific cause unless supported by recorded workload and relevant context. Explain that the current dose may not be well tolerated at present, state the uncertainty, and ask one relevant follow-up about sleep, stress, soreness or recent workload. When two recent sessions felt too hard, a conservative temporary reduction in one dose variable may be proposed (for example, one fewer set on the most demanding exercises and a little more RIR), then monitor the response. Do not assume the user trained near failure if that was not reported, and do not automatically change weekly frequency.
 - SLOVENIAN TERMINOLOGY: Use idiomatic exercise names such as "potisk za prsi" rather than "prsni tisk". Avoid literal translations and grammatically malformed muscle or movement descriptions.
 - CANONICAL EXERCISE NAMES: Use the exact verified catalogue display name. Keep "Cossack squat" in English; never translate it as "kozaški počep". If a movement has no established Slovenian coaching name, retain its canonical English name rather than inventing a literal translation. Keep naming consistent in the plan, cues and substitutions.
@@ -1143,7 +1160,9 @@ Do not ask for full names, exact addresses or unnecessary personal data. Use hea
 
 VERTICAL PULL VS HORIZONTAL ROW — CRITICAL MOVEMENT TERMINOLOGY
 - The catalogue exercise "Zgib z oporo stopal (navpični trup)" is a vertical pull-up regression.
-- For a foot-assisted vertical pull-up, the torso stays mostly upright beneath the bar; hips and knees are flexed; feet are supported on the floor or a confirmed stable step slightly forward of the bar's vertical line (not directly underneath it) and assist the vertical pull.
+- For a foot-assisted vertical pull-up, the torso stays mostly upright beneath the bar; hips and knees are comfortably flexed; only the feet contact the floor or a confirmed stable step slightly forward of the bar's vertical line (not directly underneath it) and assist the vertical pull.
+- Never describe the knees as resting on the box or step; the feet provide the support. Do not invent an exact 90-degree joint angle: adjust hip and knee flexion to the user's body and support height.
+- A technique question may be answered with setup cues, but do not prescribe sets, repetitions or load until the user's safety and relevant experience are clear.
 - Never call this exercise "avstralski zgib", "inverted row", or horizontal rowing.
 - An inverted row is a separate horizontal pull: the body is angled beneath a low bar or handles and is pulled horizontally toward the support. Do not confuse its inclined torso position with the upright torso of a foot-assisted vertical pull-up.
 - Use the exact catalogue name "Zgib z oporo stopal (navpični trup)" when this variation is meant.
