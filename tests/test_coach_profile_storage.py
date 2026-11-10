@@ -47,6 +47,7 @@ def _save_six_pattern_assessment(client, profile_id, token, *, status="comfortab
         f"/coach/profile/{profile_id}/movement-assessment",
         headers={"X-Profile-Token": token},
         json={
+            "movement_assessment_consent": True,
             "movement_patterns": {
                 pattern: {"status": status}
                 for pattern in PATTERN_DEFINITIONS
@@ -549,7 +550,7 @@ def test_six_pattern_assessment_requires_separate_health_data_consent(monkeypatc
     response = client.put(
         f"/coach/profile/{profile_id}/movement-assessment",
         headers={"X-Profile-Token": token},
-        json={"movement_patterns": {pattern: {"status": "comfortable"} for pattern in PATTERN_DEFINITIONS}},
+        json={"movement_assessment_consent": True, "movement_patterns": {pattern: {"status": "comfortable"} for pattern in PATTERN_DEFINITIONS}},
     )
     assert response.status_code == 403
 
