@@ -1696,6 +1696,16 @@ def coach_program():
             "unknown_patterns": unknown_patterns,
             "message": "Pred individualnim programom odgovori na vseh šest osnovnih gibalnih vzorcev. Če naloge ne moreš ali ne želiš oceniti, izberi »Neocenjeno – preskoči«; ta vzorec bo izpuščen iz programa.",
         }), 409
+    assessable_patterns = [
+        pattern for pattern, record in movement_decisions.items()
+        if isinstance(record, dict) and record.get("decision") in {"READY", "LEARN", "REGRESS"}
+    ]
+    if not assessable_patterns:
+        return jsonify({
+            "blocked": True,
+            "assessment_required": True,
+            "message": "Vseh šest vzorcev je trenutno neocenjenih ali nejasnih. Pred individualnim programom je treba vsaj en vzorec varno oceniti; sicer program ne bi imel zanesljivega gibalnega izhodišča.",
+        }), 409
     try:
         result = generate_program(
             profile,
