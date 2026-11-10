@@ -10,6 +10,19 @@ def _client(monkeypatch):
     return app.test_client()
 
 
+
+
+def _six_pattern_decisions():
+    from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
+    return {
+        pattern: build_movement_decision(
+            pattern, "READY",
+            decision_reason="Osnovno gibanje je po samooceni udobno in nadzorovano.",
+        )
+        for pattern in PATTERN_DEFINITIONS
+    }
+
+
 def test_program_endpoint_requires_pilot_token(monkeypatch):
     response = _client(monkeypatch).post("/coach/program", json={
         "goal": "hypertrophy", "experience": "intermediate",
@@ -24,6 +37,8 @@ def test_program_endpoint_returns_catalogue_backed_plan(monkeypatch):
         "/coach/program",
         headers={"X-Pilot-Token": "test-only-secret"},
         json={
+            "movement_assessment_consent": True,
+            "movement_decisions": _six_pattern_decisions(),
             "goal": "hypertrophy", "experience": "intermediate",
             "equipment": ["dumbbell", "bench"], "sessions_per_week": 2,
             "session_minutes": 60,
@@ -40,6 +55,8 @@ def test_program_endpoint_rejects_invalid_profile(monkeypatch):
         "/coach/program",
         headers={"X-Pilot-Token": "test-only-secret"},
         json={
+            "movement_assessment_consent": True,
+            "movement_decisions": _six_pattern_decisions(),
             "goal": "miracle", "experience": "beginner",
             "equipment": ["bodyweight"], "sessions_per_week": 2,
             "session_minutes": 60,
@@ -55,6 +72,8 @@ def test_program_endpoint_accepts_nested_profile_and_reduces_hard_feedback(monke
         "/coach/program",
         headers={"X-Pilot-Token": "test-only-secret"},
         json={
+            "movement_assessment_consent": True,
+            "movement_decisions": _six_pattern_decisions(),
             "profile": {
                 "goal": "hypertrophy", "experience": "intermediate",
                 "equipment": ["dumbbell", "bench"], "sessions_per_week": 2,
@@ -114,6 +133,8 @@ def test_program_endpoint_blocks_automatic_adaptation_when_discomfort_reported(m
 def test_program_endpoint_returns_camera_observations_as_separate_non_decisional_context(monkeypatch):
     client = _client(monkeypatch)
     payload = {
+        "movement_assessment_consent": True,
+        "movement_decisions": _six_pattern_decisions(),
         "profile": {
             "goal": "functional", "experience": "beginner",
             "equipment": ["bodyweight", "resistance_band"], "sessions_per_week": 2,
