@@ -494,9 +494,17 @@ def _coaching_guardrail_reply(messages):
             "pokliči 112. Ne morem postaviti diagnoze."
         )
 
+    swelling_reported = (
+        bool(re.search(r"otekl\w*", history_lower))
+        and not bool(re.search(r"(?:brez|ni|ne)\s+(?:nobene\s+)?otekl\w*|otekline\s+ni|ne\s+oteče", history_lower))
+    )
+    locking_reported = (
+        bool(re.search(r"zaklepan\w*|zaklen\w*", history_lower))
+        and not bool(re.search(r"(?:brez|ni|ne)\s+(?:nobenega\s+)?zaklepan\w*|ne\s+zaklepa", history_lower))
+    )
     knee_swelling_or_locking = (
         bool(re.search(r"kolen\w*", history_lower))
-        and bool(re.search(r"otekl\w*|zaklepan\w*|zaklen\w*", history_lower))
+        and (swelling_reported or locking_reported)
     )
     if knee_swelling_or_locking:
         return (
@@ -719,18 +727,29 @@ def _coaching_guardrail_reply(messages):
 
     # Keep the already-reported pain context active when the user asks whether to
     # reduce the load, continue, or substitute the same painful movement.
-    pain_reported_in_history = bool(re.search(
-        r"(boli me|me boli|bolečin\w*|čutim bolečino|občutim bolečino|bolečina se pojavi)",
-        history_lower,
+    pain_signal = re.compile(
+        r"(boli me|me boli|me zaboli|zaboli me|bolečin\w*|čutim bolečino|"
+        r"občutim bolečino|bolečina se pojavi)",
         re.IGNORECASE,
-    ))
+    )
+    pain_report_positions = [
+        index for index, content in enumerate(user_texts)
+        if pain_signal.search(content) and not _has_explicit_no_pain_confirmation(content)
+    ]
+    no_pain_positions = [
+        index for index, content in enumerate(user_texts)
+        if _has_explicit_no_pain_confirmation(content)
+    ]
+    pain_context_active = bool(pain_report_positions) and (
+        not no_pain_positions or pain_report_positions[-1] > no_pain_positions[-1]
+    )
     pain_followup_intent = bool(re.search(
         r"(zmanjš\w*|zniž\w*).{0,35}(tež\w*|bremen\w*)|"
         r"nadaljuj\w*|nadaljev\w*|zamenj\w*|nadomest\w*|alternativ\w*",
         lowered,
         re.IGNORECASE,
     ))
-    if pain_reported_in_history and pain_followup_intent:
+    if pain_context_active and pain_followup_intent:
         return (
             "Ne nadaljuj istega bolečega giba samo z manjšo težo, dokler ne razjasniva odziva. "
             "Za zdaj izpusti ta boleči gib; ne zamenjaj ga samodejno s skleco ali drugo "

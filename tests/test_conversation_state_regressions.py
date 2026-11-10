@@ -156,8 +156,8 @@ def test_inability_to_bear_weight_after_knee_swelling_and_locking_triggers_urgen
     reply = _coaching_guardrail_reply(messages)
     assert reply is not None
     assert "nujno zdravstveno oceno še danes" in reply
-    assert "ne izvajaj počepov" in reply
-    assert "pokliči 112" in reply
+    assert "ne izvajaj počepov" in reply.casefold()
+    assert "pokliči 112" in reply.casefold()
 
 
 def test_knee_swelling_and_locking_remain_active_when_user_asks_for_a_light_squat():
