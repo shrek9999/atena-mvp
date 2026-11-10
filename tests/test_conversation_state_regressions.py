@@ -323,3 +323,44 @@ def test_foot_assisted_vertical_pull_supports_only_the_feet():
 
     assert "only the feet contact" in SYSTEM_PROMPT
     assert "Never describe the knees as resting" in SYSTEM_PROMPT
+
+
+
+def test_unverified_exercise_dose_is_withheld_but_technique_context_is_preserved():
+    from coach_routes import _sanitize_unverified_training_dose
+
+    messages = [
+        {"role": "user", "content": "Imam drog za zgibe in stabilno škatlo."},
+        {"role": "model", "content": "Ali želiš lažjo različico vertikalnega zgiba?"},
+        {"role": "user", "content": "Želim lažjo različico vertikalnega zgiba, ne veslanja."},
+    ]
+    answer = (
+        "Razumem, govoriva o navpičnem zgibu, ne o veslanju.\n\n"
+        "Predlagam 3 serije po 6 do 8 ponovitev."
+    )
+    result = _sanitize_unverified_training_dose(answer, messages)
+    assert "navpičnem zgibu" in result
+    assert "3 serije" not in result
+    assert "Preden določim serije" in result
+
+
+def test_verified_safety_clearance_allows_exercise_dose():
+    from coach_routes import _sanitize_unverified_training_dose
+
+    messages = [
+        {"role": "user", "content": "Nimam bolečin, poškodb ali zdravstvenih omejitev."},
+        {"role": "user", "content": "Pri počepu lahko naredim 3 serije po 8 ponovitev?"},
+    ]
+    answer = "Pri počepu izvedi 3 serije po 8 ponovitev."
+    assert _sanitize_unverified_training_dose(answer, messages) == answer
+
+
+def test_progression_sanitizer_does_not_duplicate_the_same_rule():
+    from coach_routes import _sanitize_power_and_progression_claims
+
+    answer = (
+        "Na naslednjem treningu povečaj težo. "
+        "Pri naslednji vadbi dodaj breme, če je bilo vse lahko."
+    )
+    result = _sanitize_power_and_progression_claims(answer)
+    assert result.count("Napredovanje je primerno šele") == 1
