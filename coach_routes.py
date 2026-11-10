@@ -39,6 +39,10 @@ from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL
 from training.movement_assessment import MovementAssessmentError, assess_movement_competence
 from training.camera_observations import CameraObservationError, validate_camera_observations
 from training.goals import normalize_goal, public_goal_options
+from training.movement_coaching import (
+    ASSESSMENT_VERSION as SIX_PATTERN_ASSESSMENT_VERSION,
+    PATTERN_DEFINITIONS, MovementCoachingError, build_movement_decision,
+)
 
 logger = logging.getLogger(__name__)
 coach_bp = Blueprint("coach", __name__)
@@ -2431,6 +2435,82 @@ def save_coach_movement_assessment(profile_id):
     except StorageUnavailable as exc:
         return _storage_error(exc)
 
+@coach_bp.route("/coach/profile/<profile_id>/movement-assessment", methods=["PUT", "OPTIONS"])
+def save_six_pattern_movement_assessment(profile_id):
+    """Save the six guided movement checks only with separate health-data consent."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict) or set(payload) != {"movement_patterns"}:
+        return jsonify({"error": "Pošlji samo polje movement_patterns."}), 400
+    supplied = payload.get("movement_patterns")
+    required_patterns = set(PATTERN_DEFINITIONS)
+    if not isinstance(supplied, dict) or set(supplied) != required_patterns:
+        missing = sorted(required_patterns - set(supplied or {})) if isinstance(supplied, dict) else sorted(required_patterns)
+        unknown = sorted(set(supplied or {}) - required_patterns) if isinstance(supplied, dict) else []
+        return jsonify({
+            "error": "Gibalna samoocena mora vsebovati vseh šest osnovnih vzorcev.",
+            "missing_patterns": missing,
+            "unknown_patterns": unknown,
+        }), 400
+
+    status_to_decision = {
+        "comfortable": "READY",
+        "needs_support": "LEARN",
+        "uncertain": "UNASSESSABLE",
+        "not_assessed": "UNASSESSABLE",
+        "symptoms_reported": "UNASSESSABLE",
+    }
+    decisions = {}
+    try:
+        for pattern in PATTERN_DEFINITIONS:
+            value = supplied[pattern]
+            if not isinstance(value, dict) or set(value) != {"status"}:
+                return jsonify({"error": f"Vzorec {pattern} mora vsebovati samo status."}), 400
+            status = value.get("status")
+            if status not in status_to_decision:
+                return jsonify({"error": f"Neveljaven status za vzorec {pattern}."}), 400
+            reason = {
+                "comfortable": "Uporabnik poroča, da je osnovno izvedbo opravil udobno in nadzorovano.",
+                "needs_support": "Uporabnik poroča, da pri izvedbi potrebuje podporo ali lažjo različico.",
+                "uncertain": "Uporabnik ni prepričan o kakovosti ali udobju izvedbe.",
+                "not_assessed": "Gibalni vzorec še ni bil ocenjen.",
+                "symptoms_reported": "Uporabnik je pri gibalnem vzorcu navedel simptome; vzorec ostane izpuščen do razjasnitve.",
+            }[status]
+            decisions[pattern] = build_movement_decision(
+                pattern,
+                status_to_decision[status],
+                user_report={"status": status},
+                decision_reason=reason,
+            )
+        token = _profile_token()
+        profile = store_get_profile(profile_id, token)
+        if not profile["health_data_consent"]:
+            return jsonify({
+                "error": "Za shranjevanje gibalne samoocene je potrebna ločena privolitev za zdravstvene podatke."
+            }), 403
+        record = {
+            "assessment_version": SIX_PATTERN_ASSESSMENT_VERSION,
+            "assessment_type": "guided_six_pattern_self_report",
+            "decisions": decisions,
+            "is_diagnosis": False,
+        }
+        saved = store_save_movement_assessment(profile_id, token, record)
+        return jsonify({
+            "assessment_version": SIX_PATTERN_ASSESSMENT_VERSION,
+            "movement_decisions": decisions,
+            "assessment_updated_at": saved["updated_at"],
+            "assessment_stored": True,
+            "source": "authenticated_six_pattern_self_assessment",
+        }), 200
+    except MovementCoachingError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
+
+
 @coach_bp.route("/coach/profile/<profile_id>/progress", methods=["GET", "OPTIONS"])
 def coach_training_progress(profile_id):
     """Return descriptive training trends; never prescribe automatic load increases."""
@@ -2583,10 +2663,25 @@ def coach_profile_program(profile_id):
         # exercise-level rep guidance. A future user-confirmed session-level
         # adjustment can be applied through an explicit programme revision.
         movement_record = store_get_movement_assessment(profile_id, token)
-        movement_assessment = movement_record["assessment"] if movement_record else None
+        saved_assessment = movement_record.get("assessment") if movement_record else None
+        expected_patterns = set(PATTERN_DEFINITIONS)
+        movement_decisions = (
+            saved_assessment.get("decisions")
+            if isinstance(saved_assessment, dict)
+            and saved_assessment.get("assessment_version") == SIX_PATTERN_ASSESSMENT_VERSION
+            else None
+        )
+        if not isinstance(movement_decisions, dict) or set(movement_decisions) != expected_patterns:
+            missing_patterns = sorted(expected_patterns - set(movement_decisions or {})) if isinstance(movement_decisions, dict) else sorted(expected_patterns)
+            return jsonify({
+                "blocked": True,
+                "assessment_required": True,
+                "missing_patterns": missing_patterns,
+                "message": "Pred individualnim programom morava opraviti vseh šest kratkih gibalnih preverjanj: počep, zgib v kolku, horizontalni potisk, horizontalni poteg, vertikalni potisk in izpadni korak. Neocenjenega vzorca ne bom obravnaval kot pripravljenega za zahtevnejšo vajo.",
+            }), 409
         result = generate_program(
             profile["profile"],
-            movement_assessment=movement_assessment,
+            movement_decisions=movement_decisions,
         )
         result = apply_exercise_progression(result, exercise_progressions)
         program_version_id = str(uuid.uuid4())
@@ -2602,7 +2697,8 @@ def coach_profile_program(profile_id):
             "program": result,
             "program_version_id": program_version_id,
             "program_stored": True,
-            "movement_assessment_applied": movement_assessment is not None,
+            "movement_assessment_applied": True,
+            "movement_assessment_version": SIX_PATTERN_ASSESSMENT_VERSION,
             "profile": profile["profile"],
             "adaptation_guidance": adaptation,
             "adaptive_decision": adaptive_decision,
