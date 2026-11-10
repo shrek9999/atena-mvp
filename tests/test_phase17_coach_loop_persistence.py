@@ -64,14 +64,14 @@ def test_movement_assessment_is_persisted_only_with_separate_health_consent(monk
 
 
 
-def _save_six_pattern_assessment(client, profile_id, token):
+def _save_six_pattern_assessment(client, profile_id, token, *, status="comfortable"):
     response = client.put(
         f"/coach/profile/{profile_id}/movement-assessment",
         headers={"X-Profile-Token": token},
         json={
             "movement_assessment_consent": True,
             "movement_patterns": {
-                pattern: {"status": "comfortable"} for pattern in PATTERN_DEFINITIONS
+                pattern: {"status": status} for pattern in PATTERN_DEFINITIONS
             },
         },
     )
@@ -102,6 +102,21 @@ def test_saved_movement_assessment_is_used_when_generating_next_programme(monkey
     assert set(called["movement_decisions"]) == set(PATTERN_DEFINITIONS)
     assert response.get_json()["movement_assessment_applied"] is True
     assert response.get_json()["program_stored"] is True
+
+
+def test_saved_profile_programme_blocks_when_all_patterns_are_unassessable(monkeypatch, tmp_path):
+    client, profile_id, token, _ = _client(monkeypatch, tmp_path, health_consent=True)
+    _save_six_pattern_assessment(client, profile_id, token, status="not_assessed")
+    response = client.post(
+        f"/coach/profile/{profile_id}/program",
+        headers={"X-Profile-Token": token},
+        json={"no_current_pain_or_restrictions": True},
+    )
+    assert response.status_code == 409
+    body = response.get_json()
+    assert body["blocked"] is True
+    assert body["assessment_required"] is True
+    assert "vsaj en vzorec varno oceniti" in body["message"]
 
 
 def test_programme_versions_are_listed_and_included_in_export(monkeypatch, tmp_path):
