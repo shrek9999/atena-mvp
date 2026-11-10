@@ -369,7 +369,7 @@ def _sanitize_unverified_training_dose(answer, messages):
         re.IGNORECASE,
     ))
     individualized_dose = bool(re.search(
-        r"\b\d+\s*(?:serij|setov)\b.{0,100}\b\d+\s*(?:ponovitev|ponovitve|ponovitv)\b|"
+        r"\b\d+\s*(?:serij\w*|setov)\b.{0,100}\b\d+\s*(?:ponovitev|ponovitve|ponovitv)\b|"
         r"\b\d+\s*[x×]\s*\d+\b|\b\d+(?:[.,]\d+)?\s*kg\b",
         answer,
         re.IGNORECASE,
