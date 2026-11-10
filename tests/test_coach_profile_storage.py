@@ -497,6 +497,50 @@ def test_profile_program_is_blocked_until_all_six_patterns_are_assessed(monkeypa
     assert set(data["missing_patterns"]) == set(PATTERN_DEFINITIONS)
 
 
+def test_six_pattern_assessment_maps_self_report_statuses_conservatively(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    statuses = {
+        "squat": "needs_support",
+        "hinge": "comfortable",
+        "horizontal_push": "uncertain",
+        "horizontal_pull": "not_assessed",
+        "vertical_push": "symptoms_reported",
+        "lunge": "comfortable",
+    }
+    response = client.put(
+        f"/coach/profile/{profile_id}/movement-assessment",
+        headers={"X-Profile-Token": token},
+        json={"movement_patterns": {key: {"status": value} for key, value in statuses.items()}},
+    )
+    assert response.status_code == 200
+    decisions = response.get_json()["movement_decisions"]
+    assert decisions["squat"]["decision"] == "LEARN"
+    assert decisions["hinge"]["decision"] == "READY"
+    assert decisions["horizontal_push"]["decision"] == "UNASSESSABLE"
+    assert decisions["horizontal_pull"]["decision"] == "UNASSESSABLE"
+    assert decisions["vertical_push"]["decision"] == "UNASSESSABLE"
+    assert decisions["vertical_push"]["user_report"]["status"] == "symptoms_reported"
+    assert all(item["is_diagnosis"] is False for item in decisions.values())
+
+
+def test_six_pattern_assessment_rejects_incomplete_pattern_set(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    patterns = list(PATTERN_DEFINITIONS)[:-1]
+    response = client.put(
+        f"/coach/profile/{profile_id}/movement-assessment",
+        headers={"X-Profile-Token": token},
+        json={"movement_patterns": {key: {"status": "comfortable"} for key in patterns}},
+    )
+    assert response.status_code == 400
+    assert response.get_json()["missing_patterns"]
+
+
 def test_six_pattern_assessment_requires_separate_health_data_consent(monkeypatch, tmp_path):
     client = _client(monkeypatch, tmp_path)
     created = _create(client, health_consent=False)
