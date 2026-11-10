@@ -293,3 +293,33 @@ def test_unrequested_name_is_removed_even_inside_a_sentence():
     assert "Grega" not in answer
     assert "Odlično" in answer
     assert "nadaljuj postopno" in answer
+
+
+
+def test_safety_gate_does_not_repeat_the_same_question_after_one_reminder():
+    messages = [
+        {"role": "user", "content": "Rad bi bil bolj fit."},
+        {"role": "model", "content": "Ali imaš trenutno kakšne bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "Rad bi imel več energije in se manj zadihal."},
+        {"role": "model", "content": "Ali imaš trenutno kakršne koli bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "Trenutno skoraj nič ne treniram."},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "ne bom sestavil individualnega programa" in reply
+    assert "Ali imaš trenutno" not in reply
+    assert reply.count("?") == 0
+
+
+def test_progression_prompt_returns_to_lower_end_of_rep_range_after_two_exposures():
+    from coach_routes import SYSTEM_PROMPT
+
+    assert "return to the lower part of the existing rep range" in SYSTEM_PROMPT
+    assert "Do not prescribe repetitions above the stated upper limit" in SYSTEM_PROMPT
+
+
+def test_foot_assisted_vertical_pull_supports_only_the_feet():
+    from coach_routes import SYSTEM_PROMPT
+
+    assert "only the feet contact" in SYSTEM_PROMPT
+    assert "Never describe the knees as resting" in SYSTEM_PROMPT
