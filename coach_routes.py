@@ -1671,18 +1671,36 @@ def coach_program():
             )
         except CameraObservationError as exc:
             return jsonify({"error": str(exc)}), 400
-    movement_assessment = None
-    if "movement_assessment" in payload:
-        try:
-            movement_assessment = assess_movement_competence(payload["movement_assessment"])
-        except MovementAssessmentError as exc:
-            return jsonify({"error": str(exc)}), 400
+    if payload.get("movement_assessment") is not None:
+        return jsonify({
+            "blocked": True,
+            "assessment_required": True,
+            "message": "Stara delna samoocena ne zadošča za individualni program. Pred pripravo izpolni vseh šest osnovnih gibalnih vzorcev.",
+        }), 409
+    if payload.get("movement_assessment_consent") is not True:
+        return jsonify({
+            "blocked": True,
+            "consent_required": True,
+            "message": "Pred uporabo odgovorov o gibanju za pripravo programa moraš izrecno potrditi ločeno soglasje.",
+        }), 403
+    expected_patterns = set(PATTERN_DEFINITIONS)
+    movement_decisions = payload.get("movement_decisions")
+    if not isinstance(movement_decisions, dict) or set(movement_decisions) != expected_patterns:
+        supplied_patterns = set(movement_decisions) if isinstance(movement_decisions, dict) else set()
+        missing_patterns = sorted(expected_patterns - supplied_patterns)
+        unknown_patterns = sorted(supplied_patterns - expected_patterns)
+        return jsonify({
+            "blocked": True,
+            "assessment_required": True,
+            "missing_patterns": missing_patterns,
+            "unknown_patterns": unknown_patterns,
+            "message": "Pred individualnim programom odgovori na vseh šest osnovnih gibalnih vzorcev. Če naloge ne moreš ali ne želiš oceniti, izberi »Neocenjeno – preskoči«; ta vzorec bo izpuščen iz programa.",
+        }), 409
     try:
         result = generate_program(
             profile,
             feedback=feedback,
-            movement_assessment=payload.get("movement_assessment"),
-            movement_decisions=payload.get("movement_decisions"),
+            movement_decisions=movement_decisions,
         )
     except ProgramSafetyBlock as exc:
         return jsonify({"blocked": True, "message": str(exc)}), 409
@@ -1694,14 +1712,11 @@ def coach_program():
     response = {"program": result, "source": "curated_exercise_catalogue", "pilot": True}
     if result.get("movement_adaptation") is not None:
         response["movement_adaptation"] = result["movement_adaptation"]
-    if movement_assessment is not None:
-        # Legacy self-reported assessment; not persisted and not clinical clearance.
-        response["movement_assessment"] = movement_assessment
-        response["movement_assessment_stored"] = False
-    if payload.get("movement_decisions") is not None:
-        # Structured observations and decisions are returned for transparency,
-        # but this endpoint does not persist assessment or health data.
-        response["movement_decisions_stored"] = False
+    # All six explicit self-reports are required above. This stateless endpoint
+    # uses them for this programme only and does not persist movement/health data.
+    response["movement_assessment_applied"] = True
+    response["movement_assessment_stored"] = False
+    response["movement_decisions_stored"] = False
     if camera_observations is not None:
         # Camera-derived pose proxies are returned separately; they never
         # influence programme selection or readiness and are not persisted.
