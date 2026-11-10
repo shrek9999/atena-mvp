@@ -85,7 +85,15 @@ def main() -> int:
         status = "passed_api"
         error = None
         for turn_index, user_text in enumerate(scenario["turns"], start=1):
-            messages.append({"role": "user", "content": user_text})
+            user_profile = scenario.get("user_profile", "").strip()
+            message_content = user_text
+            if turn_index == 1 and user_profile:
+                message_content = (
+                    "KONTEKST TESTNEGA UPORABNIKA (podatki profila; upoštevaj kot podane, "
+                    "ne sklepaj več, kot piše): " + user_profile
+                    + "\\n\\nUPORABNIKOVO SPOROČILO: " + user_text
+                )
+            messages.append({"role": "user", "content": message_content})
             try:
                 data = request_chat(messages)
             except RuntimeError as exc:
@@ -102,6 +110,8 @@ def main() -> int:
             transcript.append({
                 "turn": turn_index,
                 "user": user_text,
+                "user_profile": user_profile if turn_index == 1 else None,
+                "user_profile_context_included": bool(turn_index == 1 and user_profile),
                 "assistant": answer,
                 "response_source": source,
                 "guardrail_applied": bool(data.get("guardrail_applied", False)),
