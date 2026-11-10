@@ -619,6 +619,21 @@ def generate_program(
                 if not available_options:
                     raise ProgramValidationError(f"Za učenje vzorca {pattern} ni ustrezne vaje v katalogu.")
                 target_id = available_options[0]["id"]
+            user_report = record.get("user_report", {})
+            if not isinstance(user_report, dict):
+                raise ProgramValidationError(f"Uporabnikovo poročilo za {pattern} mora biti objekt.")
+            report_status = user_report.get("status")
+            if report_status is not None and report_status not in {
+                "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed"
+            }:
+                raise ProgramValidationError(f"Neveljaven status uporabnikovega poročila za {pattern}.")
+            if report_status == "symptoms_reported":
+                # A symptom report takes precedence over any camera observation:
+                # omit this pattern pending clarification; never infer a diagnosis.
+                movement_status_by_pattern[pattern] = "symptoms_reported"
+                movement_tasks_by_pattern.setdefault(pattern, []).append(
+                    PATTERN_DEFINITIONS[pattern]["task_id"]
+                )
             movement_decisions_by_pattern[pattern] = {
                 **record,
                 "decision": decision,
