@@ -140,7 +140,7 @@ def main() -> int:
         "executed_at_utc": datetime.now(timezone.utc).isoformat(),
         "backend": BACKEND,
         "audience": benchmark["audience"],
-        "execution_mode": "live sequential multi-turn; each scenario starts with empty history",
+        "execution_mode": "live sequential multi-turn; each scenario starts with empty history; user_profile is injected into the first user turn",
         "note": (
             "API execution confirms live responses only. It is not a quality pass/fail "
             "and does not replace expert transcript scoring."

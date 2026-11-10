@@ -566,9 +566,11 @@ def _coaching_guardrail_reply(messages):
                 "Veslanja pod mizo ne izvajaj, če ne moreš potrditi, da je miza stabilna in "
                 "primerna za obremenitev s telesno težo; če nisi prepričan, je ne uporabljaj. "
                 "Ker imaš na voljo samo lastno težo in tla, brez potrjenega sidrišča nimaš "
-                "varne obremenjene različice horizontalnega vleka. Talne vaje za hrbet so "
-                "lahko koristno dopolnilo, niso pa enakovredna zamenjava za obremenjeno "
-                "veslanje. Za ta vzorec bi potreboval elastiko z varnim sidriščem ali drog "
+                "varne obremenjene različice horizontalnega vleka. Za dopolnilno delo lahko "
+                "uporabiš vajo Superman (dvig trupa in okončin leže na trebuhu) v majhni, "
+                "nadzorovani amplitudi, če ti položaj ne povzroča nelagodja; ta vaja ni "
+                "enakovredna zamenjava za obremenjeno veslanje. Za ta vzorec bi potreboval "
+                "elastiko z varnim sidriščem ali drog "
                 "za zgibe."
             )
         return (
@@ -738,8 +740,7 @@ def _coaching_guardrail_reply(messages):
         if not reported_intensity:
             return (
                 "Hvala, zdaj vem, kje in pri katerem delu giba se pojavi težava. "
-                "Kolikšna je bolečina na lestvici od 0 do 10? Ali po prenehanju giba "
-                "izzveni ali ostane prisotna?"
+                "Kolikšna je bolečina na lestvici od 0 do 10?"
             )
         if not reported_after_effect:
             return (
@@ -755,12 +756,7 @@ def _coaching_guardrail_reply(messages):
         return (
             "Za zdaj ne ponavljaj giba v isti dozi, če sproža bolečino; to ne pomeni, da moraš "
             "prekiniti vso nebolečo aktivnost. Do razjasnitve bolečega giba ga ne nadomeščaj z "
-            "drugo obremenjeno vajo. Kje natančno se pojavi bolečina, kakšna je in kako močna "
-            "je od 0 do 10, pri katerem gibu in pri kateri dozi nastane (obremenitev, obseg giba, serije/ponovitve) ter ali po prenehanju izzveni? Če gre za "
-            "blago, znano nelagodje brez opozorilnih znakov, lahko nato prilagodiva eno "
-            "spremenljivko doze (obseg, obremenitev, število serij, pogostost ali tempo) in "
-            "preveriva odziv. Ob novi, hudi, slabšajoči se ali vztrajni bolečini oziroma "
-            "oteklini, zaklepanju, popuščanju ali nezmožnosti obremenitve poišči strokovno oceno."
+            "drugo obremenjeno vajo. Kje natančno se pojavi bolečina?"
         )
 
     # Keep the already-reported pain context active when the user asks whether to
@@ -791,8 +787,7 @@ def _coaching_guardrail_reply(messages):
         return (
             "Ne nadaljuj istega bolečega giba samo z manjšo težo, dokler ne razjasniva odziva. "
             "Za zdaj izpusti ta boleči gib; ne zamenjaj ga samodejno s skleco ali drugo "
-            "obremenjeno vajo. Kolikšna je bolečina od 0 do 10 in ali po prenehanju giba "
-            "izzveni ali ostane prisotna?"
+            "obremenjeno vajo. Kolikšna je bolečina od 0 do 10?"
         )
 
     # Do not let a language model convert an unanswered safety question into clearance.

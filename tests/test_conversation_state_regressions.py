@@ -105,8 +105,9 @@ def test_pain_followup_requests_only_missing_details():
     reply = _coaching_guardrail_reply(messages)
     assert reply is not None
     assert "Kolikšna je bolečina" in reply
-    assert "po prenehanju giba" in reply
+    assert "po prenehanju giba" not in reply
     assert "Kje natančno se pojavi bolečina" not in reply
+    assert reply.count("?") == 1
 
 
 def test_bodyweight_only_regression_does_not_assume_wall_or_furniture():
@@ -185,6 +186,8 @@ def test_pain_context_is_retained_when_user_asks_to_reduce_load_and_continue():
     assert "Ne nadaljuj istega bolečega giba" in reply
     assert "manjšo težo" in reply
     assert "varnostnega vprašanja" not in reply
+    assert "po prenehanju giba" not in reply
+    assert reply.count("?") == 1
 
 
 def test_unverified_table_row_is_rejected_without_waiting_for_health_clearance():
@@ -195,6 +198,7 @@ def test_unverified_table_row_is_rejected_without_waiting_for_health_clearance()
     assert reply is not None
     assert "Veslanja pod mizo ne izvajaj" in reply
     assert "brez potrjenega sidrišča" in reply
+    assert "Superman" in reply
 
 
 def test_functional_fitness_not_only_metcon_is_not_misclassified_as_endurance_education():
@@ -264,3 +268,13 @@ def test_short_30_minute_session_preserves_rest_before_reducing_volume():
     assert reply is not None
     assert "Ne krajšaj pretirano odmorov" in reply
     assert "zmanjšaj število vaj" in reply
+
+
+def test_initial_pain_guardrail_asks_only_one_question():
+    reply = _coaching_guardrail_reply([
+        {"role": "user", "content": "Pri potisku nad glavo me zaboli rama. Naj vajo zamenjam s skleco?"},
+    ])
+    assert reply is not None
+    assert "ne nadomeščaj" in reply
+    assert "Kje natančno se pojavi bolečina?" in reply
+    assert reply.count("?") == 1
