@@ -2729,6 +2729,16 @@ def coach_profile_program(profile_id):
                 "missing_patterns": missing_patterns,
                 "message": "Pred individualnim programom morava opraviti vseh šest kratkih gibalnih preverjanj: počep, predklon v kolkih (hip hinge), horizontalni potisk, horizontalni poteg, vertikalni potisk in izpadni korak. Neocenjenega vzorca ne bom obravnaval kot pripravljenega za zahtevnejšo vajo.",
             }), 409
+        assessable_patterns = [
+            pattern for pattern, record in movement_decisions.items()
+            if isinstance(record, dict) and record.get("decision") in {"READY", "LEARN", "REGRESS"}
+        ]
+        if not assessable_patterns:
+            return jsonify({
+                "blocked": True,
+                "assessment_required": True,
+                "message": "Vseh šest vzorcev je trenutno neocenjenih ali nejasnih. Pred shranjenim individualnim programom je treba vsaj en vzorec varno oceniti; sicer program ne bi imel zanesljivega gibalnega izhodišča.",
+            }), 409
         result = generate_program(
             profile["profile"],
             movement_decisions=movement_decisions,
