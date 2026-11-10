@@ -130,3 +130,19 @@ def test_structured_symptom_report_omits_only_affected_pattern_pending_review():
     assert _pattern_exercises(plan, "hinge")
     event = next(event for event in plan["movement_adaptation"]["events"] if event["pattern"] == "squat")
     assert event["action"] == "omitted_pending_symptom_review"
+
+
+
+def test_horizontal_push_never_selects_wall_push_up_even_when_wall_is_available():
+    decision = build_movement_decision(
+        "horizontal_push", "LEARN",
+        equipment=["wall", "household_support", "bodyweight"],
+        selected_learning_method="incline_push_up",
+        selected_exercise_id="push_up_incline",
+        decision_reason="Uporabi stabilno povišano oporo, brez sklece ob steni.",
+    )
+    plan = generate_program(BASE, movement_decisions={"horizontal_push": decision})
+    pushes = _pattern_exercises(plan, "horizontal_push")
+    assert pushes
+    assert all(item["exercise_id"] != "wall_push_up" for item in pushes)
+    assert all(item["exercise_id"] == "push_up_incline" for item in pushes)
