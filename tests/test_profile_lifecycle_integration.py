@@ -144,10 +144,13 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     assessment = client.put(
         f"/coach/profile/{profile_id}/movement-assessment",
         headers=headers,
-        json={"movement_patterns": {
-            pattern: {"status": "comfortable"}
-            for pattern in __import__("training.movement_coaching", fromlist=["PATTERN_DEFINITIONS"]).PATTERN_DEFINITIONS
-        }},
+        json={
+            "movement_assessment_consent": True,
+            "movement_patterns": {
+                pattern: {"status": "comfortable"}
+                for pattern in __import__("training.movement_coaching", fromlist=["PATTERN_DEFINITIONS"]).PATTERN_DEFINITIONS
+            },
+        },
     )
     assert assessment.status_code == 200
 
