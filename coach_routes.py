@@ -122,7 +122,7 @@ def _profile_available_equipment(messages):
         "bench": ("klop", "bench"),
         "resistance_band": ("elastik", "resistance band"),
         "cable": ("kabel", "cable"),
-        "pull_up_bar": ("drogu za zgibe", "pull-up", "pull up bar"),
+        "pull_up_bar": ("drog za zgibe", "drogu za zgibe", "drog za zgib", "pull-up", "pull up bar"),
         "kettlebell": ("kettlebell", "girj"),
         "box": ("škatl", "box"),
         "weight_plate": ("utežn plošč", "weight plate"),
@@ -336,6 +336,11 @@ def _sanitize_power_and_progression_claims(answer):
     return answer
 
 
+def _sanitize_unrequested_user_name(answer):
+    """Remove an accidental direct address to the coach brand owner."""
+    return re.sub(r"(?im)^\s*Grega,\s*", "", answer)
+
+
 def _sanitize_unverified_safety_claim(answer, messages):
     """Reject model claims that the user cleared safety when no user did so."""
     user_history = "\n".join(
@@ -471,6 +476,37 @@ def _coaching_guardrail_reply(messages):
     lowered = latest.casefold()
     history_lower = history.casefold()
 
+    # Red-flag symptoms must persist across turns. A follow-up question must not
+    # erase previously reported swelling/locking or inability to bear weight.
+    unable_to_bear_weight = bool(re.search(
+        r"(?:ne morem|ne zmorem).{0,50}(?:normalno\s+)?(?:obremenit\w*|stopit\w*|hodit\w*)|"
+        r"(?:nezmož\w*|težav\w*).{0,50}(?:obremenit\w*|stopit\w*|hodit\w*)|"
+        r"(?:cannot|can't|unable to).{0,35}(?:bear weight|put weight|walk|stand)",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    if unable_to_bear_weight:
+        return (
+            "Ker noge ne moreš normalno obremeniti, potrebuješ nujno zdravstveno oceno še danes. "
+            "Ne izvajaj počepov, izpadnih korakov ali drugih obremenjenih vaj in ne preizkušaj "
+            "kolena z dodatnimi gibi. Obrni se na dežurno zdravstveno službo oziroma nujno "
+            "medicinsko pomoč; če je stanje hudo, se hitro slabša ali ne moreš varno do pomoči, "
+            "pokliči 112. Ne morem postaviti diagnoze."
+        )
+
+    knee_swelling_or_locking = (
+        bool(re.search(r"kolen\w*", history_lower))
+        and bool(re.search(r"otekl\w*|zaklepan\w*|zaklen\w*", history_lower))
+    )
+    if knee_swelling_or_locking:
+        return (
+            "Oteklina ali zaklepanje kolena sta opozorilna znaka. Za zdaj ne izvajaj počepov, "
+            "izpadnih korakov ali drugih obremenjenih gibov za to koleno. Priporočam čimprejšnjo "
+            "zdravstveno oceno, preden se vrneš k obremenjevanju. Če noge ne moreš normalno "
+            "obremeniti ali ne moreš stopiti nanjo, poišči nujno zdravstveno pomoč še danes. "
+            "Ali lahko trenutno normalno obremenjuješ nogo?"
+        )
+
     recovery_context = bool(re.search(
         r"(slabo spim|slab(?:o|ega) spanec|slaba regeneracija|neprespan)",
         history_lower,
@@ -502,9 +538,44 @@ def _coaching_guardrail_reply(messages):
             "kot shranjeno, dokler je ne potrdi namenski postopek za program oziroma profil."
         )
 
+    # Furniture is not an assumed load-bearing anchor. Answer this safety question
+    # directly even while the separate health-intake gate remains unanswered.
+    table_row_intent = bool(re.search(
+        r"(veslan\w*|inverted row|row).{0,70}(miza|mizo|table)|"
+        r"(miza|mizo|table).{0,70}(veslan\w*|inverted row|row)",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    if table_row_intent:
+        bodyweight_only = bool(re.search(
+            r"(nimam nobene opreme|samo lastno težo|brez opreme|na voljo imam samo lastno težo)",
+            history_lower,
+            re.IGNORECASE,
+        ))
+        if bodyweight_only:
+            return (
+                "Veslanja pod mizo ne izvajaj, če ne moreš potrditi, da je miza stabilna in "
+                "primerna za obremenitev s telesno težo; če nisi prepričan, je ne uporabljaj. "
+                "Ker imaš na voljo samo lastno težo in tla, brez potrjenega sidrišča nimaš "
+                "varne obremenjene različice horizontalnega vleka. Talne vaje za hrbet so "
+                "lahko koristno dopolnilo, niso pa enakovredna zamenjava za obremenjeno "
+                "veslanje. Za ta vzorec bi potreboval elastiko z varnim sidriščem ali drog "
+                "za zgibe."
+            )
+        return (
+            "Veslanja pod mizo ne izvajaj, dokler ni potrjeno, da je miza stabilna in "
+            "primerna za obremenitev s telesno težo. Če tega ne moreš zanesljivo potrditi, "
+            "je ne uporabljaj in ne preizkušaj z obešanjem pod njo. Ali imaš na voljo "
+            "elastiko z namenskim varnim sidriščem ali drog za zgibe?"
+        )
+
     # Stable, factual answers for common conceptual questions. These do not create
     # an individualized prescription and therefore do not trigger the safety gate.
-    if re.search(r"(samo|izključno).{0,20}metcon|metcon.{0,20}(samo|edini|izključno)", lowered):
+    metcon_only_question = (
+        bool(re.search(r"(samo|izključno).{0,20}metcon|metcon.{0,20}(samo|edini|izključno)", lowered))
+        and bool(re.search(r"(vzdržljiv\w*|kondic\w*|aerobn\w*|endurance)", lowered))
+    )
+    if metcon_only_question:
         return (
             "Ne. MetCon je lahko koristen za mešano delovno kapaciteto, vendar sam po sebi "
             "ne nadomesti sistematičnega razvoja aerobne osnove. Vzdržljivost lahko razvijaš "
@@ -644,6 +715,27 @@ def _coaching_guardrail_reply(messages):
             "spremenljivko doze (obseg, obremenitev, število serij, pogostost ali tempo) in "
             "preveriva odziv. Ob novi, hudi, slabšajoči se ali vztrajni bolečini oziroma "
             "oteklini, zaklepanju, popuščanju ali nezmožnosti obremenitve poišči strokovno oceno."
+        )
+
+    # Keep the already-reported pain context active when the user asks whether to
+    # reduce the load, continue, or substitute the same painful movement.
+    pain_reported_in_history = bool(re.search(
+        r"(boli me|me boli|bolečin\w*|čutim bolečino|občutim bolečino|bolečina se pojavi)",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    pain_followup_intent = bool(re.search(
+        r"(zmanjš\w*|zniž\w*).{0,35}(tež\w*|bremen\w*)|"
+        r"nadaljuj\w*|nadaljev\w*|zamenj\w*|nadomest\w*|alternativ\w*",
+        lowered,
+        re.IGNORECASE,
+    ))
+    if pain_reported_in_history and pain_followup_intent:
+        return (
+            "Ne nadaljuj istega bolečega giba samo z manjšo težo, dokler ne razjasniva odziva. "
+            "Za zdaj izpusti ta boleči gib; ne zamenjaj ga samodejno s skleco ali drugo "
+            "obremenjeno vajo. Kolikšna je bolečina od 0 do 10 in ali po prenehanju giba "
+            "izzveni ali ostane prisotna?"
         )
 
     # Do not let a language model convert an unanswered safety question into clearance.
@@ -983,6 +1075,14 @@ TRAINING QUALITY
 SAFETY AND SCOPE
 You are not a doctor or physiotherapist. Do not diagnose conditions, prescribe treatment, or claim to replace an in-person professional. Do not advise training through worsening pain. For severe, sudden, unexplained or worsening symptoms, recommend assessment by an appropriate healthcare professional. For chest pain, fainting, severe breathing difficulty, new weakness/numbness, or loss of bladder/bowel control with back pain, advise urgent local medical care. If relevant, ask about restrictions before suggesting exercise. Do not overreact to ordinary mild effort or soreness, but distinguish it from concerning or worsening symptoms.
 Do not ask for full names, exact addresses or unnecessary personal data. Use health information only when needed. If uncertain, state the uncertainty rather than inventing facts, credentials, measurements, research or outcomes.
+
+VERTICAL PULL VS HORIZONTAL ROW — CRITICAL MOVEMENT TERMINOLOGY
+- The catalogue exercise "Zgib z oporo stopal (navpični trup)" is a vertical pull-up regression.
+- For a foot-assisted vertical pull-up, the torso stays mostly upright beneath the bar; hips and knees are flexed; feet are supported on the floor or a confirmed stable step slightly forward of the torso and assist the vertical pull.
+- Never call this exercise "avstralski zgib", "inverted row", or horizontal rowing.
+- An inverted row is a separate horizontal pull: the body is angled beneath a low bar or handles and is pulled horizontally toward the support. Do not confuse its inclined torso position with the upright torso of a foot-assisted vertical pull-up.
+- Use the exact catalogue name "Zgib z oporo stopal (navpični trup)" when this variation is meant.
+- Do not suggest band-assisted pull-ups unless both a suitable band and a secure anchor are confirmed. Do not assume a box, step or pull-up bar unless the user confirms it.
 
 EXERCISE SUBSTITUTIONS – REQUIRED BEHAVIOUR
 When the user asks to replace, swap or find an alternative for an exercise:
@@ -1346,6 +1446,7 @@ def coach_chat():
             answer,
             flags=re.IGNORECASE,
         )
+        answer = _sanitize_unrequested_user_name(answer)
         return jsonify({
             "reply": answer,
             "model": used_model,

@@ -630,3 +630,10 @@ def test_system_prompt_distinguishes_general_fitness_conditioning_and_functional
     assert "conditioning focuses primarily on aerobic/anaerobic work capacity" in prompt
     assert "functional fitness develops useful physical capacities across strength, conditioning, power, balance and coordination" in prompt
     assert "These goals may overlap but are not interchangeable" in prompt
+
+
+def test_system_prompt_distinguishes_foot_assisted_vertical_pull_from_inverted_row():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert 'Zgib z oporo stopal (navpični trup)' in prompt
+    assert 'Never call this exercise "avstralski zgib", "inverted row"' in prompt
+    assert "torso stays mostly upright" in prompt

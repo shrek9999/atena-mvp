@@ -145,3 +145,78 @@ def test_duration_estimate_rounds_up_conservatively():
         }
     }]
     assert _estimated_minutes(exercises, warm_up_minutes=5) == 7
+
+
+def test_inability_to_bear_weight_after_knee_swelling_and_locking_triggers_urgent_assessment():
+    messages = [
+        {"role": "user", "content": "Po treningu mi je koleno oteklo in včasih se zaklene."},
+        {"role": "model", "content": "Ali poleg otekline občutiš težave pri obremenitvi noge?"},
+        {"role": "user", "content": "Zdaj noge ne morem normalno obremeniti."},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "nujno zdravstveno oceno še danes" in reply
+    assert "ne izvajaj počepov" in reply
+    assert "pokliči 112" in reply
+
+
+def test_knee_swelling_and_locking_remain_active_when_user_asks_for_a_light_squat():
+    messages = [
+        {"role": "user", "content": "Koleno mi je oteklo in se včasih zaklene."},
+        {"role": "model", "content": "Priporočam zdravstveno oceno."},
+        {"role": "user", "content": "Ali lahko naredim samo lažji počep?"},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "ne izvajaj počepov" in reply
+    assert "zdravstveno oceno" in reply
+
+
+def test_pain_context_is_retained_when_user_asks_to_reduce_load_and_continue():
+    messages = [
+        {"role": "user", "content": "Pri potisku nad glavo me zaboli rama. Naj vajo zamenjam s skleco?"},
+        {"role": "model", "content": "Kje natančno se pojavi bolečina in kako močna je od 0 do 10?"},
+        {"role": "user", "content": "Bolečina se pojavi, ko dvignem roko nad višino rame."},
+        {"role": "model", "content": "Kolikšna je bolečina od 0 do 10 in ali po prenehanju izzveni?"},
+        {"role": "user", "content": "Ali naj samo zmanjšam težo in nadaljujem?"},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "Ne nadaljuj istega bolečega giba" in reply
+    assert "manjšo težo" in reply
+    assert "varnostnega vprašanja" not in reply
+
+
+def test_unverified_table_row_is_rejected_without_waiting_for_health_clearance():
+    messages = [
+        {"role": "user", "content": "Doma nimam nobene opreme. Lahko delam veslanje pod mizo? Ne vem, ali je miza stabilna."},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "Veslanja pod mizo ne izvajaj" in reply
+    assert "brez potrjenega sidrišča" in reply
+
+
+def test_functional_fitness_not_only_metcon_is_not_misclassified_as_endurance_education():
+    reply = _coaching_guardrail_reply([
+        {"role": "user", "content": "Želim izboljšati funkcionalno pripravljenost, vendar nočem, da je vsak trening samo MetCon."},
+    ])
+    assert reply is None
+
+
+def test_pull_up_bar_alias_recognises_nominative_slovene_wording():
+    from coach_routes import _profile_available_equipment
+
+    available = _profile_available_equipment([
+        {"role": "user", "content": "Imam drog za zgibe in stabilno škatlo."},
+    ])
+    assert "pull_up_bar" in available
+    assert "box" in available
+
+
+def test_direct_address_does_not_assume_user_is_grega():
+    from coach_routes import _sanitize_unrequested_user_name
+
+    answer = _sanitize_unrequested_user_name("Grega, odlično delo! Nadaljuj postopno.")
+    assert not answer.startswith("Grega")
+    assert "odlično delo" in answer
