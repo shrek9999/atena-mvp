@@ -514,7 +514,7 @@ def test_six_pattern_assessment_maps_self_report_statuses_conservatively(monkeyp
     response = client.put(
         f"/coach/profile/{profile_id}/movement-assessment",
         headers={"X-Profile-Token": token},
-        json={"movement_patterns": {key: {"status": value} for key, value in statuses.items()}},
+        json={"movement_assessment_consent": True, "movement_patterns": {key: {"status": value} for key, value in statuses.items()}},
     )
     assert response.status_code == 200
     decisions = response.get_json()["movement_decisions"]
@@ -536,7 +536,7 @@ def test_six_pattern_assessment_rejects_incomplete_pattern_set(monkeypatch, tmp_
     response = client.put(
         f"/coach/profile/{profile_id}/movement-assessment",
         headers={"X-Profile-Token": token},
-        json={"movement_patterns": {key: {"status": "comfortable"} for key in patterns}},
+        json={"movement_assessment_consent": True, "movement_patterns": {key: {"status": "comfortable"} for key in patterns}},
     )
     assert response.status_code == 400
     assert response.get_json()["missing_patterns"]
