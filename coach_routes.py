@@ -37,6 +37,7 @@ from training.periodization import summarize_training_cycle
 from training.proactive_checkin import build_proactive_checkin
 from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL
 from training.movement_assessment import MovementAssessmentError, assess_movement_competence
+from training.camera_observations import CameraObservationError, validate_camera_observations
 from training.goals import normalize_goal, public_goal_options
 
 logger = logging.getLogger(__name__)
@@ -1381,6 +1382,15 @@ def coach_program():
         return jsonify({"error": "Pričakovan je JSON objekt s profilom vadečega."}), 400
     profile = payload.get("profile", payload)
     feedback = payload.get("feedback")
+    camera_observations = None
+    camera_protocol = None
+    if "camera_observations" in payload or "camera_protocol" in payload:
+        try:
+            camera_observations, camera_protocol = validate_camera_observations(
+                payload.get("camera_observations"), payload.get("camera_protocol")
+            )
+        except CameraObservationError as exc:
+            return jsonify({"error": str(exc)}), 400
     movement_assessment = None
     if "movement_assessment" in payload:
         try:
@@ -1412,6 +1422,13 @@ def coach_program():
         # Structured observations and decisions are returned for transparency,
         # but this endpoint does not persist assessment or health data.
         response["movement_decisions_stored"] = False
+    if camera_observations is not None:
+        # Camera-derived pose proxies are returned separately; they never
+        # influence programme selection or readiness and are not persisted.
+        response["camera_observations"] = camera_observations
+        response["camera_protocol"] = camera_protocol
+        response["camera_observations_stored"] = False
+        response["camera_observations_used_for_programme_decisions"] = False
     return jsonify(response), 200
 
 
