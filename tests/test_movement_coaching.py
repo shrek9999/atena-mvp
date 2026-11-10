@@ -113,3 +113,14 @@ def test_invalid_pattern_or_decision_is_rejected(pattern, decision):
 def test_exercise_selection_rejects_exercise_from_another_pattern():
     with pytest.raises(MovementCoachingError):
         build_movement_decision("squat", "READY", selected_exercise_id="push_up")
+
+
+
+def test_horizontal_push_options_exclude_wall_push_up():
+    coaching = get_pattern_coaching("horizontal_push")
+    method_ids = {item["id"] for item in coaching["learning_methods"]}
+    option_ids = {item["id"] for item in coaching["exercise_options"]}
+    assert "wall_push_up" not in method_ids
+    assert "wall_push_up" not in option_ids
+    assert "incline_push_up" in method_ids
+    assert "push_up_incline" in option_ids
