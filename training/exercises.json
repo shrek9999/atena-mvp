@@ -3289,8 +3289,8 @@
   },
   {
     "id": "foot_assisted_pull_up",
-    "name": "Zgib z oporo stopal",
-    "name_en": "Foot-assisted pull-up",
+    "name": "Zgib z oporo stopal na nizkem drogu",
+    "name_en": "Low-bar foot-assisted pull-up (inverted row)",
     "pattern": "vertical_pull",
     "joint_type": "multi_joint",
     "goals": [
@@ -3299,8 +3299,8 @@
       "general_fitness"
     ],
     "equipment": [
-      "pull_up_bar",
-      "chair"
+      "barbell",
+      "rack"
     ],
     "level": "beginner",
     "primary_muscles": [
@@ -3312,22 +3312,29 @@
       "trunk"
     ],
     "cues": [
-      "Stopalo uporabi za toliko pomoči, da ohraniš nadzor.",
-      "Spuščaj se počasi."
+      "Nastavi drog v stabilnem stojalu približno v višino prsnega koša; pred začetkom preveri, da je varno zaklenjen.",
+      "Ulezi se oziroma postavi pod drog tako, da lahko drog primeš z nadprijemom, roke pa so iztegnjene.",
+      "Stopala naj ostanejo na tleh; z nogami si pomagaj toliko, da lahko prsni koš nadzorovano približaš drogu.",
+      "Ohrani trup in medenico povezani brez povešanja bokov; lopatici med potegom nadzorovano približaj.",
+      "Počasi se vrni v začetni položaj z iztegnjenimi rokami."
     ],
     "common_errors": [
-      "Prevelik odriv z nogami.",
+      "Drog ali stojalo nista varno pritrjena.",
+      "Boki se med potegom povesijo ali trup izgubi čvrst položaj.",
+      "Prevelik odriv z nogami, zaradi katerega roke izgubijo nadzorovan del obremenitve.",
       "Nenadzorovan spust."
     ],
     "regressions": [
-      "band_assisted_pull_up"
+      "Višje nastavljen drog oziroma bolj pokončen položaj telesa"
     ],
     "progressions": [
-      "Zgib z manj pomoči stopal"
+      "Nižje nastavljen drog oziroma bolj vodoraven položaj telesa",
+      "pull_up"
     ],
     "alternatives": [],
     "warnings": [
-      "Stol mora biti stabilen in postavljen tako, da ne ovira sestopa."
+      "Uporabljaj samo drog, ki je varno pritrjen v stojalu in namenjen obremenitvi.",
+      "Višji drog in bolj pokončen položaj zmanjšata obremenitev; zahtevnost povečuj s postopnim nižanjem droga."
     ],
     "single_joint": false,
     "equipment_any": [],
