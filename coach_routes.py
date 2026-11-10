@@ -1696,6 +1696,23 @@ def coach_program():
             "unknown_patterns": unknown_patterns,
             "message": "Pred individualnim programom odgovori na vseh šest osnovnih gibalnih vzorcev. Če naloge ne moreš ali ne želiš oceniti, izberi »Neocenjeno – preskoči«; ta vzorec bo izpuščen iz programa.",
         }), 409
+    valid_report_statuses = {"comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed"}
+    invalid_report_patterns = []
+    for pattern, record in movement_decisions.items():
+        report = record.get("user_report") if isinstance(record, dict) else None
+        report_status = report.get("status") if isinstance(report, dict) else None
+        decision = record.get("decision") if isinstance(record, dict) else None
+        if report_status not in valid_report_statuses:
+            invalid_report_patterns.append(pattern)
+        elif report_status in {"uncertain", "symptoms_reported", "not_assessed"} and decision != "UNASSESSABLE":
+            invalid_report_patterns.append(pattern)
+        elif report_status == "needs_support" and decision == "READY":
+            invalid_report_patterns.append(pattern)
+    if invalid_report_patterns:
+        return jsonify({
+            "error": "Vsak vzorec mora imeti veljavno samooceno, odločitev pa mora biti skladna z njo.",
+            "invalid_report_patterns": sorted(invalid_report_patterns),
+        }), 400
     assessable_patterns = [
         pattern for pattern, record in movement_decisions.items()
         if isinstance(record, dict) and record.get("decision") in {"READY", "LEARN", "REGRESS"}
