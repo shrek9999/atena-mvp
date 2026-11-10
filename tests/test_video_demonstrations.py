@@ -7,26 +7,48 @@ from training.video_demonstrations import (
 )
 
 
-def test_owner_approved_fzs_squat_video_is_registered():
-    video = VIDEO_DEMONSTRATIONS["fzs_squat_ciwsqlgenas"]
-    assert video["video_id"] == "CIwsqlgeNAs"
-    assert video["title"] == "Počep"
-    assert video["duration_seconds"] == 5
-    assert video["movement_pattern"] == "squat"
-    assert video["review_status"] == "owner_approved"
-    assert video["exercise_id"] is None
+def test_all_ten_user_supplied_fzs_videos_are_registered():
+    expected = {
+        "mzD6t7Yo0Sw": ("hinge", None),
+        "SRGGZKWG5rI": ("lunge", "reverse_lunge"),
+        "dxHdegoDGPM": ("squat", "squat_goblet"),
+        "rHUOqAQE_WE": ("squat", "heel_elevated_squat"),
+        "he_fE0HwGNw": ("hinge", "bodyweight_hip_hinge"),
+        "D5RhXg7ahfI": ("vertical_push", "barbell_overhead_press"),
+        "GrcA2Xh06x8": ("vertical_push", None),
+        "f6LSIpaDdSA": ("squat", "reaching_squat"),
+        "4SXniOAEU5U": ("horizontal_push", "push_up"),
+        "2QuHyICgWPU": ("horizontal_pull", "barbell_bent_over_row"),
+    }
+    for video_id, (pattern, exercise_id) in expected.items():
+        video = next(v for v in VIDEO_DEMONSTRATIONS.values() if v["video_id"] == video_id)
+        assert video["movement_pattern"] == pattern
+        assert video["exercise_id"] == exercise_id
+        assert video["review_status"] == "pending"
+        assert video["embed_allowed"] is None
+        assert video["duration_seconds"] is None
 
 
-def test_video_lookup_filters_by_movement_pattern():
-    videos = get_video_demonstrations(movement_pattern="squat")
-    assert [video["video_id"] for video in videos] == ["CIwsqlgeNAs"]
-    assert get_video_demonstrations(movement_pattern="hinge") == []
+def test_exact_exercise_videos_are_returned_for_their_exercise():
+    assert get_video_demonstrations(exercise_id="reverse_lunge")[0]["video_id"] == "SRGGZKWG5rI"
+    assert get_video_demonstrations(exercise_id="squat_goblet")[0]["video_id"] == "dxHdegoDGPM"
+    assert get_video_demonstrations(exercise_id="barbell_bent_over_row")[0]["video_id"] == "2QuHyICgWPU"
+
+
+def test_reaching_squat_video_is_linked_to_exact_learning_method():
+    videos = get_video_demonstrations(learning_method_id="reaching_counterbalance")
+    assert any(v["video_id"] == "f6LSIpaDdSA" for v in videos)
+
+
+def test_lookup_filters_by_movement_pattern():
+    assert len(get_video_demonstrations(movement_pattern="squat")) == 4
+    assert get_video_demonstrations(movement_pattern="hinge")
 
 
 def test_video_lookup_returns_copies():
     videos = get_video_demonstrations()
     videos[0]["title"] = "mutated"
-    assert VIDEO_DEMONSTRATIONS["fzs_squat_ciwsqlgenas"]["title"] == "Počep"
+    assert all(v["title"] != "mutated" for v in VIDEO_DEMONSTRATIONS.values())
 
 
 def test_future_functional_skills_are_taxonomy_not_fake_video_records():
@@ -35,14 +57,6 @@ def test_future_functional_skills_are_taxonomy_not_fake_video_records():
     assert all("video_id" not in item for item in skills.values())
 
 
-
-def test_generic_squat_video_is_available_for_squat_learning_task():
-    videos = _learning_task_videos("squat", None, "reaching_squat")
-    assert len(videos) == 1
-    assert videos[0]["video_id"] == "CIwsqlgeNAs"
-    assert videos[0]["content_scope"] == "general_squat_demonstration"
-
-
-def test_squat_video_is_not_misapplied_to_other_patterns():
-    assert _learning_task_videos("hinge", None, None) == []
-    assert _learning_task_videos("horizontal_push", None, None) == []
+def test_exact_video_links_are_not_cross_applied_to_other_patterns():
+    assert _learning_task_videos("hinge", None, "reverse_lunge") == []
+    assert _learning_task_videos("horizontal_push", None, "squat_goblet") == []
