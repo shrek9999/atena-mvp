@@ -214,7 +214,7 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # of placing every mobility and strength pattern into one long session.
         mobility_templates = [
             ["mobility", "mobility", "mobility_stretch", "squat", "lunge", "horizontal_push"],
-            ["mobility", "mobility", "mobility_stretch", "hinge", "horizontal_pull", "vertical_pull"],
+            ["mobility", "mobility", "mobility_stretch", "hinge", "horizontal_pull", "accessory"],
         ]
         patterns = mobility_templates[session_index % len(mobility_templates)]
         if include_stability:
