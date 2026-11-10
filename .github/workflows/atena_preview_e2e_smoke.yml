@@ -334,7 +334,7 @@ jobs:
                   },
                   "privacy_notice_acknowledged": True,
                   "privacy_notice_version": notice_version,
-                  "health_data_consent": False
+                  "health_data_consent": True
               }, expected=(201,))
               profile = created.get("profile") or {}
               profile_id = profile.get("profile_id")
@@ -360,11 +360,37 @@ jobs:
               if not any(item.get("session_id") == session_id for item in sessions):
                   raise RuntimeError("Saved training session could not be read back.")
 
+              # Synthetic self-report only: exercise the new six-pattern gate end to end.
+              movement_patterns = {
+                  pattern: {"status": "comfortable"}
+                  for pattern in (
+                      "squat", "hinge", "horizontal_push",
+                      "horizontal_pull", "vertical_push", "lunge"
+                  )
+              }
+              _, assessment = call(
+                  f"/api/profile/{profile_id}/movement-assessment",
+                  "PUT",
+                  {"movement_patterns": movement_patterns},
+                  profile_token,
+              )
+              if assessment.get("assessment_stored") is not True:
+                  raise RuntimeError("Six-pattern movement assessment was not stored.")
+
+              _, generated = call(
+                  f"/api/profile/{profile_id}/program",
+                  "POST",
+                  {"no_current_pain_or_restrictions": True},
+                  profile_token,
+              )
+              if generated.get("movement_assessment_applied") is not True or generated.get("program_stored") is not True:
+                  raise RuntimeError("Profile programme was not generated from the saved six-pattern assessment.")
+
               call(f"/api/profile/{profile_id}", "DELETE", profile_token=profile_token, expected=(200,))
               deleted = True
               call(f"/api/profile/{profile_id}", "GET", profile_token=profile_token, expected=(404,))
               print("Supabase profile persistence: PASS (synthetic profile created, authenticated session saved/read, profile deleted, access revoked).")
-              print("Test record contained no health data; health_data_consent=false; no user profile was retained.")
+              print("Synthetic consented movement self-report and programme generation passed; profile deleted; no user profile was retained.")
           finally:
               if profile_id and profile_token and not deleted:
                   try:
