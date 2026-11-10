@@ -88,7 +88,7 @@ jobs:
               print("GitHub Actions secret AI_TRAINER_PREVIEW_TOKEN is missing or too short.")
               sys.exit(1)
 
-          origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
+          origin = "https://feature-atena-observed-movem.atena-ai-trener.pages.dev"
           url = origin + "/api/plan"
           patterns = ["squat", "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge"]
           payload = {
@@ -160,7 +160,7 @@ jobs:
           import urllib.error
           import urllib.request
 
-          origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
+          origin = "https://feature-atena-observed-movem.atena-ai-trener.pages.dev"
           checks = {
               "/api/plan": "content-type, x-atena-preview-token",
               "/api/chat": "content-type, x-atena-preview-token, x-profile-id, x-profile-token",
@@ -209,7 +209,7 @@ jobs:
           token = os.environ.get("PREVIEW_TOKEN", "").strip()
           if len(token) < 20:
               raise SystemExit("GitHub Actions secret AI_TRAINER_PREVIEW_TOKEN is missing or too short.")
-          origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
+          origin = "https://feature-atena-observed-movem.atena-ai-trener.pages.dev"
           request = urllib.request.Request(
               origin + "/api/chat",
               data=json.dumps({
@@ -253,7 +253,7 @@ jobs:
           import time
           import urllib.request
 
-          origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
+          origin = "https://feature-atena-observed-movem.atena-ai-trener.pages.dev"
           request = urllib.request.Request(
               origin + "/api/profile/status",
               headers={
@@ -289,7 +289,7 @@ jobs:
           import urllib.error
           import urllib.request
 
-          origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
+          origin = "https://feature-atena-observed-movem.atena-ai-trener.pages.dev"
           preview_token = os.environ.get("PREVIEW_TOKEN", "").strip()
           if len(preview_token) < 20:
               raise SystemExit("Preview token is missing or too short.")
