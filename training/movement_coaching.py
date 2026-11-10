@@ -48,7 +48,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "task": "Predklon z lahkim pripomočkom; amplituda se konča pred izgubo nadzora položaja hrbtenice.",
         "exercise_ids": [
             "wall_hip_hinge", "bodyweight_hip_hinge", "dumbbell_deadlift",
-            "romanian_deadlift", "deadlift", "supported_single_leg_rdl", "single_leg_rdl",
+            "romanian_deadlift", "deadlift", "kettlebell_lateral_deadlift", "supported_single_leg_rdl", "single_leg_rdl",
         ],
         "learning_methods": [
             {
@@ -122,7 +122,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "task_id": "overhead_press",
         "task": "Potisk z zelo lahkim in zabeleženim pripomočkom v razpoložljivi nadzorovani amplitudi.",
         "exercise_ids": [
-            "band_overhead_press", "overhead_press", "barbell_overhead_press", "pike_push_up",
+            "band_overhead_press", "overhead_press", "plate_overhead_press", "barbell_overhead_press", "pike_push_up",
         ],
         "learning_methods": [
             {
