@@ -98,16 +98,40 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         ],
         "learning_methods": [
             {
-                "id": "band_row",
-                "label": "Veslanje z elastiko",
-                "description": "Omogoča učenje poti komolcev in lopatic z manjšo obremenitvijo trupa.",
-                "exercise_id": "band_row",
+                "id": "scapular_coordination",
+                "label": "Učenje gibanja lopatic brez dodatnega bremena",
+                "description": (
+                    "Najprej v pokončnem položaju in nato v predklonu vadi nadzorovano "
+                    "pomikanje lopatic naprej in nazaj (protrakcija/retrakcija), brez "
+                    "dvigovanja ramen proti ušesom. To je učna naloga, ne obremenjena vaja."
+                ),
+                "exercise_id": None,
             },
             {
-                "id": "supported_row",
-                "label": "Veslanje z oporo",
-                "description": "Če predklon še ni stabilen, izberi katalogizirano veslanje z oporo namesto siljenja v predklon.",
+                "id": "light_one_arm_hinge_row",
+                "label": "Enoročno veslanje v predklonu z lahkim bremenom",
+                "description": (
+                    "Z zelo lahko ročko ali kettlebellom najprej utrdi koordinacijo lopatice "
+                    "in komolca. Trup ostane stabilen; če položaja predklona še ne obvladaš, "
+                    "uporabi katalogizirano različico veslanja z oporo."
+                ),
                 "exercise_id": "one_arm_row",
+            },
+            {
+                "id": "light_barbell_row",
+                "label": "Veslanje z lahko palico",
+                "description": (
+                    "Šele ko sta koordinacija lopatic in položaj predklona zanesljiva, "
+                    "uvedi veslanje z lahko palico. Breme povečuj šele ob nespremenjeni "
+                    "tehniki in nadzorovanem vračanju."
+                ),
+                "exercise_id": "barbell_bent_over_row",
+            },
+            {
+                "id": "band_row",
+                "label": "Veslanje z elastiko",
+                "description": "Dodatna možnost za učenje poti komolcev in lopatic, kadar je elastika varno pritrjena.",
+                "exercise_id": "band_row",
             },
         ],
     },
