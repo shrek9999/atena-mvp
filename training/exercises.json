@@ -3289,8 +3289,8 @@
   },
   {
     "id": "foot_assisted_pull_up",
-    "name": "Zgib z oporo stopal na nizkem drogu",
-    "name_en": "Low-bar foot-assisted pull-up (inverted row)",
+    "name": "Zgib z oporo stopal (navpični trup)",
+    "name_en": "Vertical foot-assisted pull-up",
     "pattern": "vertical_pull",
     "joint_type": "multi_joint",
     "goals": [
@@ -3312,29 +3312,32 @@
       "trunk"
     ],
     "cues": [
-      "Nastavi drog v stabilnem stojalu približno v višino prsnega koša; pred začetkom preveri, da je varno zaklenjen.",
-      "Ulezi se oziroma postavi pod drog tako, da lahko drog primeš z nadprijemom, roke pa so iztegnjene.",
-      "Stopala naj ostanejo na tleh; z nogami si pomagaj toliko, da lahko prsni koš nadzorovano približaš drogu.",
-      "Ohrani trup in medenico povezani brez povešanja bokov; lopatici med potegom nadzorovano približaj.",
-      "Počasi se vrni v začetni položaj z iztegnjenimi rokami."
+      "Nastavi drog v stojalu približno v višino prsnega koša in preveri, da je varno pritrjen.",
+      "Primi drog z nadprijemom. Spusti boke pod drog, pokrči kolke in kolena ter postavi stopala na tla nekoliko pred telesom, kot pri sedečem položaju.",
+      "Začni z iztegnjenimi komolci in čim bolj navpičnim trupom; ne nagibaj se nazaj v veslanje.",
+      "Potegni se navzgor z delom rok in hrbtnih mišic, stopala pa naj pomagajo toliko, da ohraniš nadzorovan celoten obseg giba.",
+      "Spuščaj se počasi do iztegnjenih komolcev, pri tem ohrani navpičen položaj trupa."
     ],
     "common_errors": [
-      "Drog ali stojalo nista varno pritrjena.",
-      "Boki se med potegom povesijo ali trup izgubi čvrst položaj.",
-      "Prevelik odriv z nogami, zaradi katerega roke izgubijo nadzorovan del obremenitve.",
+      "Trup se nagne nazaj in gibanje postane podobno veslanju.",
+      "Stopala so postavljena tako daleč naprej, da se spremeni vzorec v horizontalni priteg.",
+      "Prevelik odriv z nogami ali sunkovit začetek.",
+      "Skrajšan spodnji položaj brez iztegnjenih komolcev.",
       "Nenadzorovan spust."
     ],
     "regressions": [
-      "Višje nastavljen drog oziroma bolj pokončen položaj telesa"
+      "Več pomoči stopal in/ali višji drog, ki omogoča lažji navpični položaj"
     ],
     "progressions": [
-      "Nižje nastavljen drog oziroma bolj vodoraven položaj telesa",
+      "Manj pomoči stopal ob enaki navpični drži",
+      "band_assisted_pull_up",
       "pull_up"
     ],
     "alternatives": [],
     "warnings": [
-      "Uporabljaj samo drog, ki je varno pritrjen v stojalu in namenjen obremenitvi.",
-      "Višji drog in bolj pokončen položaj zmanjšata obremenitev; zahtevnost povečuj s postopnim nižanjem droga."
+      "Uporabljaj samo drog, ki je varno in stabilno pritrjen v stojalu.",
+      "Stopala naj bodo na nedrseči podlagi; pomoč nog naj bo postopna in nadzorovana.",
+      "Če se trup nagiba nazaj, prilagodi postavitev stopal in višino droga, da ohraniš navpični priteg."
     ],
     "single_joint": false,
     "equipment_any": [],
