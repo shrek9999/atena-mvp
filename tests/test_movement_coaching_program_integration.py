@@ -117,3 +117,16 @@ def test_new_decision_contract_rejects_conflicting_legacy_assessment():
         assert "ne kombiniraj" in str(exc)
     else:
         raise AssertionError("Conflicting assessment sources should be rejected.")
+
+
+def test_structured_symptom_report_omits_only_affected_pattern_pending_review():
+    decision = build_movement_decision(
+        "squat", "UNASSESSABLE",
+        user_report={"status": "symptoms_reported", "region": "knee"},
+        decision_reason="Uporabnik je navedel nelagodje; potrebna je dodatna razjasnitev.",
+    )
+    plan = generate_program(BASE, movement_decisions={"squat": decision})
+    assert not _pattern_exercises(plan, "squat")
+    assert _pattern_exercises(plan, "hinge")
+    event = next(event for event in plan["movement_adaptation"]["events"] if event["pattern"] == "squat")
+    assert event["action"] == "omitted_pending_symptom_review"
