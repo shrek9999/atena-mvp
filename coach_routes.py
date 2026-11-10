@@ -376,21 +376,27 @@ def _sanitize_unverified_training_dose(answer, messages):
     ]
     if not user_texts or _has_explicit_safety_clearance("\n".join(user_texts)):
         return answer
-    latest = user_texts[-1].casefold()
     exercise_context = bool(re.search(
         r"(zgib|počep|počepu|veslan|mrtv\w* dvig|predklon|potisk|sklec|vajo|vaje|trening)",
         "\n".join(user_texts),
         re.IGNORECASE,
     ))
-    individualized_dose = bool(re.search(
+    dose_pattern = (
         r"\b\d+\s*(?:serij\w*|setov)\b.{0,100}\b\d+\s*(?:ponovitev|ponovitve|ponovitv)\b|"
-        r"\b\d+\s*[x×]\s*\d+\b|\b\d+(?:[.,]\d+)?\s*kg\b",
-        answer,
-        re.IGNORECASE,
-    ))
+        r"\b\d+\s*[x×]\s*\d+\b|\b\d+(?:[.,]\d+)?\s*kg\b"
+    )
+    individualized_dose = bool(re.search(dose_pattern, answer, re.IGNORECASE))
     if not exercise_context or not individualized_dose:
         return answer
-    introduction = answer.split("\n\n", 1)[0].strip()
+
+    # Remove every sentence that contains an individualized prescription.
+    # Never keep a one-paragraph answer wholesale: that was the previous safety leak.
+    safe_sentences = [
+        sentence.strip()
+        for sentence in re.split(r"(?<=[.!?])\s+|\n+", answer)
+        if sentence.strip() and not re.search(dose_pattern, sentence, re.IGNORECASE)
+    ]
+    introduction = " ".join(safe_sentences).strip()
     if not introduction:
         introduction = "Lahko ti razložim izvedbo in namen vaje."
     return (
@@ -398,8 +404,6 @@ def _sanitize_unverified_training_dose(answer, messages):
         + "\n\nPreden določim serije, ponovitve ali obremenitev, moram preveriti varnost: "
         "ali imaš trenutno kakršne koli bolečine, poškodbe ali zdravstvene oziroma gibalne omejitve?"
     )
-
-
 def _sanitize_unverified_safety_claim(answer, messages):
     """Reject model claims that the user cleared safety when no user did so."""
     user_history = "\n".join(
@@ -638,7 +642,7 @@ def _coaching_guardrail_reply(messages):
             "Veslanje z ročkami v predklonu je horizontalni poteg: trup je nagnjen naprej, "
             "ročke vlečeš proti trupu. Zgib je vertikalni poteg. Veslanje je koristna vaja za "
             "hrbet, vendar ne nadomesti vertikalnega zgiba in ni isti gibalni vzorec. Ker nimaš "
-            "droga za zgibe, za obremenjen vertikalni poteg bi potreboval drog ali elastiko z "
+            "droga za zgibe, za obremenjen vertikalni poteg potrebuješ drog za zgibe ali elastiko z "
             "namenskim varnim sidriščem. Veslanje z ročkami lahko ohraniš kot ločeno vajo za "
             "horizontalni poteg. Ali imaš na voljo elastiko z varnim sidriščem?"
         )
