@@ -1,6 +1,6 @@
 """Regression tests for conversation state and conservative duration estimates."""
 
-from coach_routes import _coaching_guardrail_reply, _sanitize_unverified_safety_claim, _has_explicit_safety_clearance, _has_explicit_no_pain_confirmation
+from coach_routes import _coaching_guardrail_reply, _sanitize_unverified_safety_claim, _has_explicit_safety_clearance, _has_explicit_no_pain_confirmation, _chat_message_character_limit
 from training.program import _estimated_minutes
 
 
@@ -278,3 +278,18 @@ def test_initial_pain_guardrail_asks_only_one_question():
     assert "ne nadomeščaj" in reply
     assert "Kje natančno se pojavi bolečina?" in reply
     assert reply.count("?") == 1
+
+
+
+def test_chat_allows_longer_assistant_history_than_user_input():
+    assert _chat_message_character_limit("user") == 1800
+    assert _chat_message_character_limit("model") == 6000
+
+
+def test_unrequested_name_is_removed_even_inside_a_sentence():
+    from coach_routes import _sanitize_unrequested_user_name
+
+    answer = _sanitize_unrequested_user_name("Odlično, Grega! Ker si opravil vse serije, nadaljuj postopno.")
+    assert "Grega" not in answer
+    assert "Odlično" in answer
+    assert "nadaljuj postopno" in answer
