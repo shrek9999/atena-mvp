@@ -110,7 +110,16 @@ def test_program_endpoint_holds_after_easy_feedback_instead_of_auto_progressing(
     assert response.status_code == 200
     program = response.get_json()["program"]
     assert program["methodology"]["last_session_adjustment"] == "hold_and_progress_by_rule"
-    assert program["sessions"][0]["exercises"][0]["prescription"]["sets"] == 3
+    from training.program import generate_program
+    baseline = generate_program(
+        {
+            "goal": "hypertrophy", "experience": "intermediate",
+            "equipment": ["dumbbell", "bench"], "sessions_per_week": 2,
+            "session_minutes": 60,
+        },
+        movement_decisions=_six_pattern_decisions(),
+    )
+    assert program["sessions"][0]["exercises"][0]["prescription"]["sets"] == baseline["sessions"][0]["exercises"][0]["prescription"]["sets"]
 
 
 def test_program_endpoint_blocks_automatic_adaptation_when_discomfort_reported(monkeypatch):
