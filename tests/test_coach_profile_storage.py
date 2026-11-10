@@ -542,6 +542,22 @@ def test_six_pattern_assessment_rejects_incomplete_pattern_set(monkeypatch, tmp_
     assert response.get_json()["missing_patterns"]
 
 
+def test_six_pattern_assessment_requires_explicit_movement_use_consent(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    response = client.put(
+        f"/coach/profile/{profile_id}/movement-assessment",
+        headers={"X-Profile-Token": token},
+        json={"movement_patterns": {
+            pattern: {"status": "comfortable"} for pattern in PATTERN_DEFINITIONS
+        }},
+    )
+    assert response.status_code == 403
+    assert response.get_json()["consent_required"] is True
+
+
 def test_six_pattern_assessment_requires_separate_health_data_consent(monkeypatch, tmp_path):
     client = _client(monkeypatch, tmp_path)
     created = _create(client, health_consent=False)
