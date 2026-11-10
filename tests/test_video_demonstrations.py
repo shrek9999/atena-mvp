@@ -70,13 +70,18 @@ def test_new_video_variations_are_real_catalogue_exercises():
     assert get_video_demonstrations(exercise_id="plate_overhead_press")[0]["video_id"] == "GrcA2Xh06x8"
 
 
-def test_vertical_pull_has_exact_demonstrations_for_all_three_core_variants():
-    expected = {
+def test_vertical_pull_demonstrations_are_mapped_without_confusing_assisted_pull_up_and_row():
+    for exercise_id, video_id in {
         "pull_up": "lkqw5Ysf3zA",
         "band_assisted_pull_up": "fzsc4e6rSZ0",
-        "foot_assisted_pull_up": "vBGFAQ4nT0g",
-    }
-    for exercise_id, video_id in expected.items():
+    }.items():
         videos = get_video_demonstrations(exercise_id=exercise_id)
         assert any(video["video_id"] == video_id for video in videos)
         assert all(video["movement_pattern"] == "vertical_pull" for video in videos)
+
+    foot_videos = get_video_demonstrations(exercise_id="foot_assisted_pull_up")
+    assert len(foot_videos) == 1
+    assert foot_videos[0]["provider"] == "external_reference"
+    assert foot_videos[0]["embed_url"] is None
+    assert "supported-pull-up" in foot_videos[0]["source_url"]
+    assert "inverted row" not in foot_videos[0]["title"].lower()
