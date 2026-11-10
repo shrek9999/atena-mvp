@@ -419,6 +419,7 @@ def test_postgres_profile_tables_enable_rls_and_revoke_public_access(monkeypatch
     )
     coach_store._init(object(), "postgres")
 
+    assert statements[0] == "SELECT pg_advisory_xact_lock(4707463712915539010)"
     assert "ALTER TABLE atena_profiles ENABLE ROW LEVEL SECURITY" in statements
     assert "ALTER TABLE atena_training_sessions ENABLE ROW LEVEL SECURITY" in statements
     assert any("atena_profiles FROM PUBLIC, anon, authenticated" in sql for sql in statements)

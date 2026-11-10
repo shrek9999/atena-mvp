@@ -12,8 +12,10 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: atena-cloudflare-preview-smoke-${{ github.event_name }}
-  cancel-in-progress: true
+  # Push and pull_request can both target the same pilot backend. Serialize them
+  # so synthetic profile/session persistence checks do not race during DDL.
+  group: atena-cloudflare-preview-smoke
+  cancel-in-progress: false
 
 permissions:
   contents: read

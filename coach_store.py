@@ -162,6 +162,11 @@ def _now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 def _init(conn, dialect):
+    # Multiple Gunicorn workers and overlapping pilot checks may initialize the
+    # schema at the same time. Serialize PostgreSQL DDL for this schema only;
+    # the transaction-scoped lock is released automatically on commit/rollback.
+    if dialect == "postgres":
+        _execute(conn, dialect, "SELECT pg_advisory_xact_lock(4707463712915539010)")
     statements = [
         """CREATE TABLE IF NOT EXISTS atena_profiles (
             profile_id TEXT PRIMARY KEY,

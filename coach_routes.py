@@ -1820,7 +1820,10 @@ VALID_EQUIPMENT = {item for exercise in load_catalogue() for item in (exercise["
 
 
 def _storage_error(exc):
-    logger.warning("ATENA profile storage unavailable: %s", type(exc).__name__)
+    # Log only the allow-listed internal reason category; never expose it or
+    # database connection details to the client.
+    reason = getattr(exc, "reason", "storage_unavailable")
+    logger.warning("ATENA profile storage unavailable: %s (%s)", type(exc).__name__, reason)
     return jsonify({"error": "Shranjevanje profila trenutno ni aktivirano."}), 503
 
 
