@@ -8434,7 +8434,7 @@
     "loading_mode": "external_load",
     "mobility_strength": false,
     "functional_components": [],
-    "movement_pattern": "vertical_push",
+    "movement_pattern": "push",
     "training_purposes": [
       "strength",
       "hypertrophy",
