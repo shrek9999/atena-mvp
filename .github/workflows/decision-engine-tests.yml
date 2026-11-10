@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - "app.py"
+      - "coach_routes.py"
+      - "training/**"
       - "tests/**"
       - "requirements.txt"
       - "README.md"
