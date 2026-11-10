@@ -8307,5 +8307,143 @@
     "stability_focus": [
       "trunk_control"
     ]
+  },
+  {
+    "id": "kettlebell_lateral_deadlift",
+    "name": "Mrtvi dvig s kettlebellom bočno",
+    "name_en": "Lateral kettlebell deadlift",
+    "pattern": "hinge",
+    "joint_type": "multi_joint",
+    "goals": [
+      "strength",
+      "hypertrophy",
+      "general_fitness",
+      "functional"
+    ],
+    "equipment": [
+      "kettlebell"
+    ],
+    "equipment_any": [],
+    "level": "beginner",
+    "primary_muscles": [
+      "gluteus_maximus",
+      "hamstrings"
+    ],
+    "secondary_muscles": [
+      "quadriceps",
+      "spinal_erectors",
+      "trunk",
+      "forearms"
+    ],
+    "cues": [
+      "Kettlebell postavi ob stopalo v položaj, ki omogoča varen in dosegljiv prijem.",
+      "Pred dvigom ustvari napetost trupa in ohrani posameznikovo nevtralno krivino hrbtenice.",
+      "Breme dvigni z iztegom kolkov in kolen; gib izvedi nadzorovano."
+    ],
+    "common_errors": [
+      "Doseganje kettlebella z izgubo nadzora nad položajem hrbtenice.",
+      "Sukanje trupa ali nenadzorovan odmik bremena."
+    ],
+    "regressions": [
+      "bodyweight_hip_hinge",
+      "Mrtvi dvig s kettlebellom z dvignjenega položaja"
+    ],
+    "progressions": [
+      "deadlift",
+      "romanian_deadlift"
+    ],
+    "alternatives": [
+      "dumbbell_deadlift"
+    ],
+    "warnings": [
+      "Začni z lahkim bremenom in preveri, ali je položaj kettlebella ter prijem primeren za posameznika.",
+      "Če izvedba zahteva rotacijo ali stranski nagib trupa, ki ga ni mogoče nadzorovati, izberi drugo različico."
+    ],
+    "single_joint": false,
+    "training_role": "main",
+    "loading_potential": "moderate",
+    "time_based": false,
+    "movement_family": "hip_hinge",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": [],
+    "movement_pattern": "hinge",
+    "training_purposes": [
+      "strength",
+      "hypertrophy",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
+  },
+  {
+    "id": "plate_overhead_press",
+    "name": "Potisk nad glavo s kolutom",
+    "name_en": "Weight plate overhead press",
+    "pattern": "vertical_push",
+    "joint_type": "multi_joint",
+    "goals": [
+      "strength",
+      "hypertrophy",
+      "general_fitness",
+      "functional"
+    ],
+    "equipment": [
+      "weight_plate"
+    ],
+    "equipment_any": [],
+    "level": "beginner",
+    "primary_muscles": [
+      "deltoids"
+    ],
+    "secondary_muscles": [
+      "triceps",
+      "trunk",
+      "trapezius"
+    ],
+    "cues": [
+      "Kolut primi varno z obema rokama in začni v stabilnem položaju pred zgornjim delom trupa.",
+      "Potisk izvedi v razpoložljivi neboleči amplitudi, brez pretiranega iztega ledvenega dela.",
+      "Kolut nadzorovano vrni v začetni položaj."
+    ],
+    "common_errors": [
+      "Izrazit usločen položaj ledvenega dela.",
+      "Izguba nadzora nad kolutom ali nenadzorovan spust."
+    ],
+    "regressions": [
+      "band_overhead_press"
+    ],
+    "progressions": [
+      "barbell_overhead_press"
+    ],
+    "alternatives": [
+      "dumbbell_overhead_press"
+    ],
+    "warnings": [
+      "Uporabi lahek kolut, ki ga lahko varno primeš in nadzoruješ skozi celotno amplitudo.",
+      "Ne izvajaj skozi bolečino ali občutek nestabilnosti v rami."
+    ],
+    "single_joint": false,
+    "training_role": "main",
+    "loading_potential": "low",
+    "time_based": false,
+    "movement_family": "upper_push",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": [],
+    "movement_pattern": "vertical_push",
+    "training_purposes": [
+      "strength",
+      "hypertrophy",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   }
 ]
