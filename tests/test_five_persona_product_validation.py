@@ -36,7 +36,7 @@ PERSONAS = {
         "goal": "hypertrophy",
         "experience": "advanced",
         "sessions_per_week": 3,
-        "session_minutes": 60,
+        "session_minutes": 75,
         "equipment": ["bodyweight", "barbell", "rack", "dumbbell", "bench",
                       "pull_up_bar", "kettlebell", "cable"],
         "include_accessories": True,
