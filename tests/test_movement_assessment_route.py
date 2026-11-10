@@ -168,7 +168,7 @@ def test_program_route_rejects_ready_decision_when_user_report_is_unassessed(cli
         },
     )
     assert response.status_code == 400
-    assert "neocenjen" in response.get_json()["error"].lower()
+    assert response.get_json()["invalid_report_patterns"] == ["squat"]
 
 
 def test_program_route_passes_structured_six_pattern_decisions(monkeypatch, client):
