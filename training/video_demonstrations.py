@@ -187,7 +187,7 @@ VIDEO_DEMONSTRATIONS: dict[str, dict[str, Any]] = {
         "movement_pattern": "squat",
         "exercise_id": "reaching_squat",
         "exercise_variant_id": "reaching_counterbalance",
-        "learning_method_id": reaching_counterbalance,
+        "learning_method_id": "reaching_counterbalance",
         "content_scope": "exact_learning_method_demonstration",
         "duration_seconds": None,
         "language": "sl",
