@@ -36,6 +36,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      # Render auto-deploys this branch on push. Wait for its new instance to be live
+      # before sending the multi-turn benchmark, otherwise the test can straddle a restart.
+      - name: Wait for Render staging deployment to finish
+        run: sleep 150
+
       - name: Confirm live backend and pilot credential
         run: |
           python - <<'PY'

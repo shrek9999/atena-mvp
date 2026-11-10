@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - qa/visible-goal-matrix-functional-beginner-safety
+      - feature/six-pattern-learning-engine
   pull_request:
     branches:
       - pilot/website-ai-coach
@@ -20,8 +21,11 @@ permissions:
 jobs:
   preview-to-render:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
+      - name: Wait for Render staging deployment to finish
+        run: sleep 150
+
       - name: Wake and check the Render backend
         run: |
           python - <<'PY'
