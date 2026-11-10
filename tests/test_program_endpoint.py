@@ -108,3 +108,69 @@ def test_program_endpoint_blocks_automatic_adaptation_when_discomfort_reported(m
     )
     assert response.status_code == 409
     assert response.get_json()["blocked"] is True
+
+
+
+def test_program_endpoint_returns_camera_observations_as_separate_non_decisional_context(monkeypatch):
+    client = _client(monkeypatch)
+    payload = {
+        "profile": {
+            "goal": "functional", "experience": "beginner",
+            "equipment": ["bodyweight", "resistance_band"], "sessions_per_week": 2,
+            "session_minutes": 45,
+        },
+        "camera_observations": {
+            "squat": {
+                "status": "observed", "quality": "adequate",
+                "valid_frames": 20, "total_frames": 24,
+                "observations": {"knee_flexion_proxy_deg": 95, "heel_lift_visible": False},
+                "limitations": "2D približek, ne klinična meritev.",
+                "source": "browser_pose_landmarker",
+                "analysis_version": "six-pattern-proxy-v1",
+            }
+        },
+        "camera_protocol": {
+            "version": "six-pattern-camera-flow-v1",
+            "dowel_three_contact_user_confirmed": True,
+            "push_up_support_height": "floor",
+            "video_stored": False,
+            "video_uploaded": False,
+        },
+    }
+    response = client.post("/coach/program", headers={"X-Pilot-Token": "test-only-secret"}, json=payload)
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["camera_observations"]["squat"]["observations"]["knee_flexion_proxy_deg"] == 95
+    assert body["camera_observations_stored"] is False
+    assert body["camera_observations_used_for_programme_decisions"] is False
+    assert body["camera_protocol"]["video_stored"] is False
+
+
+def test_program_endpoint_rejects_camera_payload_claiming_video_storage(monkeypatch):
+    payload = {
+        "profile": {
+            "goal": "functional", "experience": "beginner",
+            "equipment": ["bodyweight"], "sessions_per_week": 2,
+            "session_minutes": 45,
+        },
+        "camera_observations": {
+            "hinge": {
+                "status": "uncertain", "quality": "insufficient",
+                "valid_frames": 0, "total_frames": 0,
+                "observations": {}, "limitations": "Premalo sličic.",
+                "source": "browser_pose_landmarker",
+                "analysis_version": "six-pattern-proxy-v1",
+            }
+        },
+        "camera_protocol": {
+            "version": "six-pattern-camera-flow-v1",
+            "dowel_three_contact_user_confirmed": False,
+            "push_up_support_height": "floor",
+            "video_stored": True,
+            "video_uploaded": False,
+        },
+    }
+    response = _client(monkeypatch).post(
+        "/coach/program", headers={"X-Pilot-Token": "test-only-secret"}, json=payload
+    )
+    assert response.status_code == 400
