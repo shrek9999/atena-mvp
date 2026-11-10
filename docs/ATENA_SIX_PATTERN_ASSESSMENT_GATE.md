@@ -27,10 +27,11 @@ The six-pattern result is health-related movement information. It is persisted o
 
 Header: `X-Profile-Token: <profile access token>`
 
-Body must contain all six pattern keys, each with one status:
+Body must contain `movement_assessment_consent: true` and all six pattern keys, each with one status:
 
 ```json
 {
+  "movement_assessment_consent": true,
   "movement_patterns": {
     "squat": {"status": "comfortable"},
     "hinge": {"status": "needs_support"},
