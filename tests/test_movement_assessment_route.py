@@ -147,6 +147,30 @@ def test_program_route_blocks_when_all_six_patterns_are_unassessable(monkeypatch
     assert "vsaj en vzorec varno oceniti" in response.get_json()["message"]
 
 
+def test_program_route_requires_explicit_user_report_for_each_pattern(client):
+    from training.movement_coaching import PATTERN_DEFINITIONS
+
+    decisions = {
+        pattern: {"movement_pattern": pattern, "decision": "READY"}
+        for pattern in PATTERN_DEFINITIONS
+    }
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-token"},
+        json={
+            "movement_assessment_consent": True,
+            "profile": {
+                "goal": "functional", "experience": "beginner",
+                "equipment": ["bodyweight"], "sessions_per_week": 2,
+                "session_minutes": 45,
+            },
+            "movement_decisions": decisions,
+        },
+    )
+    assert response.status_code == 400
+    assert set(response.get_json()["invalid_report_patterns"]) == set(PATTERN_DEFINITIONS)
+
+
 def test_program_route_rejects_ready_decision_when_user_report_is_unassessed(client):
     from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
 
