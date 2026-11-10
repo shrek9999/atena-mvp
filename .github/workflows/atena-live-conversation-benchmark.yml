@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - pilot/website-ai-coach
+      - feature/six-pattern-learning-engine
     paths:
       - "tests/fixtures/conversation_quality_benchmark_v1.json"
       - "tests/run_live_conversation_quality_benchmark.py"
@@ -56,7 +57,7 @@ jobs:
               sys.exit("ATENA chat is not reported as available.")
           print("Live Render chat endpoint is available; secret was not printed.")
 
-      - name: Run all 12 multi-turn scenarios against live ATENA
+      - name: Run all 24 multi-turn scenarios against live ATENA
         run: python tests/run_live_conversation_quality_benchmark.py
 
       - name: Upload full transcripts and run summary
