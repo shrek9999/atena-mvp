@@ -926,6 +926,24 @@ def generate_program(
                     return "moderate"
                 return potential
 
+            # A comfortable bodyweight/pattern self-check is not evidence of
+            # tolerance for a high-load variation. Start with a verified
+            # low/moderate-loading option; load progression is earned from
+            # exercise-specific training history, not inferred from READY.
+            if structured_decision and structured_decision["decision"] == "READY":
+                conservative_candidates = [
+                    item for item in candidates if effective_loading(item) != "high"
+                ]
+                if not conservative_candidates:
+                    missing_patterns.add(pattern)
+                    movement_adaptation_events.append({
+                        "pattern": pattern,
+                        "action": "omitted_no_conservative_starting_variant",
+                        "message": "Osnovni vzorec je bil v samooceni udoben, vendar katalog z razpoložljivo opremo ne ponuja preverjene konservativne začetne različice. ATENA ne bo ugibala o toleranci na veliko breme.",
+                    })
+                    continue
+                candidates = conservative_candidates
+
             def selection_priority(item: dict) -> int:
                 if movement_status == "needs_support":
                     preferred = SUPPORTED_VARIANTS.get(pattern, ())
@@ -1076,18 +1094,11 @@ def generate_program(
                     "exercise_name": candidate["name"],
                     "message": movement_note,
                 })
-            elif structured_decision and structured_decision["decision"] == "UNASSESSABLE":
-                movement_note = "Posnetek ali dokaz ni zadosten za sklep. ATENA ne sklepa o sposobnosti in ne spreminja različice na podlagi nejasnega opažanja."
-                movement_adaptation_events.append({
-                    "pattern": pattern,
-                    "action": "kept_selection_unassessable",
-                    "message": movement_note,
-                })
             elif structured_decision and structured_decision["decision"] == "READY":
                 movement_adaptation_events.append({
                     "pattern": pattern,
-                    "action": "ready_for_selected_variation_no_automatic_progression",
-                    "message": "Izvedba je ocenjena kot dovolj nadzorovana za izbrano različico; to samo po sebi ne sproži avtomatskega povečanja obremenitve.",
+                    "action": "ready_for_conservative_starting_variation",
+                    "message": "Samoocena potrjuje udobje pri osnovnem gibalnem vzorcu, ne pa tolerance na veliko breme. Program zato začne s konservativno različico; večje obremenitve zahtevajo ločeno, ponovljivo izvedbo in zabeleženo povratno informacijo.",
                 })
             if movement_status == "needs_support":
                 if pattern == "balance":
