@@ -2468,7 +2468,7 @@ def save_six_pattern_movement_assessment(profile_id):
             if not isinstance(value, dict) or set(value) != {"status"}:
                 return jsonify({"error": f"Vzorec {pattern} mora vsebovati samo status."}), 400
             status = value.get("status")
-            if status not in status_to_decision:
+            if not isinstance(status, str) or status not in status_to_decision:
                 return jsonify({"error": f"Neveljaven status za vzorec {pattern}."}), 400
             reason = {
                 "comfortable": "Uporabnik poroča, da je osnovno izvedbo opravil udobno in nadzorovano.",
@@ -2677,7 +2677,7 @@ def coach_profile_program(profile_id):
                 "blocked": True,
                 "assessment_required": True,
                 "missing_patterns": missing_patterns,
-                "message": "Pred individualnim programom morava opraviti vseh šest kratkih gibalnih preverjanj: počep, zgib v kolku, horizontalni potisk, horizontalni poteg, vertikalni potisk in izpadni korak. Neocenjenega vzorca ne bom obravnaval kot pripravljenega za zahtevnejšo vajo.",
+                "message": "Pred individualnim programom morava opraviti vseh šest kratkih gibalnih preverjanj: počep, predklon v kolkih (hip hinge), horizontalni potisk, horizontalni poteg, vertikalni potisk in izpadni korak. Neocenjenega vzorca ne bom obravnaval kot pripravljenega za zahtevnejšo vajo.",
             }), 409
         result = generate_program(
             profile["profile"],
