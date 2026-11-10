@@ -4,6 +4,7 @@ from flask import Flask
 
 from coach_routes import coach_bp
 from training.catalogue import load_catalogue
+from training.movement_coaching import PATTERN_DEFINITIONS
 
 
 def _client(monkeypatch, tmp_path, *, health_consent=True):
@@ -62,20 +63,29 @@ def test_movement_assessment_is_persisted_only_with_separate_health_consent(monk
     assert body["assessment"]["automatic_programme_change"] == "none"
 
 
+
+def _save_six_pattern_assessment(client, profile_id, token):
+    response = client.put(
+        f"/coach/profile/{profile_id}/movement-assessment",
+        headers={"X-Profile-Token": token},
+        json={"movement_patterns": {
+            pattern: {"status": "comfortable"} for pattern in PATTERN_DEFINITIONS
+        }},
+    )
+    assert response.status_code == 200, response.get_json()
+    return response.get_json()
+
+
 def test_saved_movement_assessment_is_used_when_generating_next_programme(monkeypatch, tmp_path):
     import coach_routes
 
     client, profile_id, token, _ = _client(monkeypatch, tmp_path, health_consent=True)
-    saved = client.put(
-        f"/coach/profile/{profile_id}/assessment",
-        headers={"X-Profile-Token": token},
-        json={"movement_tasks": {"squat": {"status": "needs_support"}}},
-    )
-    assert saved.status_code == 200
+    saved = _save_six_pattern_assessment(client, profile_id, token)
 
     called = {}
-    def fake_generate_program(profile, feedback=None, movement_assessment=None):
+    def fake_generate_program(profile, feedback=None, movement_assessment=None, movement_decisions=None):
         called["movement_assessment"] = movement_assessment
+        called["movement_decisions"] = movement_decisions
         return {"goal": profile["goal"], "sessions": [{"session": 1, "exercises": []}]}
 
     monkeypatch.setattr(coach_routes, "generate_program", fake_generate_program)
@@ -85,7 +95,8 @@ def test_saved_movement_assessment_is_used_when_generating_next_programme(monkey
         json={"no_current_pain_or_restrictions": True},
     )
     assert response.status_code == 200
-    assert called["movement_assessment"] == {"squat": "needs_support"}
+    assert called["movement_assessment"] is None
+    assert set(called["movement_decisions"]) == set(PATTERN_DEFINITIONS)
     assert response.get_json()["movement_assessment_applied"] is True
     assert response.get_json()["program_stored"] is True
 
@@ -94,9 +105,10 @@ def test_programme_versions_are_listed_and_included_in_export(monkeypatch, tmp_p
     import coach_routes
 
     client, profile_id, token, _ = _client(monkeypatch, tmp_path)
+    _save_six_pattern_assessment(client, profile_id, token)
     monkeypatch.setattr(
         coach_routes, "generate_program",
-        lambda profile, feedback=None, movement_assessment=None: {
+        lambda profile, feedback=None, movement_assessment=None, movement_decisions=None: {
             "goal": profile["goal"], "sessions": [{"session": 1, "exercises": []}]
         },
     )
