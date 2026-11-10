@@ -846,6 +846,24 @@ def generate_program(
                     "message": "Ta gibalni vzorec je iz programa izpuščen, ker si pri povezani nalogi navedel/-la bolečino ali nelagodje. ATENA ga ne nadomesti samodejno.",
                 })
                 continue
+            structured_decision = movement_decisions_by_pattern.get(pattern)
+            structured_report_status = (
+                structured_decision.get("user_report", {}).get("status")
+                if structured_decision and isinstance(structured_decision.get("user_report"), dict)
+                else None
+            )
+            if (
+                movement_status in {"uncertain", "not_assessed"}
+                or (structured_decision and structured_decision.get("decision") == "UNASSESSABLE")
+                or structured_report_status in {"uncertain", "not_assessed"}
+            ):
+                missing_patterns.add(pattern)
+                movement_adaptation_events.append({
+                    "pattern": pattern, "tasks": affected_tasks,
+                    "action": "omitted_unassessable_pending_reassessment",
+                    "message": "Vzorec je izpuščen, ker ATENA še nima dovolj zanesljive informacije o tvoji izvedbi. Najprej ga ponovno preveri ali izberi ustrezno lažjo učno različico.",
+                })
+                continue
             candidates = by_pattern.get(pattern, [])
             if pattern == "horizontal_push":
                 # ATENA's coaching standard excludes wall push-ups; use floor or
