@@ -60,13 +60,14 @@ def test_easy_feedback_does_not_progress_a_pattern_marked_needs_support():
     assert all("prelahek" not in exercise["prescription"]["adjustment_note"] for exercise in squats)
 
 
-def test_uncertain_keeps_the_original_selection_and_explains_no_guessing():
-    baseline = generate_program(BASE)
+def test_uncertain_omits_pattern_until_user_can_confirm_safe_execution():
     uncertain = generate_program(BASE, movement_assessment={"squat": "uncertain"})
-    assert [x["exercise_id"] for x in _exercises(uncertain, "squat")] == [
-        x["exercise_id"] for x in _exercises(baseline, "squat")
-    ]
-    assert all("nisi prepričan" in x["prescription"]["adjustment_note"] for x in _exercises(uncertain, "squat"))
+    assert not _exercises(uncertain, "squat")
+    assert any(
+        event["pattern"] == "squat"
+        and event["action"] == "omitted_unassessable_pending_reassessment"
+        for event in uncertain["movement_adaptation"]["events"]
+    )
 
 
 def test_symptom_report_omits_only_the_affected_pattern_and_never_auto_substitutes():
@@ -148,9 +149,11 @@ def test_needs_support_walking_fails_closed_instead_of_prescribing_brisk_walking
         generate_program(profile, movement_assessment={"locomotion": "needs_support"})
 
 
-def test_overhead_reach_uncertainty_does_not_auto_remove_vertical_press():
-    baseline = generate_program(BASE)
+def test_overhead_reach_uncertainty_omits_vertical_press_until_reassessment():
     uncertain = generate_program(BASE, movement_assessment={"overhead": "uncertain"})
-    assert [x["exercise_id"] for x in _exercises(uncertain, "vertical_push")] == [
-        x["exercise_id"] for x in _exercises(baseline, "vertical_push")
-    ]
+    assert not _exercises(uncertain, "vertical_push")
+    assert any(
+        event["pattern"] == "vertical_push"
+        and event["action"] == "omitted_unassessable_pending_reassessment"
+        for event in uncertain["movement_adaptation"]["events"]
+    )
