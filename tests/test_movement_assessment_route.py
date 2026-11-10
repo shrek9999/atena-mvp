@@ -124,6 +124,7 @@ def test_program_route_blocks_when_all_six_patterns_are_unassessable(monkeypatch
     decisions = {
         pattern: build_movement_decision(
             pattern, "UNASSESSABLE",
+            user_report={"status": "not_assessed"},
             decision_reason="Naloga ni bila ocenjena.",
         )
         for pattern in PATTERN_DEFINITIONS
@@ -150,7 +151,7 @@ def test_program_route_rejects_ready_decision_when_user_report_is_unassessed(cli
     from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
 
     decisions = {
-        pattern: build_movement_decision(pattern, "READY")
+        pattern: build_movement_decision(pattern, "READY", user_report={"status": "comfortable"})
         for pattern in PATTERN_DEFINITIONS
     }
     decisions["squat"]["user_report"] = {"status": "not_assessed"}
@@ -194,6 +195,7 @@ def test_program_route_passes_structured_six_pattern_decisions(monkeypatch, clie
     decisions = {
         pattern: build_movement_decision(
             pattern, "READY",
+            user_report={"status": "comfortable"},
             decision_reason="Osnovno gibanje je po samooceni udobno in nadzorovano.",
         )
         for pattern in ("squat", "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge")
