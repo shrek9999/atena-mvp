@@ -340,6 +340,7 @@ def _sanitize_power_and_progression_claims(answer):
             "stabilno tehniko in ustrezno regeneracijo; sicer ohrani trenutno "
             "obremenitev.\n\n",
             answer,
+            count=1,
         )
     return answer
 
@@ -351,6 +352,38 @@ def _sanitize_unrequested_user_name(answer):
     answer = re.sub(r"(?i)(,\s*)?Grega(?=[,!?])[,!?]?", "", answer)
     answer = re.sub(r",\s*(?=[.!?])", "", answer)
     return answer
+
+
+def _sanitize_unverified_training_dose(answer, messages):
+    """Keep technique education available but withhold individualized dose before safety clearance."""
+    user_texts = [
+        item.get("content", "") for item in messages
+        if item.get("role") == "user" and isinstance(item.get("content"), str)
+    ]
+    if not user_texts or _has_explicit_safety_clearance("\n".join(user_texts)):
+        return answer
+    latest = user_texts[-1].casefold()
+    exercise_context = bool(re.search(
+        r"(zgib|počep|počepu|veslan|mrtv\w* dvig|predklon|potisk|sklec|vajo|vaje|trening)",
+        latest,
+        re.IGNORECASE,
+    ))
+    individualized_dose = bool(re.search(
+        r"\b\d+\s*(?:serij|setov)\b.{0,100}\b\d+\s*(?:ponovitev|ponovitve|ponovitv)\b|"
+        r"\b\d+\s*[x×]\s*\d+\b|\b\d+(?:[.,]\d+)?\s*kg\b",
+        answer,
+        re.IGNORECASE,
+    ))
+    if not exercise_context or not individualized_dose:
+        return answer
+    introduction = answer.split("\n\n", 1)[0].strip()
+    if not introduction:
+        introduction = "Lahko ti razložim izvedbo in namen vaje."
+    return (
+        introduction
+        + "\n\nPreden določim serije, ponovitve ali obremenitev, moram preveriti varnost: "
+        "ali imaš trenutno kakršne koli bolečine, poškodbe ali zdravstvene oziroma gibalne omejitve?"
+    )
 
 
 def _sanitize_unverified_safety_claim(answer, messages):
@@ -1107,7 +1140,7 @@ MANDATORY DECISION GATES – NON-NEGOTIABLE
 - BODYWEIGHT-ONLY HYPERTROPHY LIMITS: Without external equipment, do not call an unloaded hip hinge an RDL or imply it provides the same loading potential as a loaded hinge. Call it "predklon z ravnim hrbtom brez dodatne obremenitve". Explicitly explain when a meaningful horizontal pulling movement cannot be loaded safely without a confirmed anchor or equipment; never invent table rows, door anchors or improvised supports. Explain realistic progression options and their limits.
 - LOADED BALANCE REGRESSION: If a bodyweight squat is stable but instability appears only after adding load, do not move the load to the shoulders or prescribe a harder variation as the first step. Keep the person at the stable bodyweight variation, do not increase load, and ask which load triggered the loss of control before considering progression.
 - ANKLE DORSIFLEXION: Do not recommend a front squat as an automatic way to reduce ankle dorsiflexion demand. Its more upright torso and forward knee travel can require as much or more ankle dorsiflexion. If the heel lifts, check whether a stable heel support is actually available before suggesting heel elevation. Heel support changes the effective ankle angle; it does not increase actual ankle mobility.
-- LOAD PROGRESSION: Do not prescribe a fixed kilogram increase when the exact exercise, current load and completed repetitions are unknown. Confirm stable technique and successful completion of the target repetitions; change one variable at a time and make only a small, conditional progression. For a repeatable progression, require the top of the target range at the intended RIR across at least two comparable exposures with good recovery. If only one exposure is known, say that confirmation is still needed; do not promise a fixed increase "next week". Once the user has met the upper limit in two comparable exposures, increase load by the smallest practical increment and return to the lower part of the existing rep range. Do not prescribe repetitions above the stated upper limit unless you explicitly agree a new rep range with the user.
+- LOAD PROGRESSION: Do not prescribe a fixed kilogram increase when the exact exercise, current load and completed repetitions are unknown. Confirm stable technique and successful completion of the target repetitions; change one variable at a time and make only a small, conditional progression. For a repeatable progression, require the top of the target range at the intended RIR across at least two comparable exposures with good recovery. If only one exposure is known, say that confirmation is still needed; do not promise a fixed increase "next week". Once the user has met the upper limit in two comparable exposures, increase load by the smallest practical increment and return to the lower part of the existing rep range. Do not prescribe repetitions above the stated upper limit unless you explicitly agree a new rep range with the user. Do not make a strength or hypertrophy session harder by shortening rests as the default; preserve enough rest for repeatable technique and the intended effort, and create the challenge through suitable load, exercise variation, sets, reps and RIR.
 - RECOVERY AND FATIGUE: Poor recovery is an observed response, not a diagnosis of its cause. Do not state that the user has accumulated fatigue, CNS fatigue, overtraining or a specific cause unless supported by recorded workload and relevant context. Explain that the current dose may not be well tolerated at present, state the uncertainty, and ask one relevant follow-up about sleep, stress, soreness or recent workload. When two recent sessions felt too hard, a conservative temporary reduction in one dose variable may be proposed (for example, one fewer set on the most demanding exercises and a little more RIR), then monitor the response. Do not assume the user trained near failure if that was not reported, and do not automatically change weekly frequency.
 - SLOVENIAN TERMINOLOGY: Use idiomatic exercise names such as "potisk za prsi" rather than "prsni tisk". Avoid literal translations and grammatically malformed muscle or movement descriptions.
 - CANONICAL EXERCISE NAMES: Use the exact verified catalogue display name. Keep "Cossack squat" in English; never translate it as "kozaški počep". If a movement has no established Slovenian coaching name, retain its canonical English name rather than inventing a literal translation. Keep naming consistent in the plan, cues and substitutions.
@@ -1521,6 +1554,7 @@ def coach_chat():
         answer = _normalize_slovene_coaching_terms(answer)
         answer = _sanitize_power_and_progression_claims(answer)
         answer = _sanitize_unverified_safety_claim(answer, messages)
+        answer = _sanitize_unverified_training_dose(answer, messages)
         answer = _sanitize_unlisted_support(answer, messages)
         bodyweight_note = _bodyweight_only_program_note(messages)
         if bodyweight_note and bodyweight_note not in answer:
