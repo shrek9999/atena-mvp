@@ -86,8 +86,7 @@ def test_ready_decision_does_not_trigger_automatic_progression_or_change_selecti
     assert assessed["movement_adaptation"]["automatic_progression"] == "movement_assessment_does_not_trigger_progression"
 
 
-def test_unassessable_does_not_remove_pattern_or_force_a_regression():
-    baseline = generate_program(BASE)
+def test_unassessable_omits_pattern_until_assessment_is_available():
     unassessable = build_movement_decision(
         "squat", "UNASSESSABLE",
         capture_quality="insufficient",
@@ -95,12 +94,9 @@ def test_unassessable_does_not_remove_pattern_or_force_a_regression():
         decision_reason="Ni dovolj dokazov za sklep.",
     )
     assessed = generate_program(BASE, movement_decisions={"squat": unassessable})
-    assert [item["exercise_id"] for item in _pattern_exercises(assessed, "squat")] == [
-        item["exercise_id"] for item in _pattern_exercises(baseline, "squat")
-    ]
-    assert _pattern_exercises(assessed, "squat")
+    assert not _pattern_exercises(assessed, "squat")
     assert any(
-        event["action"] == "kept_selection_unassessable"
+        event["action"] == "omitted_unassessable_pending_reassessment"
         for event in assessed["movement_adaptation"]["events"]
     )
 
