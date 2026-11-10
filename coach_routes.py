@@ -62,8 +62,15 @@ def add_cors_headers(response):
         response.headers["Access-Control-Max-Age"] = "600"
     return response
 
-MAX_MESSAGE_CHARS = 1800
+MAX_USER_MESSAGE_CHARS = 1800
+# Assistant replies are conversation history, not fresh user input. Allow longer
+# model turns so a valid detailed answer cannot break the next chat turn.
+MAX_MODEL_MESSAGE_CHARS = 6000
 MAX_MESSAGES = 12
+
+
+def _chat_message_character_limit(role):
+    return MAX_USER_MESSAGE_CHARS if role == "user" else MAX_MODEL_MESSAGE_CHARS
 
 
 def _has_explicit_no_pain_confirmation(text):
@@ -338,8 +345,12 @@ def _sanitize_power_and_progression_claims(answer):
 
 
 def _sanitize_unrequested_user_name(answer):
-    """Remove an accidental direct address to the coach brand owner."""
-    return re.sub(r"(?im)^\s*Grega,\s*", "", answer)
+    """Remove accidental direct address to the coach brand owner."""
+    answer = re.sub(r"(?im)^\s*Grega,\s*", "", answer)
+    # Also catch vocative use embedded in a sentence, e.g. "Odlično, Grega!".
+    answer = re.sub(r"(?i)(,\s*)?Grega(?=[,!?])[,!?]?", "", answer)
+    answer = re.sub(r",\s*(?=[.!?])", "", answer)
+    return answer
 
 
 def _sanitize_unverified_safety_claim(answer, messages):
@@ -1356,8 +1367,9 @@ def coach_chat():
         if not isinstance(item, dict) or item.get("role") not in ("user", "model"):
             return jsonify({"error": "Neveljavna zgodovina pogovora."}), 400
         content = item.get("content")
-        if not isinstance(content, str) or not content.strip() or len(content) > MAX_MESSAGE_CHARS:
-            return jsonify({"error": "Sporočilo je prazno ali predolgo (največ 1800 znakov)."}), 400
+        max_chars = _chat_message_character_limit(item["role"])
+        if not isinstance(content, str) or not content.strip() or len(content) > max_chars:
+            return jsonify({"error": f"Sporočilo je prazno ali predolgo (največ {max_chars} znakov)."}), 400
         contents.append({"role": item["role"], "parts": [{"text": content.strip()}]})
     system_prompt = SYSTEM_PROMPT
     profile_id = request.headers.get("X-Profile-Id", "").strip()
