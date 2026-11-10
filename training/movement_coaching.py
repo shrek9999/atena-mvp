@@ -76,7 +76,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "task_id": "push_up",
         "task": "Skleca v različici, ki omogoča nadzor trupa, lopatic, komolcev in amplitude.",
         "exercise_ids": [
-            "wall_push_up", "push_up_incline", "push_up", "push_up_decline",
+            "push_up_incline", "push_up", "push_up_decline",
             "dumbbell_bench_press", "barbell_bench_press",
         ],
         "learning_methods": [
@@ -85,12 +85,6 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                 "label": "Skleca na povišani opori",
                 "description": "Višino stabilne opore izberi tako, da je celotna ponovitev nadzorovana.",
                 "exercise_id": "push_up_incline",
-            },
-            {
-                "id": "wall_push_up",
-                "label": "Skleca ob steni",
-                "description": "Začni z manjšo obremenitvijo lastne teže in postopno prilagajaj oddaljenost stopal.",
-                "exercise_id": "wall_push_up",
             },
         ],
     },
