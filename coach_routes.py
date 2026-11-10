@@ -756,7 +756,8 @@ def _coaching_guardrail_reply(messages):
         return (
             "Za zdaj ne ponavljaj giba v isti dozi, če sproža bolečino; to ne pomeni, da moraš "
             "prekiniti vso nebolečo aktivnost. Do razjasnitve bolečega giba ga ne nadomeščaj z "
-            "drugo obremenjeno vajo. Kje natančno se pojavi bolečina?"
+            "drugo obremenjeno vajo. Ko razjasniva odziv, lahko prilagodiva eno spremenljivko doze. "
+            "Kje natančno se pojavi bolečina?"
         )
 
     # Keep the already-reported pain context active when the user asks whether to
