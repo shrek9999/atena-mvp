@@ -1,6 +1,6 @@
 """Regression tests for conversation state and conservative duration estimates."""
 
-from coach_routes import _coaching_guardrail_reply, _sanitize_unverified_safety_claim, _has_explicit_safety_clearance
+from coach_routes import _coaching_guardrail_reply, _sanitize_unverified_safety_claim, _has_explicit_safety_clearance, _has_explicit_no_pain_confirmation
 from training.program import _estimated_minutes
 
 
@@ -220,3 +220,47 @@ def test_direct_address_does_not_assume_user_is_grega():
     answer = _sanitize_unrequested_user_name("Grega, odlično delo! Nadaljuj postopno.")
     assert not answer.startswith("Grega")
     assert "odlično delo" in answer
+
+
+def test_third_person_explicit_profile_clearance_is_not_misread_as_active_pain():
+    profile = (
+        "KONTEKST TESTNEGA UPORABNIKA: Uporabnik je izrecno potrdil, "
+        "da nima bolečin, poškodb ali gibalnih omejitev."
+    )
+    assert _has_explicit_no_pain_confirmation(profile)
+    assert _has_explicit_safety_clearance(profile)
+    reply = _coaching_guardrail_reply([
+        {"role": "user", "content": profile},
+        {"role": "user", "content": "Danes nimam dostopa do olimpijske palice. S čim zamenjam mrtvi dvig?"},
+    ])
+    assert reply is None or "Ne nadaljuj istega bolečega giba" not in reply
+
+
+def test_general_hiit_education_does_not_wait_for_health_clearance():
+    reply = _coaching_guardrail_reply([
+        {"role": "user", "content": "Ali moram za izgubo maščobe vsak dan delati HIIT?"},
+    ])
+    assert reply is not None
+    assert "Vsakodnevni HIIT ni potreben" in reply
+    assert "energijskim primanjkljajem" in reply
+    assert "varnostnega vprašanja" not in reply
+
+
+def test_heavy_set_rest_education_does_not_wait_for_health_clearance():
+    reply = _coaching_guardrail_reply([
+        {"role": "user", "content": "Koliko naj počivam med težjimi serijami?"},
+    ])
+    assert reply is not None
+    assert "2–3 minute" in reply
+    assert "3–5 minut" in reply
+    assert "varnostnega vprašanja" not in reply
+
+
+def test_short_30_minute_session_preserves_rest_before_reducing_volume():
+    reply = _coaching_guardrail_reply([
+        {"role": "user", "content": "Danes imam samo 30 minut za tri vaje po tri serije."},
+        {"role": "user", "content": "Ali lahko skrajšam odmore, da vse spravim v 30 minut?"},
+    ])
+    assert reply is not None
+    assert "Ne krajšaj pretirano odmorov" in reply
+    assert "zmanjšaj število vaj" in reply

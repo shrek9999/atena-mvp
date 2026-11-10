@@ -193,7 +193,7 @@
     {
       "id": "G10",
       "name": "Progresija po uspešnih treningih",
-      "user_profile": "Uporabnik je izrecno potrdil, da nima bolečin, poškodb ali gibalnih omejitev; uspešno je opravil predpisane serije in ponovitve.",
+      "user_profile": "Uporabnik je izrecno potrdil, da nima bolečin, poškodb ali gibalnih omejitev. V programu je cilj 8–10 ponovitev; v dveh zaporednih primerljivih treningih je izvedel vse serije po 10 ponovitev z RIR 3 in stabilno tehniko.",
       "turns": [
         "Vse serije sem opravil. Na koncu vsake serije bi lahko naredil še približno tri ponovitve.",
         "Tehnika je bila dobra in trening ni bil pretežek."
@@ -333,7 +333,7 @@
     {
       "id": "G17",
       "name": "Progresija po samo eni uspešni izpostavitvi",
-      "user_profile": "Uporabnik je enkrat dosegel zgornjo mejo ponovitev; drugih primerljivih izpostavitev še nima.",
+      "user_profile": "Uporabnik je izrecno potrdil, da nima bolečin, poškodb ali gibalnih omejitev. Pri počepu je dosegel vse serije po 10 ponovitev z RIR 3, vendar je bil to šele prvi tak uspešen trening.",
       "turns": [
         "Pri počepu sem opravil vse serije po 10 ponovitev in imel približno 3 ponovitve v rezervi. Lahko naslednjič povečam težo?",
         "Tehnika je bila dobra, vendar je bil to šele prvi tak uspešen trening.",
@@ -393,7 +393,7 @@
     {
       "id": "G20",
       "name": "Funkcionalna vadba ni samo MetCon",
-      "user_profile": "Uporabnik želi splošno funkcionalno pripravljenost, ima polno opremljen fitnes in tri vadbene dni.",
+      "user_profile": "Uporabnik je izrecno potrdil, da nima bolečin, poškodb ali gibalnih omejitev. Želi splošno funkcionalno pripravljenost, ima polno opremljen fitnes in lahko trenira tri dni tedensko.",
       "turns": [
         "Želim izboljšati funkcionalno pripravljenost, vendar nočem, da je vsak trening samo MetCon.",
         "Lahko treniram trikrat tedensko in imam dostop do polno opremljenega fitnesa.",
@@ -413,7 +413,7 @@
     {
       "id": "G21",
       "name": "Uravnavanje telesne mase ob ohranjanju mišic in moči",
-      "user_profile": "Uporabnik želi zmanjšati telesno maščobo in ohraniti mišično maso; ima ročke in lastno težo.",
+      "user_profile": "Uporabnik je izrecno potrdil, da nima bolečin, poškodb ali gibalnih omejitev. Želi zmanjšati telesno maščobo in ohraniti mišično maso; ima ročke in lastno težo ter lahko trenira trikrat tedensko.",
       "turns": [
         "Rad bi izgubil nekaj telesne maščobe, vendar želim ohraniti mišice in moč.",
         "Doma imam ročke in lahko treniram trikrat tedensko.",
@@ -433,7 +433,7 @@
     {
       "id": "G22",
       "name": "Realističen 30-minutni trening moči",
-      "user_profile": "Uporabnik ima 30 minut in želi kakovosten trening moči z ustreznimi odmori.",
+      "user_profile": "Uporabnik je izrecno potrdil, da nima bolečin, poškodb ali gibalnih omejitev. Ima 30 minut in želi kakovosten trening moči s tremi vajami po tri serije ter ustreznimi odmori.",
       "turns": [
         "Danes imam samo 30 minut za trening moči. Želim opraviti tri vaje po tri serije.",
         "Koliko naj počivam med težjimi serijami?",
@@ -453,7 +453,7 @@
     {
       "id": "G23",
       "name": "Protislovje v izkušnjah in razpoložljivi opremi",
-      "user_profile": "Profil pravi začetnik in samo lastna teža; uporabnik kasneje navede deset let treninga in olimpijsko palico.",
+      "user_profile": "Uporabnik je izrecno potrdil, da nima bolečin, poškodb ali gibalnih omejitev. Profil pravi začetnik in samo lastna teža; uporabnik kasneje navede deset let občasnega treninga, brez izkušenj z olimpijsko palico, ter ročke in lastno težo.",
       "turns": [
         "V profilu imam zapisano, da sem začetnik, vendar treniram že deset let. Pripravi mi zahteven program.",
         "Zdaj sem ugotovil, da sem v resnici večinoma treniral občasno in nimam izkušenj z olimpijsko palico.",

@@ -68,7 +68,7 @@ MAX_MESSAGES = 12
 
 def _has_explicit_no_pain_confirmation(text):
     return bool(re.search(
-        r"\b(?:ne boli me|ne čutim bolečine|nimam bolečin|brez bolečin|no pain)\b",
+        r"\b(?:ne boli me|ne čutim bolečine|nimam bolečin|nima bolečin|brez bolečin|no pain)\b",
         text,
         re.IGNORECASE,
     ))
@@ -78,6 +78,7 @@ def _has_explicit_safety_clearance(text):
     """Accept only direct negative answers, never an ambiguous mention of uncertainty."""
     patterns = (
         r"\bnimam\s+(?:(?:trenutno|nobenih|kakršnih koli|večjih)\s+)*(?:bolečin|poškodb|(?:zdravstvenih|gibalnih)\s+omejitev|omejitev|zdravstvenih težav)\b",
+        r"\b(?:uporabnik|oseba)\s+(?:je\s+)?(?:izrecno\s+)?potrdil\w*,?\s+da\s+nima\s+(?:(?:trenutno|nobenih|kakršnih koli|večjih)\s+)*(?:bolečin|poškodb|(?:zdravstvenih|gibalnih)\s+omejitev|omejitev|zdravstvenih težav)\b",
         r"\bbrez\s+(?:(?:trenutnih|nobenih)\s+)*(?:bolečin|poškodb|(?:zdravstvenih|gibalnih)\s+omejitev|omejitev)\b",
         # Exact structured profile wording from the website intake form.
         r"\btrenutna\s+bolečina\s*/\s*poškodba\s*/\s*zdravstvena\s+omejitev\s*:\s*ne\b",
@@ -592,6 +593,43 @@ def _coaching_guardrail_reply(messages):
             "MetCon ni samodejno škodljiv, vendar lahko prevelik delež intenzivnega dela "
             "oteži regeneracijo."
         )
+    if re.search(
+        r"(?:moram|naj).{0,40}(?:vsak dan|dnevno).{0,25}hiit|"
+        r"hiit.{0,40}(?:vsak dan|dnevno)",
+        lowered,
+        re.IGNORECASE,
+    ):
+        return (
+            "Ne. Vsakodnevni HIIT ni potreben za zmanjšanje telesne maščobe. Osnovo naj "
+            "predstavljajo vzdržna prehrana z zmernim energijskim primanjkljajem, redna "
+            "vadba za moč in količina kondicije, ki jo lahko dobro regeneriraš. HIIT je "
+            "ena od možnosti, ne obveznost; del kondicije lahko razvijaš tudi s hojo, "
+            "kolesom ali zmernim aerobnim delom. Med zahtevnimi treningi pusti dovolj "
+            "prostora za okrevanje."
+        )
+    if re.search(
+        r"koliko.{0,40}(počiv\w*|odmor\w*).{0,45}(težj\w*|serij\w*)|"
+        r"(težj\w*|serij\w*).{0,45}(koliko).{0,35}(počiv\w*|odmor\w*)",
+        lowered,
+        re.IGNORECASE,
+    ):
+        return (
+            "Pri težjih večsklepnih serijah za moč običajno počivaj približno 2–3 minute; "
+            "pri zelo zahtevnih serijah lahko potrebuješ 3–5 minut. Pri lažjih dodatnih "
+            "vajah so pogosto dovolj 1–2 minuti. Odmor prilagodi tako, da naslednjo serijo "
+            "izvedeš kakovostno in z načrtovano rezervo."
+        )
+    if (
+        "30 minut" in history_lower
+        and re.search(r"(skrajš\w*).{0,35}(odmor\w*|počitek)|"
+                       r"(odmor\w*|počitek).{0,35}skrajš\w*", lowered)
+    ):
+        return (
+            "Ne krajšaj pretirano odmorov pri težkih serijah samo zato, da ujameš čas. "
+            "Ohrani dovolj počitka za kakovost izvedbe; če 30 minut ne zadošča, zmanjšaj "
+            "število vaj ali dodatnih serij, ne pa počitka pri glavnih vajah. Upoštevaj "
+            "tudi čas za ogrevanje in prehode."
+        )
     if re.search(r"(čim večjo|maximalno|največjo).{0,30}amplitud|amplitud.{0,30}(vsaki|vsaka|največjo)", lowered):
         return (
             "Ne. Cilj je čim večja amplituda, ki jo lahko izvedeš nadzorovano, brez bolečine "
@@ -1089,7 +1127,8 @@ TRAINING QUALITY
 - Give practical intensity guidance (e.g. finish with 2–4 good repetitions in reserve for suitable strength exercises) only when appropriate for the user and exercise.
 - Include a brief, realistic progression rule and explain when to stop or modify.
 - Do not promise that a workout is risk-free or that it will cure pain. Avoid vague claims such as “without risk of overload.”
-- Use the user's language consistently; proofread for grammar, spelling, terminology and internal consistency before answering.
+- When responding in Slovenian, use informal singular address (ti); do not switch to formal vi/vas unless the user explicitly uses or requests formal address. Do not address the user by name unless the user asks you to.
+Use the user's language consistently; proofread for grammar, spelling, terminology and internal consistency before answering.
 
 SAFETY AND SCOPE
 You are not a doctor or physiotherapist. Do not diagnose conditions, prescribe treatment, or claim to replace an in-person professional. Do not advise training through worsening pain. For severe, sudden, unexplained or worsening symptoms, recommend assessment by an appropriate healthcare professional. For chest pain, fainting, severe breathing difficulty, new weakness/numbness, or loss of bladder/bowel control with back pain, advise urgent local medical care. If relevant, ask about restrictions before suggesting exercise. Do not overreact to ordinary mild effort or soreness, but distinguish it from concerning or worsening symptoms.
@@ -1097,7 +1136,7 @@ Do not ask for full names, exact addresses or unnecessary personal data. Use hea
 
 VERTICAL PULL VS HORIZONTAL ROW — CRITICAL MOVEMENT TERMINOLOGY
 - The catalogue exercise "Zgib z oporo stopal (navpični trup)" is a vertical pull-up regression.
-- For a foot-assisted vertical pull-up, the torso stays mostly upright beneath the bar; hips and knees are flexed; feet are supported on the floor or a confirmed stable step slightly forward of the torso and assist the vertical pull.
+- For a foot-assisted vertical pull-up, the torso stays mostly upright beneath the bar; hips and knees are flexed; feet are supported on the floor or a confirmed stable step slightly forward of the bar's vertical line (not directly underneath it) and assist the vertical pull.
 - Never call this exercise "avstralski zgib", "inverted row", or horizontal rowing.
 - An inverted row is a separate horizontal pull: the body is angled beneath a low bar or handles and is pulled horizontally toward the support. Do not confuse its inclined torso position with the upright torso of a foot-assisted vertical pull-up.
 - Use the exact catalogue name "Zgib z oporo stopal (navpični trup)" when this variation is meant.
@@ -1143,6 +1182,7 @@ This standard is mandatory for every individual programme. Apply it as an intern
 - Regression triggers: inability to complete the lower end of the target range; RIR below target; loss of position or repeatability; reduced controlled range; pain or new symptoms; poor balance; excessive fatigue; or an exercise/support that cannot be performed safely.
 - Choose the smallest useful regression: reduce range, use a stable support, shorten the lever, reduce load, select an easier angle/variation, reduce sets/repetitions or slow down only when that improves control. Change one principal variable at a time.
 - Progression triggers: all prescribed sets reach the top of the target range at the intended RIR, with consistent technique and controlled range, across at least two exposures, and recovery is good with no concerning symptoms.
+- When the user asks whether to progress, first check the target repetition range and number of comparable successful exposures. If either is unknown, ask only for the missing detail; do not switch to unrelated questions about equipment or session time. If the criteria are met, suggest one small progression variable and explain what to monitor.
 - Progress one variable at a time: first add repetitions within the range; then a small amount of load if available; otherwise use the next catalogue progression, a longer lever, a slightly greater controlled range or a more demanding unilateral variation. Do not automatically add sets and load together.
 - If the person reports the exercise is easy but technique, range or RIR is unknown, ask for the missing performance detail rather than guessing.
 - If pain or new symptoms are reported, stop automatic progression for the affected movement. Clarify the symptom and do not automatically swap in another loaded exercise.

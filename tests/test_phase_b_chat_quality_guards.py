@@ -637,3 +637,16 @@ def test_system_prompt_distinguishes_foot_assisted_vertical_pull_from_inverted_r
     assert 'Zgib z oporo stopal (navpični trup)' in prompt
     assert 'Never call this exercise "avstralski zgib", "inverted row"' in prompt
     assert "torso stays mostly upright" in prompt
+
+
+def test_system_prompt_uses_informal_slovene_address_and_progression_questions():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "use informal singular address (ti)" in prompt
+    assert "do not switch to formal vi/vas" in prompt
+    assert "do not switch to unrelated questions about equipment or session time" in prompt
+
+
+def test_system_prompt_requires_feet_forward_of_bar_for_assisted_vertical_pull():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "slightly forward of the bar's vertical line" in prompt
+    assert "not directly underneath it" in prompt
