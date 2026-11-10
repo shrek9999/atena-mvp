@@ -113,6 +113,39 @@ def test_program_route_requires_explicit_movement_assessment_consent(client):
     assert response.get_json()["consent_required"] is True
 
 
+def test_program_route_blocks_when_all_six_patterns_are_unassessable(monkeypatch, client):
+    import coach_routes
+    from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
+
+    def should_not_run(*args, **kwargs):
+        raise AssertionError("No programme may be generated without at least one assessable pattern.")
+
+    monkeypatch.setattr(coach_routes, "generate_program", should_not_run)
+    decisions = {
+        pattern: build_movement_decision(
+            pattern, "UNASSESSABLE",
+            decision_reason="Naloga ni bila ocenjena.",
+        )
+        for pattern in PATTERN_DEFINITIONS
+    }
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-token"},
+        json={
+            "movement_assessment_consent": True,
+            "profile": {
+                "goal": "functional", "experience": "beginner",
+                "equipment": ["bodyweight"], "sessions_per_week": 2,
+                "session_minutes": 45,
+            },
+            "movement_decisions": decisions,
+        },
+    )
+    assert response.status_code == 409
+    assert response.get_json()["assessment_required"] is True
+    assert "vsaj en vzorec varno oceniti" in response.get_json()["message"]
+
+
 def test_program_route_passes_structured_six_pattern_decisions(monkeypatch, client):
     import coach_routes
     from training.movement_coaching import build_movement_decision
