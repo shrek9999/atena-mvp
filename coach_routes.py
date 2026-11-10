@@ -1998,6 +1998,21 @@ def coach_training_sessions(profile_id):
             decision = target_version.get("decision", {}).get("adaptive_decision", {})
             if not isinstance(decision, dict) or decision.get("adaptation_id") != adaptation_response["adaptation_id"] or not isinstance(decision.get("feedback_contract"), dict):
                 return jsonify({"error": "Odziv se ne ujema z odločitvijo v shranjeni različici programa.", "code": "adaptation_version_mismatch"}), 409
+            # A feedback contract is a one-time response to one exact decision.
+            # Replaying it could otherwise make one user's single response look
+            # like multiple independent confirmations in longitudinal logic.
+            already_answered = any(
+                isinstance(item.get("session"), dict)
+                and isinstance(item["session"].get("adaptation_response"), dict)
+                and item["session"]["adaptation_response"].get("program_version_id") == target_version_id
+                and item["session"]["adaptation_response"].get("adaptation_id") == adaptation_response["adaptation_id"]
+                for item in prior_sessions
+            )
+            if already_answered:
+                return jsonify({
+                    "error": "Na to prilagoditev si že odgovoril. ATENA bo upoštevala prvi zabeleženi odziv.",
+                    "code": "adaptation_feedback_already_submitted",
+                }), 409
         saved = store_add_session(profile_id, token, str(uuid.uuid4()), session_date, session, program_version_id=program_version_id)
         return jsonify({"session": saved}), 201
     except ValueError as exc:
