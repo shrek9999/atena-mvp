@@ -555,7 +555,7 @@ def test_deadlift_to_rdl_substitution_prompt_explains_non_equivalence(monkeypatc
     )
     assert response.status_code == 200
     prompt = captured["body"]["systemInstruction"]["parts"][0]["text"]
-    assert "not biomechanically identical" in prompt
+    assert "not a mechanically identical replacement" in prompt
     assert "different range-of-motion and loading profile" in prompt
 
 
