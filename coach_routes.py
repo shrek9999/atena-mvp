@@ -1398,6 +1398,17 @@ def _coaching_guardrail_reply(messages):
     # Do not invent the goal, weekly frequency or session duration to fill gaps.
     if programming_intent and _has_explicit_safety_clearance(history):
         if not goal_known:
+            goal_question_already_asked = any(
+                "kaj želiš predvsem razvijati" in item.casefold()
+                for item in assistant_texts
+            )
+            if goal_question_already_asked:
+                return (
+                    "Zabeležil sem dodatne podatke o tvojih izkušnjah in opremi. "
+                    "Glavnega cilja še nimam, zato programa ne bom ugibal. "
+                    "Ko določiš, ali želiš razvijati moč, mišično maso, kondicijo "
+                    "ali funkcionalno pripravljenost, lahko nadaljujeva."
+                )
             return (
                 "Preden sestavim program, morava najprej določiti glavni cilj. "
                 "Kaj želiš predvsem razvijati: moč, mišično maso, kondicijo, "
