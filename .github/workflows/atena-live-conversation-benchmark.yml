@@ -1,17 +1,24 @@
 name: ATENA live conversation quality benchmark
 
 on:
-  push:
-    branches:
-      - pilot/website-ai-coach
-      - feature/six-pattern-learning-engine
-    paths:
-      - "tests/fixtures/conversation_quality_benchmark_v1.json"
-      - "tests/run_live_conversation_quality_benchmark.py"
-      - ".github/workflows/atena-live-conversation-benchmark.yml"
-      - "coach_routes.py"
-      - "tests/test_conversation_state_regressions.py"
   workflow_dispatch:
+    inputs:
+      scenario_set:
+        description: "Run the full 24-scenario suite or the focused regression subset"
+        required: true
+        type: choice
+        options:
+          - focused
+          - full
+        default: focused
+      repeat_count:
+        description: "Independent repetitions (full suite: 69 turns per repetition)"
+        required: true
+        type: choice
+        options:
+          - "1"
+          - "2"
+        default: "1"
 
 concurrency:
   group: atena-live-gemini-coaching
@@ -22,15 +29,14 @@ permissions:
 
 jobs:
   live-conversation-benchmark:
-    name: Run real multi-turn coaching scenarios
+    name: Run manually selected multi-turn coaching scenarios
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
       AI_COACH_TEST_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
       ATENA_BENCHMARK_BACKEND: https://atena-ai-coach-pilot.onrender.com
-      # Full 24-scenario benchmark has been completed for Phase 3.
-      # Follow-up commits run focused live regressions for the fixes from that review, including fat-loss guidance.
-      ATENA_BENCHMARK_SCENARIOS: "G01,G02,G03,G04,G05,G06,G10,G11,G13,G14,G19,G20,G21,G23"
+      ATENA_BENCHMARK_SCENARIOS: ${{ inputs.scenario_set == 'full' && 'ALL' || 'G01,G02,G03,G04,G05,G06,G10,G11,G13,G14,G19,G20,G21,G23' }}
+      ATENA_BENCHMARK_REPEATS: ${{ inputs.repeat_count || '1' }}
     steps:
       - name: Check out backend
         uses: actions/checkout@v4
@@ -39,11 +45,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      # Render auto-deploys this branch on push. Wait for its new instance to be live
-      # before sending the multi-turn benchmark, otherwise the test can straddle a restart.
-      - name: Wait for Render staging deployment to finish
-        run: sleep 150
 
       - name: Confirm live backend and pilot credential
         run: |
@@ -66,8 +67,11 @@ jobs:
               sys.exit("ATENA chat is not reported as available.")
           print("Live Render chat endpoint is available; secret was not printed.")
 
-      - name: Run live multi-turn benchmark (full suite or targeted feature-branch regressions)
-        run: python tests/run_live_conversation_quality_benchmark.py
+      - name: Run live multi-turn benchmark
+        run: |
+          echo "Scenario selection: $ATENA_BENCHMARK_SCENARIOS"
+          echo "Independent repetitions: $ATENA_BENCHMARK_REPEATS"
+          python tests/run_live_conversation_quality_benchmark.py
 
       - name: Upload full transcripts and run summary
         if: always()
