@@ -818,3 +818,64 @@ def test_technique_education_keeps_its_answer_but_defers_health_intake_question(
     assert "glavni cilj" in cleaned
     assert "zdravstvene omejitve" not in cleaned
     assert cleaned.count("?") == 1
+
+
+def test_muscle_mass_genitive_triggers_safety_gate_and_one_question():
+    messages = [{"role": "user", "content": "Rad bi pridobil nekaj mišične mase."}]
+    answer = "Kakšno opremo imaš na voljo? Koliko dni na teden lahko treniraš?"
+    cleaned = _sanitize_onboarding_questions(answer, messages)
+    assert "bolečine, poškodbe" in cleaned
+    assert cleaned.count("?") == 1
+    assert "opremo" not in cleaned
+
+
+def test_general_physical_fitness_phrase_triggers_safety_gate():
+    messages = [{
+        "role": "user",
+        "content": "Rad bi izboljšal splošno telesno pripravljenost doma.",
+    }]
+    answer = "Kakšno opremo imaš doma? Kolikokrat tedensko lahko treniraš?"
+    cleaned = _sanitize_onboarding_questions(answer, messages)
+    assert "bolečine, poškodbe" in cleaned
+    assert cleaned.count("?") == 1
+    assert "opremo" not in cleaned
+
+
+def test_non_onboarding_follow_up_keeps_only_the_first_question():
+    messages = [{
+        "role": "user",
+        "content": "Vse serije sem opravil z RIR 3 in tehnika je bila stabilna.",
+    }]
+    answer = "Kako si se počutil po zadnjem treningu? Ali imaš možnost povečati težo?"
+    cleaned = _sanitize_onboarding_questions(answer, messages)
+    assert cleaned == "Kako si se počutil po zadnjem treningu?"
+    assert cleaned.count("?") == 1
+
+
+def test_missed_session_guardrail_handles_word_order_and_self_blame():
+    messages = [{
+        "role": "user",
+        "content": "Ta teden sem opravil samo enega od dveh načrtovanih treningov.",
+    }]
+    first = _coaching_guardrail_reply(messages)
+    assert first is not None
+    assert "En izpuščen trening" in first
+    assert first.count("?") == 1
+
+    messages.append({
+        "role": "user",
+        "content": "Drugi trening sem izpustil, ker sem bil po službi brez energije.",
+    })
+    second = _coaching_guardrail_reply(messages)
+    assert second is not None
+    assert "20–30 minut" in second
+    assert second.count("?") == 1
+
+    messages.append({
+        "role": "user",
+        "content": "Zdaj imam občutek, da sem vse pokvaril.",
+    })
+    third = _coaching_guardrail_reply(messages)
+    assert third is not None
+    assert "Ničesar nisi pokvaril" in third
+    assert third.count("?") == 1
