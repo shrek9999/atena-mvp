@@ -23,7 +23,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "task_id": "controlled_squat",
         "task": "Kontroliran počep v osebno ustrezni amplitudi; ne zahtevaj položaja počitka.",
         "exercise_ids": [
-            "reaching_squat", "air_squat", "squat_goblet",
+            "reaching_squat", "air_squat", "squat_goblet", "loaded_deep_squat",
             "two_dumbbell_squat", "dumbbell_squat_side",
             "dumbbell_squat_front_rack", "back_squat", "front_squat",
         ],
