@@ -542,7 +542,7 @@ def test_mobility_goal_includes_active_mobility_and_loaded_range_options():
     assert any(exercise["exercise_id"] in {"calf_raise_full_rom", "tibialis_raise"} for exercise in exercises)
     mobility_strength = [
         exercise for exercise in exercises
-        if get_exercise(exercise["exercise_id"]).get("mobility_strength") is True
+        if exercise.get("mobility_strength") is True
     ]
     assert mobility_strength
     assert all(exercise["prescription"]["sets"] == 2 for exercise in mobility_strength)
