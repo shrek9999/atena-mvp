@@ -28,6 +28,18 @@ BACKEND = os.environ.get(
 TOKEN = os.environ.get("AI_COACH_TEST_TOKEN", "").strip()
 
 
+def select_scenarios(scenarios: list[dict], selection: str) -> list[dict]:
+    """Select an ordered subset for fast regressions; an empty selection means the full suite."""
+    requested = [item.strip() for item in selection.split(",") if item.strip()]
+    if not requested:
+        return list(scenarios)
+    by_id = {item.get("id"): item for item in scenarios}
+    unknown = [item for item in requested if item not in by_id]
+    if unknown:
+        raise ValueError("Unknown benchmark scenario ID(s): " + ", ".join(unknown))
+    return [by_id[item] for item in requested]
+
+
 def request_chat(messages: list[dict[str, str]]) -> dict:
     payload = json.dumps({"messages": messages}, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(
@@ -83,10 +95,18 @@ def main() -> int:
         return 2
 
     benchmark = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    try:
+        scenarios = select_scenarios(
+            benchmark["scenarios"],
+            os.environ.get("ATENA_BENCHMARK_SCENARIOS", ""),
+        )
+    except ValueError as exc:
+        print(str(exc))
+        return 2
     results = []
     for repeat_index in range(1, REPEATS + 1):
         print(f"Starting independent benchmark repetition {repeat_index}/{REPEATS}.")
-        for index, scenario in enumerate(benchmark["scenarios"], start=1):
+        for index, scenario in enumerate(scenarios, start=1):
             # Every scenario in every repetition starts with an empty conversation.
             messages: list[dict[str, str]] = []
             transcript = []
@@ -139,7 +159,7 @@ def main() -> int:
             })
             print(
                 f"[run {repeat_index}/{REPEATS}] "
-                f"[{index:02d}/{len(benchmark['scenarios']):02d}] "
+                f"[{index:02d}/{len(scenarios):02d}] "
                 f"{scenario['id']} {scenario['name']}: {status}; "
                 f"turns={len(transcript)}"
             )
@@ -156,7 +176,8 @@ def main() -> int:
             "and does not replace expert transcript scoring."
         ),
         "backend_commit": os.environ.get("GITHUB_SHA"),
-        "scenario_count": len(benchmark["scenarios"]),
+        "scenario_count": len(scenarios),
+        "scenario_ids": [item["id"] for item in scenarios],
         "repeat_count": REPEATS,
         "execution_count": len(results),
         "total_turns": sum(len(x["transcript"]) for x in results),
