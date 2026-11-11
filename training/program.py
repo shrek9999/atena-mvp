@@ -480,6 +480,14 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         "tempo_description": tempo_description,
         "tempo_seconds_per_rep": tempo_seconds,
     }
+    if session_minutes <= 30 and pattern in {
+        "squat", "hinge", "lunge", "horizontal_push", "horizontal_pull",
+        "vertical_push", "vertical_pull", "hip_extension",
+    }:
+        # Keep the agreed slow learning tempo; fit short sessions by reducing
+        # volume and rest, never by rushing the movement.
+        prescription["sets"] = min(2, prescription["sets"])
+        prescription["rest_seconds"] = min(60, prescription["rest_seconds"])
     if exercise.get("id") == "l_sit":
         prescription.update({"reps": "8–15 s", "work_seconds": 12, "time_label": "zadržanja"})
     elif exercise.get("time_based") and pattern in {"trunk_stability", "anti_rotation"}:
