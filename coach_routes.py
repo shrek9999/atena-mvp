@@ -596,8 +596,8 @@ def _pending_safety_reply(latest, *, repeat_question=True):
             acknowledgement
             + " Varnostnega vprašanja še nisi odgovoril. Brez te potrditve ne bom "
             "sestavil individualnega programa ali določal obremenitev. Splošne informacije "
-            "lahko še vedno razložim; konkreten program pripravim, ko potrdiš, ali imaš "
-            "bolečine, poškodbe ali zdravstvene oziroma gibalne omejitve."
+            "lahko še vedno razložim. Ko boš pripravljen, odgovori na varnostno vprašanje; "
+            "do takrat lahko ostaneva pri splošnih informacijah, ne pri individualnem programu."
         )
     return (
         acknowledgement
@@ -1212,6 +1212,36 @@ def _coaching_guardrail_reply(messages):
             "bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
         )
 
+    # Before a programme is built, do not infer missing equipment or experience.
+    # This deterministic gate prevents a plausible-sounding model answer from filling gaps.
+    schedule_known = bool(re.search(
+        r"\\b(?:enkrat|dvakrat|trikrat|štirikrat|1x|2x|3x|4x)\\b.{0,35}(?:tedensko|na teden)|"
+        r"(?:tedensko|na teden).{0,35}\\b(?:enkrat|dvakrat|trikrat|štirikrat|1x|2x|3x|4x)\\b|"
+        r"\\b(?:20|25|30|35|40|45|50|60|75|90)\\s*(?:minut|min)\\b",
+        history_lower,
+    ))
+    experience_known = bool(re.search(
+        r"\\b(?:začetnik|začetnica|začetniški|srednje izkušen|izkušen|napreden|napredna|"
+        r"beginner|intermediate|advanced)\\b|"
+        r"\\b(?:treniram|trenirala sem|vadim).{0,45}\\b(?:leto|leti|leta|let)\\b|"
+        r"\\b(?:eno|dve|tri|štiri|pet|deset)\\s+leta?\\s+(?:redno\\s+)?treninga\\b",
+        history_lower,
+    ))
+    if fitness_intent and _has_explicit_safety_clearance(history) and schedule_known:
+        available_equipment = _profile_available_equipment(messages)
+        if not available_equipment:
+            return (
+                "Čas in pogostost sem razumel. Da ne bom predpostavljal, da imaš ročke, klop "
+                "ali drugo opremo: kaj imaš dejansko na voljo za vadbo? Če nimaš ničesar, "
+                "lahko izhajava samo iz lastne teže."
+            )
+        if not experience_known:
+            return (
+                "Oprema in časovni okvir sta jasna. Preden določim zahtevnost vaj in obseg "
+                "programa, mi povej še: kako bi opisal svoje dosedanje izkušnje z vadbo moči – "
+                "si začetnik, redno treniraš ali imaš že več let sistematičnih izkušenj?"
+            )
+
     if (
         re.search(r"dva treninga sta bila lahka", history_lower)
         and re.search(r"vsaj tremi ponovitvami v rezervi", history_lower)
@@ -1230,7 +1260,7 @@ def _coaching_guardrail_reply(messages):
 SYSTEM_PROMPT = """You are ATENA, Grega Jenko's pilot AI fitness coach. Reply in natural, grammatically correct Slovenian unless the user uses another language. Use clear, idiomatic wording, correct Slovenian grammar and punctuation, and concise headings/lists where helpful. Avoid awkward literal translations, excessive English jargon, and unsupported certainty.
 
 ROLE AND METHOD
-You are not a generic chatbot that simply prescribes an exercise in response to the last message. Act like a careful, proactive coach who first builds an adequate picture of the person, then gives a suitable next step and follows up over time. Use information already provided in the conversation; do not ask for it again. Do not pretend to remember information that is not in the conversation.
+You are not a generic chatbot that simply prescribes an exercise in response to the last message. Act like a careful, proactive coach who first builds an adequate picture of the person, then gives a suitable next step and follows up over time. Use information already provided in the conversation; do not ask for it again. Do not pretend to remember information that is not in the conversation. Never invent or silently infer a user's training start date, years of experience, consistency, previous sessions, equipment, pain status or completed actions. When the profile and the user's description conflict, acknowledge the exact discrepancy and ask one focused clarification; do not invent a compromise explanation.
 
 ONBOARDING AND QUESTIONS
 Before prescribing an individualized workout or training plan, establish the minimum useful context:
