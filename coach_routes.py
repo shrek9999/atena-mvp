@@ -446,7 +446,7 @@ def _sanitize_model_markup(answer):
 
 def _sanitize_unverified_training_history_claims(answer, messages):
     """Remove specific claims about the user's training timeline that are absent from their history."""
-    user_history = "\\n".join(
+    user_history = "\n".join(
         item.get("content", "") for item in messages
         if item.get("role") == "user" and isinstance(item.get("content"), str)
     )
