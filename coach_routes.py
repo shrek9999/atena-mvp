@@ -381,6 +381,12 @@ def _sanitize_power_and_progression_claims(answer):
 
         def replace_unqualified_progression(_match):
             if already_has_two_exposure_rule:
+                if re.search(
+                    r"(?:ne\\s+(?:dodajaj|povečuj)|ohrani\\s+(?:enako|trenutno)\\s+(?:težo|obremenitev|dozo))",
+                    _match.group(0),
+                    re.IGNORECASE,
+                ):
+                    return _match.group(0)
                 return (
                     _match.group(0)
                     + "\\n\\nOhrani trenutno obremenitev in ponovi enako dozo."
@@ -429,7 +435,7 @@ def _sanitize_strength_rest_intervals(answer, messages):
     time_limited = bool(re.search(r"\b(?:20|25|30)[-\s]*(?:minut\w*|min)\b", user_history, re.IGNORECASE))
     if time_limited:
         note = (
-            "Pri glavnih večsklepnih vajah ohrani 2–3 minute odmora za kakovost izvedbe. "
+            "Pri glavnih večsklepnih vajah ohrani dovolj odmora za kakovost izvedbe. "
             "Če razpoložljivi čas ne zadošča, zmanjša število vaj ali delovnih serij, ne pa odmora."
         )
         if "zmanjša število vaj" not in answer.casefold():
