@@ -668,11 +668,14 @@ def test_single_exposure_progression_first_reply_holds_load_and_asks_about_recov
         {
             "role": "user",
             "content": (
-                "Pri počepu je dosegel vse serije po 10 ponovitev z RIR 3, "
-                "vendar je bil to šele prvi tak uspešen trening."
+                "KONTEKST TESTNEGA UPORABNIKA (podatki profila; upoštevaj kot podane, "
+                "ne sklepaj več, kot piše): Uporabnik je izrecno potrdil, da nima bolečin, "
+                "poškodb ali gibalnih omejitev. Pri počepu je dosegel vse serije po 10 "
+                "ponovitev z RIR 3, vendar je bil to šele prvi tak uspešen trening."
+                "\n\nUPORABNIKOVO SPOROČILO: Pri počepu sem opravil vse serije po 10 "
+                "ponovitev in imel približno 3 ponovitve v rezervi. Lahko naslednjič povečam težo?"
             ),
         },
-        {"role": "user", "content": "Pri počepu sem opravil vse serije po 10 ponovitev in imel približno 3 ponovitve v rezervi. Lahko naslednjič povečam težo?"},
     ]
     cleaned = coach_routes._sanitize_unverified_exercise_parameters(
         "Povečaj težo za 2,5 kg in naredi 3 × 10.", messages
