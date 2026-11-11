@@ -391,6 +391,42 @@ def test_exercise_dose_gate_uses_the_full_conversation_context():
     assert "Preden določim serije" in result
 
 
+def test_foot_assisted_vertical_pull_position_is_explained_before_health_clearance():
+    reply = _coaching_guardrail_reply([
+        {"role": "user", "content": "Imam drog za zgibe in stabilno škatlo. Ali lahko pri zgibu pomagam z nogami?"},
+        {"role": "model", "content": "Zgib z oporo stopal je lažja različica vertikalnega potega."},
+        {"role": "user", "content": "Kako naj postavim trup, kolke, kolena in stopala?"},
+    ])
+    assert reply is not None
+    assert "trup skoraj navpičen" in reply
+    assert "Stopala ostanejo na škatli" in reply
+    assert "kolena pa se ne naslanjajo na škatlo" in reply
+    assert "varnostnega vprašanja" not in reply
+
+
+def test_foot_assisted_pull_is_confirmed_as_vertical_not_row_before_health_clearance():
+    reply = _coaching_guardrail_reply([
+        {"role": "user", "content": "Imam drog za zgibe in stabilno škatlo. Ali lahko pri zgibu pomagam z nogami?"},
+        {"role": "model", "content": "Zgib z oporo stopal je lažja različica vertikalnega potega."},
+        {"role": "user", "content": "Želim lažjo različico vertikalnega zgiba, ne veslanja."},
+    ])
+    assert reply is not None
+    assert "ne veslanja" in reply
+    assert "trup pa ostane skoraj navpičen" in reply
+    assert "varnostnega vprašanja" not in reply
+
+
+def test_row_equals_pullup_question_gets_a_direct_distinction():
+    reply = _coaching_guardrail_reply([
+        {"role": "user", "content": "V programu imam veslanje z ročkami v predklonu."},
+        {"role": "user", "content": "Ali je to v bistvu isto kot zgib?"},
+    ])
+    assert reply is not None
+    assert reply.startswith("Ne.")
+    assert "horizontalni poteg" in reply
+    assert "vertikalni poteg" in reply
+
+
 def test_row_pattern_explanation_is_available_without_health_clearance():
     reply = _coaching_guardrail_reply([
         {"role": "user", "content": "V programu imam veslanje z ročkami v predklonu. Kako naj razumem ta gibalni vzorec?"},
@@ -516,6 +552,25 @@ def test_fat_loss_with_strength_preservation_answers_daily_hiit_question_before_
     assert "energijskim primanjkljajem" in reply
 
 
+def test_missing_experience_followup_acknowledges_functional_priorities():
+    reply = _coaching_guardrail_reply([
+        {"role": "user", "content": (
+            "KONTEKST TESTNEGA UPORABNIKA: Uporabnik nima bolečin, poškodb ali "
+            "zdravstvenih omejitev. Želi izboljšati funkcionalno pripravljenost, "
+            "ima polno opremljen fitnes in trenira trikrat tedensko."
+        )},
+        {"role": "model", "content": (
+            "Kakšne so tvoje dosedanje izkušnje z dvigovanjem uteži?"
+        )},
+        {"role": "user", "content": (
+            "Pomembni so mi moč, ravnotežje, koordinacija, eksplozivnost in kondicija."
+        )},
+    ])
+    assert reply is not None
+    assert "prioritete glede moči, ravnotežja, koordinacije" in reply
+    assert "izkušnjami z vadbo moči" in reply
+
+
 def test_missing_strength_experience_is_not_repeated_as_the_same_question():
     reply = _coaching_guardrail_reply([
         {"role": "user", "content": (
@@ -532,6 +587,25 @@ def test_missing_strength_experience_is_not_repeated_as_the_same_question():
     assert reply is not None
     assert "še manjka podatek o tvojih izkušnjah" in reply
     assert reply.count("?") == 0
+
+
+def test_missing_goal_followup_distinguishes_intensity_from_training_goal():
+    reply = _coaching_guardrail_reply([
+        {"role": "user", "content": (
+            "KONTEKST TESTNEGA UPORABNIKA: Uporabnik nima bolečin, poškodb ali "
+            "zdravstvenih omejitev. Profil pravi začetnik in samo lastna teža. "
+            "Pripravi mi zahteven program."
+        )},
+        {"role": "model", "content": (
+            "Preden sestavim program, morava najprej določiti glavni cilj. "
+            "Kaj želiš predvsem razvijati: moč, mišično maso, kondicijo, "
+            "funkcionalno pripravljenost ali kaj drugega?"
+        )},
+        {"role": "user", "content": "Vseeno bi rad težek trening."},
+    ])
+    assert reply is not None
+    assert "Zahtevnost opisuje" in reply
+    assert "glavnega cilja" in reply
 
 
 def test_missing_programme_goal_is_not_repeated_as_the_same_question():
