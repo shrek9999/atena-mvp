@@ -334,6 +334,13 @@ def _sanitize_power_and_progression_claims(answer):
         "ohranjanje hitrosti in kakovosti ponovitev",
         answer,
     )
+    # Avoid unsupported claims that a training session "exhausts" the CNS.
+    answer = re.sub(
+        r"(?i)izčrp(?:al|ala|ali|amo|ati|anje)\s+"
+        r"(?:centraln\w+\s+)?živčn\w+\s+sistem\w*",
+        "povečali nepotrebno utrujenost",
+        answer,
+    )
     progression_section = re.compile(
         r"(?is)(\*\*pravilo napredovanja[^*]*\*\*\s*:?[ \t]*)(.*?)(?=\n\s*\n|$)"
     )
@@ -350,13 +357,15 @@ def _sanitize_power_and_progression_claims(answer):
         answer = answer[:match.start()] + replacement + answer[match.end():]
     else:
         answer = re.sub(
-            r"(?is)[^.!?]*(?:naslednji teden|naslednjem treningu|prihodnjič|"
-            r"naslednjič|v naslednji vadbi|pri naslednji vadbi|pri naslednjem treningu)[^.!?]*"
+            r"(?is)[^.!?]*(?:naslednji teden|v naslednjem tednu|naslednjem tednu|"
+            r"naslednjem treningu|v naslednjem treningu|prihodnjič|naslednjič|"
+            r"v naslednji vadbi|pri naslednji vadbi|pri naslednjem treningu)[^.!?]*"
             r"(?:poveč(?:aj|aš|ati|anje|a)|dod(?:aj|aš|ati|amo|a))[^.!?]*[.!?]",
             "Napredovanje je primerno šele, ko zgornjo mejo ciljnega razpona "
             "dosežeš v vsaj dveh primerljivih treningih z načrtovanim RIR, "
-            "stabilno tehniko in ustrezno regeneracijo; sicer ohrani trenutno "
-            "obremenitev.\n\n",
+            "stabilno tehniko in ustrezno regeneracijo. Takrat povečaj le eno "
+            "spremenljivko za najmanjši razpoložljivi korak; sicer ohrani "
+            "trenutno obremenitev in odmerek.\n\n",
             answer,
             count=1,
         )
