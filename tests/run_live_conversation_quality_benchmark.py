@@ -206,6 +206,7 @@ def main() -> int:
         "",
         f"- Izvedeno: {report['executed_at_utc']}",
         f"- Backend: {BACKEND}",
+        f"- Backend commit: {report['backend_commit'] or 'unknown'}",
         f"- Scenarijev: {report['scenario_count']}",
         f"- Neodvisnih ponovitev: {report['repeat_count']}",
         f"- Izvedb scenarijev: {report['execution_count']}",
