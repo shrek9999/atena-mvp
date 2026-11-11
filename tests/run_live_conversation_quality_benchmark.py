@@ -29,10 +29,11 @@ TOKEN = os.environ.get("AI_COACH_TEST_TOKEN", "").strip()
 
 
 def select_scenarios(scenarios: list[dict], selection: str) -> list[dict]:
-    """Select an ordered subset for fast regressions; an empty selection means the full suite."""
-    requested = [item.strip() for item in selection.split(",") if item.strip()]
-    if not requested:
+    """Select an ordered subset; empty, ALL, or FULL means the complete suite."""
+    normalized = selection.strip()
+    if not normalized or normalized.upper() in {"ALL", "FULL"}:
         return list(scenarios)
+    requested = [item.strip() for item in normalized.split(",") if item.strip()]
     by_id = {item.get("id"): item for item in scenarios}
     unknown = [item for item in requested if item not in by_id]
     if unknown:
