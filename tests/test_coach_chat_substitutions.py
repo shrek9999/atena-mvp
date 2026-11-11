@@ -571,3 +571,65 @@ def test_deadlift_to_rdl_equivalence_claim_is_corrected():
     cleaned = coach_routes._sanitize_deadlift_substitution_claims(answer, messages)
     assert "ni biomehansko enak klasičnemu mrtvemu dvigu" in cleaned
     assert "popolnoma posnema mehaniko" not in cleaned
+
+def test_deadlift_to_rdl_reply_does_not_invent_a_new_training_dose():
+    messages = [
+        {
+            "role": "user",
+            "content": (
+                "Uporabnik nima bolečin, poškodb ali omejitev; želi ohraniti vzorec kolčnega iztega; "
+                "na voljo ima ročke, nima pa palice ali klopi."
+            ),
+        },
+        {"role": "user", "content": "Danes nimam dostopa do olimpijske palice. V programu imam mrtvi dvig. S čim ga lahko zamenjam?"},
+        {"role": "user", "content": "Na voljo imam samo ročke in lastno težo, klopi nimam."},
+        {"role": "user", "content": "Želim ohraniti vzorec kolčnega iztega in približno enak namen treninga."},
+    ]
+    answer = (
+        "Predlagam RDL z ročkami: 3–4 serije po 8–12 ponovitev, tempo 2–1–1–0, "
+        "RIR 2–3 in 2–3 minute odmora."
+    )
+    cleaned = coach_routes._sanitize_unverified_exercise_parameters(answer, messages)
+    assert "ni biomehansko enak klasičnemu mrtvemu dvigu" in cleaned
+    assert "3–4 serije" not in cleaned
+    assert "8–12 ponovitev" not in cleaned
+    assert "2–1–1–0" not in cleaned
+    assert "RIR 2–3" not in cleaned
+    assert "prvotni odmerek" in cleaned
+
+
+def test_deadlift_to_rdl_reply_keeps_existing_program_dose_context():
+    messages = [
+        {"role": "user", "content": "Trenutni program: mrtvi dvig 3 × 5."},
+        {"role": "user", "content": "Nimam olimpijske palice. S čim lahko zamenjam mrtvi dvig?"},
+    ]
+    answer = "RDL z ročkami: 3 × 8 ponovitev."
+    assert coach_routes._sanitize_unverified_exercise_parameters(answer, messages) == answer
+
+
+def test_single_successful_squat_exposure_does_not_gain_invented_sets_or_tempo():
+    messages = [
+        {
+            "role": "user",
+            "content": (
+                "Uporabnik je izrecno potrdil, da nima bolečin, poškodb ali gibalnih omejitev. "
+                "Pri počepu je dosegel vse serije po 10 ponovitev z RIR 3, vendar je bil to "
+                "šele prvi tak uspešen trening."
+            ),
+        },
+        {"role": "user", "content": "Pri počepu sem opravil vse serije po 10 ponovitev in imel približno 3 ponovitve v rezervi."},
+        {"role": "user", "content": "Tehnika je bila dobra, vendar je bil to šele prvi tak uspešen trening."},
+        {"role": "user", "content": "Kaj naj naredim pri naslednji vadbi?"},
+    ]
+    answer = (
+        "Izvedi 3 × 10 počepov z isto težo in tempom 2–1–1–0. "
+        "Povečanje obremenitve počakaj do druge uspešne izpostavitve."
+    )
+    cleaned = coach_routes._sanitize_unverified_exercise_parameters(answer, messages)
+    assert "enakim številom serij kot zadnjič" in cleaned
+    assert "10 ponovitev" in cleaned
+    assert "RIR 3" in cleaned
+    assert "3 × 10" not in cleaned
+    assert "2–1–1–0" not in cleaned
+    assert "ne bom ugibal" in cleaned
+
