@@ -72,6 +72,34 @@ def test_tempo_and_full_controlled_range_are_explicit_for_every_exercise():
     assert all(ex["prescription"]["tempo_seconds_per_rep"] > 0 for ex in exercises)
 
 
+
+@pytest.mark.parametrize("goal", ["strength_hypertrophy", "functional", "fat_loss"])
+@pytest.mark.parametrize("experience", ["beginner", "intermediate", "advanced"])
+def test_dynamic_strength_exercises_use_controlled_learning_tempo_for_every_goal(goal, experience):
+    plan = generate_program({**BASE, "goal": goal, "experience": experience})
+    strength_patterns = {
+        "squat", "hinge", "lunge", "horizontal_push", "horizontal_pull",
+        "vertical_push", "vertical_pull", "hip_extension",
+    }
+    exercises = [
+        exercise
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+        if exercise["pattern"] in strength_patterns
+    ]
+    assert exercises
+    assert all(exercise["prescription"]["tempo"] == "3–1–2–0" for exercise in exercises)
+
+
+def test_tempo_methodology_does_not_assume_mastery_from_goal_or_experience():
+    plan = generate_program({**BASE, "goal": "strength_hypertrophy", "experience": "advanced"})
+    tempo_guidance = plan["methodology"]["tempo"]
+    assert "cilja treninga" in tempo_guidance
+    assert "oznaka izkušenosti" in tempo_guidance
+    assert "3–1–2–0" in tempo_guidance
+    assert "izrecni strokovni potrditvi" in plan["methodology"]["progression"]
+
+
 def test_horizontal_push_prefers_full_range_options_over_floor_press():
     with_bench = generate_program({**BASE, "equipment": ["dumbbell", "bench"], "session_minutes": 75})
     push_ids = {ex["exercise_id"] for s in with_bench["sessions"] for ex in s["exercises"] if ex["pattern"] == "horizontal_push"}
@@ -170,6 +198,13 @@ def test_functional_program_includes_mobility_balance_and_coordination_prep():
     assert "controlled_lateral_step" in exercise_ids
     assert "dead_bug" in exercise_ids
     assert "lateral_shuffle" not in exercise_ids
+    coordination_drill = next(
+        exercise
+        for block in blocks
+        for exercise in block["exercises"]
+        if exercise["exercise_id"] == "controlled_lateral_step"
+    )
+    assert coordination_drill["tempo"] == "počasi in nadzorovano"
     assert all(block["estimated_minutes"] == 4 for block in blocks)
     assert all(session["estimated_minutes"] <= 60 for session in plan["sessions"])
 
