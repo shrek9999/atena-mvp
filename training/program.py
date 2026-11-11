@@ -636,8 +636,6 @@ def generate_program(
                         "Obremenjeno veslanje v predklonu zahteva predhodno oceno predklona kot READY. "
                         "Najprej utrdi predklon ali izberi horizontalno veslanje, ki ne zahteva predklona."
                     )
-            if decision in {"LEARN", "REGRESS"} and method is None and not record.get("selected_exercise_id"):
-                raise ProgramValidationError(f"Za {decision} pri {pattern} mora biti izbrana učna metoda ali različica vaje.")
             if pattern in p["excluded_patterns"]:
                 raise ProgramValidationError(f"Gibalni vzorec {pattern} je izrecno izključen iz profila.")
             available_options = [
@@ -654,10 +652,24 @@ def generate_program(
                 raise ProgramValidationError(
                     f"Vaja {target_id} za {pattern} ni združljiva z opremo ali izkušnjami v profilu."
                 )
+            omission_reason = None
             if decision in {"LEARN", "REGRESS"} and not target_id:
                 if not available_options:
-                    raise ProgramValidationError(f"Za učenje vzorca {pattern} ni ustrezne vaje v katalogu.")
-                target_id = available_options[0]["id"]
+                    # A self-report that an exercise needs support must not make
+                    # the entire programme fail when this profile has no safe,
+                    # catalogue-backed learning variation for that pattern.
+                    # Keep the saved self-report unchanged; omit only this pattern
+                    # for this programme and retry automatically if equipment changes.
+                    decision = "UNASSESSABLE"
+                    omission_reason = "no_equipment_compatible_learning_variant"
+                else:
+                    target_id = available_options[0]["id"]
+                    if method is None:
+                        method = next(
+                            (item for item in method_options if item.get("exercise_id") == target_id),
+                            None,
+                        )
+                        method_id = method["id"] if method else None
             user_report = record.get("user_report", {})
             if not isinstance(user_report, dict):
                 raise ProgramValidationError(f"Uporabnikovo poročilo za {pattern} mora biti objekt.")
@@ -686,6 +698,7 @@ def generate_program(
                 "decision": decision,
                 "selected_learning_method": method_id,
                 "resolved_exercise_id": target_id,
+                **({"omission_reason": omission_reason} if omission_reason else {}),
             }
     reduce_load = bool(response and (
         response["difficulty"] == "hard" or not response["completed"] or response["recovery"] == "poor"
@@ -894,10 +907,22 @@ def generate_program(
                 or structured_report_status in {"uncertain", "not_assessed"}
             ):
                 missing_patterns.add(pattern)
+                equipment_limited = bool(
+                    structured_decision
+                    and structured_decision.get("omission_reason") == "no_equipment_compatible_learning_variant"
+                )
                 movement_adaptation_events.append({
                     "pattern": pattern, "tasks": affected_tasks,
-                    "action": "omitted_unassessable_pending_reassessment",
-                    "message": "Vzorec je izpuščen, ker ATENA še nima dovolj zanesljive informacije o tvoji izvedbi. Najprej ga ponovno preveri ali izberi ustrezno lažjo učno različico.",
+                    "action": (
+                        "omitted_no_equipment_compatible_learning_variant"
+                        if equipment_limited else "omitted_unassessable_pending_reassessment"
+                    ),
+                    "message": (
+                        "Vzorec je izpuščen, ker trenutna oprema in izkušnje ne omogočajo varne, preverjene lažje različice. "
+                        "Samoocena ostane shranjena; ko dodaš ustrezno opremo ali izbereš drugo varno možnost, ga lahko ATENA ponovno vključi."
+                        if equipment_limited else
+                        "Vzorec je izpuščen, ker ATENA še nima dovolj zanesljive informacije o tvoji izvedbi. Najprej ga ponovno preveri ali izberi ustrezno lažjo učno različico."
+                    ),
                 })
                 continue
             candidates = by_pattern.get(pattern, [])
