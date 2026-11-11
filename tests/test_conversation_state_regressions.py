@@ -879,3 +879,35 @@ def test_missed_session_guardrail_handles_word_order_and_self_blame():
     assert third is not None
     assert "Ničesar nisi pokvaril" in third
     assert third.count("?") == 1
+
+
+def test_deadlift_to_rdl_substitution_is_not_described_as_biomechanically_identical():
+    from coach_routes import _sanitize_deadlift_substitution_claims
+
+    messages = [
+        {
+            "role": "user",
+            "content": "V programu imam klasični mrtvi dvig. Kaj lahko izvajam namesto mrtvega dviga?",
+        },
+    ]
+    answer = (
+        "RDL popolnoma posnema mehaniko klasičnega mrtvega dviga "
+        "in je enakovredna zamenjava."
+    )
+
+    cleaned = _sanitize_deadlift_substitution_claims(answer, messages)
+
+    assert "soroden vzorec kolčnega zgiba" in cleaned
+    assert "ni biomehansko enak klasičnemu mrtvemu dvigu" in cleaned
+    assert "popolnoma posnema mehaniko" not in cleaned
+
+
+def test_deadlift_rdl_accuracy_guard_does_not_rewrite_unrelated_rdl_education():
+    from coach_routes import _sanitize_deadlift_substitution_claims
+
+    messages = [
+        {"role": "user", "content": "Kako naj se naučim pravilne tehnike RDL?"},
+    ]
+    answer = "RDL poudari nadzorovan predklon z nevtralno hrbtenico."
+
+    assert _sanitize_deadlift_substitution_claims(answer, messages) == answer
