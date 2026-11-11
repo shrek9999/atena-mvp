@@ -853,32 +853,69 @@ def generate_program(
         warm_up_minutes = 5 if p["session_minutes"] <= 30 else (7 if p["session_minutes"] <= 60 else 10)
         mobility_block = None
         if p["goal"] == "functional" and by_pattern.get("mobility") and "mobility" not in p["excluded_patterns"]:
-            # Keep the main session within its exercise cap. Functional mobility is
-            # delivered as a short, active warm-up block rather than a seventh lift.
+            # Functional preparation must represent all declared pillars, not
+            # mobility alone. Keep balance/coordination as short skill practice
+            # inside the warm-up, not as extra loaded work.
             mobility_candidates = sorted(by_pattern["mobility"], key=lambda item: item["id"])
             start = (session_index * 2) % len(mobility_candidates)
             selected_mobility = [
                 mobility_candidates[(start + offset) % len(mobility_candidates)]
-                for offset in range(min(2, len(mobility_candidates)))
+                for offset in range(min(2 if p["session_minutes"] > 30 else 1, len(mobility_candidates)))
             ]
+            level_rank = {"beginner": 0, "intermediate": 1, "advanced": 2}
+            target_level = level_rank[p["experience"]]
+            preferred_skill_pattern = "balance" if session_index % 2 == 0 else "coordination"
+            skill_pattern_order = [preferred_skill_pattern, "coordination" if preferred_skill_pattern == "balance" else "balance"]
+            selected_skill = None
+            selected_skill_pattern = None
+            for skill_pattern in skill_pattern_order:
+                if skill_pattern in p["excluded_patterns"]:
+                    continue
+                compatible = [
+                    item for item in by_pattern.get(skill_pattern, [])
+                    if level_rank.get(item["level"], 0) <= target_level
+                ]
+                if compatible:
+                    compatible.sort(key=lambda item: (target_level - level_rank.get(item["level"], 0), item["id"]))
+                    selected_skill = compatible[0]
+                    selected_skill_pattern = skill_pattern
+                    break
+            prep_exercises = [
+                {
+                    "exercise_id": item["id"],
+                    "name": item["name"],
+                    "component": "mobilnost",
+                    "sets": 1,
+                    "reps": 6 if item.get("unilateral") else 8,
+                    "reps_per_side": bool(item.get("unilateral") or item.get("reps_per_side")),
+                    "tempo": "počasi in nadzorovano",
+                    "equipment": item["equipment"],
+                    "cues": item["cues"],
+                    "warnings": item["warnings"],
+                }
+                for item in selected_mobility
+            ]
+            if selected_skill is not None:
+                is_balance = selected_skill_pattern == "balance"
+                work_seconds = None if is_balance else (10 if p["experience"] == "beginner" else 15)
+                prep_exercises.append({
+                    "exercise_id": selected_skill["id"],
+                    "name": selected_skill["name"],
+                    "component": "ravnotežje" if is_balance else "koordinacija",
+                    "sets": 1,
+                    "reps": 5 if is_balance else f"{work_seconds} s",
+                    "work_seconds": work_seconds,
+                    "reps_per_side": is_balance,
+                    "tempo": "počasi in nadzorovano" if is_balance else "ritmično, z nadzorovanim zaviranjem",
+                    "equipment": selected_skill["equipment"],
+                    "cues": selected_skill["cues"],
+                    "warnings": selected_skill["warnings"],
+                })
             mobility_block = {
-                "purpose": "Aktivna mobilnost in priprava na polno, nadzorovano amplitudo glavnih vaj.",
-                "estimated_minutes": 2,
-                "amplitude_rule": "Gib izvedi skozi največjo trenutno nadzorovano in tolerirano amplitudo; brez sunkov in siljenja.",
-                "exercises": [
-                    {
-                        "exercise_id": item["id"],
-                        "name": item["name"],
-                        "sets": 1,
-                        "reps": 6 if item.get("unilateral") else 8,
-                        "reps_per_side": bool(item.get("unilateral") or item.get("reps_per_side")),
-                        "tempo": "počasi in nadzorovano",
-                        "equipment": item["equipment"],
-                        "cues": item["cues"],
-                        "warnings": item["warnings"],
-                    }
-                    for item in selected_mobility
-                ],
+                "purpose": "Gibalna priprava: aktivna mobilnost ter kratka vaja ravnotežja ali koordinacije pred glavnimi vzorci.",
+                "estimated_minutes": 3 if selected_skill is not None else 2,
+                "amplitude_rule": "Gib izvedi skozi največjo trenutno nadzorovano in tolerirano amplitudo; brez sunkov, izgube ravnotežja ali siljenja.",
+                "exercises": prep_exercises,
             }
         selected = []
         seen_patterns = set()
