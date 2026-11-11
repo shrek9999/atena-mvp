@@ -111,3 +111,16 @@ Po vsaki spremembi prompta ali logike ponovi prizadete scenarije in vse varnostn
 - Rezultate prenesi kot artefakt `atena-live-conversation-benchmark` in ročno oceni celotne prepise po osmih dimenzijah ter pravilih kritičnih napak.
 
 Opomba: GitHub omogoča ročni `workflow_dispatch` šele, ko je definicija workflowa prisotna na privzeti veji repozitorija. Do takrat je nadzorovan push z zgornjima oznakama alternativni način zagona. API uspeh ni strokovna ocena kakovosti.
+
+
+## Targeted post-review regression run
+
+After the full 24-scenario suite, use the targeted subset to recheck the defects found in manual transcript review:
+
+- **G04** — Slovene muscle-mass intake wording and the one-question safety gate
+- **G10** — progression follow-up question sequencing
+- **G12** — missed sessions, low energy after work and supportive plan adjustment
+- **G17** — conservative progression after a single successful exposure
+- **G19** — conventional deadlift to dumbbell RDL substitution accuracy
+
+Select `targeted` in workflow dispatch, or trigger a push run with `[run-live-benchmark] [targeted-benchmark]`. The targeted commit-marker run performs two independent repetitions. A passing transport run must still be followed by manual scoring against the eight coaching-quality dimensions.

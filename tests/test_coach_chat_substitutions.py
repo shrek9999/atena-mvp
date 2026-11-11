@@ -517,3 +517,57 @@ def test_slovene_coaching_normalizer_cleans_common_exercise_instruction_typos():
     assert "Trup naj ostane pokončen" in cleaned
     assert "spustiš ročke" in cleaned
     assert "razbremeniš gib" in cleaned
+
+
+def test_deadlift_to_rdl_substitution_prompt_explains_non_equivalence(monkeypatch):
+    monkeypatch.setenv("AI_COACH_TEST_TOKEN", "pilot-test-secret")
+    monkeypatch.setenv("GEMINI_API_KEY", "test-api-key")
+    captured = {}
+
+    def fake_urlopen(request, timeout):
+        captured["body"] = json.loads(request.data.decode("utf-8"))
+        return FakeGeminiResponse()
+
+    monkeypatch.setattr(coach_routes.urllib.request, "urlopen", fake_urlopen)
+    app = Flask(__name__)
+    app.register_blueprint(coach_routes.coach_bp)
+    client = app.test_client()
+    response = client.post(
+        "/coach/chat",
+        headers={"X-Pilot-Token": "pilot-test-secret"},
+        json={"messages": [
+            {
+                "role": "user",
+                "content": (
+                    "Moj vadbeni profil:\n- Glavni cilj: moč in mišična masa"
+                    "\n- Varnost: nimam bolečin, poškodb ali omejitev"
+                    "\n- Izkušnje: redno treniram"
+                    "\n- Oprema: ročke"
+                    "\nTrenutni strukturirani program ATENE:"
+                    "\nTrening A\n- Mrtvi dvig: 3 × 5"
+                ),
+            },
+            {
+                "role": "user",
+                "content": "Nimam olimpijske palice. S čim lahko zamenjam mrtvi dvig?",
+            },
+        ]},
+    )
+    assert response.status_code == 200
+    prompt = captured["body"]["systemInstruction"]["parts"][0]["text"]
+    assert "not a mechanically identical replacement" in prompt
+    assert "different range-of-motion and loading profile" in prompt
+
+
+def test_deadlift_to_rdl_equivalence_claim_is_corrected():
+    messages = [
+        {"role": "user", "content": "Trenutni program: mrtvi dvig z drogom, 3 × 5."},
+        {"role": "user", "content": "Nimam olimpijske palice. S čim lahko zamenjam mrtvi dvig?"},
+    ]
+    answer = (
+        "RDL (romunski mrtvi dvig) popolnoma posnema mehaniko mrtvega dviga "
+        "s poudarkom na kolčnem iztegu."
+    )
+    cleaned = coach_routes._sanitize_deadlift_substitution_claims(answer, messages)
+    assert "ni biomehansko enak klasičnemu mrtvemu dvigu" in cleaned
+    assert "popolnoma posnema mehaniko" not in cleaned
