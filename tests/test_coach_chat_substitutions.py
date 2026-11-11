@@ -368,7 +368,7 @@ def test_progression_sanitizer_separates_replacement_from_next_sentence():
 
     cleaned = coach_routes._sanitize_power_and_progression_claims(answer)
 
-    assert "obremenitev.\n\nNapredovanje" in cleaned
+    assert "odmerek.\n\nNapredovanje" in cleaned
 
 
 def test_structured_profile_equipment_is_authoritative_over_unavailable_mentions():
