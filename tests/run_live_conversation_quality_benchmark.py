@@ -34,6 +34,9 @@ def select_scenarios(scenarios: list[dict], selection: str) -> list[dict]:
     if not normalized or normalized.upper() in {"ALL", "FULL"}:
         return list(scenarios)
     requested = [item.strip() for item in normalized.split(",") if item.strip()]
+    duplicates = sorted({item for item in requested if requested.count(item) > 1})
+    if duplicates:
+        raise ValueError("Duplicate scenario ID(s) would cause repeated model calls: " + ", ".join(duplicates))
     by_id = {item.get("id"): item for item in scenarios}
     unknown = [item for item in requested if item not in by_id]
     if unknown:
