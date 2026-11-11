@@ -509,7 +509,7 @@ def test_fat_loss_with_strength_preservation_answers_daily_hiit_question_before_
 def test_missing_strength_experience_is_not_repeated_as_the_same_question():
     reply = _coaching_guardrail_reply([
         {"role": "user", "content": (
-            "KONTEKST TESTNEGA UPORABNIKA: Uporabnik nima bolečin ali omejitev, "
+            "KONTEKST TESTNEGA UPORABNIKA: Uporabnik nima bolečin, poškodb ali zdravstvenih omejitev, "
             "želi zmanjšati telesno maščobo in ohraniti mišice, ima ročke in "
             "lahko trenira trikrat tedensko."
         )},
