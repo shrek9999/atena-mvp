@@ -281,6 +281,8 @@ def _normalize_slovene_coaching_terms(answer):
     answer = re.sub(r"<\s*/?\s*(?:strong|b|em|i)\s*>", "", answer, flags=re.IGNORECASE)
     answer = re.sub(r"\bvadinega\b", "vadečega", answer, flags=re.IGNORECASE)
     replacements = (
+        (r"\bpoz\s+dravljen\b", "Pozdravljen"),
+        (r"\bizrek gibanja\b", "izvedbo gibanja"),
         (r"\btrilogije\s*\(tricepsa\)", "tricepsa"),
         (r"\btrilogije\b", "tricepsa"),
         (r"\bprsni tisk\b", "potisk za prsi"),
@@ -440,6 +442,24 @@ def _sanitize_model_markup(answer):
         answer,
         flags=re.IGNORECASE,
     )
+
+
+def _sanitize_unverified_training_history_claims(answer, messages):
+    """Remove specific claims about the user's training timeline that are absent from their history."""
+    user_history = "\\n".join(
+        item.get("content", "") for item in messages
+        if item.get("role") == "user" and isinstance(item.get("content"), str)
+    )
+    timeline = re.compile(r"\b(?:letos|lani|lansko leto|pred\s+\d+\s+leti|že\s+\d+\s+let)\b", re.IGNORECASE)
+    if timeline.search(user_history):
+        return answer
+    unsupported_claim = re.compile(
+        r"(?is)(?:glede na to, da si|ker si|vidim, da si|saj si)"
+        r".{0,100}\b(?:letos|lani|lansko leto|pred\s+\d+\s+leti|že\s+\d+\s+let)\b"
+        r".{0,100}\b(?:začel|začela|treniral|trenirala|vadil|vadila|opravil|opravila)\b"
+        r"[^.!?]*[.!?]\s*"
+    )
+    return unsupported_claim.sub("", answer)
 
 
 def _sanitize_unrequested_user_name(answer):
@@ -1721,8 +1741,9 @@ def coach_chat():
         if not answer:
             logger.warning("Gemini returned no text for model %s", model)
             return jsonify({"error": "Model ni vrnil odgovora. Poskusi znova."}), 502
-        answer = _normalize_slovene_coaching_terms(answer)
         answer = _sanitize_model_markup(answer)
+        answer = _normalize_slovene_coaching_terms(answer)
+        answer = _sanitize_unverified_training_history_claims(answer, messages)
         answer = _sanitize_power_and_progression_claims(answer)
         answer = _sanitize_strength_rest_intervals(answer, messages)
         answer = _sanitize_unverified_safety_claim(answer, messages)
