@@ -58,7 +58,7 @@ def localize_guardrail_reply(reply: str, language: str) -> str:
     if language != "en" or not isinstance(reply, str):
         return reply
     lowered = reply.casefold()
-    if "noge ne moreš normalno obremeniti" in lowered:
+    if "ker noge ne moreš normalno obremeniti" in lowered:
         return (
             "Because you cannot bear weight normally on your leg, you need an urgent "
             "medical assessment today. Do not perform squats, lunges, or other loaded "
