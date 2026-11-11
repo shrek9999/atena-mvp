@@ -735,3 +735,33 @@ def test_two_exposure_progression_waits_for_recovery_and_avoids_invented_load():
     assert "2 kg" not in final
     assert "3 × 8" not in final
 
+
+
+def test_english_rdl_technique_request_receives_english_protocol(monkeypatch):
+    monkeypatch.setenv("AI_COACH_TEST_TOKEN", "pilot-test-secret")
+    monkeypatch.setenv("GEMINI_API_KEY", "test-api-key")
+    captured = {}
+
+    def fake_urlopen(request, timeout):
+        captured["body"] = json.loads(request.data.decode("utf-8"))
+        return FakeGeminiResponse()
+
+    monkeypatch.setattr(coach_routes.urllib.request, "urlopen", fake_urlopen)
+    app = Flask(__name__)
+    app.register_blueprint(coach_routes.coach_bp)
+    response = app.test_client().post(
+        "/coach/chat",
+        headers={"X-Pilot-Token": "pilot-test-secret"},
+        json={"messages": [
+            {"role": "user", "content": "My Romanian deadlift technique is poor; my back rounds. How can I learn the hip hinge?"},
+            {"role": "model", "content": "Is this pain or a technique issue?"},
+            {"role": "user", "content": "No pain, injury, or movement limitations. I only want to learn the technique."},
+        ]},
+    )
+
+    assert response.status_code == 200
+    prompt = captured["body"]["systemInstruction"]["parts"][0]["text"]
+    assert "Romanian deadlift (RDL) – TECHNIQUE COACHING" in prompt
+    assert "Wall hip hinge" in prompt
+    assert "Do not demand excessive rigidity" in prompt
+    assert "predklon z nevtralno hrbtenico ob steni" not in prompt
