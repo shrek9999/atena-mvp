@@ -2289,7 +2289,7 @@ def coach_chat():
             any(item["id"] == "deadlift" for item in current_records)
             and any(item["id"] == "romanian_deadlift" for item in alternatives)
         ):
-            system_prompt += "\n\n" + RDL_SUBSTITUTION_ACCURACY
+            system_prompt += "\n\n" + (RDL_SUBSTITUTION_ACCURACY_EN if response_language == "en" else RDL_SUBSTITUTION_ACCURACY)
     model = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite").strip()
     guarded_answer = _coaching_guardrail_reply(messages)
     if guarded_answer:
