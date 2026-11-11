@@ -96,6 +96,15 @@ def _has_explicit_safety_clearance(text):
         return True
     statements = re.split(r"(?<=[.!?;])\s+|\n+", normalized)
     for statement in statements:
+        # "No symptoms reported" is missing information, not an explicit
+        # negative answer from the user. Never turn absence of data into clearance.
+        missing_report = bool(re.search(
+            r"\b(?:brez\s+(?:izrecne\s+)?navedbe|ni\s+(?:bilo\s+)?(?:navedeno|podatka|podatkov)|"
+            r"not\s+(?:reported|provided|specified)|no\s+(?:health\s+)?(?:information|data)\s+(?:about|on))\b",
+            statement,
+        ))
+        if missing_report:
+            continue
         negative = bool(re.search(r"\b(?:nimam|nima|brez|no|without)\b", statement))
         pain = bool(re.search(r"\b(?:bolečin\w*|pain)\b", statement))
         injury = bool(re.search(r"\b(?:poškodb\w*|injur\w*)\b", statement))
@@ -318,7 +327,8 @@ def _normalize_slovene_coaching_terms(answer):
     if re.search(r"\b(?:RDL|romunsk\w*\s+mrtv\w*\s+dvig|predklon|hip hinge)\b", answer, re.IGNORECASE):
         hinge_replacements = (
             (r"\bkjer\s+še\s+držiš\s+(?:popolnoma\s+)?raven\s+hrbet\b", "kjer še ohranjaš nevtralni položaj hrbtenice"),
-            (r"\bz\s+(?:popolnoma\s+)?ravnim\s+hrbtom\b", "z nevtralno hrbtenico"),
+            (r"\bz\s+(?:(?:popolnoma|povsem)\s+)?ravnim(?:\s+in\s+nevtralnim)?\s+hrbtom\b", "z nevtralno hrbtenico"),
+            (r"\bhrbet\s+(?:pa\s+)?(?:ohranjaš|ohranjaj|ohranja|naj\s+ostane|ostane)\s+(?:(?:ves\s+čas)\s+)?(?:(?:popolnoma|povsem)\s+)?raven\w*\b", "hrbtenica ohranja naravni nevtralni položaj"),
             (r"\bhrbet\s+ohranjaš\s+v\s+(?:popolnoma\s+)?ravnem\s+položaju\b", "hrbtenica ohranja naravni nevtralni položaj"),
             (r"\bhrbet\s+ostane\s+(?:ves\s+čas\s+)?(?:popolnoma\s+)?raven\b", "hrbtenica ohranja naravni nevtralni položaj"),
             (r"\bhrbet\s+naj\s+ostane\s+(?:ves\s+čas\s+)?(?:popolnoma\s+)?raven\b", "hrbtenica naj ohranja naravni nevtralni položaj"),
@@ -350,11 +360,18 @@ def _sanitize_power_and_progression_claims(answer):
         "ohranjanje hitrosti in kakovosti ponovitev",
         answer,
     )
-    # Avoid unsupported claims that a training session "exhausts" the CNS.
+    # Avoid unsupported claims that a training session "exhausts" the CNS
+    # or that a short self-report proves nervous-system adaptation.
     answer = re.sub(
         r"(?i)izčrp(?:al|ala|ali|amo|ati|anje)\s+"
         r"(?:centraln\w+\s+)?živčn\w+\s+sistem\w*",
         "povečali nepotrebno utrujenost",
+        answer,
+    )
+    answer = re.sub(
+        r"(?i)(?:telo\s+in\s+)?živčn\w+\s+sistem\w*\s+"
+        r"(?:se\s+)?(?:(?:je|sta|so)\s+)?(?:lepo\s+)?prilagod\w*",
+        "odziv na trening je bil dober",
         answer,
     )
     progression_section = re.compile(
@@ -1254,12 +1271,17 @@ def _coaching_guardrail_reply(messages):
 
     # Before a programme is built, do not infer missing equipment or experience.
     # This deterministic gate prevents a plausible-sounding model answer from filling gaps.
-    schedule_known = bool(re.search(
+    frequency_known = bool(re.search(
         r"\b(?:enkrat|dvakrat|trikrat|štirikrat|1x|2x|3x|4x)\b.{0,35}(?:tedensko|na teden)|"
-        r"(?:tedensko|na teden).{0,35}\b(?:enkrat|dvakrat|trikrat|štirikrat|1x|2x|3x|4x)\b|"
-        r"\b(?:20|25|30|35|40|45|50|60|75|90)\s*(?:minut|min)\b",
+        r"(?:tedensko|na teden).{0,35}\b(?:enkrat|dvakrat|trikrat|štirikrat|1x|2x|3x|4x)\b",
         history_lower,
     ))
+    duration_known = bool(re.search(
+        r"\b(?:20|25|30|35|40|45|50|60|75|90)\s*(?:minut|min)\b|"
+        r"\b(?:pol\s+ure|eno\s+uro|ura\s+vadbe)\b",
+        history_lower,
+    ))
+    schedule_known = frequency_known or duration_known
     experience_known = bool(re.search(
         r"\b(?:začetnik|začetnica|začetniški|srednje izkušen|izkušen|napreden|napredna|"
         r"beginner|intermediate|advanced)\b|"
@@ -1267,17 +1289,55 @@ def _coaching_guardrail_reply(messages):
         r"\b(?:eno|dve|tri|štiri|pet|deset)\s+leta?\s+(?:redno\s+)?treninga\b",
         history_lower,
     ))
+    profile = _profile_from_messages(messages) or {}
+    available_equipment = _profile_available_equipment(messages)
+    equipment_known = isinstance(profile.get("equipment"), list) or bool(available_equipment)
+    goal_known = bool(isinstance(profile.get("goal"), str) and profile.get("goal").strip()) or bool(re.search(
+        r"\b(?:moč\w*|strength|mišičn\w*\s+mas\w*|hipertrof\w*|hypertrophy|"
+        r"maščob\w*|hujš\w*|fat\s+loss|weight\s+loss|kondic\w*|vzdržljiv\w*|"
+        r"endurance|conditioning|funkcionaln\w*|functional|gibljiv\w*|mobilit\w*|"
+        r"mobility|eksplozivn\w*|power)\b",
+        history_lower,
+    ))
+    programming_intent = bool(re.search(
+        r"\b(?:pripravi|pripravite|sestavi|sestavite|naredi|ustvari|build|create|prepare|make)\b"
+        r".{0,80}\b(?:program\w*|plan\w*|trening\w*|vadb\w*|workout)\b|"
+        r"\b(?:program\w*|plan\w*|workout)\b.{0,80}\b"
+        r"(?:pripravi|sestavi|naredi|ustvari|build|create|prepare|make)\b",
+        history_lower,
+    ))
+    weekly_program_intent = bool(re.search(r"\b(?:program\w*|tedenski\s+plan|weekly\s+plan)\b", history_lower))
+
+    # A conversational request for a hard workout is not a training goal.
+    # Do not invent the goal, weekly frequency or session duration to fill gaps.
+    if programming_intent and _has_explicit_safety_clearance(history):
+        if not goal_known:
+            return (
+                "Preden sestavim program, morava najprej določiti glavni cilj. "
+                "Kaj želiš predvsem razvijati: moč, mišično maso, kondicijo, "
+                "funkcionalno pripravljenost ali kaj drugega?"
+            )
+        if weekly_program_intent and not frequency_known:
+            return "Kolikokrat na teden želiš oziroma realno lahko trenirati?"
+        if not duration_known:
+            return "Koliko časa imaš običajno na voljo za posamezni trening?"
+        if not equipment_known:
+            return (
+                "Katero opremo imaš dejansko na voljo? Če nimaš ničesar, lahko "
+                "načrtujem vadbo samo z lastno težo."
+            )
+
     if fitness_intent and _has_explicit_safety_clearance(history) and schedule_known:
-        available_equipment = _profile_available_equipment(messages)
-        if not available_equipment:
+        if not equipment_known:
             return (
                 "Časovni okvir sem razumel. Da ne bom predpostavljal, da imaš ročke, klop "
                 "ali drugo opremo: kaj imaš dejansko na voljo za vadbo? Če nimaš ničesar, "
                 "lahko izhajava samo iz lastne teže."
             )
         if not experience_known:
+            schedule_label = "tedenska pogostost" if frequency_known else "trajanje treninga"
             return (
-                "Oprema in časovni okvir sta jasna. Preden določim zahtevnost vaj in obseg "
+                f"Oprema in {schedule_label} sta jasni. Preden določim zahtevnost vaj in obseg "
                 "programa, mi povej še: kako bi opisal svoje dosedanje izkušnje z vadbo moči – "
                 "si začetnik, redno treniraš ali imaš že več let sistematičnih izkušenj?"
             )
