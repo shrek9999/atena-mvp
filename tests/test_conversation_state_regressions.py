@@ -439,6 +439,7 @@ def test_programme_request_without_equipment_asks_instead_of_assuming_dumbbells_
     assert reply is not None
     assert "kaj imaš dejansko na voljo" in reply
     assert "če nimaš ničesar" in reply.casefold()
+    assert "pogostost" not in reply.casefold()
 
 
 def test_programme_request_with_schedule_and_gym_but_unknown_experience_asks_first():
