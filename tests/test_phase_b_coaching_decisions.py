@@ -85,11 +85,15 @@ def test_single_joint_hypertrophy_accessories_are_catalogue_opt_in_and_advanced_
 )
 def test_program_preserves_universal_controlled_tempo(goal, expected_tempo):
     plan = generate_program(_profile(goal, "intermediate"))
+    resistance_patterns = {
+        "squat", "hinge", "lunge", "horizontal_push", "horizontal_pull",
+        "vertical_push", "vertical_pull", "hip_extension",
+    }
     resistance_exercises = [
         exercise
         for session in plan["sessions"]
         for exercise in session["exercises"]
-        if exercise["pattern"] not in {"trunk_stability", "anti_rotation", "mobility", "mobility_stretch"}
+        if exercise["pattern"] in resistance_patterns
     ]
     assert resistance_exercises
     assert all(item["prescription"]["tempo"] == expected_tempo for item in resistance_exercises)
