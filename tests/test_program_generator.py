@@ -179,8 +179,9 @@ def test_functional_goal_uses_supported_general_fitness_catalogue_pool():
     assert all(len(s["exercises"]) >= 3 for s in plan["sessions"])
 
 
-def test_functional_program_includes_mobility_balance_and_coordination_prep():
-    plan = generate_program({**BASE, "goal": "functional", "experience": "beginner"})
+@pytest.mark.parametrize("experience", ["beginner", "intermediate", "advanced"])
+def test_functional_program_includes_mobility_balance_and_controlled_coordination_prep(experience):
+    plan = generate_program({**BASE, "goal": "functional", "experience": experience})
     blocks = [session["mobility_block"] for session in plan["sessions"] if session.get("mobility_block")]
     assert len(blocks) == 2
     components = {
