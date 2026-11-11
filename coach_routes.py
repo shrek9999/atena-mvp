@@ -435,7 +435,7 @@ def _sanitize_strength_rest_intervals(answer, messages):
 def _sanitize_model_markup(answer):
     """Remove accidental raw HTML tags emitted by the language model; Markdown remains supported."""
     return re.sub(
-        r"</?(?:strong|b|em|i|p|br|ul|ol|li|div|span|h[1-6])\\b[^>]*>",
+        r"</?(?:strong|b|em|i|p|br|ul|ol|li|div|span|h[1-6])\b[^>]*>",
         "",
         answer,
         flags=re.IGNORECASE,
