@@ -439,6 +439,18 @@ def test_repeated_table_row_warning_becomes_a_concise_follow_up():
     assert "ne enakovredna zamenjava" in reply
     assert len(reply) < 400
 
+def test_progression_sanitizer_does_not_contradict_an_explicit_two_exposure_rule():
+    from coach_routes import _sanitize_power_and_progression_claims
+
+    answer = (
+        "Ker si v dveh zaporednih treningih dosegel zgornjo mejo razpona z RIR 3 "
+        "in stabilno tehniko, lahko pri naslednjem treningu rahlo povečaj obremenitev."
+    )
+    result = _sanitize_power_and_progression_claims(answer)
+    assert "lahko pri naslednjem treningu rahlo povečaj obremenitev" in result
+    assert "Ohrani trenutno obremenitev in ponovi enako dozo" not in result
+
+
 def test_progression_sanitizer_does_not_duplicate_the_same_rule():
     from coach_routes import _sanitize_power_and_progression_claims
 
