@@ -467,3 +467,97 @@ def test_known_experience_and_equipment_allow_onboarding_to_continue():
     }]
     reply = _coaching_guardrail_reply(messages)
     assert reply is None
+
+
+def test_absence_of_health_report_is_not_explicit_safety_clearance():
+    assert not _has_explicit_safety_clearance(
+        "Brez navedbe bolečin, poškodb ali gibalnih omejitev."
+    )
+    assert not _has_explicit_safety_clearance(
+        "No pain, injuries or movement limitations reported."
+    )
+
+
+def test_missing_health_report_cannot_be_rephrased_as_user_confirmation():
+    messages = [
+        {"role": "user", "content": "Brez navedbe bolečin, poškodb ali gibalnih omejitev."},
+    ]
+    answer = "Ker si potrdil, da nimaš zdravstvenih omejitev ali bolečin, lahko začneva."
+    cleaned = _sanitize_unverified_safety_claim(answer, messages)
+    assert "Tega še nisi izrecno potrdil" in cleaned
+
+
+def test_explicit_safety_clearance_still_overrides_a_missing_profile_note():
+    assert _has_explicit_safety_clearance(
+        "Brez navedbe bolečin, poškodb ali gibalnih omejitev. "
+        "Nimam bolečin, poškodb ali zdravstvenih omejitev."
+    )
+
+
+def test_explicit_program_request_without_a_goal_must_ask_for_the_goal():
+    messages = [
+        {"role": "user", "content": (
+            "Testni profil: uporabnik je izrecno potrdil, da nima bolečin, poškodb "
+            "ali gibalnih omejitev. Profil: začetnik; na voljo ima ročke in lastno težo."
+        )},
+        {"role": "user", "content": (
+            "V profilu imam zapisano, da sem začetnik, vendar treniram že deset let. "
+            "Pripravi mi zahteven program."
+        )},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "glavni cilj" in reply
+    assert "moč" in reply
+    assert "program" in reply
+
+
+def test_weekly_program_request_requires_frequency_before_programming():
+    messages = [
+        {"role": "user", "content": (
+            "Izrecno potrjujem, da nimam bolečin, poškodb ali zdravstvenih omejitev. "
+            "Moj cilj je moč in mišična masa. Imam ročke in redno treniram. "
+            "Pripravi mi tedenski program."
+        )},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "Kolikokrat na teden" in reply
+
+
+def test_program_request_requires_session_duration_even_if_frequency_is_known():
+    messages = [
+        {"role": "user", "content": (
+            "Izrecno potrjujem, da nimam bolečin, poškodb ali zdravstvenih omejitev. "
+            "Moj cilj je moč in mišična masa. Imam ročke, redno treniram in lahko "
+            "vadim trikrat tedensko. Pripravi mi program."
+        )},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "Koliko časa" in reply
+
+
+def test_programming_gate_allows_programme_after_goal_equipment_experience_and_schedule_are_known():
+    messages = [
+        {"role": "user", "content": (
+            "Izrecno potrjujem, da nimam bolečin, poškodb ali zdravstvenih omejitev. "
+            "Moj cilj je moč in mišična masa. Imam ročke in lastno težo, redno treniram, "
+            "lahko vadim trikrat tedensko, vsak trening pa naj traja 60 minut. "
+            "Pripravi mi tedenski program."
+        )},
+    ]
+    assert _coaching_guardrail_reply(messages) is None
+
+
+def test_experience_prompt_does_not_claim_session_duration_is_known_from_frequency_alone():
+    messages = [
+        {"role": "user", "content": (
+            "Nimam bolečin, poškodb ali omejitev. Moj cilj je moč. Imam ročke. "
+            "Lahko treniram trikrat tedensko."
+        )},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "tedenska pogostost" in reply
+    assert "trajanje treninga" not in reply
