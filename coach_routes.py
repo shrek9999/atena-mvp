@@ -421,14 +421,14 @@ def _sanitize_strength_rest_intervals(answer, messages):
         return answer
 
     answer = short_rest.sub("2–3 min", answer)
-    time_limited = bool(re.search(r"\\b(?:20|25|30)\\s*(?:minut|min)\\b", user_history, re.IGNORECASE))
+    time_limited = bool(re.search(r"\b(?:20|25|30)\s*(?:minut|min)\b", user_history, re.IGNORECASE))
     if time_limited:
         note = (
             "Pri glavnih večsklepnih vajah ohrani 2–3 minute odmora za kakovost izvedbe. "
             "Če razpoložljivi čas ne zadošča, zmanjša število vaj ali delovnih serij, ne pa odmora."
         )
         if "zmanjša število vaj" not in answer.casefold():
-            answer = answer.rstrip() + "\\n\\n" + note
+            answer = answer.rstrip() + "\n\n" + note
     return answer
 
 
