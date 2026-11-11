@@ -29,7 +29,7 @@ TEHNIČNI NAMIGI
 
 
 RDL_SUBSTITUTION_ACCURACY = """
-When a Romanian deadlift (RDL) is proposed as an alternative to a conventional deadlift, describe it as a related hip-hinge and posterior-chain option, not a mechanically identical replacement. A conventional deadlift starts from the floor and generally uses more knee flexion; an RDL starts from standing with a smaller knee bend and a different range-of-motion and loading profile. Do not claim that an RDL completely mimics a conventional deadlift or guarantees an equivalent stimulus.
+Ko predlagaš romunski mrtvi dvig (RDL) kot alternativo klasičnemu mrtvemu dvigu, ga opiši kot sorodno možnost za vzorec kolčnega pregiba in obremenitev zadnje kinetične verige, ne pa kot biomehansko enako zamenjavo. Klasični mrtvi dvig se začne s tal in praviloma vključuje večji upogib kolen; RDL se začne stoje, z manjšim upogibom kolen ter drugačnim obsegom gibanja in profilom obremenitve. Ne trdi, da RDL popolnoma posnema klasični mrtvi dvig ali zagotavlja enakovreden vadbeni dražljaj. Namen in obremenitev prvotnega programa ohrani le, kadar so ti podatki znani. Če prvotno število serij, ponovitev ali breme niso znani, si jih ne izmišljaj; vprašaj po manjkajočih podatkih ali predlagaj, naj uporabnik ohrani zapisano predpisano količino, če je na voljo.
 """
 
 
