@@ -198,3 +198,88 @@ def test_band_row_learning_does_not_require_bent_over_hinge_readiness():
     )
     plan = generate_program(BASE, movement_decisions={"horizontal_pull": row})
     assert _pattern_exercises(plan, "horizontal_pull")
+
+
+def test_saved_needs_support_self_report_without_method_resolves_to_safe_wall_hinge():
+    profile = {
+        **BASE,
+        "experience": "beginner",
+        "equipment": ["wall", "household_support"],
+    }
+    decision = build_movement_decision(
+        "hinge", "LEARN",
+        user_report={"status": "needs_support"},
+        decision_reason="Uporabnik potrebuje lažjo učno različico predklona.",
+    )
+    plan = generate_program(profile, movement_decisions={"hinge": decision})
+    hinges = _pattern_exercises(plan, "hinge")
+    assert hinges
+    assert all(item["exercise_id"] == "wall_hip_hinge" for item in hinges)
+    tasks = [
+        task for session in plan["sessions"] for task in session["learning_tasks"]
+        if task["movement_pattern"] == "hinge"
+    ]
+    assert tasks
+    assert all(task["method_id"] == "wall_hip_hinge" for task in tasks)
+    assert all(task["method"] == "Predklon ob steni" for task in tasks)
+    assert all("pomik bokov nazaj" in task["description"] for task in tasks)
+
+
+def test_needs_support_without_compatible_equipment_omits_only_that_pattern():
+    profile = {
+        **BASE,
+        "experience": "beginner",
+        "equipment": ["wall", "household_support"],
+    }
+    row = build_movement_decision(
+        "horizontal_pull", "LEARN",
+        user_report={"status": "needs_support"},
+        decision_reason="Uporabnik potrebuje lažjo različico horizontalnega potega.",
+    )
+    vertical_push = build_movement_decision(
+        "vertical_push", "LEARN",
+        user_report={"status": "needs_support"},
+        decision_reason="Uporabnik potrebuje lažjo različico vertikalnega potiska.",
+    )
+    plan = generate_program(
+        profile,
+        movement_decisions={"horizontal_pull": row, "vertical_push": vertical_push},
+    )
+    assert not _pattern_exercises(plan, "horizontal_pull")
+    assert not _pattern_exercises(plan, "vertical_push")
+    assert row["decision"] == "LEARN"
+    assert vertical_push["decision"] == "LEARN"
+    assert {"horizontal_pull", "vertical_push"} <= set(plan["weekly_summary"]["unfilled_patterns"])
+    omissions = {
+        event["pattern"]: event
+        for event in plan["movement_adaptation"]["events"]
+        if event["action"] == "omitted_no_equipment_compatible_learning_variant"
+    }
+    assert set(omissions) == {"horizontal_pull", "vertical_push"}
+    assert all("oprema" in event["message"].lower() for event in omissions.values())
+
+
+def test_kettlebell_only_hinge_row_uses_the_kettlebell_catalogue_variant():
+    profile = {
+        **BASE,
+        "experience": "beginner",
+        "equipment": ["kettlebell", "bodyweight", "chair", "wall", "household_support"],
+    }
+    hinge = build_movement_decision(
+        "hinge", "READY",
+        user_report={"status": "comfortable"},
+        decision_reason="Predklon je bil samoocenjen kot običajno nadzorovan.",
+    )
+    row = build_movement_decision(
+        "horizontal_pull", "LEARN",
+        equipment=["kettlebell"],
+        selected_learning_method="light_one_arm_hinge_row",
+        selected_exercise_id="kettlebell_one_arm_row",
+        user_report={"status": "needs_support"},
+        decision_reason="Za učenje je izbrana kettlebell različica, ki ustreza opremi.",
+    )
+    plan = generate_program(profile, movement_decisions={"hinge": hinge, "horizontal_pull": row})
+    rows = _pattern_exercises(plan, "horizontal_pull")
+    assert rows
+    assert all(item["exercise_id"] == "kettlebell_one_arm_row" for item in rows)
+
