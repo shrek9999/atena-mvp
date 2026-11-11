@@ -444,3 +444,21 @@ def test_progression_sanitizer_does_not_duplicate_existing_two_exposure_guidance
 def test_rdl_protocol_includes_fourth_tactile_lumbar_control_point():
     assert "četrto taktilno kontrolno točko" in RDL_TECHNIQUE_PROTOCOL.casefold()
     assert "ne sili ledvene krivine v sploščanje" in RDL_TECHNIQUE_PROTOCOL.casefold()
+
+
+def test_power_sanitizer_removes_unsupported_claim_of_nervous_system_adaptation():
+    answer = "Telo in živčni sistem se lepo prilagodila na zadnja dva treninga."
+    cleaned = coach_routes._sanitize_power_and_progression_claims(answer)
+    assert "živčni sistem" not in cleaned
+    assert "odziv na trening je bil dober" in cleaned
+
+
+def test_hinge_language_normalizer_replaces_flat_back_cues_with_neutral_spine():
+    answer = (
+        "Pri predklonu z ravnim hrbtom naj hrbet ohranjaš povsem raven "
+        "in stabilen skozi celoten gib."
+    )
+    cleaned = coach_routes._normalize_slovene_coaching_terms(answer)
+    assert "z nevtralno hrbtenico" in cleaned
+    assert "hrbtenica ohranja naravni nevtralni položaj" in cleaned
+    assert "ravnim hrbtom" not in cleaned
