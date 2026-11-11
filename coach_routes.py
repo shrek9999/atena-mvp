@@ -1045,6 +1045,15 @@ def _coaching_guardrail_reply(messages):
         and (swelling_reported or locking_reported)
     )
 
+    if knee_swelling_or_locking:
+        return (
+            "Oteklina ali zaklepanje kolena sta opozorilna znaka. Za zdaj ne izvajaj počepov, "
+            "izpadnih korakov ali drugih obremenjenih gibov za to koleno. Priporočam čimprejšnjo "
+            "zdravstveno oceno, preden se vrneš k obremenjevanju. Če noge ne moreš normalno "
+            "obremeniti ali ne moreš stopiti nanjo, poišči nujno zdravstveno pomoč še danes. "
+            "Ali lahko trenutno normalno obremenjuješ nogo?"
+        )
+
     recovery_context = bool(re.search(
         r"(slabo spim|slab(?:o|ega) spanec|slaba regeneracija|neprespan|"
         r"sleeping poorly|poor sleep|bad sleep|not sleeping well)",
