@@ -506,6 +506,24 @@ def test_fat_loss_with_strength_preservation_answers_daily_hiit_question_before_
     assert "energijskim primanjkljajem" in reply
 
 
+def test_missing_strength_experience_is_not_repeated_as_the_same_question():
+    reply = _coaching_guardrail_reply([
+        {"role": "user", "content": (
+            "KONTEKST TESTNEGA UPORABNIKA: Uporabnik nima bolečin ali omejitev, "
+            "želi zmanjšati telesno maščobo in ohraniti mišice, ima ročke in "
+            "lahko trenira trikrat tedensko."
+        )},
+        {"role": "model", "content": (
+            "Oprema in tedenska pogostost sta jasni. Preden določim zahtevnost "
+            "vaj, mi povej svoje dosedanje izkušnje z vadbo moči."
+        )},
+        {"role": "user", "content": "Doma imam ročke in lahko treniram trikrat tedensko."},
+    ])
+    assert reply is not None
+    assert "še manjka podatek o tvojih izkušnjah" in reply
+    assert reply.count("?") == 0
+
+
 def test_missing_programme_goal_is_not_repeated_as_the_same_question():
     reply = _coaching_guardrail_reply([
         {"role": "user", "content": (
