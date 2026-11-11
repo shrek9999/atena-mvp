@@ -100,7 +100,8 @@ def _has_explicit_safety_clearance(text):
         # negative answer from the user. Never turn absence of data into clearance.
         missing_report = bool(re.search(
             r"\b(?:brez\s+(?:izrecne\s+)?navedbe|ni\s+(?:bilo\s+)?(?:navedeno|podatka|podatkov)|"
-            r"not\s+(?:reported|provided|specified)|no\s+(?:health\s+)?(?:information|data)\s+(?:about|on))\b",
+            r"not\s+(?:reported|provided|specified)|no\s+(?:health\s+)?(?:information|data)\s+(?:about|on)|"
+            r"no\s+(?:pain|injuries|limitations|health\s+issues).{0,80}\breported)\b",
             statement,
         ))
         if missing_report:
@@ -324,7 +325,7 @@ def _normalize_slovene_coaching_terms(answer):
             return replacement
         answer = re.sub(pattern, preserve_initial_case, answer, flags=re.IGNORECASE)
     # In RDL/hinge explanations, avoid the misleading cue to keep a perfectly flat back.
-    if re.search(r"\b(?:RDL|romunsk\w*\s+mrtv\w*\s+dvig|predklon|hip hinge)\b", answer, re.IGNORECASE):
+    if re.search(r"\b(?:RDL|romunsk\w*\s+mrtv\w*\s+dvig|predklon\w*|hip hinge)\b", answer, re.IGNORECASE):
         hinge_replacements = (
             (r"\bkjer\s+še\s+držiš\s+(?:popolnoma\s+)?raven\s+hrbet\b", "kjer še ohranjaš nevtralni položaj hrbtenice"),
             (r"\bz\s+(?:(?:popolnoma|povsem)\s+)?ravnim(?:\s+in\s+nevtralnim)?\s+hrbtom\b", "z nevtralno hrbtenico"),
