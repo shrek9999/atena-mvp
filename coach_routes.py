@@ -35,7 +35,10 @@ from training.longitudinal_progression import summarize_longitudinal_progression
 from training.conditioning_progression import summarize_conditioning_progress
 from training.periodization import summarize_training_cycle
 from training.proactive_checkin import build_proactive_checkin
-from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL, RDL_SUBSTITUTION_ACCURACY
+from training.coaching_protocols import (
+    RDL_TECHNIQUE_PROTOCOL, RDL_SUBSTITUTION_ACCURACY,
+    RDL_TECHNIQUE_PROTOCOL_EN, RDL_SUBSTITUTION_ACCURACY_EN,
+)
 from training.movement_assessment import MovementAssessmentError, assess_movement_competence
 from training.camera_observations import CameraObservationError, validate_camera_observations
 from training.goals import normalize_goal, public_goal_options
@@ -2221,12 +2224,12 @@ def coach_chat():
     # Keep a technique protocol active during follow-up turns. Users often ask
     # "kaj pa če..." or "ja, samo tehnika" without repeating the exercise name.
     rdl_technique_request = bool(re.search(
-        r"\bRDL\b|romunsk(?:i|ega|em)\s+mrtv(?:i|ega|em)\s+dvig|predklon\s+z\s+ravnim\s+hrbtom|raven\s+hrbet|zaokrož(?:en|anj)",
+        r"\bRDL\b|romunsk(?:i|ega|em)\s+mrtv(?:i|ega|em)\s+dvig|predklon\s+z\s+ravnim\s+hrbtom|raven\s+hrbet|zaokrož(?:en|anj)|\bhip hinge\b|\bromanian deadlift\b|\bdeadlift\b.{0,35}(?:round(?:ed|ing)? back|spinal position|hinge technique)|\b(?:round(?:ed|ing)? back|spinal position)\b.{0,35}\b(?:RDL|deadlift)\b",
         user_history_text,
         re.IGNORECASE,
     ))
     if rdl_technique_request:
-        system_prompt += "\n\n" + RDL_TECHNIQUE_PROTOCOL
+        system_prompt += "\n\n" + (RDL_TECHNIQUE_PROTOCOL_EN if response_language == "en" else RDL_TECHNIQUE_PROTOCOL)
     exercise_intent = bool(re.search(
         r"program|trening|vadb|vajo|počep|izpadni|RDL|mrtv.{0,10}dvig|"
         r"serij|ponovitev|obremenitev|moč|hipertrof|vzdržljiv|eksploziv",
