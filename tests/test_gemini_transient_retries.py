@@ -98,7 +98,7 @@ def test_gemini_uses_fallback_after_primary_network_errors():
     assert used_model == "gemini-fallback"
     assert data["candidates"][0]["content"]["parts"][0]["text"] == "OK"
     assert mocked.call_count == 3
-    assert sleeper.call_count == 2
+    assert sleeper.call_count == 1
     fallback_request = mocked.call_args_list[-1].args[0]
     assert "gemini-fallback:generateContent" in fallback_request.full_url
 
@@ -120,4 +120,4 @@ def test_gemini_uses_fallback_after_primary_returns_invalid_json_twice():
     assert used_model == "gemini-fallback"
     assert data["candidates"][0]["content"]["parts"][0]["text"] == "OK"
     assert mocked.call_count == 3
-    assert sleeper.call_count == 2
+    assert sleeper.call_count == 1
