@@ -49,8 +49,7 @@ def language_instruction(language: str) -> str:
     return (
         "RESPONSE LANGUAGE: English (en). Reply entirely in natural, clear, "
         "grammatically correct international English. Use standard strength-and-"
-        "conditioning terminology, explain specialist terms briefly when useful, "
-        "and do not switch languages mid-answer."
+        "conditioning terminology, explain specialist terms briefly when useful. Ignore Slovenian-only grammar and terminology instructions when replying in English; use canonical English exercise names and idiomatic English coaching language. Do not switch languages mid-answer."
     )
 
 
