@@ -295,7 +295,7 @@ def _normalize_slovene_coaching_terms(answer):
         (r"\bzačetiva\b", "začniva"),
         (r"\bz\s+dve\s+ročkama\b", "z dvema ročkama"),
         (r"\bhrbtorse\b", "hrbta"),
-        (r"\btrg\s+in\s+trup\b", "trup"),
+        (r"\btrg\s+in\s+trup\s+ostajata\s+pokončna\b", "Trup naj ostane pokončen"),
         (r"\bspostiš\b", "spustiš"),
         (r"\brazbremeniša\b", "razbremeniš"),
         (r"\bokrevajnje\b", "okrevanje"),
