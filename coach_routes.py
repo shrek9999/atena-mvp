@@ -382,7 +382,7 @@ def _sanitize_power_and_progression_claims(answer):
         def replace_unqualified_progression(_match):
             if already_has_two_exposure_rule:
                 if re.search(
-                    r"(?:ne\\s+(?:dodajaj|povečuj)|ohrani\\s+(?:enako|trenutno)\\s+(?:težo|obremenitev|dozo))",
+                    r"(?:ne\s+(?:dodajaj|povečuj)|ohrani\s+(?:enako|trenutno)\s+(?:težo|obremenitev|dozo))",
                     _match.group(0),
                     re.IGNORECASE,
                 ):
