@@ -1272,12 +1272,15 @@ def _coaching_guardrail_reply(messages):
 
     # Before a programme is built, do not infer missing equipment or experience.
     # This deterministic gate prevents a plausible-sounding model answer from filling gaps.
-    frequency_known = bool(re.search(
+    profile = _profile_from_messages(messages) or {}
+    profile_frequency = profile.get("sessions_per_week", profile.get("frequency"))
+    profile_duration = profile.get("session_minutes", profile.get("duration"))
+    frequency_known = profile_frequency not in (None, "", 0, "0") or bool(re.search(
         r"\b(?:enkrat|dvakrat|trikrat|štirikrat|1x|2x|3x|4x)\b.{0,35}(?:tedensko|na teden)|"
         r"(?:tedensko|na teden).{0,35}\b(?:enkrat|dvakrat|trikrat|štirikrat|1x|2x|3x|4x)\b",
         history_lower,
     ))
-    duration_known = bool(re.search(
+    duration_known = profile_duration not in (None, "", 0, "0") or bool(re.search(
         r"\b(?:20|25|30|35|40|45|50|60|75|90)\s*(?:minut|min)\b|"
         r"\b(?:pol\s+ure|eno\s+uro|ura\s+vadbe)\b",
         history_lower,
@@ -1290,7 +1293,6 @@ def _coaching_guardrail_reply(messages):
         r"\b(?:eno|dve|tri|štiri|pet|deset)\s+leta?\s+(?:redno\s+)?treninga\b",
         history_lower,
     ))
-    profile = _profile_from_messages(messages) or {}
     available_equipment = _profile_available_equipment(messages)
     equipment_known = isinstance(profile.get("equipment"), list) or bool(available_equipment)
     goal_known = bool(isinstance(profile.get("goal"), str) and profile.get("goal").strip()) or bool(re.search(
@@ -1318,15 +1320,16 @@ def _coaching_guardrail_reply(messages):
                 "Kaj želiš predvsem razvijati: moč, mišično maso, kondicijo, "
                 "funkcionalno pripravljenost ali kaj drugega?"
             )
-        if weekly_program_intent and not frequency_known:
-            return "Kolikokrat na teden želiš oziroma realno lahko trenirati?"
-        if not duration_known:
-            return "Koliko časa imaš običajno na voljo za posamezni trening?"
-        if not equipment_known:
-            return (
-                "Katero opremo imaš dejansko na voljo? Če nimaš ničesar, lahko "
-                "načrtujem vadbo samo z lastno težo."
-            )
+        if weekly_program_intent:
+            if not frequency_known:
+                return "Kolikokrat na teden želiš oziroma realno lahko trenirati?"
+            if not duration_known:
+                return "Koliko časa imaš običajno na voljo za posamezni trening?"
+            if not equipment_known:
+                return (
+                    "Katero opremo imaš dejansko na voljo? Če nimaš ničesar, lahko "
+                    "načrtujem vadbo samo z lastno težo."
+                )
 
     if fitness_intent and _has_explicit_safety_clearance(history) and schedule_known:
         if not equipment_known:
