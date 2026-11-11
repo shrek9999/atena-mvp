@@ -714,29 +714,29 @@ def _sanitize_unverified_exercise_parameters(answer, messages):
                 )
 
     two_exposures = bool(re.search(
-        r"(?:v|po)\\s+dveh\\s+zaporednih\\s+primerljivih\\s+treningih|"
-        r"dveh\\s+zaporednih\\s+primerljivih\\s+treningih",
+        r"(?:v|po)\s+dveh\s+zaporednih\s+primerljivih\s+treningih|"
+        r"dveh\s+zaporednih\s+primerljivih\s+treningih",
         user_history,
         re.IGNORECASE,
     ))
     progression_context = (
         two_exposures
         and bool(re.search(r"8[–-]10", user_history))
-        and bool(re.search(r"RIR\\s*3|tri\\s+ponovitve\\s+v\\s+rezervi", user_history, re.IGNORECASE))
-        and bool(re.search(r"10\\s+ponovitev", user_history, re.IGNORECASE))
+        and bool(re.search(r"RIR\s*3|tri\s+ponovitve\s+v\s+rezervi", user_history, re.IGNORECASE))
+        and bool(re.search(r"10\s+ponovitev", user_history, re.IGNORECASE))
     )
     if progression_context:
         recovery_reported = bool(re.search(
-            r"regeneracij\\w*.{0,40}(?:dobra|ustrezna|normalna)|"
-            r"(?:dobro|normalno)\\s+okrev\\w*|"
-            r"naslednji\\s+dan.{0,50}(?:brez\\s+težav|brez\\s+bolečin|spoč|normalno)|"
-            r"(?:brez|ni)\\s+(?:nenavadne\\s+)?utrujenosti",
+            r"regeneracij\w*.{0,40}(?:dobra|ustrezna|normalna)|"
+            r"(?:dobro|normalno)\s+okrev\w*|"
+            r"naslednji\s+dan.{0,50}(?:brez\s+težav|brez\s+bolečin|spoč|normalno)|"
+            r"(?:brez|ni)\s+(?:nenavadne\s+)?utrujenosti",
             user_history,
             re.IGNORECASE,
         ))
         technique_and_effort = bool(re.search(
-            r"tehnik\\w*.{0,40}(?:dobra|stabilna)|"
-            r"(?:ni|ni bil|ni bilo)\\s+pretež\\w*|trening\\s+ni\\s+bil\\s+pretež\\w*",
+            r"tehnik\w*.{0,40}(?:dobra|stabilna)|"
+            r"(?:ni|ni bil|ni bilo)\s+pretež\w*|trening\s+ni\s+bil\s+pretež\w*",
             user_history,
             re.IGNORECASE,
         ))
@@ -753,12 +753,12 @@ def _sanitize_unverified_exercise_parameters(answer, messages):
                 "preveriva še regeneracijo: kako si se počutil naslednji dan po zadnjem treningu?"
             )
         exercise_known = bool(re.search(
-            r"počep\\w*|mrtv\\w*\\s+dvig\\w*|deadlift|bench press|potisk\\w*|veslan\\w*|row\\b",
+            r"počep\w*|mrtv\w*\s+dvig\w*|deadlift|bench press|potisk\w*|veslan\w*|row\b",
             user_history,
             re.IGNORECASE,
         ))
-        load_known = bool(re.search(r"\\b\\d+(?:[.,]\\d+)?\\s*kg\\b", user_history, re.IGNORECASE))
-        set_count_known = bool(re.search(r"\\b\\d+\\s*[x×]\\s*\\d+\\b", user_history))
+        load_known = bool(re.search(r"\b\d+(?:[.,]\d+)?\s*kg\b", user_history, re.IGNORECASE))
+        set_count_known = bool(re.search(r"\b\d+\s*[x×]\s*\d+\b", user_history))
         if not (exercise_known and load_known and set_count_known):
             return (
                 "Ker sta dve primerljivi uspešni izpostavitvi potrjeni in je regeneracija ustrezna, "
