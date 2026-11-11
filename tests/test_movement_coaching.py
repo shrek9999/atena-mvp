@@ -23,7 +23,7 @@ def test_squat_reaching_squat_is_a_learning_method_not_a_mandatory_first_step():
     assert method["exercise_id"] == "reaching_squat"
     assert "protiutež" in method["description"]
     options = {item["id"] for item in squat["exercise_options"]}
-    assert {"reaching_squat", "squat_goblet", "back_squat", "front_squat"} <= options
+    assert {"reaching_squat", "squat_goblet", "loaded_deep_squat", "back_squat", "front_squat"} <= options
 
 
 def test_squat_options_are_filtered_by_experience_and_available_equipment():
@@ -38,6 +38,19 @@ def test_squat_options_are_filtered_by_experience_and_available_equipment():
     )
     ids = {item["id"] for item in advanced}
     assert {"squat_goblet", "back_squat", "front_squat"} <= ids
+
+
+def test_loaded_full_range_squat_is_available_as_a_main_strength_option():
+    options = get_exercise_options(
+        "squat",
+        equipment=["bodyweight", "dumbbell"],
+        experience="intermediate",
+        goal="strength_hypertrophy",
+    )
+    selected = {item["id"]: item for item in options}
+    assert "loaded_deep_squat" in selected
+    assert selected["loaded_deep_squat"]["training_role"] == "main"
+    assert selected["loaded_deep_squat"]["mobility_strength"] is True
 
 
 def test_hinge_learning_method_preserves_three_contacts_and_fourth_lumbar_control():
