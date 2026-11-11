@@ -504,3 +504,16 @@ def test_onboarding_sanitizer_preserves_a_single_explicit_safety_question():
     messages = [{"role": "user", "content": "Želim izboljšati splošno pripravljenost."}]
     answer = "Ali imaš trenutno kakršne koli bolečine, poškodbe ali zdravstvene omejitve?"
     assert coach_routes._sanitize_onboarding_questions(answer, messages) == answer
+
+
+def test_slovene_coaching_normalizer_cleans_common_exercise_instruction_typos():
+    answer = (
+        "Predenava izbereva vajo z dve ročkama. Trg in trup ostaneta pokončna; "
+        "spostiš ročke in razbremeniša gib."
+    )
+    cleaned = coach_routes._normalize_slovene_coaching_terms(answer)
+    assert "Preden izbereva" in cleaned
+    assert "z dvema ročkama" in cleaned
+    assert "trup" in cleaned
+    assert "spustiš ročke" in cleaned
+    assert "razbremeniš gib" in cleaned
