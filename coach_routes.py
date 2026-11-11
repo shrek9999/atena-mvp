@@ -381,7 +381,10 @@ def _sanitize_power_and_progression_claims(answer):
 
         def replace_unqualified_progression(_match):
             if already_has_two_exposure_rule:
-                return "\n\nOhrani trenutno obremenitev in ponovi enako dozo.\n\n"
+                return (
+                    _match.group(0)
+                    + "\\n\\nOhrani trenutno obremenitev in ponovi enako dozo."
+                )
             return (
                 "\n\nNapredovanje je primerno šele, ko zgornjo mejo ciljnega razpona "
                 "dosežeš v vsaj dveh primerljivih treningih z načrtovanim RIR, "
@@ -408,7 +411,7 @@ def _sanitize_strength_rest_intervals(answer, messages):
         item.get("content", "") for item in messages
         if item.get("role") == "user" and isinstance(item.get("content"), str)
     )
-    strength_goal = bool(re.search(r"\b(?:moč|strength|strength training)\b", user_history, re.IGNORECASE))
+    strength_goal = bool(re.search(r"\b(?:moč\w*|strength|strength training)\b", user_history, re.IGNORECASE))
     compound_lift = bool(re.search(
         r"\b(?:počep\w*|squat\w*|mrtv\w*\s+dvig\w*|deadlift\w*|RDL|predklon\w*|"
         r"potisk\w*|bench\s+press|veslan\w*|row)\b",
