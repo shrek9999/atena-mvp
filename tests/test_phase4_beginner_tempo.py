@@ -1,9 +1,9 @@
-"""Phase 4 regression: beginner combined strength/hypertrophy tempo."""
+"""Regression: universal controlled learning tempo for strength exercises."""
 
 from training.program import generate_program
 
 
-def test_beginner_combined_strength_hypertrophy_uses_agreed_2_1_1_0_tempo():
+def test_beginner_combined_strength_hypertrophy_uses_universal_controlled_tempo():
     profile = {
         "goal": "strength_hypertrophy",
         "experience": "beginner",
@@ -20,5 +20,5 @@ def test_beginner_combined_strength_hypertrophy_uses_agreed_2_1_1_0_tempo():
     ]
 
     assert exercises
-    assert all(exercise["prescription"]["tempo"] == "2–1–1–0" for exercise in exercises)
-    assert all(exercise["prescription"]["tempo_seconds_per_rep"] == 4 for exercise in exercises)
+    assert all(exercise["prescription"]["tempo"] == "3–1–2–0" for exercise in exercises)
+    assert all(exercise["prescription"]["tempo_seconds_per_rep"] == 6 for exercise in exercises)
