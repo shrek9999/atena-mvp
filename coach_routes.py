@@ -290,6 +290,20 @@ def _normalize_slovene_coaching_terms(answer):
     """Correct recurring language, malformed inline markup and hinge terminology."""
     answer = re.sub(r"<\s*/?\s*(?:strong|b|em|i)\s*>", "", answer, flags=re.IGNORECASE)
     answer = re.sub(r"\bvadinega\b", "vadečega", answer, flags=re.IGNORECASE)
+    typo_replacements = (
+        (r"\bpredenava\b", "Preden"),
+        (r"\bzačetiva\b", "začniva"),
+        (r"\bz\s+dve\s+ročkama\b", "z dvema ročkama"),
+        (r"\bhrbtorse\b", "hrbta"),
+        (r"\btrg\s+in\s+trup\b", "trup"),
+        (r"\bspostiš\b", "spustiš"),
+        (r"\brazbremeniša\b", "razbremeniš"),
+        (r"\bokrevajnje\b", "okrevanje"),
+        (r"\bpristjmp\b", "pristop"),
+        (r"\bpovdarjenim\b", "poudarjenim"),
+    )
+    for pattern, replacement in typo_replacements:
+        answer = re.sub(pattern, replacement, answer, flags=re.IGNORECASE)
     replacements = (
         (r"\bpoz\s+dravljen\b", "Pozdravljen"),
         (r"\bizrek gibanja\b", "izvedbo gibanja"),
