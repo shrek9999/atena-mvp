@@ -72,3 +72,39 @@ def test_english_safety_claim_cannot_infer_clearance_from_missing_information():
     safe = _sanitize_unverified_safety_claim(answer, messages)
     assert "You have not explicitly confirmed that" in safe
     assert "Do you currently have any pain" in safe
+
+
+def test_english_unanswered_safety_question_still_blocks_programming():
+    from coach_routes import _coaching_guardrail_reply
+
+    messages = [
+        {"role": "user", "content": "I want to improve my fitness."},
+        {
+            "role": "model",
+            "content": "Do you currently have any pain, injuries, movement limitations, or medical restrictions?",
+        },
+        {"role": "user", "content": "I can train twice a week."},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    localized = localize_guardrail_reply(reply, "en")
+    assert "clarify one safety point" in localized
+    assert "pain, injury, movement limitation" in localized
+
+
+def test_english_knee_swelling_triggers_a_safety_guardrail():
+    from coach_routes import _coaching_guardrail_reply
+
+    reply = _coaching_guardrail_reply([
+        {"role": "user", "content": "My knee is swollen. Can I keep squatting?"},
+    ])
+    assert reply is not None
+    localized = localize_guardrail_reply(reply, "en")
+    assert "Knee swelling or locking" in localized
+    assert "avoid squats" in localized
+
+
+def test_english_no_pain_confirmation_is_recognized():
+    from coach_routes import _has_explicit_no_pain_confirmation
+
+    assert _has_explicit_no_pain_confirmation("I have no pain right now.")
