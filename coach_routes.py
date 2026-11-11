@@ -35,7 +35,7 @@ from training.longitudinal_progression import summarize_longitudinal_progression
 from training.conditioning_progression import summarize_conditioning_progress
 from training.periodization import summarize_training_cycle
 from training.proactive_checkin import build_proactive_checkin
-from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL
+from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL, RDL_SUBSTITUTION_ACCURACY
 from training.movement_assessment import MovementAssessmentError, assess_movement_competence
 from training.camera_observations import CameraObservationError, validate_camera_observations
 from training.goals import normalize_goal, public_goal_options
@@ -496,9 +496,7 @@ def _sanitize_onboarding_questions(answer, messages):
         if item.get("role") == "user" and isinstance(item.get("content"), str)
     )
     lowered = user_history.casefold()
-    # A single grammatical question can still bundle two independent questions,
-    # e.g. asking for the user's goal and health restrictions at once. Keep the
-    # first useful question and defer the second.
+
     compound_health_intake = re.search(
         r"\s+(?:in|ter)\s+(?:ali\s+)?(?:imaš|občutiš|te\s+muči).{0,120}"
         r"(?:bolečin\w*|poškodb\w*|omejitv\w*|zdravstven\w*)",
@@ -507,22 +505,21 @@ def _sanitize_onboarding_questions(answer, messages):
     )
     if compound_health_intake and "?" in answer:
         answer = answer[:compound_health_intake.start()].rstrip(" ,;:") + "?"
+
     fitness_intent = bool(re.search(
-        r"(bolj fit|telesn\w* pripravljenost|splošn\w* pripravljenost|funkcional\w*|"
-        r"kondic\w*|moč\w*|mišičn\w* maso|maščob\w*|redn\w* trenir|"
+        r"(bolj fit|telesn\w*\s+pripravljenost|splošn\w*\s+pripravljenost|funkcional\w*|"
+        r"kondic\w*|moč\w*|mišičn\w*\s+mas\w*|maščob\w*|redn\w* trenir|"
         r"začnem trenir|program\w*|vadbeni program|workout|training plan)",
         lowered,
     ))
-    if not fitness_intent:
-        return answer
-
-    safety_clear = _has_explicit_safety_clearance(user_history)
+    safety_clear = _has_explicit_safety_clearance(user_history) if fitness_intent else True
     safety_question_present = "?" in answer and bool(re.search(
         r"(bolečin\w*|poškodb\w*|omejitv\w*|zdravstven\w*|pain|injur\w*|health restriction)",
         answer,
         re.IGNORECASE,
     ))
-    if not safety_clear:
+
+    if fitness_intent and not safety_clear:
         if safety_question_present and answer.count("?") == 1:
             return answer
         if "?" in answer or re.search(
@@ -537,13 +534,9 @@ def _sanitize_onboarding_questions(answer, messages):
             )
         return answer
 
-    # Multiple question marks mean the model has bundled independent intake
-    # questions. Keep the first useful question and defer the rest.
     if answer.count("?") > 1:
         return answer[:answer.find("?") + 1].strip()
 
-    # Also catch two requests joined into one grammatical question, e.g.
-    # experience plus session duration in the same sentence.
     compound_request = re.search(
         r"\s+(?:in|ter)\s+(?:približno\s+)?(?:koliko\s+časa|koliko\s+minut|"
         r"kakšno\s+opremo|s\s+kakšno\s+opremo|kolikokrat\s+na\s+teden)\b",
@@ -552,6 +545,46 @@ def _sanitize_onboarding_questions(answer, messages):
     )
     if compound_request and "?" in answer:
         return answer[:compound_request.start()].rstrip(" ,;:") + "?"
+    return answer
+
+
+
+def _sanitize_deadlift_substitution_claims(answer, messages):
+    """Avoid presenting an RDL as a biomechanically identical deadlift substitute."""
+    user_history = "\n".join(
+        message.get("content", "")
+        for message in messages
+        if message.get("role") == "user" and isinstance(message.get("content"), str)
+    )
+    deadlift_context = re.search(
+        r"\b(?:mrtv\w*\s+dvig\w*|deadlift)\b", user_history, re.IGNORECASE
+    )
+    substitution_context = re.search(
+        r"\b(?:namesto|zamenj\w*|alternativ\w*|replace|substitut\w*)\b",
+        user_history,
+        re.IGNORECASE,
+    )
+    mentions_rdl = re.search(
+        r"\b(?:RDL|romunsk\w*\s+mrtv\w*\s+dvig\w*)\b", answer, re.IGNORECASE
+    )
+    if not (deadlift_context and substitution_context and mentions_rdl):
+        return answer
+
+    answer = re.sub(
+        r"\bpopolnoma\s+posnema\s+mehaniko\s+(?:klasičnega\s+)?mrtvega\s+dviga\b",
+        "ohranja soroden vzorec kolčnega zgiba in poudarek na zadnji verigi, "
+        "vendar ni biomehansko enak klasičnemu mrtvemu dvigu",
+        answer,
+        flags=re.IGNORECASE,
+    )
+    answer = re.sub(
+        r"\b(?:completely|fully)\s+(?:mimics|replicates)\s+(?:the\s+)?"
+        r"(?:mechanics|movement)\s+of\s+(?:a\s+)?(?:conventional\s+)?deadlift\b",
+        "preserves a related hip-hinge and posterior-chain emphasis, but is not "
+        "biomechanically identical to a conventional deadlift",
+        answer,
+        flags=re.IGNORECASE,
+    )
     return answer
 
 
@@ -1038,11 +1071,50 @@ def _coaching_guardrail_reply(messages):
             "večsklepne vaje. Preden sestavim tvoj individualni program, moram preveriti: "
             "ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
         )
-    if re.search(r"(izpustil|izpuščen).{0,40}(trening|vadb)|dvojni obseg|dvojno količino", lowered):
+    missed_session = bool(re.search(
+        r"(?:izpustil\w*|izpuščen\w*).{0,50}(?:trening\w*|vadb\w*)|"
+        r"(?:trening\w*|vadb\w*).{0,50}(?:izpustil\w*|izpuščen\w*)|"
+        r"(?:opravil|opravila)\s+(?:samo|le)\s+en\w*\s+od\s+dveh.{0,60}(?:trening\w*|vadb\w*)|"
+        r"samo\s+en\w*\s+od\s+dveh.{0,60}(?:trening\w*|vadb\w*)",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    low_energy = bool(re.search(
+        r"(brez energij\w*|premalo energij\w*|utrujen\w*\s+po\s+službi|"
+        r"po\s+službi.{0,40}utrujen\w*|po\s+delu.{0,40}utrujen\w*)",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    self_blame = bool(re.search(
+        r"(vse\s+sem\s+pokvaril|vse\s+pokvaril|vse\s+sem\s+zamočil|"
+        r"vse\s+zamočil|vse\s+sem\s+uničil|vse\s+uničil|ničesar\s+nisem\s+dosegel)",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    health_issue = bool(re.search(
+        r"(bolečin\w*|poškodb\w*|oteklin\w*|vročin\w*|bolezen|gripa|omotic\w*|omotič\w*)",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    if missed_session and not health_issue:
+        if self_blame:
+            return (
+                "Ničesar nisi pokvaril. En izpuščen trening ne izniči napredka. "
+                "Ne poskušaj ga nadoknaditi z dvojnim obsegom; nadaljuj z naslednjim "
+                "načrtovanim treningom. Če se to ponavlja, prilagodiva tedenski obseg, "
+                "da bo realističen. Bi ti bolj ustrezala dva krajša treninga?"
+            )
+        if low_energy:
+            return (
+                "To je razumljivo; po službi ni vedno dovolj energije. Izpuščenega treninga "
+                "ne nadomeščaj z dvojnim obsegom. Poskusi krajšo različico 20–30 minut ali "
+                "zahtevnejši trening prestavi na dan z več energije. Bi ti bolj ustrezal "
+                "krajši trening po službi?"
+            )
         return (
-            "Ne. Izpuščenega treninga praviloma ne nadomeščaj z dvojnim obsegom v naslednji "
-            "vadbi. Nadaljuj po običajnem razporedu; zamujenega treninga ni treba 'loviti'. "
-            "Če si zaradi premora še utrujen ali slabše regeneriran, nadaljuj konservativno."
+            "En izpuščen trening ne izniči napredka. Ne nadomeščaj ga z dvojnim obsegom; "
+            "nadaljuj z naslednjim načrtovanim treningom. Kaj je bil glavni razlog, "
+            "da je trening odpadel?"
         )
 
     no_pain_now = _has_explicit_no_pain_confirmation(latest)
@@ -1984,6 +2056,7 @@ def coach_chat():
             + ("\n".join(compact) if compact else "No matching alternatives found; ask one clarifying question.")
             + "\nUse only the alternatives above. If the requested exercise is not identified, ask which exercise."
         )
+        system_prompt += "\n\n" + RDL_SUBSTITUTION_ACCURACY
     model = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite").strip()
     guarded_answer = _coaching_guardrail_reply(messages)
     if guarded_answer:
@@ -2012,6 +2085,7 @@ def coach_chat():
         answer = _sanitize_model_markup(answer)
         answer = _normalize_slovene_coaching_terms(answer)
         answer = _sanitize_onboarding_questions(answer, messages)
+        answer = _sanitize_deadlift_substitution_claims(answer, messages)
         answer = _sanitize_unverified_training_history_claims(answer, messages)
         answer = _sanitize_power_and_progression_claims(answer)
         answer = _sanitize_strength_rest_intervals(answer, messages)
