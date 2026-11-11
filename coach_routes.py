@@ -500,8 +500,8 @@ def _sanitize_onboarding_questions(answer, messages):
     # e.g. asking for the user's goal and health restrictions at once. Keep the
     # first useful question and defer the second.
     compound_health_intake = re.search(
-        r"\\s+(?:in|ter)\\s+(?:ali\\s+)?(?:imaš|občutiš|te\\s+muči).{0,120}"
-        r"(?:bolečin\\w*|poškodb\\w*|omejitv\\w*|zdravstven\\w*)",
+        r"\s+(?:in|ter)\s+(?:ali\s+)?(?:imaš|občutiš|te\s+muči).{0,120}"
+        r"(?:bolečin\w*|poškodb\w*|omejitv\w*|zdravstven\w*)",
         answer,
         re.IGNORECASE,
     )
