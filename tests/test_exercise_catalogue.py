@@ -245,6 +245,16 @@ def test_compound_and_single_joint_exercise_roles_match_their_training_function(
         assert item["training_role"] == "accessory", exercise_id
 
 
+def test_controlled_lateral_step_is_a_slow_coordination_skill_not_a_power_alternative():
+    step = get_exercise("controlled_lateral_step")
+    assert step["training_role"] == "accessory"
+    assert "power" not in step["training_purposes"]
+    assert "skill" in step["training_purposes"]
+    assert step["alternatives"] == []
+    assert any("nadzorovanim korakom" in cue for cue in step["cues"])
+    assert any("bočni prenos teže ob stabilni opori" in item.lower() for item in step["regressions"])
+
+
 def test_knee_flexion_accessories_are_not_misclassified_as_hip_hinge_patterns():
     assert get_exercise("slider_leg_curl")["movement_pattern"] == "accessory"
     assert get_exercise("nordic_hamstring_curl")["movement_pattern"] == "accessory"
