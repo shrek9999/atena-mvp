@@ -7828,8 +7828,8 @@
     "training_purposes": [
       "functional_fitness",
       "general_fitness",
-      "power",
-      "coordination"
+      "coordination",
+      "skill"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -8075,14 +8075,12 @@
       "Daljši bočni korak z nadzorovanim zaviranjem",
       "Počasno bočno prestopanje v obe smeri"
     ],
-    "alternatives": [
-      "lateral_shuffle"
-    ],
+    "alternatives": [],
     "warnings": [
       "Izvajaj na ravni, nedrseči podlagi. Če izgubiš ravnotežje, skrajšaj korak ali se vrni na prenos teže ob opori."
     ],
     "single_joint": false,
-    "training_role": "power",
+    "training_role": "accessory",
     "loading_potential": "low",
     "time_based": true,
     "endurance_type": "muscular",
