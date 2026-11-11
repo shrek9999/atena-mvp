@@ -391,6 +391,29 @@ def test_exercise_dose_gate_uses_the_full_conversation_context():
     assert "Preden določim serije" in result
 
 
+def test_row_pattern_explanation_is_available_without_health_clearance():
+    reply = _coaching_guardrail_reply([
+        {"role": "user", "content": "V programu imam veslanje z ročkami v predklonu. Kako naj razumem ta gibalni vzorec?"},
+    ])
+    assert reply is not None
+    assert "horizontalni poteg" in reply
+    assert "trup je nagnjen naprej" in reply
+    assert "varnostnega vprašanja" not in reply
+
+
+def test_row_and_pull_up_are_explained_as_distinct_patterns_without_health_gate():
+    reply = _coaching_guardrail_reply([
+        {"role": "user", "content": "V programu imam veslanje z ročkami v predklonu."},
+        {"role": "model", "content": "Kako naj razumem ta gibalni vzorec?"},
+        {"role": "user", "content": "Ali je to v bistvu isto kot zgib?"},
+    ])
+    assert reply is not None
+    assert "horizontalni poteg" in reply
+    assert "vertikalni poteg" in reply
+    assert "dva različna gibalna vzorca" in reply
+    assert "varnostnega vprašanja" not in reply
+
+
 def test_dumbbell_row_is_not_presented_as_a_vertical_pull_substitute():
     messages = [
         {"role": "user", "content": "V programu imam veslanje z ročkami v predklonu."},
