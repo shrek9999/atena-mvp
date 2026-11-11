@@ -1708,11 +1708,11 @@
       "Breme naj lebdi zaradi iztega kolkov."
     ],
     "common_errors": [
-      "Počep namesto predklona z ravnim hrbtom.",
+      "Počep namesto predklona z nevtralno hrbtenico.",
       "Pretiran izteg v ledvenem delu."
     ],
     "regressions": [
-      "Učenje predklona z ravnim hrbtom s palico",
+      "Učenje predklona z nevtralno hrbtenico s palico",
       "Mrtvi dvig s kettlebellom"
     ],
     "progressions": [
@@ -1722,7 +1722,7 @@
       "Met medicinke ob tla"
     ],
     "warnings": [
-      "Najprej obvladaj predklon z ravnim hrbtom in mrtvi dvig."
+      "Najprej obvladaj predklon z nevtralno hrbtenico in mrtvi dvig."
     ],
     "single_joint": false,
     "equipment_any": [],
@@ -2029,7 +2029,7 @@
       "trunk"
     ],
     "cues": [
-      "Kolena rahlo pokrči in izvedi predklon z ravnim hrbtom.",
+      "Kolena rahlo pokrči in izvedi predklon z nevtralno hrbtenico.",
       "Trup ohrani stabilen, ročki naj visita pod rameni.",
       "Komolca vodi nazaj, nato ročki nadzorovano spusti."
     ],
