@@ -439,6 +439,16 @@ def test_repeated_table_row_warning_becomes_a_concise_follow_up():
     assert "ne enakovredna zamenjava" in reply
     assert len(reply) < 400
 
+def test_slovene_normalizer_fixes_mixed_script_and_known_metcon_typo():
+    from coach_routes import _normalize_slovene_coaching_terms
+
+    answer = "Delovni teden naj bo uravnoteжeno zasnovan, ne skozi naporne presvete krožne treninge."
+    result = _normalize_slovene_coaching_terms(answer)
+    assert "uravnoteženo" in result
+    assert "naporne, prehitre krožne treninge" in result
+    assert "ж" not in result
+
+
 def test_progression_sanitizer_does_not_contradict_an_explicit_two_exposure_rule():
     from coach_routes import _sanitize_power_and_progression_claims
 
