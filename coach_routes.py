@@ -638,8 +638,8 @@ def _sanitize_unverified_exercise_parameters(answer, messages):
         )
 
     one_exposure = bool(re.search(
-        r"prvi.{0,60}(?:uspešn\w*|izpostavitv\w*)|"
-        r"šele\s+prvi\s+tak\s+uspešn\w*\s+trening",
+        r"prvi.{0,60}(?:uspeš\w*|izpostavitv\w*)|"
+        r"šele\s+prvi\s+tak\s+uspeš\w*\s+trening",
         user_history,
         re.IGNORECASE,
     ))
