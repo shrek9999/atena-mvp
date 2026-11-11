@@ -633,3 +633,102 @@ def test_single_successful_squat_exposure_does_not_gain_invented_sets_or_tempo()
     assert "2–1–1–0" not in cleaned
     assert "ne bom ugibal" in cleaned
 
+def test_rdl_substitution_follow_up_acknowledges_equipment_without_repeating_full_answer():
+    messages = [
+        {"role": "user", "content": "Uporabnik nima bolečin ali omejitev; na voljo ima ročke, nima palice ali klopi."},
+        {"role": "user", "content": "Danes nimam dostopa do olimpijske palice. V programu imam mrtvi dvig. S čim ga lahko zamenjam?"},
+        {"role": "model", "content": "RDL je sorodna alternativa, vendar ni biomehansko enak mrtvemu dvigu. Kakšen je bil prvotni odmerek mrtvega dviga in katere teže ročk imaš?"},
+        {"role": "user", "content": "Na voljo imam samo ročke in lastno težo, klopi nimam."},
+    ]
+    cleaned = coach_routes._sanitize_unverified_exercise_parameters(
+        "Predlagam RDL z ročkami: 3 × 10 ponovitev.", messages
+    )
+    assert cleaned.startswith("Razumem: imaš ročke in lastno težo")
+    assert "prvotni odmerek" in cleaned
+    assert cleaned.count("?") == 1
+
+
+def test_rdl_substitution_follow_up_acknowledges_training_intent():
+    messages = [
+        {"role": "user", "content": "Na voljo ima ročke, nima palice ali klopi."},
+        {"role": "user", "content": "V programu imam mrtvi dvig. S čim ga lahko zamenjam?"},
+        {"role": "model", "content": "RDL ni biomehansko enak mrtvemu dvigu. Kakšen je bil prvotni odmerek mrtvega dviga?"},
+        {"role": "user", "content": "Želim ohraniti vzorec kolčnega iztega in približno enak namen treninga."},
+    ]
+    cleaned = coach_routes._sanitize_unverified_exercise_parameters(
+        "RDL z ročkami: 3–4 serije po 8–12 ponovitev.", messages
+    )
+    assert cleaned.startswith("Se strinjam: ohraniva soroden vzorec predklona")
+    assert "ni biomehansko enak" in cleaned
+    assert cleaned.count("?") == 1
+
+
+def test_single_exposure_progression_first_reply_holds_load_and_asks_about_recovery():
+    messages = [
+        {
+            "role": "user",
+            "content": (
+                "Pri počepu je dosegel vse serije po 10 ponovitev z RIR 3, "
+                "vendar je bil to šele prvi tak uspešen trening."
+            ),
+        },
+        {"role": "user", "content": "Pri počepu sem opravil vse serije po 10 ponovitev in imel približno 3 ponovitve v rezervi. Lahko naslednjič povečam težo?"},
+    ]
+    cleaned = coach_routes._sanitize_unverified_exercise_parameters(
+        "Povečaj težo za 2,5 kg in naredi 3 × 10.", messages
+    )
+    assert "Za zdaj še ne povečuj obremenitve" in cleaned
+    assert "isto težo" in cleaned
+    assert "enakim številom serij kot zadnjič" in cleaned
+    assert "24–48 urah" in cleaned
+    assert "2,5 kg" not in cleaned
+
+
+def test_single_exposure_progression_technique_follow_up_does_not_ask_about_equipment():
+    messages = [
+        {"role": "user", "content": "Pri počepu sem dosegel vse serije po 10 ponovitev z RIR 3, vendar je bil to šele prvi tak uspešen trening."},
+        {"role": "user", "content": "Tehnika je bila dobra, vendar je bil to šele prvi tak uspešen trening."},
+    ]
+    cleaned = coach_routes._sanitize_unverified_exercise_parameters(
+        "Ali imaš za naslednji trening na voljo enako opremo?", messages
+    )
+    assert "tehnika je bila dobra" in cleaned.casefold()
+    assert "isto obremenitev" in cleaned
+    assert "regeneracijo" in cleaned
+    assert "opremo" not in cleaned
+
+
+def test_two_exposure_progression_waits_for_recovery_and_avoids_invented_load():
+    profile = (
+        "V programu je cilj 8–10 ponovitev; v dveh zaporednih primerljivih treningih "
+        "je izvedel vse serije po 10 ponovitev z RIR 3 in stabilno tehniko."
+    )
+    messages = [
+        {"role": "user", "content": profile},
+        {"role": "user", "content": "Vse serije sem opravil. Na koncu vsake serije bi lahko naredil še približno tri ponovitve."},
+    ]
+    first = coach_routes._sanitize_unverified_exercise_parameters(
+        "Povečaj obremenitev za 2 kg in naredi 3 × 8.", messages
+    )
+    assert "preveriva še regeneracijo" in first
+    assert "2 kg" not in first
+    assert "3 × 8" not in first
+
+    messages.append({"role": "model", "content": first})
+    messages.append({"role": "user", "content": "Tehnika je bila dobra in trening ni bil pretežek."})
+    second = coach_routes._sanitize_unverified_exercise_parameters(
+        "Izvedi 3 serije po 8 ponovitev.", messages
+    )
+    assert "regeneracijo" in second
+    assert second.count("?") == 1
+
+    messages.append({"role": "model", "content": second})
+    messages.append({"role": "user", "content": "Naslednji dan sem se normalno počutil in bil spočit."})
+    final = coach_routes._sanitize_unverified_exercise_parameters(
+        "Povečaj za 2 kg in izvedi 3 × 8.", messages
+    )
+    assert "najmanjše razpoložljivo povečanje" in final
+    assert "ne bom ugibal kilogramov" in final
+    assert "2 kg" not in final
+    assert "3 × 8" not in final
+
