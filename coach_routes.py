@@ -822,9 +822,9 @@ def _coaching_guardrail_reply(messages):
 
     # Explain a movement pattern when the user asks a conceptual question.
     # This is general education, not an individualized exercise prescription.
-    row_pattern_context = bool(re.search(r"veslan\\w*", history_lower))
+    row_pattern_context = bool(re.search(r"veslan\w*", history_lower))
     row_conceptual_question = bool(re.search(
-        r"(gibaln\\w*\\s+vzorec|kako\\s+naj\\s+razumem|isto\\s+kot|enako\\s+kot|kaj\\s+pomeni)",
+        r"(gibaln\w*\s+vzorec|kako\s+naj\s+razumem|isto\s+kot|enako\s+kot|kaj\s+pomeni)",
         lowered,
         re.IGNORECASE,
     ))
