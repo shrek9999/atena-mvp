@@ -697,7 +697,7 @@ def _sanitize_unverified_exercise_parameters(answer, messages):
                     "primerljivi uspešni izpostavitvi; šele nato lahko razmisliva o najmanjšem "
                     "povečanju obremenitve."
                 )
-            if re.search(r"(tehnik\w*|prvi tak uspeš\w*|prvič)", latest_user, re.IGNORECASE):
+            if re.search(r"tehnik\w*", latest_user, re.IGNORECASE):
                 return (
                     "Dobro, tehnika je bila dobra. Ker je bila to še vedno samo ena uspešna "
                     "izpostavitev, naslednjič ohrani isto obremenitev in enako število serij "
