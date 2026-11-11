@@ -824,6 +824,43 @@ def _coaching_guardrail_reply(messages):
             "kot shranjeno, dokler je ne potrdi namenski postopek za program oziroma profil."
         )
 
+    # Low-risk technique education for a foot-assisted vertical pull should remain
+    # available even while the separate health-intake question is unanswered.
+    foot_assisted_pull_context = bool(re.search(
+        r"(zgib\\w*|vertikaln\\w*.{0,25}(?:poteg|vlek)|pull.?up)",
+        history_lower,
+        re.IGNORECASE,
+    )) and bool(re.search(
+        r"(oporo\\s+stopal|pomag\\w*.{0,20}nog\\w*|nog\\w*.{0,20}pomag\\w*|škatl\\w*)",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    if foot_assisted_pull_context and re.search(
+        r"(lažj\\w*.{0,35}vertikaln\\w*|ne\\s+veslanj\\w*|ne\\s+rowing)",
+        lowered,
+        re.IGNORECASE,
+    ):
+        return (
+            "Razumem: želiš lažjo različico vertikalnega zgiba, ne veslanja. "
+            "Zgib z oporo stopal je vertikalni poteg; škatla ti omogoča, da z nogami "
+            "delno razbremeniš roke, trup pa ostane skoraj navpičen."
+        )
+    if foot_assisted_pull_context and re.search(
+        r"(kako.{0,50}(?:postav\\w*|položaj\\w*|trup\\w*|kolk\\w*|kolen\\w*|stopal\\w*)|"
+        r"postav\\w*.{0,50}(?:trup\\w*|kolk\\w*|kolen\\w*|stopal\\w*))",
+        lowered,
+        re.IGNORECASE,
+    ):
+        return (
+            "Škatlo postavi nekoliko pred drog, tako da lahko nanjo položiš stopala in "
+            "ohraniš trup skoraj navpičen. Stopala ostanejo na škatli; kolena in kolki so "
+            "udobno pokrčeni, kolena pa se ne naslanjajo na škatlo. Z rokami primi drog "
+            "približno v širini ramen, nežno aktiviraj lopatice in ohrani rebra nad medenico. "
+            "Med dvigom z nogami pritisni na škatlo le toliko, da zmanjšaš breme rok. "
+            "Spuščaj se nadzorovano in se ne odrivaj sunkovito. Če škatla ni stabilna, "
+            "te različice ne izvajaj."
+        )
+
     # Explain a movement pattern when the user asks a conceptual question.
     # This is general education, not an individualized exercise prescription.
     row_pattern_context = bool(re.search(r"veslan\w*", history_lower))
@@ -833,6 +870,12 @@ def _coaching_guardrail_reply(messages):
         re.IGNORECASE,
     ))
     if row_pattern_context and row_conceptual_question:
+        if re.search(r"(isto\\s+kot|enako\\s+kot)", lowered, re.IGNORECASE):
+            return (
+                "Ne. Veslanje z ročkami v predklonu je horizontalni poteg: trup je nagnjen "
+                "naprej, ročke vlečeš proti trupu. Zgib je vertikalni poteg, pri katerem "
+                "telo vlečeš navzgor proti drogu. Gre za različna gibalna vzorca."
+            )
         return (
             "Veslanje z ročkami v predklonu je horizontalni poteg: trup je nagnjen naprej, "
             "ročke vlečeš proti trupu, pri tem pa nadzoruješ položaj trupa in lopatic. "
@@ -1410,6 +1453,14 @@ def _coaching_guardrail_reply(messages):
                 for item in assistant_texts
             )
             if goal_question_already_asked:
+                if re.search(r"(težek\\w*\\s+trening|zahtev\\w*\\s+trening|visok\\w*\\s+intenzivnost)", lowered):
+                    return (
+                        "Razumem, da želiš zahteven trening. Zahtevnost opisuje, kako "
+                        "intenzivno boš treniral, ne pove pa še, kaj želiš predvsem razvijati. "
+                        "Glavnega cilja še nimam, zato programa ne bom ugibal. "
+                        "Ko določiš, ali želiš razvijati moč, mišično maso, kondicijo "
+                        "ali funkcionalno pripravljenost, lahko nadaljujeva."
+                    )
                 return (
                     "Zabeležil sem dodatne podatke o tvojih izkušnjah in opremi. "
                     "Glavnega cilja še nimam, zato programa ne bom ugibal. "
@@ -1446,6 +1497,13 @@ def _coaching_guardrail_reply(messages):
                 for item in assistant_texts
             )
             if experience_question_already_asked:
+                if re.search(r"(ravnotež\\w*|koordinacij\\w*|eksploziv\\w*|kondic\\w*|moč\\w*)", lowered):
+                    return (
+                        "Zabeležil sem tvoje prioritete glede moči, ravnotežja, koordinacije, "
+                        "eksplozivnosti in kondicije. Za določitev zahtevnosti programa mi "
+                        "še manjka podatek o tvojih izkušnjah z vadbo moči. Ne bom "
+                        "predpostavljal, da si začetnik ali napreden."
+                    )
                 return (
                     "Oprema in tedenska pogostost sta zabeleženi. Za določitev zahtevnosti "
                     "programa mi še manjka podatek o tvojih izkušnjah z vadbo moči. "
