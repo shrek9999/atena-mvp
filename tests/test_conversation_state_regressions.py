@@ -516,7 +516,7 @@ def test_weekly_program_request_requires_frequency_before_programming():
     messages = [
         {"role": "user", "content": (
             "Izrecno potrjujem, da nimam bolečin, poškodb ali zdravstvenih omejitev. "
-            "Moj cilj je moč in mišična masa. Imam ročke in redno treniram. "
+            "Moj cilj je moč in mišična masa. Imam ročke in redno treniram že tri leta. "
             "Pripravi mi tedenski program."
         )},
     ]
@@ -542,7 +542,7 @@ def test_programming_gate_allows_programme_after_goal_equipment_experience_and_s
     messages = [
         {"role": "user", "content": (
             "Izrecno potrjujem, da nimam bolečin, poškodb ali zdravstvenih omejitev. "
-            "Moj cilj je moč in mišična masa. Imam ročke in lastno težo, redno treniram, "
+            "Moj cilj je moč in mišična masa. Imam ročke in lastno težo, redno treniram že tri leta, "
             "lahko vadim trikrat tedensko, vsak trening pa naj traja 60 minut. "
             "Pripravi mi tedenski program."
         )},
