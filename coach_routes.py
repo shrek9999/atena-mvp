@@ -80,11 +80,12 @@ def _chat_message_character_limit(role):
 
 def _has_explicit_no_pain_confirmation(text):
     return bool(re.search(
-        r"\b(?:ne boli me|ne čutim bolečine|nimam bolečin|nima bolečin|brez bolečin|no pain)\b",
+        r"\b(?:ne boli me|ne čutim bolečine|nimam bolečin|nima bolečin|brez bolečin|"
+        r"no pain|no current pain|I have no pain|I don't have pain|I do not have pain|"
+        r"not experiencing pain|without pain)\b",
         text,
         re.IGNORECASE,
     ))
-
 
 def _has_explicit_safety_clearance(text):
     """Require explicit negative confirmation for pain, injuries and limitations."""
@@ -1024,35 +1025,38 @@ def _coaching_guardrail_reply(messages):
         )
 
     swelling_reported = (
-        bool(re.search(r"otekl\w*", history_lower))
-        and not bool(re.search(r"(?:brez|ni|ne)\s+(?:nobene\s+)?otekl\w*|otekline\s+ni|ne\s+oteče", history_lower))
+        bool(re.search(r"otekl\w*|swelling|swollen", history_lower))
+        and not bool(re.search(
+            r"(?:brez|ni|ne)\s+(?:nobene\s+)?otekl\w*|otekline\s+ni|ne\s+oteče|"
+            r"no swelling|not swollen|without swelling",
+            history_lower,
+        ))
     )
     locking_reported = (
-        bool(re.search(r"zaklepan\w*|zaklen\w*", history_lower))
-        and not bool(re.search(r"(?:brez|ni|ne)\s+(?:nobenega\s+)?zaklepan\w*|ne\s+zaklepa", history_lower))
+        bool(re.search(r"zaklepan\w*|zaklen\w*|locking|locks up", history_lower))
+        and not bool(re.search(
+            r"(?:brez|ni|ne)\s+(?:nobenega\s+)?zaklepan\w*|ne\s+zaklepa|"
+            r"no locking|does not lock|doesn't lock",
+            history_lower,
+        ))
     )
     knee_swelling_or_locking = (
-        bool(re.search(r"kolen\w*", history_lower))
+        bool(re.search(r"kolen\w*|knee", history_lower))
         and (swelling_reported or locking_reported)
     )
-    if knee_swelling_or_locking:
-        return (
-            "Oteklina ali zaklepanje kolena sta opozorilna znaka. Za zdaj ne izvajaj počepov, "
-            "izpadnih korakov ali drugih obremenjenih gibov za to koleno. Priporočam čimprejšnjo "
-            "zdravstveno oceno, preden se vrneš k obremenjevanju. Če noge ne moreš normalno "
-            "obremeniti ali ne moreš stopiti nanjo, poišči nujno zdravstveno pomoč še danes. "
-            "Ali lahko trenutno normalno obremenjuješ nogo?"
-        )
 
     recovery_context = bool(re.search(
-        r"(slabo spim|slab(?:o|ega) spanec|slaba regeneracija|neprespan)",
+        r"(slabo spim|slab(?:o|ega) spanec|slaba regeneracija|neprespan|"
+        r"sleeping poorly|poor sleep|bad sleep|not sleeping well)",
         history_lower,
     )) and bool(re.search(
-        r"(mišice.{0,35}utrujen|utrujen.{0,35}mišic|utrujenost)",
+        r"(mišice.{0,35}utrujen|utrujen.{0,35}mišic|utrujenost|"
+        r"muscle.{0,35}fatigue|fatigue.{0,35}muscle|muscle soreness)",
         history_lower,
     ))
     asks_to_continue = bool(re.search(
-        r"(naj kar nadaljujem|ali naj nadaljujem|nadaljujem po načrtu|nadaljujem po planu)",
+        r"(naj kar nadaljujem|ali naj nadaljujem|nadaljujem po načrtu|nadaljujem po planu|"
+        r"should i continue|can i continue|continue as planned|keep following the plan)",
         lowered,
     ))
     if recovery_context and asks_to_continue:
@@ -1455,7 +1459,9 @@ def _coaching_guardrail_reply(messages):
         1 for item in assistant_texts
         if "?" in item and re.search(
             r"(?:ali\s+(?:imaš|trenutno|morda)|imaš\s+(?:trenutno|kakšne|kakršne koli)|občutiš|opaziš).{0,100}"
-            r"(?:bolečin\w*|poškodb\w*|omejitv\w*|zdravstven.{0,30}težav)",
+            r"(?:bolečin\w*|poškodb\w*|omejitv\w*|zdravstven.{0,30}težav)|"
+            r"(?:do you currently have|do you have|are you experiencing).{0,100}"
+            r"(?:pain|injur\w*|medical restriction|health condition|limitation)",
             item,
             re.IGNORECASE,
         )
@@ -1463,7 +1469,8 @@ def _coaching_guardrail_reply(messages):
     assistant_asked_safety = safety_question_count > 0
     assistant_asked_setup = any(
         "?" in item and re.search(
-            r"(oprem\w*|koliko časa|časovn\w* okvir|minut|tedensk\w*|pogostost)",
+            r"(oprem\w*|koliko časa|časovn\w* okvir|minut|tedensk\w*|pogostost|"
+            r"what equipment|how much time|how many days|weekly availability|how often)",
             item,
             re.IGNORECASE,
         )
@@ -1472,7 +1479,9 @@ def _coaching_guardrail_reply(messages):
     fitness_intent = bool(re.search(
         r"(bolj fit|telesn\w* pripravljenost|splošn\w* pripravljenost|funkcional\w*|"
         r"kondic\w*|moč\w*|mišičn\w* maso|maščob\w*|redn\w* trenir|"
-        r"začnem trenir|program vadbe|vadbeni program)",
+        r"začnem trenir|program vadbe|vadbeni program|get fitter|improve my fitness|"
+        r"build strength|gain muscle|lose fat|training plan|workout plan|"
+        r"improve conditioning|improve endurance)",
         history_lower,
         re.IGNORECASE,
     ))
@@ -1488,8 +1497,8 @@ def _coaching_guardrail_reply(messages):
             "ali zdravstvene zadržke?"
         )
     latest_reports_health_issue = bool(re.search(
-        r"(imam|občutim|čutim|pojavlja se|pojavila se je).{0,70}"
-        r"(boleč|poškodb|omejit|bolezen|operacij|simptom)",
+        r"(imam|občutim|čutim|pojavlja se|pojavila se je|I have|I am experiencing|I feel).{0,70}"
+        r"(boleč|poškodb|omejit|bolezen|operacij|simptom|pain|injur\w*|limitation|medical condition|symptom)",
         latest,
         re.IGNORECASE,
     ))
