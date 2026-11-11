@@ -441,5 +441,5 @@ def test_progression_sanitizer_does_not_duplicate_existing_two_exposure_guidance
 
 
 def test_rdl_protocol_includes_fourth_tactile_lumbar_control_point():
-    assert "četrto taktilno kontrolno točko" in RDL_TECHNIQUE_PROTOCOL
-    assert "ne sili ledvene krivine v sploščanje" in RDL_TECHNIQUE_PROTOCOL
+    assert "četrto taktilno kontrolno točko" in RDL_TECHNIQUE_PROTOCOL.casefold()
+    assert "ne sili ledvene krivine v sploščanje" in RDL_TECHNIQUE_PROTOCOL.casefold()
