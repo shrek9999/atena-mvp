@@ -820,6 +820,22 @@ def _coaching_guardrail_reply(messages):
             "kot shranjeno, dokler je ne potrdi namenski postopek za program oziroma profil."
         )
 
+    # Explain a movement pattern when the user asks a conceptual question.
+    # This is general education, not an individualized exercise prescription.
+    row_pattern_context = bool(re.search(r"veslan\\w*", history_lower))
+    row_conceptual_question = bool(re.search(
+        r"(gibaln\\w*\\s+vzorec|kako\\s+naj\\s+razumem|isto\\s+kot|enako\\s+kot|kaj\\s+pomeni)",
+        lowered,
+        re.IGNORECASE,
+    ))
+    if row_pattern_context and row_conceptual_question:
+        return (
+            "Veslanje z ročkami v predklonu je horizontalni poteg: trup je nagnjen naprej, "
+            "ročke vlečeš proti trupu, pri tem pa nadzoruješ položaj trupa in lopatic. "
+            "Zgib je vertikalni poteg, pri katerem telo vlečeš navzgor proti drogu. "
+            "Gre za dva različna gibalna vzorca; veslanje ne nadomesti zgiba."
+        )
+
     # A dumbbell row is horizontal pulling, never a substitute for a vertical pull-up.
     no_pull_up_bar = bool(re.search(
         r"(?:nimam|brez|not have|don't have).{0,40}(?:drog(?:a|om)?|pull.?up bar)",
