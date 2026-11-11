@@ -413,16 +413,9 @@ def _sanitize_power_and_progression_claims(answer):
 
         def replace_unqualified_progression(_match):
             if already_has_two_exposure_rule:
-                if re.search(
-                    r"(?:ne\s+(?:dodajaj|povečuj)|ohrani\s+(?:enako|trenutno)\s+(?:težo|obremenitev|dozo))",
-                    _match.group(0),
-                    re.IGNORECASE,
-                ):
-                    return _match.group(0)
-                return (
-                    _match.group(0)
-                    + "\\n\\nOhrani trenutno obremenitev in ponovi enako dozo."
-                )
+                # The answer already states the two-exposure criterion.
+                # Do not append a contradictory hold instruction to a valid progression.
+                return _match.group(0)
             return (
                 "\n\nNapredovanje je primerno šele, ko zgornjo mejo ciljnega razpona "
                 "dosežeš v vsaj dveh primerljivih treningih z načrtovanim RIR, "
