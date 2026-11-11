@@ -99,14 +99,15 @@ Za vsak zagon zabeleži:
 Po vsaki spremembi prompta ali logike ponovi prizadete scenarije in vse varnostno kritične scenarije. Rezultate primerjaj s prejšnjim commitom; izboljšava ene kategorije ne sme poslabšati druge.
 
 
-## Ročni zagon v GitHub Actions
 
-Živi pogovorni benchmark se sproži **samo ročno**, da spremembe kode ne porabljajo nepričakovano kvote zunanjega AI-modela.
+## Nadzorovan zagon živega benchmarka
 
-1. Počakaj, da je Render pilot na veji `feature/six-pattern-learning-engine` označen kot `Live`.
-2. V GitHub odpri **Actions → ATENA live conversation quality benchmark → Run workflow**.
-3. Izberi `focused` za 14 ciljnih regresijskih scenarijev ali `full` za vseh 24 scenarijev.
-4. Za prvi pregled izberi eno ponovitev. Celoten nabor obsega 69 uporabniških obratov na ponovitev; dve ponovitvi sta namenjeni preverjanju ponovljivosti.
-5. Po koncu prenesi artefakt `atena-live-conversation-benchmark` in strokovno oceni celotne prepise po osmih dimenzijah ter pravilih kritičnih napak.
+Živi benchmark kliče zunanji AI-model. Zato se **ne zažene ob običajnem pushu** in ne porablja nepričakovano modelne kvote.
 
-Uspešen API klic pomeni samo, da je ATENA vrnila odgovor. Ne pomeni, da je odgovor strokovno kakovosten. Benchmark uporablja obstoječi GitHub Actions secret in Render pilot; ne izpisuje skrivnosti in ne spreminja produkcije.
+- V GitHub Actions je na voljo izbira `focused` (14 ciljnih regresijskih scenarijev) ali `full` (vseh 24 scenarijev).
+- Za prvi polni pregled uporabi eno ponovitev: 24 scenarijev in 69 uporabniških obratov. Dve ponovitvi sta namenjeni preverjanju ponovljivosti.
+- Pri push zagonu se benchmark izvede samo, če ima commit sporočilo oznaki `[run-live-benchmark]`; za celoten nabor dodaj še `[full-benchmark]`. Polni zagon uporablja eno ponovitev, ciljni zagon dve.
+- Pred zagonom mora biti Render pilot na veji `feature/six-pattern-learning-engine` že označen kot `Live`. Push zagon počaka 150 sekund, nato preveri dosegljivost in pilotni žeton.
+- Rezultate prenesi kot artefakt `atena-live-conversation-benchmark` in ročno oceni celotne prepise po osmih dimenzijah ter pravilih kritičnih napak.
+
+Opomba: GitHub omogoča ročni `workflow_dispatch` šele, ko je definicija workflowa prisotna na privzeti veji repozitorija. Do takrat je nadzorovan push z zgornjima oznakama alternativni način zagona. API uspeh ni strokovna ocena kakovosti.
