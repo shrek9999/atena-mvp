@@ -224,6 +224,13 @@ def test_hip_hinge_catalogue_names_use_neutral_spine_language_consistently():
         assert "ravnim hrbtom" not in item["name"].lower()
 
 
+def test_catalogue_avoids_flat_back_cues_and_uses_neutral_spine_language():
+    for item in load_catalogue():
+        for field in ("name", "cues", "common_errors", "regressions", "progressions", "warnings"):
+            values = item[field] if isinstance(item[field], list) else [item[field]]
+            assert all("ravnim hrbtom" not in value.lower() for value in values), (item["id"], field)
+
+
 def test_compound_and_single_joint_exercise_roles_match_their_training_function():
     for exercise_id in (
         "dumbbell_deadlift", "two_dumbbell_squat",
