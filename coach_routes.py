@@ -1433,6 +1433,18 @@ def _coaching_guardrail_reply(messages):
                 "lahko izhajava samo iz lastne teže."
             )
         if not experience_known:
+            experience_question_already_asked = any(
+                "izkušnje z vadbo moči" in item.casefold()
+                or "dosedanje izkušnje" in item.casefold()
+                for item in assistant_texts
+            )
+            if experience_question_already_asked:
+                return (
+                    "Oprema in tedenska pogostost sta zabeleženi. Za določitev zahtevnosti "
+                    "programa mi še manjka podatek o tvojih izkušnjah z vadbo moči. "
+                    "Ne bom predpostavljal, da si začetnik ali napreden; ko to pojasniš, "
+                    "lahko nadaljujeva."
+                )
             schedule_label = "tedenska pogostost" if frequency_known else "trajanje treninga"
             return (
                 f"Oprema in {schedule_label} sta jasni. Preden določim zahtevnost vaj in obseg "
