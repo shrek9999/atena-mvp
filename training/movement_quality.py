@@ -37,7 +37,7 @@ MOVEMENT_RUBRICS = {
         "criteria": {
             "hip_strategy": "Gibanje se začne s pomikom kolkov nazaj; kolena se prilagodijo nalogi.",
             "spine_pelvis_control": "Ohranja svoj naravni nevtralni položaj hrbtenice in nadzor medenice skozi amplitudo; cilj ni prisilno izravnati ledvene krivine.",
-            "dowel_neutral_spine": "Pri učenju s palico ohranja tri stične točke (trtica oziroma križnično-sakralni predel, torakalni del hrbtenice, zadnji del glave) in nespremenjen položaj roke v ledveni krivini kot četrto kontrolno točko.",
+            "dowel_neutral_spine": "Pri učenju s palico ohranja tri stične točke (trtica oziroma križnično-sakralni predel, torakalni del hrbtenice, zadnji del glave) in četrto kontrolno točko: roko v ledveni krivini. Položaj roke v ledveni krivini se med predklonom ne sme spreminjati.",
             "foot_pressure": "Ohranja stabilno oporo stopal brez nenadzorovanega prenosa teže.",
             "load_path": "Breme, kadar je prisotno, ostaja blizu telesa in pod nadzorom.",
             "range_control": "Ustavi amplitudo, preden izgubi nadzor položaja.",
