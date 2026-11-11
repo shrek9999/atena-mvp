@@ -439,6 +439,16 @@ def test_repeated_table_row_warning_becomes_a_concise_follow_up():
     assert "ne enakovredna zamenjava" in reply
     assert len(reply) < 400
 
+def test_slovene_normalizer_corrects_pullup_wording():
+    from coach_routes import _normalize_slovene_coaching_terms
+
+    result = _normalize_slovene_coaching_terms(
+        "Z ročkami oziroma hrbtom se povleci navzgor; to je vpoteg."
+    )
+    assert "z rokami in hrbtom se povleci" in result.casefold()
+    assert "vpoteg" not in result
+
+
 def test_slovene_normalizer_fixes_mixed_script_and_known_metcon_typo():
     from coach_routes import _normalize_slovene_coaching_terms
 
