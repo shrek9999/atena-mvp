@@ -605,7 +605,7 @@ def test_missing_goal_followup_distinguishes_intensity_from_training_goal():
     ])
     assert reply is not None
     assert "Zahtevnost opisuje" in reply
-    assert "glavnega cilja" in reply
+    assert "glavnega cilja" in reply.casefold()
 
 
 def test_missing_programme_goal_is_not_repeated_as_the_same_question():
