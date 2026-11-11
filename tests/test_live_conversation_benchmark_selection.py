@@ -29,3 +29,16 @@ def test_all_keyword_selects_the_full_benchmark_suite():
 def test_full_keyword_is_case_insensitive():
     scenarios = [{"id": "G01"}, {"id": "G02"}]
     assert select_scenarios(scenarios, "full") == scenarios
+
+
+def test_post_review_targeted_regression_set_selects_five_known_ids():
+    scenarios = [
+        {"id": "G04"},
+        {"id": "G10"},
+        {"id": "G12"},
+        {"id": "G17"},
+        {"id": "G19"},
+        {"id": "G24"},
+    ]
+    selected = select_scenarios(scenarios, "G04,G10,G12,G17,G19")
+    assert [item["id"] for item in selected] == ["G04", "G10", "G12", "G17", "G19"]
