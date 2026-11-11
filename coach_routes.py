@@ -1160,6 +1160,40 @@ def _coaching_guardrail_reply(messages):
             "obremenjeno vajo. Kolikšna je bolečina od 0 do 10?"
         )
 
+    # A planned load increase is not evidence that the user actually tried it.
+    # Verify the new exposure before interpreting technique/effort feedback as
+    # adaptation to the higher load or recommending another increase.
+    assistant_history = "\n".join(assistant_texts).casefold()
+    progression_was_recommended = bool(re.search(
+        r"(?:povečaj|povečanje|povečati|dvigni|zvišaj).{0,80}(?:obremenitv|tež|kg)|"
+        r"(?:obremenitev|teža).{0,80}(?:povečaj|povečanje|dvign)",
+        assistant_history,
+    ))
+    latest_positive_feedback = bool(re.search(
+        r"(?:tehnik\w*.{0,60}(?:dobr\w*|stabiln\w*)|"
+        r"(?:dobr\w*|stabiln\w*).{0,40}tehnik\w*|"
+        r"trening.{0,50}ni bil pretež\w*|ni bil pretež\w*|ni bilo pretež\w*)",
+        latest,
+    ))
+    explicit_new_load_exposure = bool(re.search(
+        r"(?:povečal\w*|dvignil\w*|uporabil\w*|preizkusil\w*|poskusil\w*|"
+        r"izvedel\w*|opravil\w*|delal\w*).{0,80}"
+        r"(?:višj\w*|večj\w*|nov\w*|povečan\w*|obremenitv\w*|tež\w*|kg)|"
+        r"(?:z|pri)\s+(?:novo|višjo|večjo)\s+(?:obremenitv\w*|tež\w*)",
+        history_lower,
+    ))
+    if (
+        progression_was_recommended
+        and latest_positive_feedback
+        and not explicit_new_load_exposure
+        and _has_explicit_safety_clearance(history)
+    ):
+        return (
+            "Dobra tehnika in občutek, da trening ni bil pretežek, sta pozitivna znaka. "
+            "Vendar še ne vem, ali si že preizkusil predlagano višjo obremenitev. "
+            "Ali opisuješ trening s prejšnjo težo ali si že izvedel trening z nekoliko višjo obremenitvijo?"
+        )
+
     # Do not let a language model convert an unanswered safety question into clearance.
     safety_question_count = sum(
         1 for item in assistant_texts
