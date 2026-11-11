@@ -308,6 +308,8 @@ def test_safety_gate_does_not_repeat_the_same_question_after_one_reminder():
     assert reply is not None
     assert "ne bom sestavil individualnega programa" in reply
     assert "Ali imaš trenutno" not in reply
+    assert "ali imaš" not in reply.casefold()
+    assert "Ko boš pripravljen" in reply
     assert reply.count("?") == 0
 
 
@@ -423,3 +425,44 @@ def test_progression_sanitizer_does_not_duplicate_the_same_rule():
     )
     result = _sanitize_power_and_progression_claims(answer)
     assert result.count("Napredovanje je primerno šele") == 1
+
+
+def test_programme_request_without_equipment_asks_instead_of_assuming_dumbbells_or_bench():
+    messages = [{
+        "role": "user",
+        "content": (
+            "Nimam bolečin, poškodb ali zdravstvenih omejitev. Želim izboljšati moč. "
+            "Danes imam 30 minut in želim opraviti tri vaje."
+        ),
+    }]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "kaj imaš dejansko na voljo" in reply
+    assert "če nimaš ničesar" in reply
+
+
+def test_programme_request_with_schedule_and_gym_but_unknown_experience_asks_first():
+    messages = [{
+        "role": "user",
+        "content": (
+            "Nimam bolečin, poškodb ali zdravstvenih omejitev. Želim izboljšati "
+            "funkcionalno pripravljenost. Imam polno opremljen fitnes in lahko "
+            "treniram trikrat tedensko."
+        ),
+    }]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "izkušnje z vadbo moči" in reply
+    assert "si začetnik" in reply
+
+
+def test_known_experience_and_equipment_allow_onboarding_to_continue():
+    messages = [{
+        "role": "user",
+        "content": (
+            "Nimam bolečin, poškodb ali zdravstvenih omejitev. Sem začetnik, "
+            "želim izboljšati moč, imam ročke in lahko treniram dvakrat tedensko."
+        ),
+    }]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is None
