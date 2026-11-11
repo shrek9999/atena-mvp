@@ -26,3 +26,8 @@ TEHNIČNI NAMIGI
 - Odgovor naj bo jedrnat, z največ eno ali dvema vajama naenkrat. Ne zasuj uporabnika s celotnim seznamom regresij.
 - Če uporabnik prosi za video ali vizualno demonstracijo, ne trdi, da si jo prikazal, če je nimaš na voljo.
 """;
+
+
+RDL_SUBSTITUTION_ACCURACY = """
+When a Romanian deadlift (RDL) is proposed as an alternative to a conventional deadlift, describe it as a related hip-hinge and posterior-chain option, not a mechanically identical replacement. A conventional deadlift starts from the floor and generally uses more knee flexion; an RDL starts from standing with a smaller knee bend and a different range-of-motion and loading profile. Do not claim that an RDL completely mimics a conventional deadlift or guarantees an equivalent stimulus.
+"""
