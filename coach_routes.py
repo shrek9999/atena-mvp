@@ -799,35 +799,45 @@ def _sanitize_unrequested_user_name(answer):
     return answer
 
 
-def _sanitize_unverified_training_dose(answer, messages):
-    """Keep technique education available but withhold individualized dose before safety clearance."""
+def _sanitize_unverified_training_dose(answer, messages, language="sl"):
+    """Withhold individualized training doses until explicit safety clearance."""
     user_texts = [
         item.get("content", "") for item in messages
         if item.get("role") == "user" and isinstance(item.get("content"), str)
     ]
     if not user_texts or _has_explicit_safety_clearance("\n".join(user_texts)):
         return answer
+    history = "\n".join(user_texts)
     exercise_context = bool(re.search(
-        r"(zgib|počep|počepu|veslan|mrtv\w* dvig|predklon|potisk|sklec|vajo|vaje|trening)",
-        "\n".join(user_texts),
+        r"(zgib|počep|počepu|veslan|mrtv\w* dvig|predklon|potisk|sklec|vajo|vaje|trening|"
+        r"squat|deadlift|hinge|row|pull.?up|push.?up|press|lunge|workout|exercise)",
+        history,
         re.IGNORECASE,
     ))
     dose_pattern = (
         r"\b\d+\s*(?:serij\w*|setov)\b.{0,100}\b\d+\s*(?:ponovitev|ponovitve|ponovitv)\b|"
-        r"\b\d+\s*[x×]\s*\d+\b|\b\d+(?:[.,]\d+)?\s*kg\b"
+        r"\b\d+\s*(?:sets?)\b.{0,100}\b\d+\s*(?:reps?|repetitions?)\b|"
+        r"\b\d+\s*[x×]\s*\d+\b|"
+        r"\b\d+(?:[.,]\d+)?\s*(?:kg|kilograms?|lb|lbs|pounds?)\b"
     )
     individualized_dose = bool(re.search(dose_pattern, answer, re.IGNORECASE))
     if not exercise_context or not individualized_dose:
         return answer
 
-    # Remove every sentence that contains an individualized prescription.
-    # Never keep a one-paragraph answer wholesale: that was the previous safety leak.
     safe_sentences = [
         sentence.strip()
         for sentence in re.split(r"(?<=[.!?])\s+|\n+", answer)
         if sentence.strip() and not re.search(dose_pattern, sentence, re.IGNORECASE)
     ]
     introduction = " ".join(safe_sentences).strip()
+    if language == "en":
+        if not introduction:
+            introduction = "I can explain the exercise and its purpose."
+        return (
+            introduction
+            + "\n\nBefore prescribing sets, repetitions, or a load, I need to check safety: "
+            "do you currently have any pain, injuries, movement limitations, or medical restrictions?"
+        )
     if not introduction:
         introduction = "Lahko ti razložim izvedbo in namen vaje."
     return (
@@ -855,12 +865,25 @@ def _sanitize_unverified_safety_claim(answer, messages):
         r"(?:sva|smo|si).{0,40}zdravstven\w*\s+(?:pregled|preverjanje).{0,40}"
         r"(?:opravila|zaključila|končala)|"
         r"zdravstven\w*\s+(?:pregled|preverjanje).{0,40}"
-        r"(?:je bil|je bilo)\s+(?:že\s+)?(?:opravljen|zaključen)",
+        r"(?:je bil|je bilo)\s+(?:že\s+)?(?:opravljen|zaključen)|"
+        r"(?:since|because)\s+(?:you\s+)?(?:did not|didn't|have not|haven't)\s+"
+        r"(?:mention|report|tell me about).{0,100}(?:pain|injur\w*|limitation)|"
+        r"(?:since|because)\s+(?:you\s+)?(?:have no|do not have|don't have)\s+"
+        r"(?:pain|injur\w*|limitation)|"
+        r"(?:you confirmed|you told me)\s+(?:that\s+)?(?:you have no|you do not have|you don't have)\s+"
+        r"(?:pain|injur\w*|limitation)|"
+        r"(?:we have already completed|your health screening is complete)",
         answer,
         re.IGNORECASE,
     )
     if not claim:
         return answer
+    if re.search(r"\b(?:since|because|you confirmed|you told me)\b", answer, re.IGNORECASE):
+        return (
+            "You have not explicitly confirmed that, so I will not assume you are free "
+            "from restrictions. Do you currently have any pain, injuries, movement "
+            "limitations, or medical restrictions I should take into account?"
+        )
     return (
         "Tega še nisi izrecno potrdil, zato ne bom predpostavljal, da nimaš omejitev. "
         "Ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve ali "
@@ -2280,7 +2303,7 @@ def coach_chat():
         answer = _sanitize_power_and_progression_claims(answer)
         answer = _sanitize_strength_rest_intervals(answer, messages)
         answer = _sanitize_unverified_safety_claim(answer, messages)
-        answer = _sanitize_unverified_training_dose(answer, messages)
+        answer = _sanitize_unverified_training_dose(answer, messages, response_language)
         answer = _sanitize_unlisted_support(answer, messages)
         answer = _sanitize_unverified_exercise_parameters(answer, messages)
         bodyweight_note = _bodyweight_only_program_note(messages)
