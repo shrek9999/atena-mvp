@@ -1309,6 +1309,7 @@ def generate_program(
                 "target_systems": candidate.get("target_systems", []),
                 "target_regions": candidate.get("target_regions", []),
                 "time_based": bool(candidate.get("time_based")),
+                "mobility_strength": bool(candidate.get("mobility_strength")),
                 "reps_per_side": bool(candidate.get("unilateral") or candidate.get("reps_per_side")),
                 "primary_muscles": candidate["primary_muscles"],
                 "equipment": selected_equipment,
