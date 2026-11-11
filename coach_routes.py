@@ -1824,6 +1824,19 @@ def _request_gemini_content(api_key, model, fallback_model, payload):
                     time.sleep(5.0 if exc.code == 429 else 1.0)
                     continue
                 break
+            except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+                # A transport timeout/reset or malformed provider payload is
+                # transient too. Retry once, then try the alternate model rather
+                # than returning a 502 without using the configured fallback.
+                last_error = exc
+                logger.warning(
+                    "Gemini model %s had a transient network/response error (%s, attempt %s/2)",
+                    candidate_model, type(exc).__name__, attempt + 1
+                )
+                if attempt == 0:
+                    time.sleep(1.0)
+                    continue
+                break
     if last_error is not None:
         raise last_error
     raise urllib.error.URLError("Gemini request failed without a provider response")
@@ -1960,7 +1973,7 @@ def coach_chat():
             + ("\n".join(compact) if compact else "No matching alternatives found; ask one clarifying question.")
             + "\nUse only the alternatives above. If the requested exercise is not identified, ask which exercise."
         )
-    model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
+    model = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite").strip()
     guarded_answer = _coaching_guardrail_reply(messages)
     if guarded_answer:
         return jsonify({
@@ -1975,7 +1988,7 @@ def coach_chat():
         "contents": contents,
         "generationConfig": {"temperature": 0.25, "maxOutputTokens": 900}
     }
-    fallback_model = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-3.1-flash-lite").strip()
+    fallback_model = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-3.5-flash-lite").strip()
     try:
         data, used_model = _request_gemini_content(
             api_key, model, fallback_model, body
@@ -2020,7 +2033,7 @@ def coach_chat():
         if exc.code == 429:
             return jsonify({"error": "Trenutno je dosežena omejitev uporabe. Poskusi pozneje."}), 429
         return jsonify({"error": "Storitev trenutno ni dosegljiva. Poskusi znova."}), 502
-    except (TimeoutError, socket.timeout, urllib.error.URLError, json.JSONDecodeError):
+    except (OSError, TimeoutError, socket.timeout, urllib.error.URLError, json.JSONDecodeError, UnicodeDecodeError):
         logger.warning("Gemini request failed due to timeout, network error, or invalid JSON for model %s", model)
         return jsonify({"error": "Odgovor se je predolgo pripravljal ali povezava ni uspela. Poskusi znova."}), 504
 
@@ -2172,7 +2185,7 @@ def coach_status():
         catalogue_count = len(load_catalogue())
     except (OSError, ValueError):
         catalogue_count = 0
-    model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
+    model = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite").strip()
     return jsonify({
         "chat_available": bool(os.getenv("GEMINI_API_KEY", "").strip()),
         "program_available": catalogue_count > 0,
