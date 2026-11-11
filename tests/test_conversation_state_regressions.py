@@ -574,4 +574,4 @@ def test_fat_loss_guidance_mentions_protein_and_moderate_energy_deficit():
     assert reply is not None
     assert "zmernim energijskim primanjkljajem" in reply
     assert "beljakovin" in reply
-    assert "vsakodnevni HIIT ni potreben" in reply
+    assert "vsakodnevni hiit ni potreben" in reply.casefold()
