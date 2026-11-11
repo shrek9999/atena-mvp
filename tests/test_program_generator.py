@@ -883,9 +883,9 @@ def test_beginner_foundational_exercises_use_learning_tempo_for_strength():
         if ex["pattern"] not in {"trunk_stability", "anti_rotation", "mobility", "mobility_stretch", "jump", "hinge_power"}
     ]
     assert foundational
-    assert all(ex["prescription"]["tempo"] == "3–1–1–0" for ex in foundational)
-    assert all(ex["prescription"]["tempo_seconds_per_rep"] == 5 for ex in foundational)
-    assert all("3 s nadzorovan spust" in ex["prescription"]["tempo_description"] for ex in foundational)
+    assert all(ex["prescription"]["tempo"] == "3–1–2–0" for ex in foundational)
+    assert all(ex["prescription"]["tempo_seconds_per_rep"] == 6 for ex in foundational)
+    assert all("2 s nadzorovana vrnitev" in ex["prescription"]["tempo_description"] for ex in foundational)
 
 
 def test_session_set_volume_uses_flexible_time_bands():
