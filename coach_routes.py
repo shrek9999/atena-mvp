@@ -471,6 +471,61 @@ def _sanitize_model_markup(answer):
     )
 
 
+def _sanitize_onboarding_questions(answer, messages):
+    """Keep intake to one high-value question and never skip an unanswered safety gate."""
+    user_history = "\n".join(
+        item.get("content", "") for item in messages
+        if item.get("role") == "user" and isinstance(item.get("content"), str)
+    )
+    lowered = user_history.casefold()
+    fitness_intent = bool(re.search(
+        r"(bolj fit|telesn\w* pripravljenost|splošn\w* pripravljenost|funkcionaln\w*|"
+        r"kondic\w*|moč\w*|mišičn\w* maso|maščob\w*|redn\w* trenir|"
+        r"začnem trenir|program\w*|vadbeni program|workout|training plan)",
+        lowered,
+    ))
+    if not fitness_intent:
+        return answer
+
+    safety_clear = _has_explicit_safety_clearance(user_history)
+    safety_question_present = "?" in answer and bool(re.search(
+        r"(bolečin\w*|poškodb\w*|omejitv\w*|zdravstven\w*|pain|injur\w*|health restriction)",
+        answer,
+        re.IGNORECASE,
+    ))
+    if not safety_clear:
+        if safety_question_present and answer.count("?") == 1:
+            return answer
+        if "?" in answer or re.search(
+            r"(individualni program|vadbeni program|serij\w* po|ponovitev|delovn\w* serij)",
+            answer,
+            re.IGNORECASE,
+        ):
+            return (
+                "Preden pripravim individualni trening, najprej preveriva varnost: "
+                "ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve "
+                "ali zdravstvene zadržke?"
+            )
+        return answer
+
+    # Multiple question marks mean the model has bundled independent intake
+    # questions. Keep the first useful question and defer the rest.
+    if answer.count("?") > 1:
+        return answer[:answer.find("?") + 1].strip()
+
+    # Also catch two requests joined into one grammatical question, e.g.
+    # experience plus session duration in the same sentence.
+    compound_request = re.search(
+        r"\s+(?:in|ter)\s+(?:približno\s+)?(?:koliko\s+časa|koliko\s+minut|"
+        r"kakšno\s+opremo|s\s+kakšno\s+opremo|kolikokrat\s+na\s+teden)\b",
+        answer,
+        re.IGNORECASE,
+    )
+    if compound_request and "?" in answer:
+        return answer[:compound_request.start()].rstrip(" ,;:") + "?"
+    return answer
+
+
 def _sanitize_unverified_training_history_claims(answer, messages):
     """Remove specific claims about the user's training timeline that are absent from their history."""
     user_history = "\n".join(
@@ -1816,6 +1871,7 @@ def coach_chat():
             return jsonify({"error": "Model ni vrnil odgovora. Poskusi znova."}), 502
         answer = _sanitize_model_markup(answer)
         answer = _normalize_slovene_coaching_terms(answer)
+        answer = _sanitize_onboarding_questions(answer, messages)
         answer = _sanitize_unverified_training_history_claims(answer, messages)
         answer = _sanitize_power_and_progression_claims(answer)
         answer = _sanitize_strength_rest_intervals(answer, messages)
