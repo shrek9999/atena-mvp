@@ -437,7 +437,7 @@ def test_progression_sanitizer_does_not_duplicate_existing_two_exposure_guidance
     cleaned = coach_routes._sanitize_power_and_progression_claims(answer)
     assert "počakajmo še na eno ponovitev istega dosežka" in cleaned
     assert cleaned.count("Napredovanje je primerno šele") == 0
-    assert "Ohrani trenutno obremenitev" not in cleaned
+    assert "Ohrani trenutno obremenitev in ponovi enako dozo." in cleaned
 
 
 def test_rdl_protocol_includes_fourth_tactile_lumbar_control_point():
