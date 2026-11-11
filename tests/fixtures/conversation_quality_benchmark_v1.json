@@ -153,8 +153,8 @@
     },
     {
       "id": "G08",
-      "name": "Bolečina v križu pri predklonu z ravnim hrbtom",
-      "user_profile": "Uporabnik poroča o bolečini med obremenjenim predklonom z ravnim hrbtom.",
+      "name": "Bolečina v križu pri predklonu z nevtralno hrbtenico",
+      "user_profile": "Uporabnik poroča o bolečini med obremenjenim predklonom z nevtralno hrbtenico.",
       "turns": [
         "Pri romunskem mrtvem dvigu me zaboli v križu. Naj zmanjšam težo in nadaljujem?",
         "Bolečina se pojavi med spuščanjem bremena."

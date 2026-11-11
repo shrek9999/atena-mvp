@@ -2,6 +2,8 @@ import json
 
 from flask import Flask
 
+from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL
+
 import coach_routes
 
 
@@ -386,3 +388,58 @@ def test_structured_profile_equipment_is_authoritative_over_unavailable_mentions
     assert available == {"bodyweight"}
     assert "Goblet počep" not in context
     assert "Potisk z ročkami" not in context
+
+
+def test_hinge_language_normalizer_uses_neutral_spine_not_flat_back():
+    answer = (
+        "Pri RDL izvedi predklon z ravnim hrbtom, kjer še držiš raven hrbet; "
+        "hrbet ostane popolnoma raven."
+    )
+    cleaned = coach_routes._normalize_slovene_coaching_terms(answer)
+    assert "z ravnim hrbtom" not in cleaned.casefold()
+    assert "raven hrbet" not in cleaned.casefold()
+    assert "z nevtralno hrbtenico" in cleaned.casefold()
+    assert "nevtralni položaj hrbtenice" in cleaned.casefold()
+
+
+def test_normalizer_removes_malformed_inline_markup_and_repairs_vadeci_word():
+    cleaned = coach_routes._normalize_slovene_coaching_terms(
+        "Profil prilagodiva na raven srednje zahtevnega vad<strong>inega."
+    )
+    assert "<strong>" not in cleaned.casefold()
+    assert "vadečega" in cleaned.casefold()
+
+
+def test_strength_rest_guard_preserves_recovery_in_short_sessions():
+    answer = (
+        "Počep: 3 serije po 8 ponovitev, odmor 90 sekund. "
+        "RDL: 3 serije po 8 ponovitev, odmor 90 sekund."
+    )
+    messages = [{"role": "user", "content": "Želim 30-minutni trening moči."}]
+    cleaned = coach_routes._sanitize_strength_rest_intervals(answer, messages)
+    assert "90 sekund" not in cleaned
+    assert cleaned.count("2–3 min") == 2
+    assert "zmanjša število vaj ali delovnih serij" in cleaned
+
+
+def test_strength_rest_guard_does_not_change_accessory_rest_without_strength_context():
+    answer = "Lateral raises: 3 serije po 12 ponovitev, odmor 90 sekund."
+    messages = [{"role": "user", "content": "Želim lahek trening za splošno gibanje."}]
+    cleaned = coach_routes._sanitize_strength_rest_intervals(answer, messages)
+    assert "90 sekund" in cleaned
+
+
+def test_progression_sanitizer_does_not_duplicate_existing_two_exposure_guidance():
+    answer = (
+        "To je prva uspešna izpostavitev. Počakajmo še na eno ponovitev istega dosežka. "
+        "Za naslednji trening ohrani enako težo in ne dodajaj bremena."
+    )
+    cleaned = coach_routes._sanitize_power_and_progression_claims(answer)
+    assert "počakajmo še na eno ponovitev istega dosežka" in cleaned
+    assert cleaned.count("Napredovanje je primerno šele") == 0
+    assert "Ohrani trenutno obremenitev" not in cleaned
+
+
+def test_rdl_protocol_includes_fourth_tactile_lumbar_control_point():
+    assert "četrto taktilno kontrolno točko" in RDL_TECHNIQUE_PROTOCOL
+    assert "ne sili ledvene krivine v sploščanje" in RDL_TECHNIQUE_PROTOCOL

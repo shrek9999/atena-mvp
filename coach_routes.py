@@ -277,7 +277,9 @@ def _verified_exercise_catalogue_context(messages):
     )
 
 def _normalize_slovene_coaching_terms(answer):
-    """Correct a small, tested set of recurring literal translations/typos."""
+    """Correct recurring language, malformed inline markup and hinge terminology."""
+    answer = re.sub(r"<\s*/?\s*(?:strong|b|em|i)\s*>", "", answer, flags=re.IGNORECASE)
+    answer = re.sub(r"\bvadinega\b", "vadečega", answer, flags=re.IGNORECASE)
     replacements = (
         (r"\btrilogije\s*\(tricepsa\)", "tricepsa"),
         (r"\btrilogije\b", "tricepsa"),
@@ -310,11 +312,23 @@ def _normalize_slovene_coaching_terms(answer):
                 return replacement[:1].upper() + replacement[1:]
             return replacement
         answer = re.sub(pattern, preserve_initial_case, answer, flags=re.IGNORECASE)
+    # In RDL/hinge explanations, avoid the misleading cue to keep a perfectly flat back.
+    if re.search(r"\b(?:RDL|romunsk\w*\s+mrtv\w*\s+dvig|predklon|hip hinge)\b", answer, re.IGNORECASE):
+        hinge_replacements = (
+            (r"\bkjer\s+še\s+držiš\s+(?:popolnoma\s+)?raven\s+hrbet\b", "kjer še ohranjaš nevtralni položaj hrbtenice"),
+            (r"\bz\s+(?:popolnoma\s+)?ravnim\s+hrbtom\b", "z nevtralno hrbtenico"),
+            (r"\bhrbet\s+ohranjaš\s+v\s+(?:popolnoma\s+)?ravnem\s+položaju\b", "hrbtenica ohranja naravni nevtralni položaj"),
+            (r"\bhrbet\s+ostane\s+(?:ves\s+čas\s+)?(?:popolnoma\s+)?raven\b", "hrbtenica ohranja naravni nevtralni položaj"),
+            (r"\bhrbet\s+naj\s+ostane\s+(?:ves\s+čas\s+)?(?:popolnoma\s+)?raven\b", "hrbtenica naj ohranja naravni nevtralni položaj"),
+            (r"\b(?:popolnoma\s+)?raven\s+hrbet\b", "nevtralni položaj hrbtenice"),
+        )
+        for pattern, replacement in hinge_replacements:
+            answer = re.sub(pattern, replacement, answer, flags=re.IGNORECASE)
     return answer
 
 
 def _sanitize_power_and_progression_claims(answer):
-    """Enforce two high-value coaching rules when Gemini phrases them inconsistently."""
+    """Enforce progression and physiological-language rules consistently."""
     answer = re.sub(
         r"\s+in\s+(?:ustrezno\s+)?spočit(?:im|ega|emu)\s+živčno[- ]mišičn(?:im|ega|emu)\s+sistem(?:om|a|u)",
         "; med serijami pa si vzemi dovolj dolg odmor za ohranjanje hitrosti in kakovosti ponovitev",
@@ -356,19 +370,63 @@ def _sanitize_power_and_progression_claims(answer):
         )
         answer = answer[:match.start()] + replacement + answer[match.end():]
     else:
+        already_has_two_exposure_rule = bool(re.search(
+            r"vsaj\s+dveh\s+(?:primerljivih|zaporednih|uspešnih)\s+treningih|"
+            r"dveh\s+zaporednih\s+treningih|še\s+na\s+eno\s+(?:ponovitev|izpostavitev)",
+            answer,
+            re.IGNORECASE,
+        ))
+
+        def replace_unqualified_progression(_match):
+            if already_has_two_exposure_rule:
+                return "\n\nOhrani trenutno obremenitev in ponovi enako dozo.\n\n"
+            return (
+                "\n\nNapredovanje je primerno šele, ko zgornjo mejo ciljnega razpona "
+                "dosežeš v vsaj dveh primerljivih treningih z načrtovanim RIR, "
+                "stabilno tehniko in ustrezno regeneracijo. Takrat povečaj le eno "
+                "spremenljivko za najmanjši razpoložljivi korak; sicer ohrani "
+                "trenutno obremenitev in odmerek.\n\n"
+            )
+
         answer = re.sub(
             r"(?is)[^.!?]*(?:naslednji teden|v naslednjem tednu|naslednjem tednu|"
             r"naslednjem treningu|v naslednjem treningu|prihodnjič|naslednjič|"
             r"v naslednji vadbi|pri naslednji vadbi|pri naslednjem treningu)[^.!?]*"
             r"(?:poveč(?:aj|aš|ati|anje|a)|dod(?:aj|aš|ati|amo|a))[^.!?]*[.!?]",
-            "Napredovanje je primerno šele, ko zgornjo mejo ciljnega razpona "
-            "dosežeš v vsaj dveh primerljivih treningih z načrtovanim RIR, "
-            "stabilno tehniko in ustrezno regeneracijo. Takrat povečaj le eno "
-            "spremenljivko za najmanjši razpoložljivi korak; sicer ohrani "
-            "trenutno obremenitev in odmerek.\n\n",
+            replace_unqualified_progression,
             answer,
             count=1,
         )
+    return answer
+
+
+def _sanitize_strength_rest_intervals(answer, messages):
+    """Preserve adequate rest for primary strength lifts when a short session is requested."""
+    user_history = "\n".join(
+        item.get("content", "") for item in messages
+        if item.get("role") == "user" and isinstance(item.get("content"), str)
+    )
+    strength_goal = bool(re.search(r"\b(?:moč|strength|strength training)\b", user_history, re.IGNORECASE))
+    compound_lift = bool(re.search(
+        r"\b(?:počep\w*|squat\w*|mrtv\w*\s+dvig\w*|deadlift\w*|RDL|predklon\w*|"
+        r"potisk\w*|bench\s+press|veslan\w*|row)\b",
+        answer,
+        re.IGNORECASE,
+    ))
+    if not strength_goal or not compound_lift:
+        return answer
+
+    short_rest = re.compile(r"\b(?:60|75|90)\s*(?:sekund\w*|seconds?|sec|s)\b", re.IGNORECASE)
+    if not short_rest.search(answer):
+        return answer
+
+    answer = short_rest.sub("2–3 min", answer)
+    note = (
+        "Pri glavnih večsklepnih vajah ohrani 2–3 minute odmora za kakovost izvedbe. "
+        "Če 30 minut ne zadošča, zmanjša število vaj ali delovnih serij, ne pa odmora."
+    )
+    if "zmanjša število vaj" not in answer.casefold():
+        answer = answer.rstrip() + "\n\n" + note
     return answer
 
 
@@ -1214,6 +1272,7 @@ MANDATORY DECISION GATES – NON-NEGOTIABLE
 - BEGINNER PRESCRIPTION: For beginners, prioritize learning and repeatable technique. Default to 8–12 repetitions (often begin around 10) for foundational strength exercises; 10–15 may suit lighter bodyweight or low-load exercises. Use a manageable load and about 2–3 repetitions in reserve. Do not use 6–10, 4–6 or 5–8 as a generic beginner strength range. Use a lower range only for a clearly justified exercise-specific reason and sufficient competency.
 - POWER PRESCRIPTION: Do not prescribe a universal percentage of 1RM for explosive-power work. Use low repetitions (commonly 2–3), enough rest to preserve output and technique, maximal intent with a controllable load, and stop when speed or technique declines. Explain rest in terms of maintaining performance and movement speed; do not claim "complete recovery of the nervous system", CNS fatigue, nervous-system recovery/overload or other unsupported physiological mechanisms. Give a percentage only when the user has a reliable tested 1RM for that exact lift and the percentage is justified. Never invent exercise names such as "izbruh z drogom".
 - STRENGTH WITH LIMITED TIME: Do not shorten rest intervals arbitrarily to force a heavy strength session into a short time window. Preserve adequate recovery for the main lift and reduce accessory exercises or total sets instead.
+- STRENGTH REST INTERVALS: For primary compound strength exercises (squat, hinge/deadlift/RDL, bench or overhead press, row), use about 2–3 minutes of rest (3–5 minutes for very demanding sets). Do not prescribe 60–90 seconds as the default for main strength lifts; shorter rests are for lighter accessories. If the requested session duration cannot fit the requested work with adequate rest, explain the trade-off and reduce exercise count or work sets rather than compressing rest.
 - EXERCISE NAMING AND CATALOGUE: Use verified exercise names from the supplied catalogue context when available. In Slovenian, call the Romanian-deadlift pattern "predklon z nevtralno hrbtenico" as the primary label; you may add "(RDL)" in parentheses. Do not use "paleta" for a barbell (use "drog" or "olimpijska palica"), "voravnotežen", or "romunski dvig trupa". Never call a bodyweight squat "Goblet počep". Do not invent compound words or literal translations.
 - TRAINING VOLUME: For a typical full-body session, usually choose 4–5 purposeful exercises, not a long list of filler. Match the number of work sets to experience, weekly frequency, recovery and available time. Do not automatically add single-joint or stabilization exercises to a hypertrophy session.
 - TEMPO ACCURACY: In a tempo such as 3-1-2-0, the phases are exactly 3 seconds eccentric, 1-second pause, 2 seconds concentric, 0-second pause. Never change a digit while explaining it. Tempo is a tool, not a universal optimum; do not claim that time under tension alone makes a tempo superior.
@@ -1621,6 +1680,7 @@ def coach_chat():
             return jsonify({"error": "Model ni vrnil odgovora. Poskusi znova."}), 502
         answer = _normalize_slovene_coaching_terms(answer)
         answer = _sanitize_power_and_progression_claims(answer)
+        answer = _sanitize_strength_rest_intervals(answer, messages)
         answer = _sanitize_unverified_safety_claim(answer, messages)
         answer = _sanitize_unverified_training_dose(answer, messages)
         answer = _sanitize_unlisted_support(answer, messages)

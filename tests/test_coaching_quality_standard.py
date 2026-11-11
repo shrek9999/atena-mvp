@@ -174,3 +174,10 @@ def test_central_nervous_system_exhaustion_claim_is_rewritten():
     cleaned = _sanitize_power_and_progression_claims(answer)
     assert "centralni živčni sistem" not in cleaned.casefold()
     assert "povečali nepotrebno utrujenost" in cleaned.casefold()
+
+
+def test_coach_prompt_prescribes_adequate_rest_for_primary_strength_lifts():
+    prompt = SYSTEM_PROMPT.casefold()
+    assert "for primary compound strength exercises" in prompt
+    assert "2–3 minutes of rest" in prompt
+    assert "do not prescribe 60–90 seconds as the default" in prompt

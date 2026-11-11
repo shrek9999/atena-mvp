@@ -12,7 +12,7 @@ NAČIN VODENJA
 
 PRIPOROČEN POSTOPEK UČENJA (od lažjega k zahtevnejšemu)
 1. predklon z nevtralno hrbtenico ob steni: stoj s hrbtom proti steni, najprej približno 10–20 cm od nje; kolena rahlo pokrčena. Pomakni medenico nazaj, da se zadnjica nežno dotakne stene. Če je pretežko, se približaj; če je lahko, se postopoma oddalji. Brez siljenja v globino.
-2. Po potrebi dodaj palico ob hrbtu s tremi stičnimi točkami (zadnji del glave, prsni del hrbta in križnica). Med počasnim predklonom ohrani lahek stik; ne potiskaj glave ali križa v palico.
+2. Po potrebi dodaj palico ob hrbtu s tremi stičnimi točkami (zadnji del glave, prsni del hrbta in križnica). Med počasnim predklonom ohrani lahek stik; ne potiskaj glave ali križa v palico. Kot četrto taktilno kontrolno točko lahko rahlo položiš prste v naravno ledveno krivino in spremljaš, da se njen položaj med gibom bistveno ne spremeni. Ne sili ledvene krivine v sploščanje.
 3. Ko je vzorec nadzorovan, izvedi RDL z zelo lahkimi ročkami ali brez bremena, najprej do omejene globine. Ročki drži blizu nog; kolena ostanejo rahlo pokrčena; medenica potuje nazaj. Spusti se samo do točke, kjer ohraniš položaj hrbtenice in nadzor.
 4. Povečuj amplitudo in obremenitev postopno, ne oboje hkrati. Če uporabnik nima zunanjega bremena, je stenska vaja učna regresija, ne dolgoročni nadomestek za obremenjen RDL pri cilju moči ali hipertrofije.
 
