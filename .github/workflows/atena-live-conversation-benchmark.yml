@@ -27,10 +27,9 @@ jobs:
     env:
       AI_COACH_TEST_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
       ATENA_BENCHMARK_BACKEND: https://atena-ai-coach-pilot.onrender.com
-      # Keep feature-branch pushes fast: rerun the scenarios that exposed onboarding,
-      # history-grounding, experience and equipment assumptions. Release/manual runs
-      # continue to execute the complete 24-scenario suite.
-      ATENA_BENCHMARK_SCENARIOS: ${{ github.event_name == 'push' && github.ref == 'refs/heads/feature/six-pattern-learning-engine' && 'G01,G12,G20,G22,G23' || '' }}
+      # Phase 3: execute the complete 24-scenario / 69-turn benchmark on the
+      # feature branch as well as on manual runs. Empty selection means full suite.
+      ATENA_BENCHMARK_SCENARIOS: ""
     steps:
       - name: Check out backend
         uses: actions/checkout@v4
