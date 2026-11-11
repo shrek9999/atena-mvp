@@ -198,3 +198,28 @@ def test_band_row_learning_does_not_require_bent_over_hinge_readiness():
     )
     plan = generate_program(BASE, movement_decisions={"horizontal_pull": row})
     assert _pattern_exercises(plan, "horizontal_pull")
+
+
+def test_kettlebell_only_hinge_row_uses_the_kettlebell_catalogue_variant():
+    profile = {
+        **BASE,
+        "experience": "beginner",
+        "equipment": ["kettlebell", "bodyweight", "chair", "wall", "household_support"],
+    }
+    hinge = build_movement_decision(
+        "hinge", "READY",
+        user_report={"status": "comfortable"},
+        decision_reason="Predklon je bil samoocenjen kot običajno nadzorovan.",
+    )
+    row = build_movement_decision(
+        "horizontal_pull", "LEARN",
+        equipment=["kettlebell"],
+        selected_learning_method="light_one_arm_hinge_row",
+        selected_exercise_id="kettlebell_one_arm_row",
+        user_report={"status": "needs_support"},
+        decision_reason="Za učenje je izbrana kettlebell različica, ki ustreza opremi.",
+    )
+    plan = generate_program(profile, movement_decisions={"hinge": hinge, "horizontal_pull": row})
+    rows = _pattern_exercises(plan, "horizontal_pull")
+    assert rows
+    assert all(item["exercise_id"] == "kettlebell_one_arm_row" for item in rows)
