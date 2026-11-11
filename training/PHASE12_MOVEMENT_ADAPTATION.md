@@ -21,7 +21,7 @@ Faza 12 poveže neobvezno gibalno samooceno iz faze 11 z determinističnim gener
 Izbira ni prosto generirana. Generator uporablja le obstoječe zapise v katalogu in pred izborom preveri gibalni vzorec, namen vaje, opremo, zahtevnost in uporabnikove izključitve.
 
 - Počep: `reaching_squat` ali `air_squat`.
-- Predklon z ravnim hrbtom: `bodyweight_hip_hinge`.
+- predklon z nevtralno hrbtenico: `bodyweight_hip_hinge`.
 - Izpadni korak: katalog trenutno nima potrjene podprte regresije kot samostojnega zapisa; vzorec se zato izpusti, dokler ustrezna različica ni dodana in preverjena.
 - Horizontalni potisk: `push_up_incline` ali `wall_push_up`; običajna skleca ni sprejeta kot regresija sama sebi.
 - Vertikalni potisk: `band_overhead_press`, samo če je elastika na voljo; sicer se vzorec izpusti.
