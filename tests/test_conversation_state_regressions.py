@@ -911,3 +911,25 @@ def test_deadlift_rdl_accuracy_guard_does_not_rewrite_unrelated_rdl_education():
     answer = "RDL poudari nadzorovan predklon z nevtralno hrbtenico."
 
     assert _sanitize_deadlift_substitution_claims(answer, messages) == answer
+
+def test_live_profile_injection_does_not_turn_first_exposure_into_claimed_good_technique():
+    from coach_routes import _sanitize_unverified_exercise_parameters
+
+    messages = [{
+        "role": "user",
+        "content": (
+            "KONTEKST TESTNEGA UPORABNIKA (podatki profila; upoštevaj kot podane, "
+            "ne sklepaj več, kot piše): Uporabnik je izrecno potrdil, da nima bolečin, "
+            "poškodb ali gibalnih omejitev. Pri počepu je dosegel vse serije po 10 "
+            "ponovitev z RIR 3, vendar je bil to šele prvi tak uspešen trening."
+            "\n\nUPORABNIKOVO SPOROČILO: Pri počepu sem opravil vse serije po 10 "
+            "ponovitev in imel približno 3 ponovitve v rezervi. Lahko naslednjič povečam težo?"
+        ),
+    }]
+    cleaned = _sanitize_unverified_exercise_parameters(
+        "Povečaj obremenitev za 2,5 kg in izvedi 3 × 10.", messages
+    )
+    assert "Za zdaj še ne povečuj obremenitve" in cleaned
+    assert "Dobro, tehnika je bila dobra" not in cleaned
+    assert "Kako si se počutil v 24–48 urah" in cleaned
+
