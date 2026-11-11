@@ -642,7 +642,7 @@ def _sanitize_unverified_exercise_parameters(answer, messages):
         if already_asked and re.search(r"(ohraniti vzorec|enak namen|namen treninga)", latest_user, re.IGNORECASE):
             return (
                 "Se strinjam: ohraniva soroden vzorec predklona in poudarek na zadnji verigi, "
-                "ne pa trditve, da je RDL biomehansko enak klasičnemu mrtvemu dvigu. Ker se razlikujejo "
+                "RDL pa ni biomehansko enak klasičnemu mrtvemu dvigu. Ker se razlikujejo "
                 "začetni položaj, obseg giba, upogib kolen in razporeditev obremenitve, "
                 "morava odmerek prilagoditi dejanski izvedbi. Kakšen je bil prvotni odmerek "
                 "mrtvega dviga (serije × ponovitve) in katere teže ročk imaš?"
