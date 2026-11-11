@@ -29,7 +29,7 @@ jobs:
       ATENA_BENCHMARK_BACKEND: https://atena-ai-coach-pilot.onrender.com
       # Full 24-scenario benchmark has been completed for Phase 3.
       # Follow-up commits run focused live regressions for the fixes from that review.
-      ATENA_BENCHMARK_SCENARIOS: "G10,G13,G19,G20,G21,G23"
+      ATENA_BENCHMARK_SCENARIOS: "G01,G02,G03,G04,G05,G06,G10,G11,G13,G19,G20,G21,G23"
     steps:
       - name: Check out backend
         uses: actions/checkout@v4
