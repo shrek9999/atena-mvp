@@ -294,7 +294,7 @@ def _normalize_slovene_coaching_terms(answer):
     answer = answer.replace("uravnoteжeno", "uravnoteženo")
     answer = answer.replace("Uravnoteжeno", "Uravnoteženo")
     typo_replacements = (
-        (r"\\bnaporne\\s+presvete\\s+krožne\\s+treninge\\b", "naporne, prehitre krožne treninge"),
+        (r"\bnaporne\s+presvete\s+krožne\s+treninge\b", "naporne, prehitre krožne treninge"),
         (r"\bpredenava\b", "Preden"),
         (r"\bzačetiva\b", "začniva"),
         (r"\bz\s+dve\s+ročkama\b", "z dvema ročkama"),
