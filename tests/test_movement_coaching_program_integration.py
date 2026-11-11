@@ -1,6 +1,6 @@
 """Programme integration for structured six-pattern movement decisions."""
 from training.movement_coaching import build_movement_decision
-from training.program import PATTERN_LABELS, generate_program
+from training.program import PATTERN_LABELS, ProgramValidationError, generate_program
 
 
 BASE = {
@@ -153,3 +153,48 @@ def test_horizontal_push_never_selects_wall_push_up_even_when_wall_is_available(
 
 def test_hinge_user_facing_label_uses_neutral_spine_not_flat_back_language():
     assert PATTERN_LABELS["hinge"] == "predklon z nevtralno hrbtenico"
+
+
+def test_loaded_bent_over_row_learning_requires_hinge_ready():
+    row = build_movement_decision(
+        "horizontal_pull", "LEARN",
+        equipment=["dumbbell"],
+        selected_learning_method="light_one_arm_hinge_row",
+        selected_exercise_id="one_arm_row",
+        decision_reason="Najprej utrdi koordinacijo lopatice in komolca z lahkim bremenom.",
+    )
+    try:
+        generate_program(BASE, movement_decisions={"horizontal_pull": row})
+    except ProgramValidationError as exc:
+        assert "predklon" in str(exc).lower()
+        assert "ready" in str(exc).lower()
+    else:
+        raise AssertionError("Loaded bent-over row must require a READY hinge assessment.")
+
+
+def test_loaded_bent_over_row_is_allowed_after_hinge_is_marked_ready():
+    hinge = build_movement_decision(
+        "hinge", "READY",
+        decision_reason="Uporabnik poroča o običajni nadzorovani izvedbi predklona.",
+    )
+    row = build_movement_decision(
+        "horizontal_pull", "LEARN",
+        equipment=["dumbbell"],
+        selected_learning_method="light_one_arm_hinge_row",
+        selected_exercise_id="one_arm_row",
+        decision_reason="Utrdi koordinacijo lopatice in komolca z lahkim bremenom.",
+    )
+    plan = generate_program(BASE, movement_decisions={"hinge": hinge, "horizontal_pull": row})
+    assert _pattern_exercises(plan, "horizontal_pull")
+
+
+def test_band_row_learning_does_not_require_bent_over_hinge_readiness():
+    row = build_movement_decision(
+        "horizontal_pull", "LEARN",
+        equipment=["resistance_band"],
+        selected_learning_method="band_row",
+        selected_exercise_id="band_row",
+        decision_reason="Uporabi stabilno pritrjeno elastiko za učenje horizontalnega potega.",
+    )
+    plan = generate_program(BASE, movement_decisions={"horizontal_pull": row})
+    assert _pattern_exercises(plan, "horizontal_pull")
