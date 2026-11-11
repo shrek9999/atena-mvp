@@ -1,6 +1,16 @@
 name: ATENA live conversation quality benchmark
 
 on:
+  push:
+    branches:
+      - pilot/website-ai-coach
+      - feature/six-pattern-learning-engine
+    paths:
+      - "tests/fixtures/conversation_quality_benchmark_v1.json"
+      - "tests/run_live_conversation_quality_benchmark.py"
+      - ".github/workflows/atena-live-conversation-benchmark.yml"
+      - "coach_routes.py"
+      - "tests/test_conversation_state_regressions.py"
   workflow_dispatch:
     inputs:
       scenario_set:
@@ -30,13 +40,14 @@ permissions:
 jobs:
   live-conversation-benchmark:
     name: Run manually selected multi-turn coaching scenarios
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[run-live-benchmark]')
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
       AI_COACH_TEST_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
       ATENA_BENCHMARK_BACKEND: https://atena-ai-coach-pilot.onrender.com
-      ATENA_BENCHMARK_SCENARIOS: ${{ inputs.scenario_set == 'full' && 'ALL' || 'G01,G02,G03,G04,G05,G06,G10,G11,G13,G14,G19,G20,G21,G23' }}
-      ATENA_BENCHMARK_REPEATS: ${{ inputs.repeat_count || '1' }}
+      ATENA_BENCHMARK_SCENARIOS: ${{ (inputs.scenario_set == 'full' || contains(github.event.head_commit.message, '[full-benchmark]')) && 'ALL' || 'G01,G02,G03,G04,G05,G06,G10,G11,G13,G14,G19,G20,G21,G23' }}
+      ATENA_BENCHMARK_REPEATS: ${{ inputs.repeat_count || (contains(github.event.head_commit.message, '[full-benchmark]') && '1' || '2') }}
     steps:
       - name: Check out backend
         uses: actions/checkout@v4
@@ -45,6 +56,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Wait for Render staging deployment to finish
+        if: github.event_name == 'push'
+        run: sleep 150
 
       - name: Confirm live backend and pilot credential
         run: |
