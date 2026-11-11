@@ -243,6 +243,24 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         patterns = base + ["vertical_pull"]
     else:
         patterns = base + (extras[session_index][:1] if include_stability else extras[session_index])
+
+    # In 60+ minute strength/muscle-building plans, distribute direct hip
+    # extension and unilateral knee-dominant work across the two sessions.
+    if (
+        session_minutes >= 60
+        and session_index == 1
+        and goal in {"strength", "hypertrophy", "strength_hypertrophy"}
+    ):
+        if "lunge" in patterns:
+            patterns = [
+                "hip_extension" if pattern == "lunge" else pattern
+                for pattern in patterns
+            ]
+        elif "hip_extension" not in patterns:
+            # Keep the six-pattern cap when stability work is also included.
+            if include_stability and "horizontal_push" in patterns:
+                patterns.remove("horizontal_push")
+            patterns.append("hip_extension")
     if goal == "fat_loss":
         patterns.append("conditioning")
     if include_stability:
