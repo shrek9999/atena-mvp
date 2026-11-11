@@ -1,4 +1,5 @@
 name: ATENA live conversation quality benchmark
+# Explicit one-time full-suite validation requested; opt-in commit markers are required.
 
 on:
   push:
