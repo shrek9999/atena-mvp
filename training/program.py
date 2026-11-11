@@ -447,6 +447,12 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
             sets, reps, rir, rest = 3, "6–10", 2, 120
     if pattern == "mobility_stretch":
         tempo, tempo_description, tempo_seconds = "zadržanje", "Zadrži blag do zmeren razteg, dihaj sproščeno in ne sili v končni položaj.", 0
+    elif goal == "mobility" and exercise.get("mobility_strength"):
+        tempo, tempo_description, tempo_seconds = (
+            "3–1–2–0",
+            "3 s nadzorovan povratek iz končne amplitude · 1 s stabilen nadzor v razpoložljivem končnem položaju · 2 s aktivna vrnitev · brez sunkov ali siljenja.",
+            6,
+        )
     elif goal == "mobility" or pattern == "mobility":
         tempo, tempo_description, tempo_seconds = "kontrolirano", "Aktivno raziskuj razpoložljivo amplitudo brez sunkov in prisiljevanja.", 4
     elif goal == "endurance" or (goal == "fat_loss" and pattern in {"locomotion", "conditioning"}):
