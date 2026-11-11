@@ -47,3 +47,29 @@ def test_invalid_or_unknown_observation_is_rejected():
         summarize_movement_observation("squat", {"unknown": "controlled"})
     with pytest.raises(MovementQualityError):
         summarize_movement_observation("squat", {"foot_tripod": "pass"})
+
+
+def test_horizontal_push_uses_a_stable_raised_support_not_wall_pushups():
+    rubric = get_movement_rubric("horizontal_push")
+    combined = " ".join(rubric["manipulations"] + rubric["coaching_options"]).lower()
+    assert "stabilno" in combined
+    assert "višji opori" in combined
+    assert "skleca ob steni" not in combined
+    assert "wall_push_up" not in combined
+
+
+def test_hinge_uses_neutral_spine_language_and_four_point_dowel_learning():
+    rubric = get_movement_rubric("hinge")
+    assert "nevtralno hrbtenico" in rubric["task"].lower()
+    description = rubric["criteria"]["dowel_neutral_spine"].lower()
+    assert "tri stične točke" in description
+    assert "četrto kontrolno točko" in description
+    assert "ledveni krivini" in description
+    assert "ne sme spreminjati" in description
+
+
+def test_horizontal_pull_is_a_bent_over_row_with_a_stable_torso_angle():
+    rubric = get_movement_rubric("horizontal_pull")
+    assert "veslanje v predklonu" in rubric["task"].lower()
+    assert "kot predklona" in rubric["criteria"]["trunk_control"].lower()
+    assert "vertikalni" not in rubric["task"].lower()
