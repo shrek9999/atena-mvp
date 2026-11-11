@@ -97,3 +97,17 @@ Za vsak zagon zabeleži:
 - predlagani popravek in povezavo do regresijskega testa.
 
 Po vsaki spremembi prompta ali logike ponovi prizadete scenarije in vse varnostno kritične scenarije. Rezultate primerjaj s prejšnjim commitom; izboljšava ene kategorije ne sme poslabšati druge.
+
+
+
+## Nadzorovan zagon živega benchmarka
+
+Živi benchmark kliče zunanji AI-model. Zato se **ne zažene ob običajnem pushu** in ne porablja nepričakovano modelne kvote.
+
+- V GitHub Actions je na voljo izbira `focused` (14 ciljnih regresijskih scenarijev) ali `full` (vseh 24 scenarijev).
+- Za prvi polni pregled uporabi eno ponovitev: 24 scenarijev in 69 uporabniških obratov. Dve ponovitvi sta namenjeni preverjanju ponovljivosti.
+- Pri push zagonu se benchmark izvede samo, če ima commit sporočilo oznaki `[run-live-benchmark]`; za celoten nabor dodaj še `[full-benchmark]`. Polni zagon uporablja eno ponovitev, ciljni zagon dve.
+- Pred zagonom mora biti Render pilot na veji `feature/six-pattern-learning-engine` že označen kot `Live`. Push zagon počaka 150 sekund, nato preveri dosegljivost in pilotni žeton.
+- Rezultate prenesi kot artefakt `atena-live-conversation-benchmark` in ročno oceni celotne prepise po osmih dimenzijah ter pravilih kritičnih napak.
+
+Opomba: GitHub omogoča ročni `workflow_dispatch` šele, ko je definicija workflowa prisotna na privzeti veji repozitorija. Do takrat je nadzorovan push z zgornjima oznakama alternativni način zagona. API uspeh ni strokovna ocena kakovosti.
