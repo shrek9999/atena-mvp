@@ -463,22 +463,14 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         tempo, tempo_description, tempo_seconds = "kontrolirano", "Najprej kakovost in nadzor; hitrost ali doseg povečuj šele, ko je izvedba ponovljiva.", 0
     elif is_stability:
         tempo, tempo_description, tempo_seconds = "2–1–2–1", "2 s izteg oziroma odmik · 1 s nadzor · 2 s vrnitev · 1 s ponastavitev.", 6
-    elif goal == "strength_hypertrophy" and level == "beginner":
-        # Agreed beginner combined-goal default: controlled, repeatable 2–1–1–0.
-        tempo, tempo_description, tempo_seconds = "2–1–1–0", "2 s nadzorovan spust · 1 s nadzor v spodnjem položaju · 1 s dvig · brez premora v vrhu.", 4
-    elif level == "beginner":
-        # Foundational exercises use the same learning tempo across strength and hypertrophy goals.
-        tempo, tempo_description, tempo_seconds = "3–1–1–0", "3 s nadzorovan spust · 1 s nadzor v spodnjem položaju · 1 s dvig · brez premora v vrhu.", 5
-    elif goal == "strength_hypertrophy" and pattern in {"squat", "hinge"}:
-        tempo, tempo_description, tempo_seconds = "2–0–X–0", "2 s nadzorovan spust · brez premora v spodnjem položaju · koncentrično fazo izvedi z maksimalno namero hitrosti (X), vendar brez izgube tehnike · brez premora v vrhu.", 3
-    elif goal == "strength_hypertrophy":
-        tempo, tempo_description, tempo_seconds = "3–1–2–0", "3 s nadzorovana ekscentrična faza · 1 s nadzor v spodnjem položaju · 2 s koncentrična faza · brez premora v vrhu.", 6
-    elif goal == "strength":
-        tempo, tempo_description, tempo_seconds = "2–0–X–0", "2 s nadzorovan spust · brez premora v spodnjem položaju · koncentrično fazo izvedi z maksimalno namero hitrosti (X), vendar brez izgube tehnike · brez premora v vrhu.", 3
-    elif goal in {"hypertrophy", "fat_loss"}:
-        tempo, tempo_description, tempo_seconds = "3–1–2–0", "3 s ekscentrična faza · 1 s nadzor v spodnjem položaju · 2 s koncentrična faza · brez premora v vrhu.", 6
     else:
-        tempo, tempo_description, tempo_seconds = "2–0–1–0", "2 s nadzorovan spust · 1 s dvig; ohrani tekočo, tehnično čisto izvedbo.", 3
+        # Universal motor-learning default across strength, hypertrophy, functional
+        # and fat-loss goals. Training age and goal do not prove movement mastery.
+        tempo, tempo_description, tempo_seconds = (
+            "3–1–2–0",
+            "3 s nadzorovan spust oziroma ekscentrična faza · 1 s miren nadzor v izbranem položaju · 2 s nadzorovana vrnitev oziroma koncentrična faza · brez sunkov in brez izgube položaja.",
+            6,
+        )
     prescription = {
         "sets": sets,
         "reps": reps,
@@ -876,7 +868,7 @@ def generate_program(
                     if level_rank.get(item["level"], 0) <= target_level
                 ]
                 if compatible:
-                    compatible.sort(key=lambda item: (target_level - level_rank.get(item["level"], 0), item["id"]))
+                    compatible.sort(key=lambda item: (0 if skill_pattern != "coordination" or item["id"] == "controlled_lateral_step" else 1, target_level - level_rank.get(item["level"], 0), item["id"]))
                     selected_skill = compatible[0]
                     selected_skill_pattern = skill_pattern
                     break
@@ -906,7 +898,7 @@ def generate_program(
                     "reps": 5 if is_balance else f"{work_seconds} s",
                     "work_seconds": work_seconds,
                     "reps_per_side": is_balance,
-                    "tempo": "počasi in nadzorovano" if is_balance else "ritmično, z nadzorovanim zaviranjem",
+                    "tempo": "počasi in nadzorovano",
                     "equipment": selected_skill["equipment"],
                     "cues": selected_skill["cues"],
                     "warnings": selected_skill["warnings"],
@@ -1609,11 +1601,7 @@ def generate_program(
                 "Intermediate: uporablja bolj specifične razpone glede na cilj; pri glavnih vajah za moč je običajen razpon 5–8 ponovitev, pri hipertrofiji večinoma 6–12. Advanced: pri glavnih vajah za moč lahko uporablja 3–6 ponovitev, ob večji obremenitvi pa zahteva ustrezno tehniko, regeneracijo in daljše odmore."
             ),
             "tempo": (
-                "Začetnik pri kombiniranem cilju moč + hipertrofija: pri osnovnih počepih in predklonih z nevtralno hrbtenico uporabi tempo 2–1–1–0 (2 s nadzorovan spust, 1 s nadzor v spodnjem položaju, 1 s dvig, brez premora v vrhu). Druge začetniške vaje in posebni vzorci ohranijo svoj namenski tempo."
-                if p["experience"] == "beginner" and planning_goal == "strength_hypertrophy" else
-                "Začetnik: pri osnovnih vajah je privzeti tempo 3–1–1–0 (3 s nadzorovan spust, 1 s nadzor v spodnjem položaju, 1 s dvig, brez premora v vrhu). Eksplozivne, časovno določene, stabilizacijske in mobilnostne vaje imajo ustrezno specifičen tempo."
-                if p["experience"] == "beginner" else
-                "Tempo je določen glede na cilj in vrsto vaje: moč uporablja nadzorovano ekscentrično fazo ter hitro koncentrično namero, hipertrofija daljšo nadzorovano izvedbo, eksplozivne vaje hiter koncentrični del, vzdržljivost ritmično delo, mobilnost pa počasno aktivno raziskovanje obsega. Stabilizacijsko delo se doda ciljno, ne avtomatično."
+                "Univerzalno načelo ATENE za moč + mišično maso, funkcionalnost in izgubo maščobe: najprej počasna, nadzorovana izvedba skozi največjo trenutno obvladano amplitudo. Privzeti učni tempo pri dinamičnih vajah za moč je 3–1–2–0 (3 s nadzorovan spust, 1 s nadzor v izbranem položaju, 2 s nadzorovana vrnitev). Cilj treninga ali oznaka izkušenosti sama po sebi ne dovoljujeta hitrejše izvedbe. Aerobne, izometrične, mobilnostne in koordinacijske naloge ohranijo tempo, primeren njihovi naravi, vendar vedno brez izgube nadzora."
             ),
             "range_of_motion": "Pri vsaki vaji uporabi največjo amplitudo, ki jo omogočata gibljivost in nadzor. Amplitudo postopno razvijaj; ne žrtvuj položaja, stabilnosti ali neboleče izvedbe. Pri mobilnosti kombiniraj aktivno gibanje in moč skozi razpoložljivo amplitudo.",
             "progression": ("Pri aerobni vzdržljivosti postopno povečuj trajanje ali obseg, nato po potrebi intenzivnost; pri intervalih spreminjaj le eno spremenljivko naenkrat. Ohraniti moraš ponovljivo tehniko in regeneracijo."
@@ -1622,7 +1610,7 @@ def generate_program(
                 if planning_goal == "fat_loss" else
                 "Pri mobilnosti postopno povečuj nadzorovan obseg, kakovost končnega položaja in sposobnost ustvarjanja sile v njem. Ne sili v globino in ne napreduj skozi bolečino."
                 if planning_goal == "mobility" else
-                "Ko pri vseh serijah dosežeš zgornjo mejo ponovitev in ohraniš predpisano rezervo ter tehniko, povečaj dražljaj: najprej obremenitev, če je na voljo; sicer težjo različico, daljši vzvod, večjo nadzorovano amplitudo ali enostransko izvedbo. Če tehnika ali regeneracija odstopata, obdrži ali zmanjša zahtevnost."
+                "Ko pri vseh serijah dosežeš zgornjo mejo ponovitev in ohraniš predpisano rezervo ter tehniko, povečaj dražljaj postopno: najprej obremenitev, če je na voljo; sicer težjo različico, daljši vzvod ali večjo nadzorovano amplitudo. Hitrost ni samodejna stopnja napredovanja: hitrejšo oziroma eksplozivno namero uvedi šele po ponovljivem obvladovanju giba skozi celotno tolerirano amplitudo v najmanj dveh primerljivih izpostavitvah in po izrecni strokovni potrditvi. Samoocena READY ali oznaka naprednih izkušenj sami po sebi ne dokazujeta obvladovanja. Če tehnika, simptomi ali regeneracija odstopajo, obdrži ali zmanjša zahtevnost."
             ),
             "deload": "Razbremenitev se ne določa avtomatično po koledarju; uporabi jo ob vztrajnem slabšanju zmogljivosti, regeneracije ali kakovosti izvedbe.",
             "last_session_adjustment": "reduce_sets_increase_reserve" if reduce_load else ("hold_and_progress_by_rule" if response and response["difficulty"] == "easy" else "maintain"),
