@@ -912,8 +912,9 @@ def _coaching_guardrail_reply(messages):
     ):
         return (
             "Ne. Vsakodnevni HIIT ni potreben za zmanjšanje telesne maščobe. Osnovo naj "
-            "predstavljajo vzdržna prehrana z zmernim energijskim primanjkljajem, redna "
-            "vadba za moč in količina kondicije, ki jo lahko dobro regeneriraš. HIIT je "
+            "predstavljajo vzdržna prehrana z zmernim energijskim primanjkljajem, zadosten "
+            "vnos beljakovin za ohranjanje mišične mase, redna vadba za moč in količina "
+            "kondicije, ki jo lahko dobro regeneriraš. HIIT je "
             "ena od možnosti, ne obveznost; del kondicije lahko razvijaš tudi s hojo, "
             "kolesom ali zmernim aerobnim delom. Med zahtevnimi treningi pusti dovolj "
             "prostora za okrevanje."
