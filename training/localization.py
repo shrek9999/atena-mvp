@@ -98,9 +98,6 @@ def localize_guardrail_reply(reply: str, language: str) -> str:
             "loads. Do you currently have any pain, injury, movement limitation, or "
             "medical restriction I should take into account?"
         )
-    return (
-        "I need to clarify one safety or movement detail before I can recommend an "
-        "individualized exercise or training load. Please tell me what you are "
-        "experiencing and where in the movement it occurs. I will not guess or "
-        "progress the exercise until that is clear."
-    )
+    # For an unrecognized guardrail, preserve the original deterministic wording.
+    # A generic translation could accidentally remove a clinically important instruction.
+    return reply
