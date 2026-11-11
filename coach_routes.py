@@ -496,8 +496,19 @@ def _sanitize_onboarding_questions(answer, messages):
         if item.get("role") == "user" and isinstance(item.get("content"), str)
     )
     lowered = user_history.casefold()
+    # A single grammatical question can still bundle two independent questions,
+    # e.g. asking for the user's goal and health restrictions at once. Keep the
+    # first useful question and defer the second.
+    compound_health_intake = re.search(
+        r"\\s+(?:in|ter)\\s+(?:ali\\s+)?(?:imaš|občutiš|te\\s+muči).{0,120}"
+        r"(?:bolečin\\w*|poškodb\\w*|omejitv\\w*|zdravstven\\w*)",
+        answer,
+        re.IGNORECASE,
+    )
+    if compound_health_intake and "?" in answer:
+        answer = answer[:compound_health_intake.start()].rstrip(" ,;:") + "?"
     fitness_intent = bool(re.search(
-        r"(bolj fit|telesn\w* pripravljenost|splošn\w* pripravljenost|funkcionaln\w*|"
+        r"(bolj fit|telesn\w* pripravljenost|splošn\w* pripravljenost|funkcional\w*|"
         r"kondic\w*|moč\w*|mišičn\w* maso|maščob\w*|redn\w* trenir|"
         r"začnem trenir|program\w*|vadbeni program|workout|training plan)",
         lowered,
@@ -1180,7 +1191,7 @@ def _coaching_guardrail_reply(messages):
         for item in assistant_texts
     )
     fitness_intent = bool(re.search(
-        r"(bolj fit|telesn\w* pripravljenost|splošn\w* pripravljenost|funkcionaln\w*|"
+        r"(bolj fit|telesn\w* pripravljenost|splošn\w* pripravljenost|funkcional\w*|"
         r"kondic\w*|moč\w*|mišičn\w* maso|maščob\w*|redn\w* trenir|"
         r"začnem trenir|program vadbe|vadbeni program)",
         history_lower,
@@ -1431,7 +1442,7 @@ def _coaching_guardrail_reply(messages):
     goal_known = bool(isinstance(profile.get("goal"), str) and profile.get("goal").strip()) or bool(re.search(
         r"\b(?:moč\w*|strength|mišičn\w*\s+mas\w*|hipertrof\w*|hypertrophy|"
         r"maščob\w*|hujš\w*|fat\s+loss|weight\s+loss|kondic\w*|vzdržljiv\w*|"
-        r"endurance|conditioning|funkcionaln\w*|functional|gibljiv\w*|mobilit\w*|"
+        r"endurance|conditioning|funkcional\w*|functional|gibljiv\w*|mobilit\w*|"
         r"mobility|eksplozivn\w*|power)\b",
         history_lower,
     ))
