@@ -462,3 +462,45 @@ def test_hinge_language_normalizer_replaces_flat_back_cues_with_neutral_spine():
     assert "z nevtralno hrbtenico" in cleaned
     assert "hrbtenica ohranja naravni nevtralni položaj" in cleaned
     assert "ravnim hrbtom" not in cleaned
+
+
+def test_onboarding_sanitizer_replaces_equipment_first_question_with_safety_gate():
+    messages = [{"role": "user", "content": "Želim izboljšati kondicijo brez teka."}]
+    answer = "Katero opremo imaš doma in kakšne aktivnosti so ti všeč?"
+    cleaned = coach_routes._sanitize_onboarding_questions(answer, messages)
+    assert "bolečine, poškodbe" in cleaned
+    assert cleaned.count("?") == 1
+    assert "opremo" not in cleaned
+
+
+def test_onboarding_sanitizer_keeps_only_safety_question_when_model_bundles_intake():
+    messages = [{"role": "user", "content": "Rad bi pridobil mišično maso."}]
+    answer = (
+        "Kakšno opremo imaš na voljo? Ali imaš kakšne zdravstvene omejitve ali bolečine?"
+    )
+    cleaned = coach_routes._sanitize_onboarding_questions(answer, messages)
+    assert "bolečine, poškodbe" in cleaned
+    assert cleaned.count("?") == 1
+    assert "opremo" not in cleaned
+
+
+def test_onboarding_sanitizer_trims_compound_experience_and_duration_question():
+    messages = [{
+        "role": "user",
+        "content": (
+            "Izrecno potrjujem, da nimam bolečin, poškodb ali omejitev. "
+            "Želim funkcionalno pripravljenost, imam fitnes in treniram trikrat tedensko."
+        ),
+    }]
+    answer = (
+        "Kako bi opisal svoje izkušnje z vadbo moči in koliko časa imaš na voljo?"
+    )
+    cleaned = coach_routes._sanitize_onboarding_questions(answer, messages)
+    assert cleaned == "Kako bi opisal svoje izkušnje z vadbo moči?"
+    assert cleaned.count("?") == 1
+
+
+def test_onboarding_sanitizer_preserves_a_single_explicit_safety_question():
+    messages = [{"role": "user", "content": "Želim izboljšati splošno pripravljenost."}]
+    answer = "Ali imaš trenutno kakršne koli bolečine, poškodbe ali zdravstvene omejitve?"
+    assert coach_routes._sanitize_onboarding_questions(answer, messages) == answer
