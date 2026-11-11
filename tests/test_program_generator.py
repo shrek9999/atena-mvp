@@ -94,7 +94,7 @@ def test_dynamic_strength_exercises_use_controlled_learning_tempo_for_every_goal
 def test_tempo_methodology_does_not_assume_mastery_from_goal_or_experience():
     plan = generate_program({**BASE, "goal": "strength_hypertrophy", "experience": "advanced"})
     tempo_guidance = plan["methodology"]["tempo"]
-    assert "cilja treninga" in tempo_guidance
+    assert "Cilj treninga" in tempo_guidance
     assert "oznaka izkušenosti" in tempo_guidance
     assert "3–1–2–0" in tempo_guidance
     assert "izrecni strokovni potrditvi" in plan["methodology"]["progression"]
