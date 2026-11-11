@@ -1,5 +1,5 @@
 name: ATENA live conversation quality benchmark
-# Explicit one-time full-suite validation requested; opt-in commit markers are required.
+# Live model calls are opt-in through explicit commit markers or manual workflow dispatch.
 
 on:
   push:
@@ -15,11 +15,12 @@ on:
   workflow_dispatch:
     inputs:
       scenario_set:
-        description: "Run the full 24-scenario suite or the focused regression subset"
+        description: "Run the full suite, focused subset, or targeted post-review regressions"
         required: true
         type: choice
         options:
           - focused
+          - targeted
           - full
         default: focused
       repeat_count:
@@ -47,7 +48,7 @@ jobs:
     env:
       AI_COACH_TEST_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
       ATENA_BENCHMARK_BACKEND: https://atena-ai-coach-pilot.onrender.com
-      ATENA_BENCHMARK_SCENARIOS: ${{ (inputs.scenario_set == 'full' || contains(github.event.head_commit.message || '', '[full-benchmark]')) && 'ALL' || 'G01,G02,G03,G04,G05,G06,G10,G11,G13,G14,G19,G20,G21,G23' }}
+      ATENA_BENCHMARK_SCENARIOS: ${{ (inputs.scenario_set == 'full' || contains(github.event.head_commit.message || '', '[full-benchmark]')) && 'ALL' || (inputs.scenario_set == 'targeted' || contains(github.event.head_commit.message || '', '[targeted-benchmark]')) && 'G04,G10,G12,G17,G19' || 'G01,G02,G03,G04,G05,G06,G10,G11,G13,G14,G19,G20,G21,G23' }}
       ATENA_BENCHMARK_REPEATS: ${{ inputs.repeat_count || (contains(github.event.head_commit.message || '', '[full-benchmark]') && '1' || '2') }}
     steps:
       - name: Check out backend
