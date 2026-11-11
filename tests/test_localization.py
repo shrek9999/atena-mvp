@@ -40,3 +40,35 @@ def test_urgent_safety_guardrail_is_localized_without_changing_action():
 def test_slovene_guardrail_remains_slovene_when_slovene_selected():
     sl = "Oteklina ali zaklepanje kolena sta opozorilna znaka."
     assert localize_guardrail_reply(sl, "sl") == sl
+
+
+def test_english_individualized_dose_is_withheld_before_safety_clearance():
+    from coach_routes import _sanitize_unverified_training_dose
+
+    messages = [{"role": "user", "content": "Please give me a squat workout."}]
+    answer = "Do 3 sets of 8 reps. Keep each repetition controlled."
+    safe = _sanitize_unverified_training_dose(answer, messages, "en")
+    assert "3 sets of 8 reps" not in safe
+    assert "Before prescribing sets, repetitions, or a load" in safe
+    assert "pain, injuries, movement limitations" in safe
+
+
+def test_english_explicit_safety_clearance_allows_individualized_dose():
+    from coach_routes import _sanitize_unverified_training_dose
+
+    messages = [{
+        "role": "user",
+        "content": "I have no pain, injuries, or movement limitations.",
+    }]
+    answer = "Do 3 sets of 8 reps."
+    assert _sanitize_unverified_training_dose(answer, messages, "en") == answer
+
+
+def test_english_safety_claim_cannot_infer_clearance_from_missing_information():
+    from coach_routes import _sanitize_unverified_safety_claim
+
+    messages = [{"role": "user", "content": "I want to get stronger."}]
+    answer = "Since you did not mention pain, I assume you have no injuries or limitations."
+    safe = _sanitize_unverified_safety_claim(answer, messages)
+    assert "You have not explicitly confirmed that" in safe
+    assert "Do you currently have any pain" in safe
