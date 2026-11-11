@@ -99,7 +99,7 @@ def main() -> int:
                     message_content = (
                         "KONTEKST TESTNEGA UPORABNIKA (podatki profila; upoštevaj kot podane, "
                         "ne sklepaj več, kot piše): " + user_profile
-                        + "\\n\\nUPORABNIKOVO SPOROČILO: " + user_text
+                        + "\n\nUPORABNIKOVO SPOROČILO: " + user_text
                     )
                 messages.append({"role": "user", "content": message_content})
                 try:
