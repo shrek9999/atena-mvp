@@ -151,6 +151,28 @@ def test_functional_goal_uses_supported_general_fitness_catalogue_pool():
     assert all(len(s["exercises"]) >= 3 for s in plan["sessions"])
 
 
+def test_functional_program_includes_mobility_balance_and_coordination_prep():
+    plan = generate_program({**BASE, "goal": "functional", "experience": "beginner"})
+    blocks = [session["mobility_block"] for session in plan["sessions"] if session.get("mobility_block")]
+    assert len(blocks) == 2
+    components = {
+        exercise["component"]
+        for block in blocks
+        for exercise in block["exercises"]
+    }
+    assert {"mobilnost", "ravnotežje", "koordinacija"}.issubset(components)
+    exercise_ids = {
+        exercise["exercise_id"]
+        for block in blocks
+        for exercise in block["exercises"]
+    }
+    assert "single_leg_balance_reach" in exercise_ids
+    assert "controlled_lateral_step" in exercise_ids
+    assert "lateral_shuffle" not in exercise_ids
+    assert all(block["estimated_minutes"] == 3 for block in blocks)
+    assert all(session["estimated_minutes"] <= 60 for session in plan["sessions"])
+
+
 def test_power_goal_uses_catalogue_power_exercises():
     plan = generate_program({**BASE, "goal": "power"})
     patterns = {ex["pattern"] for s in plan["sessions"] for ex in s["exercises"]}
