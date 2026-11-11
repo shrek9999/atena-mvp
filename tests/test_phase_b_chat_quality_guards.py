@@ -650,3 +650,21 @@ def test_system_prompt_requires_feet_forward_of_bar_for_assisted_vertical_pull()
     prompt = coach_routes.SYSTEM_PROMPT
     assert "slightly forward of the bar's vertical line" in prompt
     assert "not directly underneath it" in prompt
+
+
+def test_system_prompt_forbids_inventing_training_history_or_user_facts():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "Never invent or silently infer a user's training start date" in prompt
+    assert "do not invent a compromise explanation" in prompt
+    assert "Never start an individualized programme until the user's experience" in prompt
+    assert "Never select exercises that require equipment the user has not confirmed" in prompt
+
+
+def test_raw_html_markup_from_model_is_removed_but_plain_text_remains():
+    answer = "Program vad<strong>beni</strong> je pripravljen. <br>Ohrani nadzor."
+    cleaned = coach_routes._sanitize_model_markup(answer)
+    assert "<strong>" not in cleaned
+    assert "</strong>" not in cleaned
+    assert "<br>" not in cleaned
+    assert "Program vad" in cleaned
+    assert "Ohrani nadzor." in cleaned
