@@ -911,9 +911,29 @@ def generate_program(
                     "cues": selected_skill["cues"],
                     "warnings": selected_skill["warnings"],
                 })
+            selected_stability = next(
+                (
+                    item for item in by_pattern.get("trunk_stability", [])
+                    if item["id"] == "dead_bug"
+                ),
+                None,
+            ) if not include_stability else None
+            if selected_stability is not None:
+                prep_exercises.append({
+                    "exercise_id": selected_stability["id"],
+                    "name": selected_stability["name"],
+                    "component": "stabilnost",
+                    "sets": 1,
+                    "reps": 6,
+                    "reps_per_side": True,
+                    "tempo": "počasi in nadzorovano",
+                    "equipment": selected_stability["equipment"],
+                    "cues": selected_stability["cues"],
+                    "warnings": selected_stability["warnings"],
+                })
             mobility_block = {
-                "purpose": "Gibalna priprava: aktivna mobilnost ter kratka vaja ravnotežja ali koordinacije pred glavnimi vzorci.",
-                "estimated_minutes": 3 if selected_skill is not None else 2,
+                "purpose": "Gibalna priprava: aktivna mobilnost, nadzor trupa ter kratka vaja ravnotežja ali koordinacije pred glavnimi vzorci.",
+                "estimated_minutes": 2 + int(selected_skill is not None) + int(selected_stability is not None),
                 "amplitude_rule": "Gib izvedi skozi največjo trenutno nadzorovano in tolerirano amplitudo; brez sunkov, izgube ravnotežja ali siljenja.",
                 "exercises": prep_exercises,
             }
