@@ -207,9 +207,35 @@ def test_reaching_squat_is_an_accessible_squat_with_supporting_stability_role():
 
 def test_unloaded_hinge_uses_neutral_back_forward_bend_user_facing_name():
     item = get_exercise("bodyweight_hip_hinge")
-    assert item["name"] == "Predklon z ravnim hrbtom (lastna teža)"
+    assert item["name"] == "Predklon z nevtralno hrbtenico (lastna teža)"
     assert any("nevtralnega položaja hrbtenice" in cue for cue in item["cues"])
 
+
+
+def test_hip_hinge_catalogue_names_use_neutral_spine_language_consistently():
+    expected = {
+        "bodyweight_hip_hinge": "Predklon z nevtralno hrbtenico (lastna teža)",
+        "wall_hip_hinge": "Predklon z nevtralno hrbtenico ob steni",
+        "supported_single_leg_rdl": "Podprti enonožni predklon z nevtralno hrbtenico",
+    }
+    for exercise_id, name in expected.items():
+        item = get_exercise(exercise_id)
+        assert item["name"] == name
+        assert "ravnim hrbtom" not in item["name"].lower()
+
+
+def test_compound_and_single_joint_exercise_roles_match_their_training_function():
+    for exercise_id in (
+        "dumbbell_deadlift", "two_dumbbell_squat",
+        "dumbbell_squat_side", "loaded_deep_squat",
+    ):
+        item = get_exercise(exercise_id)
+        assert item["joint_type"] == "multi_joint"
+        assert item["training_role"] == "main", exercise_id
+    for exercise_id in ("calf_raise_full_rom", "tibialis_raise"):
+        item = get_exercise(exercise_id)
+        assert item["joint_type"] == "single_joint"
+        assert item["training_role"] == "accessory", exercise_id
 
 
 def test_knee_flexion_accessories_are_not_misclassified_as_hip_hinge_patterns():
