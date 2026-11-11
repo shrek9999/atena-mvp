@@ -160,7 +160,7 @@ def test_functional_program_includes_mobility_balance_and_coordination_prep():
         for block in blocks
         for exercise in block["exercises"]
     }
-    assert {"mobilnost", "ravnotežje", "koordinacija"}.issubset(components)
+    assert {"mobilnost", "ravnotežje", "koordinacija", "stabilnost"}.issubset(components)
     exercise_ids = {
         exercise["exercise_id"]
         for block in blocks
@@ -168,8 +168,9 @@ def test_functional_program_includes_mobility_balance_and_coordination_prep():
     }
     assert "single_leg_balance_reach" in exercise_ids
     assert "controlled_lateral_step" in exercise_ids
+    assert "dead_bug" in exercise_ids
     assert "lateral_shuffle" not in exercise_ids
-    assert all(block["estimated_minutes"] == 3 for block in blocks)
+    assert all(block["estimated_minutes"] == 4 for block in blocks)
     assert all(session["estimated_minutes"] <= 60 for session in plan["sessions"])
 
 
