@@ -561,3 +561,17 @@ def test_experience_prompt_does_not_claim_session_duration_is_known_from_frequen
     assert reply is not None
     assert "tedenska pogostost" in reply
     assert "trajanje treninga" not in reply
+
+
+def test_fat_loss_guidance_mentions_protein_and_moderate_energy_deficit():
+    messages = [
+        {"role": "user", "content": (
+            "Rad bi zmanjšal telesno maščobo, vendar ohranil mišice in moč. "
+            "Ali moram vsak dan delati HIIT?"
+        )},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "zmernim energijskim primanjkljajem" in reply
+    assert "beljakovin" in reply
+    assert "vsakodnevni HIIT ni potreben" in reply
