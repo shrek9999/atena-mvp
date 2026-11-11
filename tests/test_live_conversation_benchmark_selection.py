@@ -19,3 +19,13 @@ def test_unknown_scenario_id_is_rejected_instead_of_silently_skipped():
         assert "G99" in str(exc)
     else:
         raise AssertionError("Unknown benchmark scenario IDs must be rejected.")
+
+
+def test_all_keyword_selects_the_full_benchmark_suite():
+    scenarios = [{"id": "G01"}, {"id": "G02"}, {"id": "G03"}]
+    assert select_scenarios(scenarios, "ALL") == scenarios
+
+
+def test_full_keyword_is_case_insensitive():
+    scenarios = [{"id": "G01"}, {"id": "G02"}]
+    assert select_scenarios(scenarios, "full") == scenarios
