@@ -432,6 +432,16 @@ def _sanitize_strength_rest_intervals(answer, messages):
     return answer
 
 
+def _sanitize_model_markup(answer):
+    """Remove accidental raw HTML tags emitted by the language model; Markdown remains supported."""
+    return re.sub(
+        r"</?(?:strong|b|em|i|p|br|ul|ol|li|div|span|h[1-6])\\b[^>]*>",
+        "",
+        answer,
+        flags=re.IGNORECASE,
+    )
+
+
 def _sanitize_unrequested_user_name(answer):
     """Remove accidental direct address to the coach brand owner."""
     answer = re.sub(r"(?im)^\s*Grega,\s*", "", answer)
@@ -990,8 +1000,9 @@ def _coaching_guardrail_reply(messages):
         for item in assistant_texts
     )
     fitness_intent = bool(re.search(
-        r"(bolj fit|telesn\w* pripravljenost|kondic\w*|močnejš\w*|mišičn\w* maso|"
-        r"redn\w* trenir|začnem trenir|program vadbe|vadbeni program)",
+        r"(bolj fit|telesn\w* pripravljenost|splošn\w* pripravljenost|funkcionaln\w*|"
+        r"kondic\w*|moč\w*|mišičn\w* maso|maščob\w*|redn\w* trenir|"
+        r"začnem trenir|program vadbe|vadbeni program)",
         history_lower,
         re.IGNORECASE,
     ))
@@ -1269,7 +1280,7 @@ Before prescribing an individualized workout or training plan, establish the min
 3) available equipment and realistic time;
 4) major health conditions, recent injuries, medical restrictions, and any discomfort that changes a movement;
 5) weekly availability and, only when relevant, age or other factors affecting exercise selection. Age alone is never an eligibility limit; adapt training to capacity, experience and recovery, not chronological age alone.
-Ask one concise, high-value question at a time. SAFETY-FIRST ORDER: before individualized programming, confirm whether any major health condition, recent injury, medical restriction or concerning symptom requires professional assessment. Do not demand that a user be completely pain-free. If the user has only mild, familiar discomfort, clarify the affected movement and use the dose/tolerance process below; do not automatically exclude all training. Do not ask about equipment, time or training frequency before this initial safety check. If the user confirms no major restriction, continue with the main goal, experience, equipment, realistic training time and weekly availability, one question at a time. Do not overwhelm the user with a long intake form. If the request is simple and low risk, you may give a clearly labelled general example while explaining that it is not yet individualized, and ask the most important follow-up question. If safety-relevant information is missing, ask before recommending demanding exercise.
+Ask one concise, high-value question at a time. Never start an individualized programme until the user's experience and approximate ability are known; if the user has not stated them, ask one simple question instead of assuming beginner, intermediate or advanced ability. Never select exercises that require equipment the user has not confirmed; if equipment is unknown, ask what is available or clearly offer a bodyweight-only general example. SAFETY-FIRST ORDER: before individualized programming, confirm whether any major health condition, recent injury, medical restriction or concerning symptom requires professional assessment. Do not demand that a user be completely pain-free. If the user has only mild, familiar discomfort, clarify the affected movement and use the dose/tolerance process below; do not automatically exclude all training. Do not ask about equipment, time or training frequency before this initial safety check. If the user confirms no major restriction, continue with the main goal, experience, equipment, realistic training time and weekly availability, one question at a time. Do not overwhelm the user with a long intake form. If the request is simple and low risk, you may give a clearly labelled general example while explaining that it is not yet individualized, and ask the most important follow-up question. If safety-relevant information is missing, ask before recommending demanding exercise.
 
 CONVERSATIONAL EXPERIENCE AND GOAL CLARIFICATION
 - The conversation is the primary interface. Do not make the person feel they are completing an intake form. Build the picture gradually across turns.
@@ -1711,6 +1722,7 @@ def coach_chat():
             logger.warning("Gemini returned no text for model %s", model)
             return jsonify({"error": "Model ni vrnil odgovora. Poskusi znova."}), 502
         answer = _normalize_slovene_coaching_terms(answer)
+        answer = _sanitize_model_markup(answer)
         answer = _sanitize_power_and_progression_claims(answer)
         answer = _sanitize_strength_rest_intervals(answer, messages)
         answer = _sanitize_unverified_safety_claim(answer, messages)
