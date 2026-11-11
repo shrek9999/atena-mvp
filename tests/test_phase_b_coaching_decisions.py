@@ -46,16 +46,16 @@ def test_beginner_main_squat_uses_skill_focused_repetition_range_and_reserve(goa
     assert prescription["rir"] >= 3
 
 
-def test_strength_and_hypertrophy_use_distinct_tempo_intentions():
+def test_strength_and_hypertrophy_share_controlled_learning_tempo():
     exercise = next(
         item for item in load_catalogue()
         if item["pattern"] == "squat" and item["training_role"] == "main"
     )
     strength = _prescription("strength", "intermediate", "squat", exercise)
     hypertrophy = _prescription("hypertrophy", "intermediate", "squat", exercise)
-    assert strength["tempo"] == "2–0–X–0"
+    assert strength["tempo"] == "3–1–2–0"
     assert hypertrophy["tempo"] == "3–1–2–0"
-    assert strength["tempo_description"] != hypertrophy["tempo_description"]
+    assert strength["tempo_description"] == hypertrophy["tempo_description"]
 
 
 def test_single_joint_hypertrophy_accessories_are_catalogue_opt_in_and_advanced_only():
@@ -77,11 +77,13 @@ def test_single_joint_hypertrophy_accessories_are_catalogue_opt_in_and_advanced_
 @pytest.mark.parametrize(
     "goal,expected_tempo",
     [
-        ("strength", "2–0–X–0"),
+        ("strength", "3–1–2–0"),
         ("hypertrophy", "3–1–2–0"),
+        ("fat_loss", "3–1–2–0"),
+        ("functional", "3–1–2–0"),
     ],
 )
-def test_program_preserves_goal_specific_tempo(goal, expected_tempo):
+def test_program_preserves_universal_controlled_tempo(goal, expected_tempo):
     plan = generate_program(_profile(goal, "intermediate"))
     resistance_exercises = [
         exercise
