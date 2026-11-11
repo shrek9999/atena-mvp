@@ -39,6 +39,7 @@ from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL, RDL_SUBSTITUTION
 from training.movement_assessment import MovementAssessmentError, assess_movement_competence
 from training.camera_observations import CameraObservationError, validate_camera_observations
 from training.goals import normalize_goal, public_goal_options
+from training.localization import resolve_response_language, language_instruction, localize_guardrail_reply
 from training.movement_coaching import (
     ASSESSMENT_VERSION as SIX_PATTERN_ASSESSMENT_VERSION,
     PATTERN_DEFINITIONS, MovementCoachingError, build_movement_decision,
@@ -1798,7 +1799,7 @@ def _coaching_guardrail_reply(messages):
         )
     return None
 
-SYSTEM_PROMPT = """You are ATENA, Grega Jenko's pilot AI fitness coach. Reply in natural, grammatically correct Slovenian unless the user uses another language. Use clear, idiomatic wording, correct Slovenian grammar and punctuation, and concise headings/lists where helpful. Avoid awkward literal translations, excessive English jargon, and unsupported certainty.
+SYSTEM_PROMPT = """You are ATENA, an international AI fitness coach. Follow the response-language instruction supplied for each conversation. Use natural, grammatically correct language, clear wording, concise headings/lists where helpful, and avoid awkward literal translations, excessive jargon, and unsupported certainty. Use clear, idiomatic wording, correct Slovenian grammar and punctuation, and concise headings/lists where helpful. Avoid awkward literal translations, excessive English jargon, and unsupported certainty.
 
 ROLE AND METHOD
 You are not a generic chatbot that simply prescribes an exercise in response to the last message. Act like a careful, proactive coach who first builds an adequate picture of the person, then gives a suitable next step and follows up over time. Use information already provided in the conversation; do not ask for it again. Do not pretend to remember information that is not in the conversation. Never invent or silently infer a user's training start date, years of experience, consistency, previous sessions, equipment, pain status or completed actions. When the profile and the user's description conflict, acknowledge the exact discrepancy and ask one focused clarification; do not invent a compromise explanation.
@@ -2136,7 +2137,8 @@ def coach_chat():
         if not isinstance(content, str) or not content.strip() or len(content) > max_chars:
             return jsonify({"error": f"Sporočilo je prazno ali predolgo (največ {max_chars} znakov)."}), 400
         contents.append({"role": item["role"], "parts": [{"text": content.strip()}]})
-    system_prompt = SYSTEM_PROMPT
+    response_language = resolve_response_language(messages, payload.get("language") or payload.get("locale"))
+    system_prompt = SYSTEM_PROMPT + "\n\n" + language_instruction(response_language)
     profile_id = request.headers.get("X-Profile-Id", "").strip()
     profile_token = request.headers.get("X-Profile-Token", "").strip()
     if bool(profile_id) != bool(profile_token):
@@ -2247,6 +2249,7 @@ def coach_chat():
     model = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite").strip()
     guarded_answer = _coaching_guardrail_reply(messages)
     if guarded_answer:
+        guarded_answer = localize_guardrail_reply(guarded_answer, response_language)
         return jsonify({
             "reply": guarded_answer,
             "model": model,
