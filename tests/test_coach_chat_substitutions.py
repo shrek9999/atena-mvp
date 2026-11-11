@@ -539,12 +539,12 @@ def test_deadlift_to_rdl_substitution_prompt_explains_non_equivalence(monkeypatc
             {
                 "role": "user",
                 "content": (
-                    "Moj vadbeni profil:\\n- Glavni cilj: moč in mišična masa"
-                    "\\n- Varnost: nimam bolečin, poškodb ali omejitev"
-                    "\\n- Izkušnje: redno treniram"
-                    "\\n- Oprema: ročke"
-                    "\\nTrenutni strukturirani program ATENE:"
-                    "\\nTrening A\\n- Mrtvi dvig: 3 × 5"
+                    "Moj vadbeni profil:\n- Glavni cilj: moč in mišična masa"
+                    "\n- Varnost: nimam bolečin, poškodb ali omejitev"
+                    "\n- Izkušnje: redno treniram"
+                    "\n- Oprema: ročke"
+                    "\nTrenutni strukturirani program ATENE:"
+                    "\nTrening A\n- Mrtvi dvig: 3 × 5"
                 ),
             },
             {
