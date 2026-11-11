@@ -10,6 +10,7 @@ on:
       - "tests/run_live_conversation_quality_benchmark.py"
       - ".github/workflows/atena-live-conversation-benchmark.yml"
       - "coach_routes.py"
+      - "tests/test_conversation_state_regressions.py"
   workflow_dispatch:
 
 concurrency:
