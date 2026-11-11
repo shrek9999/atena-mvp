@@ -1112,7 +1112,7 @@ def _coaching_guardrail_reply(messages):
                 "krajši trening po službi?"
             )
         return (
-            "En izpuščen trening ne izniči napredka. Ne nadomeščaj ga z dvojnim obsegom; "
+            "En izpuščen trening ne izniči napredka. Izpuščenega treninga ne nadomeščaj z dvojnim obsegom; "
             "nadaljuj z naslednjim načrtovanim treningom. Kaj je bil glavni razlog, "
             "da je trening odpadel?"
         )
