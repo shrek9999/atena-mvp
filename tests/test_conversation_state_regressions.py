@@ -766,3 +766,45 @@ def test_fat_loss_guidance_mentions_protein_and_moderate_energy_deficit():
     assert "zmernim energijskim primanjkljajem" in reply
     assert "beljakovin" in reply
     assert "vsakodnevni hiit ni potreben" in reply.casefold()
+
+
+def test_progression_followup_verifies_the_new_load_was_actually_tried():
+    messages = [
+        {"role": "user", "content": (
+            "Nimam bolečin, poškodb ali zdravstvenih omejitev. Moj cilj je moč in mišična masa. "
+            "Redno treniram, imam fitnes in lahko vadim trikrat tedensko po 60 minut. "
+            "V dveh primerljivih treningih sem pri vseh serijah dosegel 10 ponovitev z RIR 3."
+        )},
+        {"role": "model", "content": (
+            "Pri naslednjem treningu povečaj obremenitev za najmanjši možni korak."
+        )},
+        {"role": "user", "content": (
+            "Tehnika je bila dobra in trening ni bil pretežek."
+        )},
+    ]
+
+    reply = _coaching_guardrail_reply(messages)
+
+    assert reply is not None
+    assert "še ne vem, ali si že preizkusil" in reply
+    assert "prejšnjo težo" in reply
+    assert reply.count("?") == 1
+
+
+def test_progression_followup_allows_feedback_when_new_load_is_explicitly_confirmed():
+    messages = [
+        {"role": "user", "content": (
+            "Nimam bolečin, poškodb ali zdravstvenih omejitev. Moj cilj je moč in mišična masa. "
+            "Redno treniram, imam fitnes in lahko vadim trikrat tedensko po 60 minut. "
+            "V dveh primerljivih treningih sem pri vseh serijah dosegel 10 ponovitev z RIR 3."
+        )},
+        {"role": "model", "content": (
+            "Pri naslednjem treningu povečaj obremenitev za najmanjši možni korak."
+        )},
+        {"role": "user", "content": (
+            "Pri naslednjem treningu sem povečal obremenitev za 2 kg. Tehnika je bila dobra "
+            "in trening ni bil pretežek."
+        )},
+    ]
+
+    assert _coaching_guardrail_reply(messages) is None
