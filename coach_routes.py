@@ -1271,7 +1271,7 @@ def _coaching_guardrail_reply(messages):
         available_equipment = _profile_available_equipment(messages)
         if not available_equipment:
             return (
-                "Čas in pogostost sem razumel. Da ne bom predpostavljal, da imaš ročke, klop "
+                "Časovni okvir sem razumel. Da ne bom predpostavljal, da imaš ročke, klop "
                 "ali drugo opremo: kaj imaš dejansko na voljo za vadbo? Če nimaš ničesar, "
                 "lahko izhajava samo iz lastne teže."
             )
