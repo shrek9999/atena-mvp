@@ -42,3 +42,14 @@ def test_post_review_targeted_regression_set_selects_five_known_ids():
     ]
     selected = select_scenarios(scenarios, "G04,G10,G12,G17,G19")
     assert [item["id"] for item in selected] == ["G04", "G10", "G12", "G17", "G19"]
+
+def test_duplicate_scenario_ids_are_rejected_to_prevent_unintended_model_calls():
+    scenarios = [{"id": "G04"}, {"id": "G10"}]
+    try:
+        select_scenarios(scenarios, "G04,G10,G04")
+    except ValueError as exc:
+        assert "Duplicate scenario ID" in str(exc)
+        assert "G04" in str(exc)
+    else:
+        raise AssertionError("Duplicate scenario IDs must be rejected.")
+
