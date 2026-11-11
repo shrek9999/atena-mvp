@@ -874,7 +874,7 @@ def _coaching_guardrail_reply(messages):
             return (
                 "Ne. Veslanje z ročkami v predklonu je horizontalni poteg: trup je nagnjen "
                 "naprej, ročke vlečeš proti trupu. Zgib je vertikalni poteg, pri katerem "
-                "telo vlečeš navzgor proti drogu. Gre za različna gibalna vzorca."
+                "telo vlečeš navzgor proti drogu. Gre za dva različna gibalna vzorca."
             )
         return (
             "Veslanje z ročkami v predklonu je horizontalni poteg: trup je nagnjen naprej, "

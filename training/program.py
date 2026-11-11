@@ -249,6 +249,7 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
     if (
         session_minutes >= 60
         and session_index == 1
+        and not include_accessories
         and goal in {"strength", "hypertrophy", "strength_hypertrophy"}
     ):
         if "lunge" in patterns:

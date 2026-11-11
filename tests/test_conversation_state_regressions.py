@@ -568,7 +568,7 @@ def test_missing_experience_followup_acknowledges_functional_priorities():
     ])
     assert reply is not None
     assert "prioritete glede moči, ravnotežja, koordinacije" in reply
-    assert "izkušnjami z vadbo moči" in reply
+    assert "izkušnjah z vadbo moči" in reply
 
 
 def test_missing_strength_experience_is_not_repeated_as_the_same_question():
