@@ -421,7 +421,7 @@ def _sanitize_strength_rest_intervals(answer, messages):
         return answer
 
     answer = short_rest.sub("2–3 min", answer)
-    time_limited = bool(re.search(r"\b(?:20|25|30)\s*(?:minut|min)\b", user_history, re.IGNORECASE))
+    time_limited = bool(re.search(r"\b(?:20|25|30)[-\s]*(?:minut\w*|min)\b", user_history, re.IGNORECASE))
     if time_limited:
         note = (
             "Pri glavnih večsklepnih vajah ohrani 2–3 minute odmora za kakovost izvedbe. "
