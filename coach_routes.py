@@ -588,6 +588,95 @@ def _sanitize_deadlift_substitution_claims(answer, messages):
     return answer
 
 
+
+def _sanitize_unverified_exercise_parameters(answer, messages):
+    """Prevent the model from inventing exercise doses absent from the user's record."""
+    user_history = "\n".join(
+        item.get("content", "")
+        for item in messages
+        if item.get("role") == "user" and isinstance(item.get("content"), str)
+    )
+    latest_user = next(
+        (
+            item.get("content", "")
+            for item in reversed(messages)
+            if item.get("role") == "user" and isinstance(item.get("content"), str)
+        ),
+        "",
+    )
+
+    deadlift_context = re.search(
+        r"\b(?:mrtv\w*\s+dvig\w*|deadlift)\b", user_history, re.IGNORECASE
+    )
+    substitution_context = re.search(
+        r"\b(?:namesto|zamenj\w*|alternativ\w*|replace|substitut\w*)\b",
+        user_history,
+        re.IGNORECASE,
+    )
+    mentions_rdl = re.search(
+        r"\b(?:RDL|romunsk\w*\s+mrtv\w*\s+dvig\w*)\b",
+        answer,
+        re.IGNORECASE,
+    )
+    original_deadlift_dose = re.search(
+        r"(?:mrtv\w*\s+dvig\w*|deadlift)[^\n]{0,100}"
+        r"\b\d+\s*[x×]\s*\d+\b",
+        user_history,
+        re.IGNORECASE,
+    )
+    if deadlift_context and substitution_context and mentions_rdl and not original_deadlift_dose:
+        return (
+            "Z ročkami je lahko primerna alternativa **predklon z nevtralno hrbtenico (RDL)**, "
+            "če ga obvladaš in razpoložljive ročke omogočajo ustrezen izziv. Ohranja soroden "
+            "vzorec predklona in poudarek na zadnji verigi, vendar ni biomehansko enak "
+            "klasičnemu mrtvemu dvigu: razlikujejo se začetni položaj, obseg giba, upogib "
+            "kolen in razporeditev obremenitve. Ker ne poznam odmerka iz tvojega programa "
+            "niti teže ročk, ne bom ugibal serij, ponovitev, tempa ali bremena. Pri prvi "
+            "izvedbi izberi obvladljivo breme, ohrani ciljni napor iz programa le, če je "
+            "primeren za RDL, in preveri kakovost gibanja. Kakšen je bil prvotni odmerek "
+            "mrtvega dviga (serije in ponovitve) in katere teže ročk imaš na voljo?"
+        )
+
+    one_exposure = bool(re.search(
+        r"prvi.{0,60}(?:uspešn\w*|izpostavitv\w*)|"
+        r"šele\s+prvi\s+tak\s+uspešn\w*\s+trening",
+        user_history,
+        re.IGNORECASE,
+    ))
+    next_session_request = bool(re.search(
+        r"(?:kaj\s+naj\s+naredim|kaj\s+naj\s+storim).{0,50}"
+        r"(?:naslednj\w*\s+(?:vadb\w*|trening\w*)|pri\s+naslednj\w*)",
+        latest_user,
+        re.IGNORECASE,
+    ))
+    rep_match = re.search(
+        r"(?:vse\s+serije\s+po\s+|\b)(\d{1,2})\s+ponovitev",
+        user_history,
+        re.IGNORECASE,
+    )
+    if one_exposure and next_session_request and rep_match and re.search(r"počep", user_history, re.IGNORECASE):
+        exact_set_count = re.search(
+            r"\b\d+\s*[x×]\s*\d+\b|"
+            r"\b\d+\s+serij\w*.{0,40}\b\d+\s+ponovitev",
+            user_history,
+            re.IGNORECASE,
+        )
+        if not exact_set_count:
+            reps = rep_match.group(1)
+            rir_known = bool(re.search(r"RIR\s*3|3\s+ponovitev\s+v\s+rezervi", user_history, re.IGNORECASE))
+            effort = "približno RIR 3" if rir_known else "enak načrtovani občutek napora kot zadnjič"
+            return (
+                f"Pri naslednjem treningu ponovi počep z isto obremenitvijo in enakim številom "
+                f"serij kot zadnjič. V vsaki seriji ciljaj na {reps} ponovitev in {effort}. "
+                "Ohrani enako kontrolirano amplitudo in tehniko. Natančnega števila serij "
+                "in tempa nimam zabeleženega, zato ju ne bom ugibal. Če boš enako dozo "
+                "ponovno izvedel z dobro tehniko in ustrezno regeneracijo, boš imel dve "
+                "primerljivi uspešni izpostavitvi; šele nato lahko razmisliva o najmanjšem "
+                "povečanju obremenitve."
+            )
+    return answer
+
+
 def _sanitize_unverified_training_history_claims(answer, messages):
     """Remove specific claims about the user's training timeline that are absent from their history."""
     user_history = "\n".join(
@@ -2096,6 +2185,7 @@ def coach_chat():
         answer = _sanitize_unverified_safety_claim(answer, messages)
         answer = _sanitize_unverified_training_dose(answer, messages)
         answer = _sanitize_unlisted_support(answer, messages)
+        answer = _sanitize_unverified_exercise_parameters(answer, messages)
         bodyweight_note = _bodyweight_only_program_note(messages)
         if bodyweight_note and bodyweight_note not in answer:
             answer += "\n\n" + bodyweight_note
