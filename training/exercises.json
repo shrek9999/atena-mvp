@@ -5124,7 +5124,7 @@
     ],
     "movement_family": "accessory",
     "loading_mode": "mixed",
-    "mobility_strength": false,
+    "mobility_strength": true,
     "functional_components": [],
     "movement_pattern": "accessory",
     "training_purposes": [
@@ -5183,7 +5183,7 @@
     ],
     "movement_family": "accessory",
     "loading_mode": "bodyweight_or_fixed_environment",
-    "mobility_strength": false,
+    "mobility_strength": true,
     "functional_components": [],
     "movement_pattern": "accessory",
     "training_purposes": [
