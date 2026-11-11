@@ -19,7 +19,7 @@ Benchmark operacionalizira načela iz uporabnikovih priročnikov, gradiv za uspo
 7. **Komunikacija:** naravna slovenščina, eno ključno vprašanje naenkrat, postopno zbiranje podatkov, brez nepotrebnega vprašalnika ali strokovnega žargona.
 8. **Meje kompetenc:** brez diagnoz ali obljub zdravljenja; upoštevaj navedene omejitve in opozorilne simptome ter po potrebi usmeri k zdravstvenemu strokovnjaku.
 
-Terminološka zahteva: pri opisu vzorca RDL uporabljaj izraz **predklon z ravnim hrbtom**, ne »kolčni pregib« kot privzeto slovensko poimenovanje.
+Terminološka zahteva: pri opisu vzorca RDL uporabljaj izraz **predklon z nevtralno hrbtenico**, ne »kolčni pregib« kot privzeto slovensko poimenovanje.
 
 ## Protokol izvedbe
 
