@@ -33,10 +33,10 @@ MOVEMENT_RUBRICS = {
         "coaching_options": ["prilagodi globino", "uporabi oporo", "upočasni tempo", "izberi goblet ali reaching različico", "postopno povečaj amplitudo"],
     },
     "hinge": {
-        "task": "Predklon z ravnim hrbtom",
+        "task": "Predklon z nevtralno hrbtenico",
         "criteria": {
             "hip_strategy": "Gibanje se začne s pomikom kolkov nazaj; kolena se prilagodijo nalogi.",
-            "spine_pelvis_control": "Ohranja nadzorovan odnos trupa in medenice skozi amplitudo.",
+            "spine_pelvis_control": "Ohranja svoj naravni nevtralni položaj hrbtenice in nadzor medenice skozi amplitudo; cilj ni prisilno izravnati ledvene krivine.",
             "dowel_neutral_spine": "Pri učenju s palico ohranja tri stične točke (trtica oziroma križnično-sakralni predel, torakalni del hrbtenice, zadnji del glave) in nespremenjen položaj roke v ledveni krivini kot četrto kontrolno točko.",
             "foot_pressure": "Ohranja stabilno oporo stopal brez nenadzorovanega prenosa teže.",
             "load_path": "Breme, kadar je prisotno, ostaja blizu telesa in pod nadzorom.",
@@ -80,17 +80,17 @@ MOVEMENT_RUBRICS = {
             "tempo_control": "Ohranja predpisani tempo tudi v zadnjih ponovitvah.",
         },
         "manipulations": [
-            "Dvigni oporo rok (stena, višja klop) in ponovno opazuj.",
+            "Dvigni roke na stabilno, nepremično oporo (npr. fiksno klop ali pult) in ponovno opazuj; opora se ne sme premikati.",
             "Zmanjšaj amplitudo, nato jo postopno povečuj.",
             "Zmanjšaj število ponovitev in preveri kakovost zadnje ponovitve.",
         ],
-        "coaching_options": ["skleca ob steni", "skleca na višji opori", "skleca na nižji opori", "polna skleca"],
+        "coaching_options": ["skleca na stabilni višji opori", "skleca na nižji stabilni opori", "skleca na tleh"],
     },
     "horizontal_pull": {
-        "task": "Horizontalni poteg / veslanje",
+        "task": "Horizontalni poteg – veslanje v predklonu",
         "criteria": {
             "anchor_safety": "Opora oziroma sidrišče je stabilno in primerno za obremenitev.",
-            "trunk_control": "Ohranja nadzor trupa brez sunkovitega iztega ali rotacije.",
+            "trunk_control": "Ohranja naučen kot predklona in položaj trupa med celotnim veslanjem, brez sunkovitega iztega kolkov ali rotacije.",
             "scapular_control": "Lopatici se gibljeta nadzorovano brez prisilnega položaja.",
             "elbow_path": "Pot komolcev je nadzorovana in skladna z različico.",
             "range_control": "Ohranja ponovljivo amplitudo brez izgube položaja.",
@@ -99,7 +99,7 @@ MOVEMENT_RUBRICS = {
         "manipulations": [
             "Zmanjšaj naklon telesa pri TRX/ring veslanju.",
             "Zmanjšaj breme pri veslanju z utežjo ali elastiko.",
-            "Preveri sidrišče pred vsako serijo; ne uporabljaj nestabilnega pohištva.",
+            "Preveri sidrišče pred vsako serijo; ne uporabljaj nestabilnega pohištva. Pri veslanju v predklonu mora kot trupa ostati stabilen; če ga ne moreš ohraniti, najprej izberi učno različico predklona ali različico veslanja z oporo.",
         ],
         "coaching_options": ["veslanje z elastiko", "pokončnejše TRX/ring veslanje", "veslanje z ročko", "postopno večji naklon ali breme"],
     },
