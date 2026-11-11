@@ -487,6 +487,50 @@ def test_programme_request_without_equipment_asks_instead_of_assuming_dumbbells_
     assert "pogostost" not in reply.casefold()
 
 
+def test_fat_loss_with_strength_preservation_answers_daily_hiit_question_before_intake_gate():
+    reply = _coaching_guardrail_reply([
+        {"role": "user", "content": (
+            "KONTEKST TESTNEGA UPORABNIKA: Uporabnik je izrecno potrdil, da nima "
+            "bolečin, poškodb ali gibalnih omejitev. Želi zmanjšati telesno maščobo "
+            "in ohraniti mišično maso; ima ročke in lastno težo ter lahko trenira "
+            "trikrat tedensko. Rad bi izgubil nekaj telesne maščobe, vendar želim "
+            "ohraniti mišice in moč."
+        )},
+        {"role": "model", "content": "Kako pogosto in s kakšno opremo lahko treniraš?"},
+        {"role": "user", "content": "Doma imam ročke in lahko treniram trikrat tedensko."},
+        {"role": "model", "content": "Kako opisuješ svoje izkušnje z vadbo moči?"},
+        {"role": "user", "content": "Ali moram zato vsak dan delati HIIT?"},
+    ])
+    assert reply is not None
+    assert "Vsakodnevni HIIT ni potreben" in reply
+    assert "energijskim primanjkljajem" in reply
+
+
+def test_missing_programme_goal_is_not_repeated_as_the_same_question():
+    reply = _coaching_guardrail_reply([
+        {"role": "user", "content": (
+            "KONTEKST TESTNEGA UPORABNIKA: Uporabnik je izrecno potrdil, da nima "
+            "bolečin, poškodb ali gibalnih omejitev. Profil pravi začetnik in samo "
+            "lastna teža. Pripravi mi zahteven program."
+        )},
+        {"role": "model", "content": (
+            "Preden sestavim program, morava najprej določiti glavni cilj. "
+            "Kaj želiš predvsem razvijati: moč, mišično maso, kondicijo, "
+            "funkcionalno pripravljenost ali kaj drugega?"
+        )},
+        {"role": "user", "content": "Treniral sem deset let, vendar večinoma občasno."},
+        {"role": "model", "content": (
+            "Preden sestavim program, morava najprej določiti glavni cilj. "
+            "Kaj želiš predvsem razvijati: moč, mišično maso, kondicijo, "
+            "funkcionalno pripravljenost ali kaj drugega?"
+        )},
+        {"role": "user", "content": "Na voljo imam samo lastno težo in ročke."},
+    ])
+    assert reply is not None
+    assert "Glavnega cilja še nimam" in reply
+    assert reply.count("?") == 0
+
+
 def test_programme_request_with_schedule_and_gym_but_unknown_experience_asks_first():
     messages = [{
         "role": "user",
