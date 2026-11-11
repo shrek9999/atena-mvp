@@ -1045,3 +1045,40 @@ def test_lunge_symptoms_are_not_replaced_with_an_automatic_regression():
         and event["action"] == "omitted_pending_symptom_review"
         for event in plan["movement_adaptation"]["events"]
     )
+
+
+@pytest.mark.parametrize("goal", ["strength", "hypertrophy", "strength_hypertrophy"])
+def test_sixty_minute_two_day_strength_plans_distribute_lunge_and_hip_extension(goal):
+    profile = {
+        **BASE,
+        "goal": goal,
+        "sessions_per_week": 2,
+        "session_minutes": 60,
+    }
+    plan = generate_program(profile)
+    patterns_by_session = [
+        {exercise["pattern"] for exercise in session["exercises"]}
+        for session in plan["sessions"]
+    ]
+
+    assert len(patterns_by_session) == 2
+    assert sum("hip_extension" in patterns for patterns in patterns_by_session) == 1
+    assert any("lunge" in patterns for patterns in patterns_by_session)
+    assert all(session["estimated_minutes"] <= 60 for session in plan["sessions"])
+
+
+def test_short_two_day_strength_plan_does_not_add_hip_extension_volume():
+    profile = {
+        **BASE,
+        "goal": "strength",
+        "sessions_per_week": 2,
+        "session_minutes": 45,
+    }
+    plan = generate_program(profile)
+    patterns_by_session = [
+        {exercise["pattern"] for exercise in session["exercises"]}
+        for session in plan["sessions"]
+    ]
+
+    assert all("hip_extension" not in patterns for patterns in patterns_by_session)
+    assert all("lunge" in patterns for patterns in patterns_by_session)
