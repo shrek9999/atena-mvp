@@ -540,6 +540,15 @@ def test_mobility_goal_includes_active_mobility_and_loaded_range_options():
     assert len({exercise["exercise_id"] for exercise in mobility_drills}) == len(mobility_drills)
     assert any(exercise["training_role"] == "mobility" for exercise in exercises)
     assert any(exercise["exercise_id"] in {"calf_raise_full_rom", "tibialis_raise"} for exercise in exercises)
+    mobility_strength = [
+        exercise for exercise in exercises
+        if get_exercise(exercise["exercise_id"]).get("mobility_strength") is True
+    ]
+    assert mobility_strength
+    assert all(exercise["prescription"]["sets"] == 2 for exercise in mobility_strength)
+    assert all(exercise["prescription"]["reps"] == "8–12" for exercise in mobility_strength)
+    assert all(exercise["prescription"]["rir"] == 3 for exercise in mobility_strength)
+    assert all(exercise["prescription"]["tempo"] == "3–1–2–0" for exercise in mobility_strength)
     assert plan["weekly_summary"]["pattern_session_frequency"]["mobility"] == 2
     assert plan["weekly_summary"]["pattern_session_frequency"]["mobility_stretch"] == 2
     timed_stretches = [exercise for exercise in exercises if exercise["pattern"] == "mobility_stretch"]
