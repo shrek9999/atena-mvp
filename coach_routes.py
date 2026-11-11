@@ -827,16 +827,16 @@ def _coaching_guardrail_reply(messages):
     # Low-risk technique education for a foot-assisted vertical pull should remain
     # available even while the separate health-intake question is unanswered.
     foot_assisted_pull_context = bool(re.search(
-        r"(zgib\\w*|vertikaln\\w*.{0,25}(?:poteg|vlek)|pull.?up)",
+        r"(zgib\w*|vertikaln\w*.{0,25}(?:poteg|vlek)|pull.?up)",
         history_lower,
         re.IGNORECASE,
     )) and bool(re.search(
-        r"(oporo\\s+stopal|pomag\\w*.{0,20}nog\\w*|nog\\w*.{0,20}pomag\\w*|škatl\\w*)",
+        r"(oporo\s+stopal|pomag\w*.{0,20}nog\w*|nog\w*.{0,20}pomag\w*|škatl\w*)",
         history_lower,
         re.IGNORECASE,
     ))
     if foot_assisted_pull_context and re.search(
-        r"(lažj\\w*.{0,35}vertikaln\\w*|ne\\s+veslanj\\w*|ne\\s+rowing)",
+        r"(lažj\w*.{0,35}vertikaln\w*|ne\s+veslanj\w*|ne\s+rowing)",
         lowered,
         re.IGNORECASE,
     ):
@@ -846,8 +846,8 @@ def _coaching_guardrail_reply(messages):
             "delno razbremeniš roke, trup pa ostane skoraj navpičen."
         )
     if foot_assisted_pull_context and re.search(
-        r"(kako.{0,50}(?:postav\\w*|položaj\\w*|trup\\w*|kolk\\w*|kolen\\w*|stopal\\w*)|"
-        r"postav\\w*.{0,50}(?:trup\\w*|kolk\\w*|kolen\\w*|stopal\\w*))",
+        r"(kako.{0,50}(?:postav\w*|položaj\w*|trup\w*|kolk\w*|kolen\w*|stopal\w*)|"
+        r"postav\w*.{0,50}(?:trup\w*|kolk\w*|kolen\w*|stopal\w*))",
         lowered,
         re.IGNORECASE,
     ):
@@ -870,7 +870,7 @@ def _coaching_guardrail_reply(messages):
         re.IGNORECASE,
     ))
     if row_pattern_context and row_conceptual_question:
-        if re.search(r"(isto\\s+kot|enako\\s+kot)", lowered, re.IGNORECASE):
+        if re.search(r"(isto\s+kot|enako\s+kot)", lowered, re.IGNORECASE):
             return (
                 "Ne. Veslanje z ročkami v predklonu je horizontalni poteg: trup je nagnjen "
                 "naprej, ročke vlečeš proti trupu. Zgib je vertikalni poteg, pri katerem "
@@ -1453,7 +1453,7 @@ def _coaching_guardrail_reply(messages):
                 for item in assistant_texts
             )
             if goal_question_already_asked:
-                if re.search(r"(težek\\w*\\s+trening|zahtev\\w*\\s+trening|visok\\w*\\s+intenzivnost)", lowered):
+                if re.search(r"(težek\w*\s+trening|zahtev\w*\s+trening|visok\w*\s+intenzivnost)", lowered):
                     return (
                         "Razumem, da želiš zahteven trening. Zahtevnost opisuje, kako "
                         "intenzivno boš treniral, ne pove pa še, kaj želiš predvsem razvijati. "
@@ -1497,7 +1497,7 @@ def _coaching_guardrail_reply(messages):
                 for item in assistant_texts
             )
             if experience_question_already_asked:
-                if re.search(r"(ravnotež\\w*|koordinacij\\w*|eksploziv\\w*|kondic\\w*|moč\\w*)", lowered):
+                if re.search(r"(ravnotež\w*|koordinacij\w*|eksploziv\w*|kondic\w*|moč\w*)", lowered):
                     return (
                         "Zabeležil sem tvoje prioritete glede moči, ravnotežja, koordinacije, "
                         "eksplozivnosti in kondicije. Za določitev zahtevnosti programa mi "
