@@ -40,14 +40,14 @@ permissions:
 jobs:
   live-conversation-benchmark:
     name: Run manually selected multi-turn coaching scenarios
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[run-live-benchmark]')
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message || '', '[run-live-benchmark]')
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
       AI_COACH_TEST_TOKEN: ${{ secrets.AI_COACH_TEST_TOKEN }}
       ATENA_BENCHMARK_BACKEND: https://atena-ai-coach-pilot.onrender.com
-      ATENA_BENCHMARK_SCENARIOS: ${{ (inputs.scenario_set == 'full' || contains(github.event.head_commit.message, '[full-benchmark]')) && 'ALL' || 'G01,G02,G03,G04,G05,G06,G10,G11,G13,G14,G19,G20,G21,G23' }}
-      ATENA_BENCHMARK_REPEATS: ${{ inputs.repeat_count || (contains(github.event.head_commit.message, '[full-benchmark]') && '1' || '2') }}
+      ATENA_BENCHMARK_SCENARIOS: ${{ (inputs.scenario_set == 'full' || contains(github.event.head_commit.message || '', '[full-benchmark]')) && 'ALL' || 'G01,G02,G03,G04,G05,G06,G10,G11,G13,G14,G19,G20,G21,G23' }}
+      ATENA_BENCHMARK_REPEATS: ${{ inputs.repeat_count || (contains(github.event.head_commit.message || '', '[full-benchmark]') && '1' || '2') }}
     steps:
       - name: Check out backend
         uses: actions/checkout@v4
