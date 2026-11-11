@@ -1215,16 +1215,16 @@ def _coaching_guardrail_reply(messages):
     # Before a programme is built, do not infer missing equipment or experience.
     # This deterministic gate prevents a plausible-sounding model answer from filling gaps.
     schedule_known = bool(re.search(
-        r"\\b(?:enkrat|dvakrat|trikrat|štirikrat|1x|2x|3x|4x)\\b.{0,35}(?:tedensko|na teden)|"
-        r"(?:tedensko|na teden).{0,35}\\b(?:enkrat|dvakrat|trikrat|štirikrat|1x|2x|3x|4x)\\b|"
-        r"\\b(?:20|25|30|35|40|45|50|60|75|90)\\s*(?:minut|min)\\b",
+        r"\b(?:enkrat|dvakrat|trikrat|štirikrat|1x|2x|3x|4x)\b.{0,35}(?:tedensko|na teden)|"
+        r"(?:tedensko|na teden).{0,35}\b(?:enkrat|dvakrat|trikrat|štirikrat|1x|2x|3x|4x)\b|"
+        r"\b(?:20|25|30|35|40|45|50|60|75|90)\s*(?:minut|min)\b",
         history_lower,
     ))
     experience_known = bool(re.search(
-        r"\\b(?:začetnik|začetnica|začetniški|srednje izkušen|izkušen|napreden|napredna|"
-        r"beginner|intermediate|advanced)\\b|"
-        r"\\b(?:treniram|trenirala sem|vadim).{0,45}\\b(?:leto|leti|leta|let)\\b|"
-        r"\\b(?:eno|dve|tri|štiri|pet|deset)\\s+leta?\\s+(?:redno\\s+)?treninga\\b",
+        r"\b(?:začetnik|začetnica|začetniški|srednje izkušen|izkušen|napreden|napredna|"
+        r"beginner|intermediate|advanced)\b|"
+        r"\b(?:treniram|trenirala sem|vadim).{0,45}\b(?:leto|leti|leta|let)\b|"
+        r"\b(?:eno|dve|tri|štiri|pet|deset)\s+leta?\s+(?:redno\s+)?treninga\b",
         history_lower,
     ))
     if fitness_intent and _has_explicit_safety_clearance(history) and schedule_known:
