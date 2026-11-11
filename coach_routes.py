@@ -290,6 +290,13 @@ def _normalize_slovene_coaching_terms(answer):
     """Correct recurring language, malformed inline markup and hinge terminology."""
     answer = re.sub(r"<\s*/?\s*(?:strong|b|em|i)\s*>", "", answer, flags=re.IGNORECASE)
     answer = re.sub(r"\bvadinega\b", "vadečega", answer, flags=re.IGNORECASE)
+    answer = re.sub(r"\bvpoteg\b", "poteg", answer, flags=re.IGNORECASE)
+    answer = re.sub(
+        r"\bz\s+ročkami\s+oziroma\s+hrbtom\s+se\s+povleci\b",
+        "z rokami in hrbtom se povleci",
+        answer,
+        flags=re.IGNORECASE,
+    )
     # Correct occasional mixed-script Cyrillic confusables from model output.
     answer = answer.replace("uravnoteжeno", "uravnoteženo")
     answer = answer.replace("Uravnoteжeno", "Uravnoteženo")
