@@ -668,3 +668,33 @@ def test_raw_html_markup_from_model_is_removed_but_plain_text_remains():
     assert "<br>" not in cleaned
     assert "Program vad" in cleaned
     assert "Ohrani nadzor." in cleaned
+
+
+def test_chat_removes_unverified_claim_about_user_starting_training_this_year():
+    messages = [{
+        "role": "user",
+        "content": "Ta teden sem opravil samo enega od dveh načrtovanih treningov.",
+    }]
+    answer = (
+        "To je povsem v redu. Glede na to, da si letos začel z enim treningom, "
+        "me zanima, kako zahteven je bil."
+    )
+    cleaned = coach_routes._sanitize_unverified_training_history_claims(answer, messages)
+    assert "letos začel" not in cleaned
+    assert "To je povsem v redu." in cleaned
+
+
+def test_chat_preserves_training_timeline_when_user_explicitly_provided_it():
+    messages = [{
+        "role": "user",
+        "content": "Letos sem začel redno trenirati.",
+    }]
+    answer = "Glede na to, da si letos začel trenirati, bova napredovala postopno."
+    assert coach_routes._sanitize_unverified_training_history_claims(answer, messages) == answer
+
+
+def test_slovene_normalizer_fixes_recurring_live_benchmark_typographic_errors():
+    answer = "Poz dravljen! To je izrek gibanja."
+    cleaned = coach_routes._normalize_slovene_coaching_terms(answer)
+    assert cleaned.startswith("Pozdravljen!")
+    assert "izvedbo gibanja" in cleaned
