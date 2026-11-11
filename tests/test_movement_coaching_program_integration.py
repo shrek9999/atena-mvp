@@ -1,6 +1,6 @@
 """Programme integration for structured six-pattern movement decisions."""
 from training.movement_coaching import build_movement_decision
-from training.program import generate_program
+from training.program import PATTERN_LABELS, generate_program
 
 
 BASE = {
@@ -149,3 +149,7 @@ def test_horizontal_push_never_selects_wall_push_up_even_when_wall_is_available(
     assert pushes
     assert all(item["exercise_id"] != "wall_push_up" for item in pushes)
     assert all(item["exercise_id"] == "push_up_incline" for item in pushes)
+
+
+def test_hinge_user_facing_label_uses_neutral_spine_not_flat_back_language():
+    assert PATTERN_LABELS["hinge"] == "predklon z nevtralno hrbtenico"
