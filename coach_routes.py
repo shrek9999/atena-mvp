@@ -596,6 +596,11 @@ def _sanitize_unverified_exercise_parameters(answer, messages):
         for item in messages
         if item.get("role") == "user" and isinstance(item.get("content"), str)
     )
+    assistant_history = "\n".join(
+        item.get("content", "")
+        for item in messages
+        if item.get("role") == "model" and isinstance(item.get("content"), str)
+    )
     latest_user = next(
         (
             item.get("content", "")
@@ -623,8 +628,25 @@ def _sanitize_unverified_exercise_parameters(answer, messages):
         r"\b\d+\s*[x×]\s*\d+\b",
         user_history,
         re.IGNORECASE,
-    )
+    ) or re.search(r"\b\d+\s*[x×]\s*\d+\b", latest_user)
     if deadlift_context and substitution_context and mentions_rdl and not original_deadlift_dose:
+        already_asked = "prvotni odmerek" in assistant_history.casefold()
+        if already_asked and re.search(r"(na voljo imam|klopi nimam|ročk)", latest_user, re.IGNORECASE):
+            return (
+                "Razumem: imaš ročke in lastno težo, klopi pa ne potrebuješ za RDL. "
+                "RDL ohranja soroden vzorec predklona in poudarek na zadnji verigi, "
+                "vendar ni biomehansko enak klasičnemu mrtvemu dvigu. Da ne bom ugibal "
+                "o odmerku ali obremenitvi, mi povej še: kakšen je bil prvotni odmerek "
+                "mrtvega dviga (serije × ponovitve) in katere teže ročk imaš?"
+            )
+        if already_asked and re.search(r"(ohraniti vzorec|enak namen|namen treninga)", latest_user, re.IGNORECASE):
+            return (
+                "Se strinjam: ohraniva soroden vzorec predklona in poudarek na zadnji verigi, "
+                "ne pa trditve, da je RDL enak klasičnemu mrtvemu dvigu. Ker se razlikujejo "
+                "začetni položaj, obseg giba, upogib kolen in razporeditev obremenitve, "
+                "morava odmerek prilagoditi dejanski izvedbi. Kakšen je bil prvotni odmerek "
+                "mrtvega dviga (serije × ponovitve) in katere teže ročk imaš?"
+            )
         return (
             "Z ročkami je lahko primerna alternativa **predklon z nevtralno hrbtenico (RDL)**, "
             "če ga obvladaš in razpoložljive ročke omogočajo ustrezen izziv. Ohranja soroden "
@@ -654,7 +676,7 @@ def _sanitize_unverified_exercise_parameters(answer, messages):
         user_history,
         re.IGNORECASE,
     )
-    if one_exposure and next_session_request and rep_match and re.search(r"počep", user_history, re.IGNORECASE):
+    if one_exposure and rep_match and re.search(r"počep", user_history, re.IGNORECASE):
         exact_set_count = re.search(
             r"\b\d+\s*[x×]\s*\d+\b|"
             r"\b\d+\s+serij\w*.{0,40}\b\d+\s+ponovitev",
@@ -665,14 +687,86 @@ def _sanitize_unverified_exercise_parameters(answer, messages):
             reps = rep_match.group(1)
             rir_known = bool(re.search(r"RIR\s*3|3\s+ponovitev\s+v\s+rezervi", user_history, re.IGNORECASE))
             effort = "približno RIR 3" if rir_known else "enak načrtovani občutek napora kot zadnjič"
+            if next_session_request:
+                return (
+                    f"Pri naslednjem treningu ponovi počep z isto obremenitvijo in enakim številom "
+                    f"serij kot zadnjič. V vsaki seriji ciljaj na {reps} ponovitev in {effort}. "
+                    "Ohrani enako kontrolirano amplitudo in tehniko. Natančnega števila serij "
+                    "in tempa nimam zabeleženega, zato ju ne bom ugibal. Če boš enako dozo "
+                    "ponovno izvedel z dobro tehniko in ustrezno regeneracijo, boš imel dve "
+                    "primerljivi uspešni izpostavitvi; šele nato lahko razmisliva o najmanjšem "
+                    "povečanju obremenitve."
+                )
+            if re.search(r"(tehnik\w*|prvi tak uspeš\w*|prvič)", latest_user, re.IGNORECASE):
+                return (
+                    "Dobro, tehnika je bila dobra. Ker je bila to še vedno samo ena uspešna "
+                    "izpostavitev, naslednjič ohrani isto obremenitev in enako število serij "
+                    f"kot zadnjič ter izvedi {reps} ponovitev na serijo z {effort}. "
+                    "Breme povečaj šele po drugi primerljivi uspešni izvedbi z ustrezno "
+                    "regeneracijo. Kako si se počutil naslednji dan po treningu?"
+                )
+            if re.search(r"(poveč\w*|dodaj\w*).{0,30}(tež\w*|obremen|breme)", latest_user, re.IGNORECASE):
+                return (
+                    "Za zdaj še ne povečuj obremenitve. Ker je bila to prva uspešna izvedba "
+                    f"{reps} ponovitev z {effort}, naslednjič ponovi enako vajo z isto težo "
+                    "in enakim številom serij kot zadnjič. O povečanju razmišljaj šele po "
+                    "drugi primerljivi uspešni izvedbi. Kako si se počutil v 24–48 urah po treningu?"
+                )
+
+    two_exposures = bool(re.search(
+        r"(?:v|po)\\s+dveh\\s+zaporednih\\s+primerljivih\\s+treningih|"
+        r"dveh\\s+zaporednih\\s+primerljivih\\s+treningih",
+        user_history,
+        re.IGNORECASE,
+    ))
+    progression_context = (
+        two_exposures
+        and bool(re.search(r"8[–-]10", user_history))
+        and bool(re.search(r"RIR\\s*3|tri\\s+ponovitve\\s+v\\s+rezervi", user_history, re.IGNORECASE))
+        and bool(re.search(r"10\\s+ponovitev", user_history, re.IGNORECASE))
+    )
+    if progression_context:
+        recovery_reported = bool(re.search(
+            r"regeneracij\\w*.{0,40}(?:dobra|ustrezna|normalna)|"
+            r"(?:dobro|normalno)\\s+okrev\\w*|"
+            r"naslednji\\s+dan.{0,50}(?:brez\\s+težav|brez\\s+bolečin|spoč|normalno)|"
+            r"(?:brez|ni)\\s+(?:nenavadne\\s+)?utrujenosti",
+            user_history,
+            re.IGNORECASE,
+        ))
+        technique_and_effort = bool(re.search(
+            r"tehnik\\w*.{0,40}(?:dobra|stabilna)|"
+            r"(?:ni|ni bil|ni bilo)\\s+pretež\\w*|trening\\s+ni\\s+bil\\s+pretež\\w*",
+            user_history,
+            re.IGNORECASE,
+        ))
+        if not recovery_reported:
+            if technique_and_effort:
+                return (
+                    "Dobro, to potrjuje stabilno tehniko in primeren občutek napora. "
+                    "Pred povečanjem bremena preveriva še regeneracijo: ali si bil naslednji "
+                    "dan običajno spočit, brez nenavadne utrujenosti ali bolečin?"
+                )
             return (
-                f"Pri naslednjem treningu ponovi počep z isto obremenitvijo in enakim številom "
-                f"serij kot zadnjič. V vsaki seriji ciljaj na {reps} ponovitev in {effort}. "
-                "Ohrani enako kontrolirano amplitudo in tehniko. Natančnega števila serij "
-                "in tempa nimam zabeleženega, zato ju ne bom ugibal. Če boš enako dozo "
-                "ponovno izvedel z dobro tehniko in ustrezno regeneracijo, boš imel dve "
-                "primerljivi uspešni izpostavitvi; šele nato lahko razmisliva o najmanjšem "
-                "povečanju obremenitve."
+                "Podatki kažejo, da si zgornjo mejo razpona dosegel v dveh primerljivih "
+                "treningih z RIR 3 in stabilno tehniko. Preden potrdim povečanje obremenitve, "
+                "preveriva še regeneracijo: kako si se počutil naslednji dan po zadnjem treningu?"
+            )
+        exercise_known = bool(re.search(
+            r"počep\\w*|mrtv\\w*\\s+dvig\\w*|deadlift|bench press|potisk\\w*|veslan\\w*|row\\b",
+            user_history,
+            re.IGNORECASE,
+        ))
+        load_known = bool(re.search(r"\\b\\d+(?:[.,]\\d+)?\\s*kg\\b", user_history, re.IGNORECASE))
+        set_count_known = bool(re.search(r"\\b\\d+\\s*[x×]\\s*\\d+\\b", user_history))
+        if not (exercise_known and load_known and set_count_known):
+            return (
+                "Ker sta dve primerljivi uspešni izpostavitvi potrjeni in je regeneracija ustrezna, "
+                "je naslednji korak lahko najmanjše razpoložljivo povečanje obremenitve; nato se "
+                "vrni na spodnjo mejo razpona, 8 ponovitev na serijo, in ohrani enako število serij "
+                "kot v programu. Ker nimam zapisa točne vaje, trenutnega bremena ali števila serij, "
+                "ne bom ugibal kilogramov ali obsega. Spreminjaj samo eno spremenljivko in spremljaj "
+                "tehniko ter RIR."
             )
     return answer
 
