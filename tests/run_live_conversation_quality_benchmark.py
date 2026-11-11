@@ -169,6 +169,12 @@ def main() -> int:
             )
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+    response_source_counts = {}
+    for item in results:
+        for turn in item["transcript"]:
+            source = turn.get("response_source", "unknown")
+            response_source_counts[source] = response_source_counts.get(source, 0) + 1
+
     report = {
         "benchmark_id": benchmark["benchmark_id"],
         "executed_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -187,6 +193,7 @@ def main() -> int:
         "total_turns": sum(len(x["transcript"]) for x in results),
         "api_success_count": sum(x["status"] == "passed_api" for x in results),
         "api_error_count": sum(x["status"] != "passed_api" for x in results),
+        "response_source_counts": response_source_counts,
         "results": results,
     }
     OUT_JSON.write_text(
@@ -205,6 +212,7 @@ def main() -> int:
         f"- Uporabniških obratov: {report['total_turns']}",
         f"- Uspešne API izvedbe: {report['api_success_count']}",
         f"- API napake: {report['api_error_count']}",
+        f"- Viri odgovorov: {', '.join(f'{key}={value}' for key, value in sorted(response_source_counts.items()))}",
         "",
         "> API uspeh pomeni, da je ATENA vrnila odgovor v večkoračnem toku. "
         "To še ni strokovna ocena kakovosti odgovora.",
