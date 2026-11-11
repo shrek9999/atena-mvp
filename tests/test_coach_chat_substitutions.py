@@ -118,8 +118,8 @@ def test_chat_uses_rdl_technique_protocol_for_hinge_learning_request(monkeypatch
 
     assert response.status_code == 200
     prompt = captured["body"]["systemInstruction"]["parts"][0]["text"]
-    assert "RDL / PREDKLON Z RAVNIM HRBTOM" in prompt
-    assert "Predklon z ravnim hrbtom ob steni" in prompt
+    assert "RDL / predklon z nevtralno hrbtenico" in prompt
+    assert "predklon z nevtralno hrbtenico ob steni" in prompt
     assert "bolečino/nelagodje" in prompt
     assert "Ne dodajaj elastike, ovite okoli stopal" in prompt
 
@@ -148,8 +148,8 @@ def test_rdl_protocol_remains_active_when_followup_does_not_repeat_exercise_name
 
     assert response.status_code == 200
     prompt = captured["body"]["systemInstruction"]["parts"][0]["text"]
-    assert "RDL / PREDKLON Z RAVNIM HRBTOM" in prompt
-    assert "Predklon z ravnim hrbtom ob steni" in prompt
+    assert "RDL / predklon z nevtralno hrbtenico" in prompt
+    assert "predklon z nevtralno hrbtenico ob steni" in prompt
 
 
 def test_clarified_balance_issue_does_not_repeat_the_same_guardrail_question():
