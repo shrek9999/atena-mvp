@@ -608,6 +608,15 @@ def generate_program(
             method = next((item for item in method_options if item["id"] == method_id), None)
             if method_id is not None and method is None:
                 raise ProgramValidationError(f"Učna metoda {method_id} ne pripada vzorcu {pattern}.")
+            if pattern == "horizontal_pull" and method_id in {
+                "light_one_arm_hinge_row", "light_barbell_row"
+            }:
+                hinge_record = movement_decisions.get("hinge")
+                if not isinstance(hinge_record, dict) or hinge_record.get("decision") != "READY":
+                    raise ProgramValidationError(
+                        "Obremenjeno veslanje v predklonu zahteva predhodno oceno predklona kot READY. "
+                        "Najprej utrdi predklon ali izberi horizontalno veslanje, ki ne zahteva predklona."
+                    )
             if decision in {"LEARN", "REGRESS"} and method is None and not record.get("selected_exercise_id"):
                 raise ProgramValidationError(f"Za {decision} pri {pattern} mora biti izbrana učna metoda ali različica vaje.")
             if pattern in p["excluded_patterns"]:
