@@ -795,7 +795,7 @@ def test_functional_onboarding_answer_does_not_bundle_goal_and_health_questions(
     cleaned = _sanitize_onboarding_questions(answer, messages)
 
     assert cleaned.count("?") == 1
-    assert "zdravstvene omejitve" in cleaned
+    assert "zdravstvene zadržke" in cleaned
     assert "glavni cilj" not in cleaned
 
 
