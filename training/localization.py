@@ -30,7 +30,7 @@ def resolve_response_language(messages: list[dict], requested_language: object =
     )
     lowered = latest.casefold()
     if re.search(r"[čćžšđ]", lowered) or re.search(
-        r"\b(?:živjo|živijo|prosim|želim|rad bi|rada bi|imam|nimam|trening|vadba|počep|boli|koleno|mišice|moč|vzdržljivost|oprema|roke|hrbet)\b",
+        r"\b(?:živjo|živijo|prosim|želim|rad bi|rada bi|imam|nimam|pripravi|pripravim|hipertrofija|hipertrofijo|program|vadbe|trening|vadba|počep|boli|koleno|mišice|moč|vzdržljivost|oprema|roke|hrbet)\b",
         lowered,
     ):
         return "sl"
