@@ -1049,3 +1049,59 @@ def test_onboarding_recognizes_three_times_weekly_without_reasking():
     reply = _coaching_guardrail_reply(messages)
     assert reply is not None
     assert "kolikokrat na teden" not in reply.casefold()
+
+
+
+def test_guided_onboarding_does_not_treat_unselected_form_defaults_as_equipment():
+    messages = [
+        {"role": "user", "content": (
+            'Profil ATENE (strukturirano): {"goal":"","experience":"","equipment":[],'
+            '"equipment_confirmed":false,"sessions_per_week":null,"session_minutes":null}'
+            "\\nMoje vprašanje: Sem začetnik. Rad bi izboljšal splošno telesno pripravljenost, "
+            "pridobil nekaj mišične mase in imel več energije. Trenutno ne treniram redno. "
+            "Želim vaditi doma, približno 3-krat tedensko po 30–45 minut."
+        )},
+        {"role": "model", "content": "Ali imaš kakršne koli zdravstvene težave, poškodbe ali omejitve?"},
+        {"role": "user", "content": "ne"},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "opremo" in reply.casefold()
+    assert "koliko časa" not in reply.casefold()
+    assert "kolikokrat na teden" not in reply.casefold()
+
+
+def test_guided_equipment_question_has_simple_choice_options():
+    from coach_routes import _onboarding_quick_replies
+
+    choices = _onboarding_quick_replies(
+        "Katero opremo imaš dejansko na voljo za vadbo?"
+    )
+    assert choices == [
+        "Samo lastna teža", "Elastike", "Ročke", "Kettlebell", "Polno opremljen fitnes"
+    ]
+
+
+def test_guided_safety_question_offers_clear_yes_no_and_uncertain_choices():
+    from coach_routes import _onboarding_quick_replies
+
+    choices = _onboarding_quick_replies(
+        "Ali imaš trenutno kakršne koli bolečine, poškodbe ali zdravstvene omejitve?"
+    )
+    assert choices[0].startswith("Ne")
+    assert choices[1].startswith("Da")
+    assert "Nisem prepričan" in choices[2]
+
+
+def test_general_fitness_is_recognized_as_a_real_goal():
+    messages = [
+        {"role": "user", "content": (
+            "Želim izboljšati splošno telesno pripravljenost in trenirati 3-krat tedensko."
+        )},
+        {"role": "model", "content": "Ali imaš kakšne bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "ne"},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "opremo" in reply.casefold()
+    assert "glavni cilj" not in reply.casefold()
