@@ -20,6 +20,9 @@ def validate_symptom_regression_report(user_report: dict, decision: str, selecte
     """Permit a symptom-reported pattern only after a documented tolerated regression retest."""
     if user_report.get("status") != "symptoms_reported":
         return
+    # A symptom-reported pattern may remain unassessable and be omitted.
+    if decision == "UNASSESSABLE":
+        return
     test = user_report.get("regression_test")
     if (
         decision != "REGRESS"
