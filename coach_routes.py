@@ -91,7 +91,7 @@ def _has_explicit_no_pain_confirmation(text):
     ))
 
 def _has_explicit_safety_clearance(text):
-    """Require explicit negative confirmation for pain, injuries and limitations."""
+    """Recognize an explicit negative answer without requiring every category to be repeated."""
     normalized = " ".join(str(text or "").split()).casefold()
     structured_profile = re.search(
         r"\btrenutna\s+bolečina\s*/\s*poškodba\s*/\s*zdravstvena\s+omejitev\s*:\s*ne\b",
@@ -101,8 +101,6 @@ def _has_explicit_safety_clearance(text):
         return True
     statements = re.split(r"(?<=[.!?;])\s+|\n+", normalized)
     for statement in statements:
-        # "No symptoms reported" is missing information, not an explicit
-        # negative answer from the user. Never turn absence of data into clearance.
         missing_report = bool(re.search(
             r"\b(?:brez\s+(?:izrecne\s+)?navedbe|ni\s+(?:bilo\s+)?(?:navedeno|podatka|podatkov)|"
             r"not\s+(?:reported|provided|specified)|no\s+(?:health\s+)?(?:information|data)\s+(?:about|on)|"
@@ -111,12 +109,14 @@ def _has_explicit_safety_clearance(text):
         ))
         if missing_report:
             continue
-        negative = bool(re.search(r"\b(?:nimam|nima|brez|no|without)\b", statement))
-        pain = bool(re.search(r"\b(?:bolečin\w*|pain)\b", statement))
-        injury = bool(re.search(r"\b(?:poškodb\w*|injur\w*)\b", statement))
-        limitations = bool(re.search(
-            r"\b(?:omejit\w*|zdravstven\w*\s+težav\w*|health\s+(?:restrictions?|issues?)|limitations?)\b",
-            statement,
+        negative = bool(re.search(r"\b(?:nimam|nima|brez|no|without|ne čutim)\b", statement))
+        categories = sum((
+            bool(re.search(r"\b(?:bolečin\w*|pain)\b", statement)),
+            bool(re.search(r"\b(?:poškodb\w*|injur\w*)\b", statement)),
+            bool(re.search(
+                r"\b(?:omejit\w*|zdravstven\w*\s+težav\w*|health\s+(?:restrictions?|issues?)|limitations?)\b",
+                statement,
+            )),
         ))
         positive_issue = bool(re.search(
             r"\b(?:imam|občutim|čutim|me boli|boli me)\b.{0,60}(?:bolečin\w*|poškodb\w*|omejit\w*)|"
@@ -124,9 +124,70 @@ def _has_explicit_safety_clearance(text):
             r"\bi am experiencing\b.{0,50}(?:pain|injury|limitation)",
             statement,
         ))
-        if negative and pain and injury and limitations and not positive_issue:
+        if negative and categories >= 2 and not positive_issue:
             return True
     return False
+
+
+def _is_safety_question(text):
+    """Identify the initial broad safety-intake question, not a local symptom follow-up."""
+    value = str(text or "")
+    asks_about_health = bool(re.search(
+        r"(?:ali\s+imaš|imaš\s+trenutno|do\s+you\s+have|are\s+you\s+experiencing|any\s+current)"
+        r".{0,180}(?:bolečin\w*|poškodb\w*|omejitv\w*|zdravstven\w*|pain|injur\w*|limitation|medical restriction)",
+        value,
+        re.IGNORECASE | re.DOTALL,
+    ))
+    return "?" in value and asks_about_health
+
+
+def _has_contextual_safety_clearance(messages):
+    """Treat a short 'no' as an answer only when it directly follows ATENA's safety question."""
+    uncertain = re.compile(
+        r"^(?:ne vem|nisem prepričan(?:-a)?|nisem prepričana|mogoče|nisem siguren|"
+        r"not sure|i don't know|i am not sure|maybe)\b",
+        re.IGNORECASE,
+    )
+    negative = re.compile(
+        r"^(?:ne|no|nope|nič od tega|none of these|none)\s*[.!?,]*$",
+        re.IGNORECASE,
+    )
+    for index in range(1, len(messages)):
+        current, previous = messages[index], messages[index - 1]
+        if (
+            isinstance(current, dict) and current.get("role") == "user"
+            and isinstance(previous, dict) and previous.get("role") == "model"
+            and _is_safety_question(previous.get("content", ""))
+        ):
+            answer = str(current.get("content") or "").strip()
+            prior_user_history = "\n".join(
+                item.get("content", "") for item in messages[:index - 1]
+                if isinstance(item, dict) and item.get("role") == "user"
+                and isinstance(item.get("content"), str)
+            )
+            prior_positive_symptom = bool(re.search(
+                r"\bme\b.{0,25}\bboli\b|\bboli me\b|"
+                r"\bimam\b.{0,60}(?:bolečin\w*|poškodb\w*|omejitv\w*)|"
+                r"\bI have\b.{0,50}(?:pain|injur\w*|limitation)|"
+                r"\bI am experiencing\b.{0,50}(?:pain|injur\w*|limitation)",
+                prior_user_history,
+                re.IGNORECASE,
+            ))
+            if not prior_positive_symptom and not uncertain.search(answer) and negative.fullmatch(answer):
+                return True
+    return False
+
+
+def _has_safety_clearance(messages):
+    """Resolve the one-time safety gate from explicit wording or a contextual yes/no answer."""
+    user_history = "\n".join(
+        item.get("content", "") for item in messages
+        if isinstance(item, dict) and item.get("role") == "user"
+        and isinstance(item.get("content"), str)
+    )
+    return _has_explicit_safety_clearance(user_history) or _has_contextual_safety_clearance(messages)
+
+
 def _profile_from_messages(messages):
     user_text = "\n".join(
         item.get("content", "") for item in messages if item.get("role") == "user"
@@ -517,12 +578,21 @@ def _sanitize_onboarding_questions(answer, messages):
         r"začnem trenir|program\w*|vadbeni program|workout|training plan)",
         lowered,
     ))
-    safety_clear = _has_explicit_safety_clearance(user_history) if fitness_intent else True
+    safety_clear = _has_safety_clearance(messages) if fitness_intent else True
     safety_question_present = "?" in answer and bool(re.search(
         r"(bolečin\w*|poškodb\w*|omejitv\w*|zdravstven\w*|pain|injur\w*|health restriction)",
         answer,
         re.IGNORECASE,
     ))
+
+    if fitness_intent and safety_clear and _is_safety_question(answer):
+        retained = [
+            part.strip() for part in re.split(r"(?<=[.!?])\s+|\n+", answer)
+            if part.strip() and not _is_safety_question(part)
+        ]
+        if retained:
+            return " ".join(retained)
+        return "Hvala, to sem upošteval. Nadaljujeva z naslednjim korakom priprave tvojega profila."
 
     if fitness_intent and not safety_clear:
         if safety_question_present and answer.count("?") == 1:
@@ -809,7 +879,7 @@ def _sanitize_unverified_training_dose(answer, messages, language="sl"):
         item.get("content", "") for item in messages
         if item.get("role") == "user" and isinstance(item.get("content"), str)
     ]
-    if not user_texts or _has_explicit_safety_clearance("\n".join(user_texts)):
+    if not user_texts or _has_safety_clearance(messages):
         return answer
     history = "\n".join(user_texts)
     exercise_context = bool(re.search(
@@ -855,7 +925,7 @@ def _sanitize_unverified_safety_claim(answer, messages):
         item.get("content", "") for item in messages
         if item.get("role") == "user" and isinstance(item.get("content"), str)
     )
-    if _has_explicit_safety_clearance(user_history):
+    if _has_safety_clearance(messages):
         return answer
     claim = re.search(
         r"(?:ker|saj)\s+(?:si\s+)?(?:potrdil|povedal),?\s+da\s+(?:nimaš|si brez)|"
@@ -1500,7 +1570,7 @@ def _coaching_guardrail_reply(messages):
     if (
         assistant_asked_setup
         and not assistant_asked_safety
-        and not _has_explicit_safety_clearance(history)
+        and not _has_safety_clearance(messages)
         and fitness_intent
     ):
         return (
@@ -1514,7 +1584,7 @@ def _coaching_guardrail_reply(messages):
         latest,
         re.IGNORECASE,
     ))
-    if assistant_asked_safety and not _has_explicit_safety_clearance(history) and not latest_reports_health_issue:
+    if assistant_asked_safety and not _has_safety_clearance(messages) and not latest_reports_health_issue:
         # Ask the safety question at most twice (the original ask plus one reminder).
         # After that, acknowledge further intake details and explain the boundary
         # without repeating the same question on every turn.
@@ -1652,7 +1722,7 @@ def _coaching_guardrail_reply(messages):
         if re.search(r"zamenj|nadomest|alternativ|namesto|swap|replace", text_value, re.IGNORECASE):
             substitution_intent_texts.append(text_value)
     if substitution_intent_texts:
-        if not _has_explicit_safety_clearance(history):
+        if not _has_safety_clearance(messages):
             return (
                 "Preden predlagam zamenjavo vaje, moram preveriti varnost: ali imaš trenutno "
                 "kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
@@ -1695,7 +1765,7 @@ def _coaching_guardrail_reply(messages):
         latest,
         re.IGNORECASE,
     ))
-    if prescription_request and not _has_explicit_safety_clearance(history):
+    if prescription_request and not _has_safety_clearance(messages):
         contradiction = bool(re.search(
             r"(začetnik|začetniški).{0,80}(deset let|dolgoletn|napreden)|"
             r"(deset let|dolgoletn|napreden).{0,80}(začetnik|začetniški)",
@@ -1757,7 +1827,7 @@ def _coaching_guardrail_reply(messages):
 
     # A conversational request for a hard workout is not a training goal.
     # Do not invent the goal, weekly frequency or session duration to fill gaps.
-    if programming_intent and _has_explicit_safety_clearance(history):
+    if programming_intent and _has_safety_clearance(messages):
         if not goal_known:
             goal_question_already_asked = any(
                 "kaj želiš predvsem razvijati" in item.casefold()
@@ -1794,7 +1864,7 @@ def _coaching_guardrail_reply(messages):
                     "načrtujem vadbo samo z lastno težo."
                 )
 
-    if fitness_intent and _has_explicit_safety_clearance(history) and schedule_known:
+    if fitness_intent and _has_safety_clearance(messages) and schedule_known:
         if not equipment_known:
             return (
                 "Časovni okvir sem razumel. Da ne bom predpostavljal, da imaš ročke, klop "
@@ -1831,7 +1901,7 @@ def _coaching_guardrail_reply(messages):
     if (
         re.search(r"dva treninga sta bila lahka", history_lower)
         and re.search(r"vsaj tremi ponovitvami v rezervi", history_lower)
-        and _has_explicit_safety_clearance(history)
+        and _has_safety_clearance(messages)
     ):
         return (
             "Dva lahka treninga in dobra regeneracija lahko upravičita majhen korak naprej, "
@@ -1855,7 +1925,7 @@ Before prescribing an individualized workout or training plan, establish the min
 3) available equipment and realistic time;
 4) major health conditions, recent injuries, medical restrictions, and any discomfort that changes a movement;
 5) weekly availability and, only when relevant, age or other factors affecting exercise selection. Age alone is never an eligibility limit; adapt training to capacity, experience and recovery, not chronological age alone.
-Ask one concise, high-value question at a time. Never start an individualized programme until the user's experience and approximate ability are known; if the user has not stated them, ask one simple question instead of assuming beginner, intermediate or advanced ability. Never select exercises that require equipment the user has not confirmed; if equipment is unknown, ask what is available or clearly offer a bodyweight-only general example. SAFETY-FIRST ORDER: before individualized programming, confirm whether any major health condition, recent injury, medical restriction or concerning symptom requires professional assessment. Do not demand that a user be completely pain-free. If the user has only mild, familiar discomfort, clarify the affected movement and use the dose/tolerance process below; do not automatically exclude all training. Do not ask about equipment, time or training frequency before this initial safety check. If the user confirms no major restriction, continue with the main goal, experience, equipment, realistic training time and weekly availability, one question at a time. Do not overwhelm the user with a long intake form. If the request is simple and low risk, you may give a clearly labelled general example while explaining that it is not yet individualized, and ask the most important follow-up question. If safety-relevant information is missing, ask before recommending demanding exercise.
+Ask one concise, high-value question at a time. Never start an individualized programme until the user's experience and approximate ability are known; if the user has not stated them, ask one simple question instead of assuming beginner, intermediate or advanced ability. Never select exercises that require equipment the user has not confirmed; if equipment is unknown, ask what is available or clearly offer a bodyweight-only general example. SAFETY-FIRST ORDER: ask the broad health/safety intake question once, at the beginning, before individualized programming. Accept a clear negative answer (including a direct 'no' to that question) and retain that resolved state throughout this conversation. Never ask the same broad pain/injury/restriction question again after it has been answered. Do not reopen the initial gate merely because the user asks a follow-up or gives a short answer. If a new, localized symptom is later reported during a specific movement, address only that movement with the appropriate symptom protocol; do not repeat the full intake. If the initial answer is uncertain or positive, clarify only the relevant safety detail. Do not demand that a user be completely pain-free. If the user has only mild, familiar discomfort, clarify the affected movement and use the dose/tolerance process below; do not automatically exclude all training. Do not ask about equipment, time or training frequency before this initial safety check. If the user confirms no major restriction, continue with the main goal, experience, equipment, realistic training time and weekly availability, one question at a time. Do not overwhelm the user with a long intake form. If the request is simple and low risk, you may give a clearly labelled general example while explaining that it is not yet individualized, and ask the most important follow-up question. If safety-relevant information is missing, ask before recommending demanding exercise.
 
 CONVERSATIONAL EXPERIENCE AND GOAL CLARIFICATION
 - The conversation is the primary interface. Do not make the person feel they are completing an intake form. Build the picture gradually across turns.

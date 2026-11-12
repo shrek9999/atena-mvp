@@ -933,3 +933,77 @@ def test_live_profile_injection_does_not_turn_first_exposure_into_claimed_good_t
     assert "Dobro, tehnika je bila dobra" not in cleaned
     assert "Kako si se počutil v 24–48 urah" in cleaned
 
+
+
+def test_short_no_after_atena_safety_question_resolves_gate_once():
+    from coach_routes import _has_safety_clearance, _sanitize_unverified_safety_claim
+
+    messages = [
+        {"role": "user", "content": "Želim izboljšati splošno pripravljenost in pridobiti mišično maso."},
+        {"role": "model", "content": "Ali imaš kakršne koli zdravstvene težave, nedavne poškodbe ali medicinske omejitve?"},
+        {"role": "user", "content": "ne"},
+    ]
+    assert _has_safety_clearance(messages)
+    answer = "Ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
+    assert _sanitize_unverified_safety_claim(answer, messages) == answer
+
+
+def test_no_pain_or_limitations_is_enough_when_explicitly_stated():
+    assert _has_explicit_safety_clearance("Nimam bolečin ali omejitev!")
+    assert _has_explicit_safety_clearance("I have no pain or limitations.")
+
+
+def test_uncertain_short_answer_after_safety_question_does_not_clear_gate():
+    from coach_routes import _has_safety_clearance
+
+    messages = [
+        {"role": "user", "content": "Želim pridobiti mišično maso."},
+        {"role": "model", "content": "Ali imaš kakršne koli zdravstvene težave, poškodbe ali omejitve?"},
+        {"role": "user", "content": "Ne vem."},
+    ]
+    assert not _has_safety_clearance(messages)
+
+
+def test_repeated_broad_safety_question_is_removed_after_clearance():
+    messages = [
+        {"role": "user", "content": "Želim izboljšati splošno pripravljenost in pridobiti mišično maso."},
+        {"role": "model", "content": "Ali imaš kakršne koli zdravstvene težave, poškodbe ali omejitve?"},
+        {"role": "user", "content": "ne"},
+    ]
+    answer = "Preden pripravim individualni trening, moram preveriti varnost: ali imaš trenutno kakršne koli bolečine, poškodbe ali zdravstvene omejitve?"
+    cleaned = _sanitize_onboarding_questions(answer, messages)
+    assert "ali imaš trenutno" not in cleaned.casefold()
+    assert "Nadaljujeva z naslednjim korakom" in cleaned
+
+
+def test_short_reply_inherits_language_from_previous_substantive_user_turn():
+    from training.localization import resolve_response_language
+
+    messages = [
+        {"role": "user", "content": "Želim izboljšati splošno pripravljenost in pridobiti mišično maso."},
+        {"role": "model", "content": "Ali imaš kakršne koli zdravstvene težave ali omejitve?"},
+        {"role": "user", "content": "ne"},
+    ]
+    assert resolve_response_language(messages) == "sl"
+
+
+def test_short_english_reply_inherits_english_from_previous_substantive_user_turn():
+    from training.localization import resolve_response_language
+
+    messages = [
+        {"role": "user", "content": "I want to improve my general fitness and build muscle."},
+        {"role": "model", "content": "Do you have any pain, injuries or medical restrictions?"},
+        {"role": "user", "content": "no"},
+    ]
+    assert resolve_response_language(messages) == "en"
+
+
+def test_contextual_no_does_not_override_a_previously_reported_active_symptom():
+    from coach_routes import _has_safety_clearance
+
+    messages = [
+        {"role": "user", "content": "Pri počepu me trenutno boli koleno."},
+        {"role": "model", "content": "Ali imaš kakršne koli bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "ne"},
+    ]
+    assert not _has_safety_clearance(messages)
