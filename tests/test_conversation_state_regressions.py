@@ -1078,7 +1078,7 @@ def test_guided_equipment_question_has_simple_choice_options():
         "Katero opremo imaš dejansko na voljo za vadbo?"
     )
     assert choices == [
-        "Samo lastna teža", "Elastike", "Ročke", "Kettlebell", "Polno opremljen fitnes"
+        "Samo lastna teža", "Elastike", "Ročke", "Kettlebell", "Ročke in kettlebell", "Polno opremljen fitnes"
     ]
 
 
