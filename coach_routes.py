@@ -1869,6 +1869,7 @@ def _coaching_guardrail_reply(messages):
     ))
     if (
         fitness_intent
+        and assistant_asked_safety
         and _has_safety_clearance(messages)
         and not latest_is_educational
         and not substitution_intent_texts
@@ -1877,6 +1878,15 @@ def _coaching_guardrail_reply(messages):
             return (
                 "Kaj želiš predvsem izboljšati? Izberi najbližji cilj; če jih imaš več, "
                 "lahko pozneje sestaviva kombinacijo."
+            )
+        if not frequency_known:
+            return "Kolikokrat na teden lahko realno treniraš?"
+        if not duration_known:
+            return "Koliko časa imaš običajno na voljo za posamezni trening?"
+        if not equipment_known:
+            return (
+                "Katero opremo imaš dejansko na voljo? Če nimaš ničesar, lahko "
+                "načrtujem vadbo samo z lastno težo."
             )
         experience_question_already_asked = any(
             "izkušnje z vadbo moči" in item.casefold()
@@ -1887,15 +1897,6 @@ def _coaching_guardrail_reply(messages):
             return (
                 "Kakšne so tvoje dosedanje izkušnje z vadbo moči – si začetnik, imaš nekaj "
                 "izkušenj ali že redno treniraš?"
-            )
-        if not frequency_known:
-            return "Kolikokrat na teden lahko realno treniraš?"
-        if not duration_known:
-            return "Koliko časa imaš običajno na voljo za posamezni trening?"
-        if not equipment_known:
-            return (
-                "Katero opremo imaš dejansko na voljo? Če nimaš ničesar, lahko "
-                "načrtujem vadbo samo z lastno težo."
             )
 
     # A conversational request for a hard workout is not a training goal.
