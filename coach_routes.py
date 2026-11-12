@@ -1790,12 +1790,12 @@ def _coaching_guardrail_reply(messages):
     profile_frequency = profile.get("sessions_per_week", profile.get("frequency"))
     profile_duration = profile.get("session_minutes", profile.get("duration"))
     frequency_known = profile_frequency not in (None, "", 0, "0") or bool(re.search(
-        r"\b(?:enkrat|dvakrat|trikrat|štirikrat|1x|2x|3x|4x)\b.{0,35}(?:tedensko|na teden)|"
-        r"(?:tedensko|na teden).{0,35}\b(?:enkrat|dvakrat|trikrat|štirikrat|1x|2x|3x|4x)\b",
+        r"\b(?:enkrat|dvakrat|trikrat|štirikrat|[1-4]\s*[- ]?\s*krat|[1-4]x)\b.{0,35}(?:tedensko|na teden)|"
+        r"(?:tedensko|na teden).{0,35}\b(?:enkrat|dvakrat|trikrat|štirikrat|[1-4]\s*[- ]?\s*krat|[1-4]x)\b",
         history_lower,
     ))
     duration_known = profile_duration not in (None, "", 0, "0") or bool(re.search(
-        r"\b(?:20|25|30|35|40|45|50|60|75|90)\s*(?:minut|min)\b|"
+        r"\b(?:20|25|30|35|40|45|50|60|75|90)(?:\s*(?:[-–—]|do)\s*(?:20|25|30|35|40|45|50|60|75|90))?\s*(?:minut|min)\b|"
         r"\b(?:pol\s+ure|eno\s+uro|ura\s+vadbe)\b",
         history_lower,
     ))
