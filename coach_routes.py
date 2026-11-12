@@ -2972,6 +2972,8 @@ def save_six_pattern_movement_assessment(profile_id):
                 allowed_keys |= {"regression_test", "selected_exercise_id"}
             if set(value) - allowed_keys:
                 return jsonify({"error": f"Vzorec {pattern} vsebuje nepričakovana polja."}), 400
+            if status == "symptoms_reported" and "selected_exercise_id" in value and "regression_test" not in value:
+                return jsonify({"error": f"Izbrana regresija za {pattern} mora imeti tudi zabeležen ponovni preizkus."}), 400
             user_report = {"status": status}
             selected_exercise_id = value.get("selected_exercise_id")
             decision = status_to_decision[status]
