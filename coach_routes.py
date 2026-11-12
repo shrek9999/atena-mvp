@@ -1107,7 +1107,7 @@ def _has_contextual_frequency_answer(messages):
         r"(?:how many times|days per week|weekly frequency)",
         question,
     ))
-    return asked_frequency and bool(re.fullmatch(r"[2-4](?:\s*(?:x|krat))?", answer))
+    return asked_frequency and bool(re.fullmatch(r"(?:saj\s*,?\s*)?[2-4](?:\s*(?:x|krat))?", answer))
 
 
 def _coaching_guardrail_reply(messages):
