@@ -56,7 +56,7 @@ SUPPORTED_VARIANTS = {
     "hinge": ("wall_hip_hinge", "bodyweight_hip_hinge"),
     "horizontal_push": ("push_up_incline",),
     "vertical_push": ("band_overhead_press",),
-    "horizontal_pull": ("band_row", "trx_row"),
+    "horizontal_pull": ("band_row", "trx_row", "one_arm_row", "kettlebell_one_arm_row"),
     "vertical_pull": ("band_assisted_pull_up", "foot_assisted_pull_up", "band_lat_pulldown"),
     "lunge": ("supported_split_squat",),
     # A report of needing support for a lunge is not clearance for brisk walking.
