@@ -28,7 +28,7 @@ def test_local_symptom_can_pass_only_the_tested_regression():
     "decision,exercise_id,report",
     [
         ("READY", "supported_squat", valid_report()),
-        ("UNASSESSABLE", "supported_squat", valid_report()),
+        ("LEARN", "supported_squat", valid_report()),
         ("REGRESS", "air_squat", valid_report()),
         ("REGRESS", "supported_squat", {
             "status": "symptoms_reported",
@@ -56,3 +56,7 @@ def test_supported_squat_is_a_verified_catalogue_exercise():
     assert exercise is not None
     assert exercise["pattern"] == "squat"
     assert set(exercise["equipment_any"]) == {"household_support", "suspension_trainer"}
+
+
+def test_symptom_report_can_remain_unassessable_without_a_tolerated_regression():
+    validate_symptom_regression_report({"status": "symptoms_reported"}, "UNASSESSABLE", None)
