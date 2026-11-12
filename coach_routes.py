@@ -1076,7 +1076,7 @@ def _onboarding_quick_replies(answer, messages=None, response_language="sl"):
     if _is_safety_question(answer):
         choices = ["No, none of these", "Yes, I have a limitation or injury", "I'm not sure"] if english else ["Ne, nimam teh težav", "Da, imam omejitev ali poškodbo", "Nisem prepričan/-a"]
     elif re.search(r"(kakšno opremo|katero opremo|oprema.{0,30}na voljo|equipment.{0,30}available)", value):
-        choices = ["Bodyweight only", "Resistance bands", "Dumbbells", "Kettlebell", "Full gym"] if english else ["Samo lastna teža", "Elastike", "Ročke", "Kettlebell", "Polno opremljen fitnes"]
+        choices = ["Bodyweight only", "Resistance bands", "Dumbbells", "Kettlebell", "Dumbbells and kettlebell", "Full gym"] if english else ["Samo lastna teža", "Elastike", "Ročke", "Kettlebell", "Ročke in kettlebell", "Polno opremljen fitnes"]
     elif re.search(r"(kolikokrat|pogostost|how many times|days per week)", value):
         choices = ["2 days", "3 days", "4 days"] if english else ["2-krat na teden", "3-krat na teden", "4-krat na teden"]
     elif re.search(r"(koliko časa|koliko minut|time.{0,20}available|how long)", value):
