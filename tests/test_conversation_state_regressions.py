@@ -1007,3 +1007,45 @@ def test_contextual_no_does_not_override_a_previously_reported_active_symptom():
         {"role": "user", "content": "ne"},
     ]
     assert not _has_safety_clearance(messages)
+
+
+def test_onboarding_recognizes_three_times_weekly_and_30_to_45_minute_range():
+    messages = [
+        {"role": "user", "content": (
+            "Sem začetnik. Rad bi izboljšal splošno telesno pripravljenost, "
+            "pridobil nekaj mišične mase in imel več energije. Trenutno ne treniram "
+            "redno. Želim vaditi doma, približno 3-krat tedensko po 30–45 minut."
+        )},
+        {"role": "model", "content": (
+            "Ali imaš kakršne koli zdravstvene težave, nedavne poškodbe "
+            "ali medicinske omejitve?"
+        )},
+        {"role": "user", "content": "ne"},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "opremo" in reply.casefold()
+    assert "koliko časa" not in reply.casefold()
+    assert "kolikokrat na teden" not in reply.casefold()
+
+
+def test_onboarding_recognizes_30_to_45_minute_duration_without_reasking():
+    messages = [
+        {"role": "user", "content": "Želim vaditi 30–45 minut na trening."},
+        {"role": "model", "content": "Ali imaš kakšne bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "ne"},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "koliko časa" not in reply.casefold()
+
+
+def test_onboarding_recognizes_three_times_weekly_without_reasking():
+    messages = [
+        {"role": "user", "content": "Želim trenirati 3-krat tedensko."},
+        {"role": "model", "content": "Ali imaš kakšne bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "ne"},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "kolikokrat na teden" not in reply.casefold()
