@@ -219,7 +219,7 @@ def _profile_available_equipment(messages):
     user_text = "\n".join(
         item.get("content", "") for item in messages if item.get("role") == "user"
     )
-    user_text = re.sub(r"\\{[^{}]*\\}", " ", user_text)
+    user_text = re.sub(r"\{[^{}]*\}", " ", user_text)
     lowered = user_text.casefold()
     available = set()
     aliases = {
