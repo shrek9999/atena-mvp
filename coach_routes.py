@@ -147,9 +147,23 @@ def _has_adaptable_local_symptom_report(text):
     return bool(local_region and movement_context)
 
 
+def _has_initial_health_gate_clearance(text):
+    """Recognize the single structured onboarding answer about major health restrictions."""
+    normalized = " ".join(str(text or "").split()).casefold()
+    return bool(re.search(
+        r"varnostna potrditev:\\s*nimam\\s+večjih\\s+zdravstvenih\\s+omejitev.{0,100}"
+        r"(?:svežih\\s+poškodb|zdravniških\\s+prepovedi)",
+        normalized,
+    ))
+
+
 def _has_safety_intake_resolution(text):
-    """Explicit no-concern answer or localized symptom report; neither is a medical clearance."""
-    return _has_explicit_safety_clearance(text) or _has_adaptable_local_symptom_report(text)
+    """Initial major-restriction gate or localized symptom report; not a medical clearance."""
+    return (
+        _has_explicit_safety_clearance(text)
+        or _has_initial_health_gate_clearance(text)
+        or _has_adaptable_local_symptom_report(text)
+    )
 
 
 def _profile_from_messages(messages):
