@@ -1078,7 +1078,7 @@ def _onboarding_quick_replies(answer, messages=None, response_language="sl"):
     elif re.search(r"(kakšno opremo|katero opremo|oprema.{0,30}na voljo|equipment.{0,30}available)", value):
         choices = ["Bodyweight only", "Resistance bands", "Dumbbells", "Kettlebell", "Full gym"] if english else ["Samo lastna teža", "Elastike", "Ročke", "Kettlebell", "Polno opremljen fitnes"]
     elif re.search(r"(kolikokrat|pogostost|how many times|days per week)", value):
-        choices = ["1 day", "2 days", "3 days", "4 days", "5 days"] if english else ["1-krat", "2-krat", "3-krat", "4-krat", "5-krat na teden"]
+        choices = ["2 days", "3 days", "4 days"] if english else ["2-krat na teden", "3-krat na teden", "4-krat na teden"]
     elif re.search(r"(koliko časa|koliko minut|time.{0,20}available|how long)", value):
         choices = ["20–30 minutes", "30–45 minutes", "45–60 minutes", "60+ minutes"] if english else ["20–30 minut", "30–45 minut", "45–60 minut", "60+ minut"]
     elif re.search(r"(izkušnj.{0,20}vadb|začetnik|beginner|training experience)", value):
@@ -1818,8 +1818,8 @@ def _coaching_guardrail_reply(messages):
     profile_frequency = profile.get("sessions_per_week", profile.get("frequency"))
     profile_duration = profile.get("session_minutes", profile.get("duration"))
     frequency_known = profile_frequency not in (None, "", 0, "0") or bool(re.search(
-        r"\b(?:enkrat|dvakrat|trikrat|štirikrat|petkrat|[1-5]\s*[- ]?\s*krat|[1-5]x)\b.{0,35}(?:tedensko|na teden)|"
-        r"(?:tedensko|na teden).{0,35}\b(?:enkrat|dvakrat|trikrat|štirikrat|petkrat|[1-5]\s*[- ]?\s*krat|[1-5]x)\b",
+        r"\b(?:dvakrat|trikrat|štirikrat|[2-4]\s*[- ]?\s*krat|[2-4]x)\b.{0,35}(?:tedensko|na teden)|"
+        r"(?:tedensko|na teden).{0,35}\b(?:dvakrat|trikrat|štirikrat|[2-4]\s*[- ]?\s*krat|[2-4]x)\b",
         history_lower,
     ))
     duration_known = profile_duration not in (None, "", 0, "0") or bool(re.search(
