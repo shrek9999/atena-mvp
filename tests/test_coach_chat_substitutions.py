@@ -731,8 +731,9 @@ def test_two_exposure_progression_waits_for_recovery_and_avoids_invented_load():
     final = coach_routes._sanitize_unverified_exercise_parameters(
         "Povečaj za 2 kg in izvedi 3 × 8.", messages
     )
-    assert "najmanjše razpoložljivo povečanje" in final
-    assert "ne bom ugibal kilogramov" in final
+    assert "ne bom ugibal kilogramov ali obsega" in final
+    assert "Katera vaja je v programu" in final
+    assert final.count("?") == 1
     assert "2 kg" not in final
     assert "3 × 8" not in final
 
