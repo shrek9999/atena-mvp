@@ -1625,15 +1625,6 @@ def generate_program(
         },
         "feedback_applied": response,
         "sessions": plans,
-        "limitations": (
-            [
-                "V tem programu niso vključeni naslednji gibalni vzorci: "
-                + ", ".join(PATTERN_LABELS.get(pattern, pattern) for pattern in sorted(missing_patterns))
-                + ". ATENA jih ni nadomestila z drugo vrsto giba. Izpust je lahko posledica razpoložljive opreme, gibalne ocene, izključitev v profilu ali časovne omejitve. "
-                + "Če želiš te vzorce vključiti, preveri opremo, ponovno oceni izvedbo ali prilagodi trajanje treninga."
-            ]
-            if missing_patterns else []
-        ),
         "weekly_summary": {
             "total_work_sets": total_sets,
             "exercise_frequency": dict(used_counts),
@@ -1654,6 +1645,14 @@ def generate_program(
             "Katalog ne ocenjuje zdravstvenih stanj. Omejitve in simptome mora pred izbiro vaj pregledati trener oziroma ustrezen zdravstveni strokovnjak.",
             "Tedenska izpostavljenost mišičnih skupin pri večsklepnih vajah ni enaka številu neposrednih delovnih serij za posamezno mišico.",
         ] + (
+            [
+                "V tem programu niso vključeni naslednji gibalni vzorci: "
+                + ", ".join(PATTERN_LABELS.get(pattern, pattern) for pattern in sorted(missing_patterns))
+                + ". ATENA jih ni nadomestila z drugo vrsto giba. Izpust je lahko posledica razpoložljive opreme, gibalne ocene, izključitev v profilu ali časovne omejitve. "
+                + "Če želiš te vzorce vključiti, preveri opremo, ponovno oceni izvedbo ali prilagodi trajanje treninga."
+            ]
+            if missing_patterns else []
+        ) + (
             [
                 "Brez ustrezne opreme ni mogoče zagotoviti učinkovitega horizontalnega potega (npr. veslanja). Program tega ne nadomešča z neustreznimi samoupornimi vajami; za uravnotežen razvoj hrbtnih mišic dodaj varno oporo, elastiko, drog ali utež."
             ]
