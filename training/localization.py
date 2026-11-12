@@ -17,25 +17,39 @@ def normalize_language(value: object) -> str | None:
     return primary if primary in SUPPORTED_LANGUAGES else None
 
 
-def resolve_response_language(messages: list[dict], requested_language: object = None) -> str:
-    """Use an explicit client locale first, then the latest user turn; default to English."""
-    explicit = normalize_language(requested_language)
-    if explicit:
-        return explicit
-    latest = next(
-        (item.get("content", "") for item in reversed(messages)
-         if isinstance(item, dict) and item.get("role") == "user"
-         and isinstance(item.get("content"), str)),
-        "",
-    )
-    lowered = latest.casefold()
+def _language_hint(text: str) -> str | None:
+    """Return a language only when the text contains a useful language signal."""
+    lowered = text.casefold()
     if re.search(r"[čćžšđ]", lowered) or re.search(
         r"\b(?:živjo|živijo|prosim|želim|rad bi|rada bi|imam|nimam|pripravi|pripravim|hipertrofija|hipertrofijo|program|vadbe|trening|vadba|počep|boli|koleno|mišice|moč|vzdržljivost|oprema|roke|hrbet)\b",
         lowered,
     ):
         return "sl"
-    return "en"
+    if re.search(
+        r"\b(?:hello|hi|please|i want|i would like|i have|i don't|i do not|workout|training|fitness|strength|muscle|pain|injury|equipment|squat|knee)\b",
+        lowered,
+    ):
+        return "en"
+    return None
 
+
+def resolve_response_language(messages: list[dict], requested_language: object = None) -> str:
+    """Use an explicit locale, otherwise inherit the latest informative user language."""
+    explicit = normalize_language(requested_language)
+    if explicit:
+        return explicit
+    user_turns = [
+        item.get("content", "") for item in messages
+        if isinstance(item, dict) and item.get("role") == "user"
+        and isinstance(item.get("content"), str)
+    ]
+    # A short reply such as 'no', 'ne', 'yes' or 'ok' has no reliable language
+    # signal. Inherit the latest substantive user turn instead of defaulting to English.
+    for turn in reversed(user_turns):
+        hint = _language_hint(turn)
+        if hint:
+            return hint
+    return "en"
 
 def language_instruction(language: str) -> str:
     """Return a concise, explicit output-language contract for the model."""
