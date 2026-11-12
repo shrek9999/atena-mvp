@@ -1105,3 +1105,67 @@ def test_general_fitness_is_recognized_as_a_real_goal():
     assert reply is not None
     assert "opremo" in reply.casefold()
     assert "glavni cilj" not in reply.casefold()
+
+
+
+def test_guided_onboarding_asks_frequency_after_goal_experience_and_equipment():
+    messages = [
+        {"role": "user", "content": (
+            "Želim izboljšati splošno telesno pripravljenost in pridobiti mišično maso. "
+            "Sem začetnik in treniram doma samo z lastno težo."
+        )},
+        {"role": "model", "content": "Ali imaš kakršne koli bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "ne"},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "kolikokrat na teden" in reply.casefold()
+
+
+def test_guided_onboarding_asks_duration_only_when_it_is_missing():
+    messages = [
+        {"role": "user", "content": (
+            "Želim izboljšati splošno telesno pripravljenost in pridobiti mišično maso. "
+            "Sem začetnik, treniram doma z lastno težo 3-krat tedensko."
+        )},
+        {"role": "model", "content": "Ali imaš kakršne koli bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "ne"},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "koliko časa" in reply.casefold()
+    assert "kolikokrat na teden" not in reply.casefold()
+
+
+def test_guided_onboarding_asks_experience_before_programming():
+    messages = [
+        {"role": "user", "content": (
+            "Želim izboljšati splošno telesno pripravljenost in pridobiti mišično maso. "
+            "Vadim doma z lastno težo 3-krat tedensko po 30 minut."
+        )},
+        {"role": "model", "content": "Ali imaš kakršne koli bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "ne"},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "izkušnj" in reply.casefold()
+    assert "začetnik" in reply.casefold()
+
+
+def test_unconfirmed_empty_profile_does_not_hide_equipment_stated_in_chat():
+    from coach_routes import _profile_available_equipment
+
+    messages = [{
+        "role": "user",
+        "content": (
+            'Profil ATENE: {"equipment":[],"equipment_confirmed":false}'
+            "\\nMoje vprašanje: Doma imam ročke."
+        ),
+    }]
+    assert "dumbbell" in _profile_available_equipment(messages)
+
+
+def test_localized_movement_symptom_question_does_not_get_broad_safety_choices():
+    from coach_routes import _onboarding_quick_replies
+
+    assert _onboarding_quick_replies("Ali te pri počepu boli koleno?") == []
