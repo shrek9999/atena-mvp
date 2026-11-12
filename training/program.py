@@ -1625,6 +1625,15 @@ def generate_program(
         },
         "feedback_applied": response,
         "sessions": plans,
+        "limitations": (
+            [
+                "V tem programu niso vključeni naslednji gibalni vzorci: "
+                + ", ".join(PATTERN_LABELS.get(pattern, pattern) for pattern in sorted(missing_patterns))
+                + ". ATENA jih ni nadomestila z drugo vrsto giba. Izpust je lahko posledica razpoložljive opreme, gibalne ocene, izključitev v profilu ali časovne omejitve. "
+                + "Če želiš te vzorce vključiti, preveri opremo, ponovno oceni izvedbo ali prilagodi trajanje treninga."
+            ]
+            if missing_patterns else []
+        ),
         "weekly_summary": {
             "total_work_sets": total_sets,
             "exercise_frequency": dict(used_counts),
