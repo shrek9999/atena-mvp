@@ -118,3 +118,20 @@ def test_discomfort_feedback_blocks_automatic_programme_adaptation():
     }
     with pytest.raises(ProgramSafetyBlock):
         generate_program(profile, feedback={"discomfort": "yes", "difficulty": "hard"})
+
+
+
+def test_vertical_pull_never_offers_horizontal_row_as_equivalent_alternative():
+    catalogue = load_catalogue()
+    vertical_pull = [item for item in catalogue if item["pattern"] == "vertical_pull"]
+
+    assert vertical_pull
+    for exercise in vertical_pull:
+        alternatives = " ".join(exercise["alternatives"]).casefold()
+        assert "veslanje" not in alternatives
+        assert "row" not in alternatives
+
+    pull_up = get_exercise("pull_up")
+    assert pull_up is not None
+    assert pull_up["pattern"] == "vertical_pull"
+    assert pull_up["alternatives"] == []
