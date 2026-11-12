@@ -1,11 +1,11 @@
-"""Five-persona product validation: beginner, regular, mobility-limited,
-muscle-mass focused and conditioning-focused users.
+"""Persona product validation: beginner, occasional, regular, mobility-limited,
+muscle-mass, conditioning and home/no-equipment users.
 
 These are deterministic planner acceptance tests, not evidence of real-human
 usability or live LLM conversation quality.
 """
 from training.catalogue import get_exercise
-from training.program import generate_program
+from training.program import ProgramSafetyBlock, generate_program
 
 
 PERSONAS = {
@@ -47,6 +47,20 @@ PERSONAS = {
         "sessions_per_week": 3,
         "session_minutes": 45,
         "equipment": ["bodyweight", "bicycle", "jump_rope", "step"],
+    },
+    "occasional": {
+        "goal": "strength_hypertrophy",
+        "experience": "beginner",
+        "sessions_per_week": 2,
+        "session_minutes": 30,
+        "equipment": ["bodyweight", "dumbbell", "chair"],
+    },
+    "home_no_equipment": {
+        "goal": "functional",
+        "experience": "beginner",
+        "sessions_per_week": 2,
+        "session_minutes": 30,
+        "equipment": ["bodyweight"],
     },
 }
 
@@ -135,3 +149,42 @@ def test_conditioning_user_gets_conditioning_and_locomotion_not_random_metcon_on
     assert "locomotion" in patterns
     assert len(plan["sessions"]) == 3
     assert all(session["estimated_minutes"] <= 45 for session in plan["sessions"])
+
+
+
+def test_occasional_user_gets_a_conservative_two_day_plan():
+    plan = generate_program(PERSONAS["occasional"])
+    assert len(plan["sessions"]) == 2
+    assert all(session["estimated_minutes"] <= 30 for session in plan["sessions"])
+    for exercise in _all_exercises(plan):
+        assert exercise["prescription"]["sets"] <= 3
+        assert exercise["prescription"]["rir"] >= 3
+    assert all(
+        exercise["joint_type"] != "single_joint"
+        for exercise in _all_exercises(plan)
+    )
+
+
+def test_home_user_without_equipment_gets_only_bodyweight_exercises():
+    plan = generate_program(PERSONAS["home_no_equipment"])
+    assert len(plan["sessions"]) == 2
+    assert { "squat", "hinge", "horizontal_push", "horizontal_pull" }.issubset(
+        _patterns(plan)
+    )
+    for exercise in _all_exercises(plan):
+        assert set(exercise["equipment"]).issubset({"bodyweight"}), exercise
+        catalogue_entry = get_exercise(exercise["exercise_id"])
+        assert catalogue_entry is not None
+        assert set(catalogue_entry["equipment"]).issubset({"bodyweight"})
+
+
+def test_reported_discomfort_blocks_automatic_programme_adaptation():
+    try:
+        generate_program(
+            PERSONAS["beginner"],
+            feedback={"discomfort": "yes"},
+        )
+    except ProgramSafetyBlock:
+        pass
+    else:
+        raise AssertionError("Reported discomfort must block automatic programme adaptation")
