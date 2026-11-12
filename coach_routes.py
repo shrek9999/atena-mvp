@@ -1989,33 +1989,6 @@ def _coaching_guardrail_reply(messages):
                 "ali drugo opremo: kaj imaš dejansko na voljo za vadbo? Če nimaš ničesar, "
                 "lahko izhajava samo iz lastne teže."
             )
-        if not experience_known:
-            experience_question_already_asked = any(
-                "izkušnje z vadbo moči" in item.casefold()
-                or "dosedanje izkušnje" in item.casefold()
-                for item in assistant_texts
-            )
-            if experience_question_already_asked:
-                if re.search(r"(ravnotež\w*|koordinacij\w*|eksploziv\w*|kondic\w*|moč\w*)", lowered):
-                    return (
-                        "Zabeležil sem tvoje prioritete glede moči, ravnotežja, koordinacije, "
-                        "eksplozivnosti in kondicije. Za določitev zahtevnosti programa mi "
-                        "še manjka podatek o tvojih izkušnjah z vadbo moči. Ne bom "
-                        "predpostavljal, da si začetnik ali napreden."
-                    )
-                return (
-                    "Oprema in tedenska pogostost sta zabeleženi. Za določitev zahtevnosti "
-                    "programa mi še manjka podatek o tvojih izkušnjah z vadbo moči. "
-                    "Ne bom predpostavljal, da si začetnik ali napreden; ko to pojasniš, "
-                    "lahko nadaljujeva."
-                )
-            schedule_label = "tedenska pogostost" if frequency_known else "trajanje treninga"
-            return (
-                f"Oprema in {schedule_label} sta jasni. Preden določim zahtevnost vaj in obseg "
-                "programa, mi povej še: kako bi opisal svoje dosedanje izkušnje z vadbo moči – "
-                "si začetnik, redno treniraš ali imaš že več let sistematičnih izkušenj?"
-            )
-
     if (
         re.search(r"dva treninga sta bila lahka", history_lower)
         and re.search(r"vsaj tremi ponovitvami v rezervi", history_lower)
