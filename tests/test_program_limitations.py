@@ -22,6 +22,6 @@ def test_omitted_movement_patterns_are_explained_in_user_facing_limitations():
     ), f"omitted={omitted}; labels={user_facing_labels}; limitations={plan['limitations']}"
     combined_limitations = " ".join(plan["limitations"])
     assert "niso vključeni" in combined_limitations
-    assert "niso nadomestila z drugo vrsto giba" in combined_limitations
+    assert "ni nadomestila z drugo vrsto giba" in combined_limitations
 
 
