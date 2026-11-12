@@ -1062,6 +1062,28 @@ def _pending_safety_reply(latest, *, repeat_question=True):
     )
 
 
+def _onboarding_quick_replies(answer, messages=None, response_language="sl"):
+    """Return short, accessible choices for ATENA's current guided onboarding question."""
+    value = str(answer or "").casefold()
+    english = str(response_language or "").casefold().startswith("en")
+    choices = None
+    if re.search(r"(bolečin|poškodb|omejitv|zdravstven|pain|injur|medical restriction)", value) and "?" in value:
+        choices = ["No, none of these", "Yes, I have a limitation or injury", "I'm not sure"] if english else ["Ne, nimam teh težav", "Da, imam omejitev ali poškodbo", "Nisem prepričan/-a"]
+    elif re.search(r"(kakšno opremo|katero opremo|oprema.{0,30}na voljo|equipment.{0,30}available)", value):
+        choices = ["Bodyweight only", "Resistance bands", "Dumbbells", "Kettlebell", "Full gym"] if english else ["Samo lastna teža", "Elastike", "Ročke", "Kettlebell", "Polno opremljen fitnes"]
+    elif re.search(r"(kolikokrat|pogostost|how many times|days per week)", value):
+        choices = ["1 day", "2 days", "3 days", "4 days", "5 days"] if english else ["1-krat", "2-krat", "3-krat", "4-krat", "5-krat na teden"]
+    elif re.search(r"(koliko časa|koliko minut|time.{0,20}available|how long)", value):
+        choices = ["20–30 minutes", "30–45 minutes", "45–60 minutes", "60+ minutes"] if english else ["20–30 minut", "30–45 minut", "45–60 minut", "60+ minut"]
+    elif re.search(r"(izkušnj.{0,20}vadb|začetnik|beginner|training experience)", value):
+        choices = ["Beginner / just starting", "Some experience", "I train regularly"] if english else ["Začetnik/-ca", "Nekaj izkušenj", "Redno treniram"]
+    elif re.search(r"(kaj želiš|glavni cilj|predvsem razvijati|what would you like|main goal)", value):
+        choices = ["Strength and muscle", "General fitness and energy", "Conditioning", "Functional fitness", "A combination"] if english else ["Moč in mišična masa", "Splošna pripravljenost in več energije", "Kondicija", "Funkcionalna pripravljenost", "Kombinacija ciljev"]
+    elif re.search(r"(kje.{0,20}treniraš|where.{0,20}train|training location)", value):
+        choices = ["At home", "At a gym", "Outdoors", "A mix of places"] if english else ["Doma", "V fitnesu", "Na prostem", "Kombinacija okolij"]
+    return choices or []
+
+
 def _coaching_guardrail_reply(messages):
     """Deterministic safety/persistence gate; never rely on model compliance alone."""
     user_texts = [
@@ -1808,11 +1830,18 @@ def _coaching_guardrail_reply(messages):
         history_lower,
     ))
     available_equipment = _profile_available_equipment(messages)
-    equipment_known = isinstance(profile.get("equipment"), list) or bool(available_equipment)
+    # An empty equipment array means the profile form has not confirmed equipment.
+    # Older clients injected household/bodyweight defaults even when untouched.
+    equipment_known = (
+        profile.get("equipment_confirmed") is True
+        or bool(profile.get("equipment"))
+        or bool(available_equipment)
+    )
     goal_known = bool(isinstance(profile.get("goal"), str) and profile.get("goal").strip()) or bool(re.search(
         r"\b(?:moč\w*|strength|mišičn\w*\s+mas\w*|hipertrof\w*|hypertrophy|"
         r"maščob\w*|hujš\w*|fat\s+loss|weight\s+loss|kondic\w*|vzdržljiv\w*|"
-        r"endurance|conditioning|funkcional\w*|functional|gibljiv\w*|mobilit\w*|"
+        r"endurance|conditioning|splošn\w*\s+(?:telesn\w*\s+)?pripravljenost|"
+        r"general\s+fitness|funkcional\w*|functional|gibljiv\w*|mobilit\w*|"
         r"mobility|eksplozivn\w*|power)\b",
         history_lower,
     ))
@@ -2366,6 +2395,7 @@ def coach_chat():
         guarded_answer = localize_guardrail_reply(guarded_answer, response_language)
         return jsonify({
             "reply": guarded_answer,
+            "quick_replies": _onboarding_quick_replies(guarded_answer, messages, response_language),
             "model": model,
             "pilot": True,
             "guardrail_applied": True,
@@ -2410,6 +2440,7 @@ def coach_chat():
         answer = _sanitize_unrequested_user_name(answer)
         return jsonify({
             "reply": answer,
+            "quick_replies": _onboarding_quick_replies(answer, messages, response_language),
             "model": used_model,
             "pilot": True,
             "guardrail_applied": False,
