@@ -7,11 +7,12 @@ from typing import Any
 from training.catalogue import get_exercises
 from training.goals import CANONICAL_GOALS, normalize_goal
 from training.movement_assessment import (
-    MovementAssessmentError, SUPPORTED_VARIANTS, TASK_PATTERNS,
+    MovementAssessmentError, SUPPORTED_VARIANTS, SYMPTOM_REGRESSION_VARIANTS, TASK_PATTERNS,
     assess_movement_competence,
 )
 from training.movement_coaching import (
-    PATTERN_DEFINITIONS, VALID_DECISIONS, get_exercise_options,
+    PATTERN_DEFINITIONS, VALID_DECISIONS, MovementCoachingError, get_exercise_options,
+    validate_symptom_regression_report,
 )
 from training.video_demonstrations import get_video_demonstrations
 
@@ -636,7 +637,14 @@ def generate_program(
                         "Obremenjeno veslanje v predklonu zahteva predhodno oceno predklona kot READY. "
                         "Najprej utrdi predklon ali izberi horizontalno veslanje, ki ne zahteva predklona."
                     )
-            if decision in {"LEARN", "REGRESS"} and method is None and not record.get("selected_exercise_id"):
+            support_fallback_allowed = (
+                decision == "LEARN"
+                and method is None
+                and not record.get("selected_exercise_id")
+                and isinstance(record.get("user_report"), dict)
+                and record["user_report"].get("status") == "needs_support"
+            )
+            if decision in {"LEARN", "REGRESS"} and method is None and not record.get("selected_exercise_id") and not support_fallback_allowed:
                 raise ProgramValidationError(f"Za {decision} pri {pattern} mora biti izbrana učna metoda ali različica vaje.")
             if pattern in p["excluded_patterns"]:
                 raise ProgramValidationError(f"Gibalni vzorec {pattern} je izrecno izključen iz profila.")
@@ -655,9 +663,22 @@ def generate_program(
                     f"Vaja {target_id} za {pattern} ni združljiva z opremo ali izkušnjami v profilu."
                 )
             if decision in {"LEARN", "REGRESS"} and not target_id:
-                if not available_options:
-                    raise ProgramValidationError(f"Za učenje vzorca {pattern} ni ustrezne vaje v katalogu.")
-                target_id = available_options[0]["id"]
+                if support_fallback_allowed:
+                    preferred_ids = SUPPORTED_VARIANTS.get(pattern, ())
+                    target_id = next(
+                        (item["id"] for preferred in preferred_ids for item in available_options
+                         if item["id"] == preferred),
+                        None,
+                    )
+                    # If no verified, equipment-compatible support variant exists,
+                    # fail closed by omitting this pattern rather than selecting a
+                    # random exercise or claiming the user is ready.
+                    if target_id is None:
+                        decision = "UNASSESSABLE"
+                else:
+                    if not available_options:
+                        raise ProgramValidationError(f"Za učenje vzorca {pattern} ni ustrezne vaje v katalogu.")
+                    target_id = available_options[0]["id"]
             user_report = record.get("user_report", {})
             if not isinstance(user_report, dict):
                 raise ProgramValidationError(f"Uporabnikovo poročilo za {pattern} mora biti objekt.")
@@ -666,20 +687,29 @@ def generate_program(
                 "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed"
             }:
                 raise ProgramValidationError(f"Neveljaven status uporabnikovega poročila za {pattern}.")
-            if report_status in {"uncertain", "symptoms_reported", "not_assessed"} and decision != "UNASSESSABLE":
+            if report_status in {"uncertain", "not_assessed"} and decision != "UNASSESSABLE":
                 raise ProgramValidationError(
-                    f"Vzorec {pattern} je označen kot nejasen, simptomatski ali neocenjen, zato ne sme biti označen kot pripravljen."
+                    f"Vzorec {pattern} je označen kot nejasen ali neocenjen, zato ne sme biti označen kot pripravljen."
                 )
+            if report_status == "symptoms_reported":
+                if decision == "REGRESS" and target_id not in SYMPTOM_REGRESSION_VARIANTS.get(pattern, ()):
+                    raise ProgramValidationError(
+                        f"Različica {target_id} ni potrjena regresija za gibalni vzorec {pattern}."
+                    )
+                try:
+                    validate_symptom_regression_report(user_report, decision, target_id)
+                except MovementCoachingError as exc:
+                    raise ProgramValidationError(str(exc)) from exc
             if report_status == "needs_support" and decision == "READY":
                 raise ProgramValidationError(
                     f"Vzorec {pattern} potrebuje oporo ali lažjo različico in ne sme biti označen kot READY."
                 )
             if report_status == "symptoms_reported":
-                # A symptom report takes precedence over any camera observation:
-                # omit this pattern pending clarification; never infer a diagnosis.
-                movement_status_by_pattern[pattern] = "symptoms_reported"
-                movement_tasks_by_pattern.setdefault(pattern, []).append(
-                    PATTERN_DEFINITIONS[pattern]["task_id"]
+                # User-reported symptoms override camera observations. Only a documented,
+                # tolerated regression becomes needs_support; otherwise retain the symptom
+                # status so the pattern is omitted with an explicit symptom-review reason.
+                movement_status_by_pattern[pattern] = (
+                    "needs_support" if decision == "REGRESS" else "symptoms_reported"
                 )
             movement_decisions_by_pattern[pattern] = {
                 **record,
@@ -910,7 +940,12 @@ def generate_program(
             if planning_goal == "functional":
                 # Never assume household furniture is a safe pulling anchor.
                 candidates = [item for item in candidates if item["id"] != "inverted_row_table"]
-            if movement_status == "needs_support" and pattern != "balance":
+            structured_decision = movement_decisions_by_pattern.get(pattern)
+            has_confirmed_symptom_regression = bool(
+                structured_decision and structured_decision.get("decision") == "REGRESS"
+                and structured_decision.get("user_report", {}).get("status") == "symptoms_reported"
+            )
+            if movement_status == "needs_support" and pattern != "balance" and not has_confirmed_symptom_regression:
                 preferred_ids = SUPPORTED_VARIANTS.get(pattern, ())
                 available_for_regression = set(p["equipment"]) | {"bodyweight"}
                 supported_candidates = [
@@ -936,7 +971,6 @@ def generate_program(
                         "message": "Za ta gibalni vzorec ni na voljo preverjene lažje različice z izbrano opremo. Vzorec je zato izpuščen, namesto da bi ATENA ugibala.",
                     })
                     continue
-            structured_decision = movement_decisions_by_pattern.get(pattern)
             if structured_decision and structured_decision["decision"] in {"LEARN", "REGRESS"}:
                 target_id = structured_decision.get("resolved_exercise_id")
                 target = next((item for item in reference_catalogue if item["id"] == target_id), None)
