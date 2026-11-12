@@ -11,7 +11,7 @@ from typing import Any
 
 from training.catalogue import get_exercise, load_catalogue
 
-ASSESSMENT_VERSION = "six-pattern-coaching-v2"
+ASSESSMENT_VERSION = "six-pattern-coaching-v1"
 VALID_DECISIONS = {"READY", "LEARN", "REGRESS", "UNASSESSABLE"}
 LEVEL_RANK = {"beginner": 0, "intermediate": 1, "advanced": 2}
 
