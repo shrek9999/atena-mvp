@@ -160,14 +160,14 @@ def _has_contextual_safety_clearance(messages):
             and _is_safety_question(previous.get("content", ""))
         ):
             answer = str(current.get("content") or "").strip()
-            prior_user_history = "\\n".join(
+            prior_user_history = "\n".join(
                 item.get("content", "") for item in messages[:index - 1]
                 if isinstance(item, dict) and item.get("role") == "user"
                 and isinstance(item.get("content"), str)
             )
             prior_positive_symptom = bool(re.search(
                 r"(?:imam|občutim|čutim|me boli|boli me|I have|I am experiencing).{0,80}"
-                r"(?:bolečin\\w*|poškodb\\w*|omejitv\\w*|pain|injur\\w*|limitation)",
+                r"(?:bolečin\w*|poškodb\w*|omejitv\w*|pain|injur\w*|limitation)",
                 prior_user_history,
                 re.IGNORECASE,
             ))
