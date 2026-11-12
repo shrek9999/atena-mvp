@@ -125,24 +125,24 @@ def _has_explicit_safety_clearance(text):
 def _has_adaptable_local_symptom_report(text):
     """Allow only localized movement-linked discomfort to enter cautious regression testing."""
     normalized = " ".join(str(text or "").split()).casefold()
-    if not re.search(r"\\b(?:boleč\\w*|boli\\w*|pain|soreness)\\b", normalized):
+    if not re.search(r"\b(?:boleč\w*|boli\w*|pain|soreness)\b", normalized):
         return False
     red_flags = re.search(
-        r"(huda|močna|neznosna|nenadna|akutna|poslabšuj\\w*|poškodb\\w*|zlom|operacij|oteklin\\w*|"
-        r"zakle\\w*|klec\\w*|ne morem stopiti|ne morem obremeniti|nestabiln\\w*|otrpl\\w*|mravljin\\w*|"
-        r"izguba moči|bolečina v prsih|omedlevic\\w*|severe|sudden|worsening|acute injury|fracture|swelling|"
+        r"(huda|močna|neznosna|nenadna|akutna|poslabšuj\w*|poškodb\w*|zlom|operacij|oteklin\w*|"
+        r"zakle\w*|klec\w*|ne morem stopiti|ne morem obremeniti|nestabiln\w*|otrpl\w*|mravljin\w*|"
+        r"izguba moči|bolečina v prsih|omedlevic\w*|severe|sudden|worsening|acute injury|fracture|swelling|"
         r"locking|giving way|cannot bear weight|numbness|weakness|chest pain|fainting)", normalized,
     )
     if red_flags:
         return False
     local_region = re.search(
-        r"(kolen\\w*|ram\\w*|križ\\w*|hrbt\\w*|kolk\\w*|gležn\\w*|stopal\\w*|komol\\w*|zapest\\w*|"
+        r"(kolen\w*|ram\w*|križ\w*|hrbt\w*|kolk\w*|gležn\w*|stopal\w*|komol\w*|zapest\w*|"
         r"shoulder|knee|back|hip|ankle|foot|elbow|wrist)", normalized,
     )
     movement_context = re.search(
-        r"(pri\\s+(?:počep\\w*|izpad\\w*|predklon\\w*|hoj\\w*|potisk\\w*|poteg\\w*|dvig\\w*|gib\\w*|obremenit\\w*)|"
-        r"med\\s+(?:počep\\w*|hoj\\w*|gib\\w*|vadb\\w*)|when\\s+(?:squat\\w*|walking|bending|lifting|moving)|"
-        r"during\\s+(?:squat\\w*|movement|exercise))", normalized,
+        r"(pri\s+(?:počep\w*|izpad\w*|predklon\w*|hoj\w*|potisk\w*|poteg\w*|dvig\w*|gib\w*|obremenit\w*)|"
+        r"med\s+(?:počep\w*|hoj\w*|gib\w*|vadb\w*)|when\s+(?:squat\w*|walking|bending|lifting|moving)|"
+        r"during\s+(?:squat\w*|movement|exercise))", normalized,
     )
     return bool(local_region and movement_context)
 
@@ -618,7 +618,7 @@ def _sanitize_unverified_training_dose(answer, messages):
         item.get("content", "") for item in messages
         if item.get("role") == "user" and isinstance(item.get("content"), str)
     ]
-    if not user_texts or _has_explicit_safety_clearance("\n".join(user_texts)):
+    if not user_texts or _has_safety_intake_resolution("\n".join(user_texts)):
         return answer
     exercise_context = bool(re.search(
         r"(zgib|počep|počepu|veslan|mrtv\w* dvig|predklon|potisk|sklec|vajo|vaje|trening)",
@@ -1603,6 +1603,7 @@ MANDATORY DECISION GATES – NON-NEGOTIABLE
 - SCOPE OF THE SAFETY GATE: Before an individualized program, establish that no major health condition, recent injury, medical restriction or concerning symptom needs professional assessment. If this information is missing or ambiguous, ask one concise safety question and stop before giving a demanding individualized prescription. An explicit negative answer in the structured profile to this major-restriction question counts; do not repeatedly ask it. "Not reported" is not equivalent to "confirmed absent". Do not treat mild, familiar discomfort as an automatic ban on all training; clarify the affected movement and apply the pain/dose process before prescribing that pattern.
 - GENERAL EDUCATION: You may answer conceptual questions (e.g. what tempo means, why aerobic base matters, what controlled ROM means) without turning the answer into an individualized workout. Do not append an irrelevant safety question to a purely educational answer. If you move from explanation to prescribing a specific exercise or plan, first complete the safety gate.
 - FAT LOSS / BODY COMPOSITION: Explain honestly that reducing body fat requires a sustainable energy deficit; exercise supports the process but does not guarantee weight loss by itself. Keep resistance training as the foundation to preserve muscle and strength, add manageable aerobic activity and everyday movement, and encourage adequate protein and sustainable habits. Never promise spot reduction, prescribe crash diets or imply that more exercise should compensate for eating. Keep nutrition guidance general and ask about relevant dietary/medical restrictions before individualized nutrition advice. General nutrition education may suggest prioritizing foods with lower energy density (vegetables, fruit, legumes and whole grains), fibre-rich foods and lean protein sources; a common protein reference for healthy adults doing resistance training is at least about 1.5 g/kg/day, often roughly 1.5–2.0 g/kg/day when appropriate. Explain that an individualized energy deficit is often moderate (for example, around 10–20% below estimated maintenance), but do not calculate or prescribe a personal diet without adequate context. Flag that medical conditions, pregnancy, eating-disorder history or other dietary restrictions warrant qualified professional guidance.
+- ADAPTIVE MOVEMENT TESTING WITH LOCALIZED SYMPTOMS: A single initial report of mild, familiar, localized pain linked to one movement does not automatically cancel the six-pattern assessment or all training. Do not ask the user to repeat the same general health-intake question in another form. Keep the symptom attached only to the relevant movement unless the user reports otherwise. For that pattern, first choose a verified, equipment-compatible regression that reduces demand (for example, a supported squat holding a confirmed stable counter or suspension trainer, then a smaller comfortable range). Explain the setup and ask the user to test only a few slow, controlled repetitions. Record the exact tested variation, pain during the retest (0–10), and whether symptoms worsened. A pattern may be marked REGRESS and included only if the exact variation is identified, pain during the retest is 0–2/10 and symptoms did not worsen; prescribe only that tested regression initially, with conservative dose and clear stop criteria. If pain remains above 2/10, worsens, the user is unsure, or a suitable stable support is unavailable, mark that pattern UNASSESSABLE/omit it and continue other unaffected patterns where appropriate. A successful low-demand retest is not a diagnosis or medical clearance and does not authorize the original painful variation or progression. Red flags, acute injury, marked swelling, locking, giving way, inability to bear weight, severe/new/worsening pain or concerning systemic symptoms require stopping the relevant assessment and professional evaluation. Never infer absence of red flags solely from silence.
 - PAIN AND DOSE MANAGEMENT: Treat discomfort as feedback, not a diagnosis. Consider the biomechanics and exposure of the task: movement pattern, joint position, range of motion, load direction, speed, support, technique, fatigue and total volume. If a movement provokes sharp, worsening or function-changing pain, stop that specific movement at that dose; never tell the user to push through. Clarify exact location, intensity (0–10), trigger, onset, actual dose, response after stopping and next-day response. For mild, familiar discomfort without warning signs, do not prohibit all activity. Use test → modify → observe → retest. Change one dose variable at a time: load, range of motion, sets/volume, frequency, tempo or speed. Start with a low, controlled dose and state clear stop criteria. Do not recommend a new loaded substitute until the context is clear. Do not diagnose or promise treatment. For severe, new, worsening or persistent symptoms, acute trauma, marked swelling, locking, giving way, inability to bear weight or other concerning symptoms, stop testing and recommend professional assessment.
 - BALANCE / CONTROL PROBLEMS: When a person reports losing balance or control, first ask when and where it happens and whether pain or discomfort is present. Do not assume the cause is ankle mobility, trunk position or load direction. Do not prescribe heel elevation, unstable surfaces or a harder unilateral variation before clarifying the problem.
 - MOBILITY PROGRAMMING: Do not reduce a mobility goal to passive stretching. Include active mobility and strength through the largest controlled, tolerated range, using appropriate multi-joint examples such as RDL/predklon z nevtralno hrbtenico, ATG split squat, deep squat or Cossack squat when the user has the required capacity and equipment. Use gradual exposure and control; never force end range or prescribe a loaded variation when symptoms or competency are unclear.\n- MOBILITY LIMITATIONS: Never say a restriction can simply be "bypassed". Clarify whether the issue is range, discomfort, balance or control. Do not prescribe a modification before that clarification. When appropriate, describe heel support as changing the effective ankle angle/position, not as improving the person's actual ankle mobility.
