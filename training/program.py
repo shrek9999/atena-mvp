@@ -7,7 +7,7 @@ from typing import Any
 from training.catalogue import get_exercises
 from training.goals import CANONICAL_GOALS, normalize_goal
 from training.movement_assessment import (
-    MovementAssessmentError, SUPPORTED_VARIANTS, TASK_PATTERNS,
+    MovementAssessmentError, SUPPORTED_VARIANTS, SYMPTOM_REGRESSION_VARIANTS, TASK_PATTERNS,
     assess_movement_competence,
 )
 from training.movement_coaching import (
@@ -672,7 +672,7 @@ def generate_program(
                     f"Vzorec {pattern} je označen kot nejasen ali neocenjen, zato ne sme biti označen kot pripravljen."
                 )
             if report_status == "symptoms_reported":
-                if decision == "REGRESS" and target_id not in SUPPORTED_VARIANTS.get(pattern, ()):
+                if decision == "REGRESS" and target_id not in SYMPTOM_REGRESSION_VARIANTS.get(pattern, ()):
                     raise ProgramValidationError(
                         f"Različica {target_id} ni potrjena regresija za gibalni vzorec {pattern}."
                     )
@@ -920,7 +920,12 @@ def generate_program(
             if planning_goal == "functional":
                 # Never assume household furniture is a safe pulling anchor.
                 candidates = [item for item in candidates if item["id"] != "inverted_row_table"]
-            if movement_status == "needs_support" and pattern != "balance":
+            structured_decision = movement_decisions_by_pattern.get(pattern)
+            has_confirmed_symptom_regression = bool(
+                structured_decision and structured_decision.get("decision") == "REGRESS"
+                and structured_decision.get("user_report", {}).get("status") == "symptoms_reported"
+            )
+            if movement_status == "needs_support" and pattern != "balance" and not has_confirmed_symptom_regression:
                 preferred_ids = SUPPORTED_VARIANTS.get(pattern, ())
                 available_for_regression = set(p["equipment"]) | {"bodyweight"}
                 supported_candidates = [
@@ -946,7 +951,6 @@ def generate_program(
                         "message": "Za ta gibalni vzorec ni na voljo preverjene lažje različice z izbrano opremo. Vzorec je zato izpuščen, namesto da bi ATENA ugibala.",
                     })
                     continue
-            structured_decision = movement_decisions_by_pattern.get(pattern)
             if structured_decision and structured_decision["decision"] in {"LEARN", "REGRESS"}:
                 target_id = structured_decision.get("resolved_exercise_id")
                 target = next((item for item in reference_catalogue if item["id"] == target_id), None)
