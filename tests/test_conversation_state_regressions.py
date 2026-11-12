@@ -664,7 +664,7 @@ def test_programme_request_with_schedule_and_gym_but_unknown_experience_asks_fir
     assert "si začetnik" in reply
 
 
-def test_known_experience_and_equipment_allow_onboarding_to_continue():
+def test_known_experience_and_equipment_still_requires_session_duration():
     messages = [{
         "role": "user",
         "content": (
@@ -673,7 +673,8 @@ def test_known_experience_and_equipment_allow_onboarding_to_continue():
         ),
     }]
     reply = _coaching_guardrail_reply(messages)
-    assert reply is None
+    assert reply is not None
+    assert "koliko časa" in reply.casefold()
 
 
 def test_absence_of_health_report_is_not_explicit_safety_clearance():
