@@ -1103,7 +1103,7 @@ def test_general_fitness_is_recognized_as_a_real_goal():
     ]
     reply = _coaching_guardrail_reply(messages)
     assert reply is not None
-    assert "opremo" in reply.casefold()
+    assert "izkušnj" in reply.casefold()
     assert "glavni cilj" not in reply.casefold()
 
 
@@ -1169,3 +1169,17 @@ def test_localized_movement_symptom_question_does_not_get_broad_safety_choices()
     from coach_routes import _onboarding_quick_replies
 
     assert _onboarding_quick_replies("Ali te pri počepu boli koleno?") == []
+
+
+
+def test_unconfirmed_legacy_equipment_defaults_are_not_treated_as_selected():
+    from coach_routes import _profile_available_equipment
+
+    messages = [{
+        "role": "user",
+        "content": (
+            'Profil ATENE: {"equipment":["bodyweight","chair","wall",'
+            '"household_support","towel"],"equipment_confirmed":false}'
+        ),
+    }]
+    assert _profile_available_equipment(messages) == set()
