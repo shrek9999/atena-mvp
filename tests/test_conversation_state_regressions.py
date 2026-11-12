@@ -996,3 +996,14 @@ def test_short_english_reply_inherits_english_from_previous_substantive_user_tur
         {"role": "user", "content": "no"},
     ]
     assert resolve_response_language(messages) == "en"
+
+
+def test_contextual_no_does_not_override_a_previously_reported_active_symptom():
+    from coach_routes import _has_safety_clearance
+
+    messages = [
+        {"role": "user", "content": "Pri počepu me trenutno boli koleno."},
+        {"role": "model", "content": "Ali imaš kakršne koli bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "ne"},
+    ]
+    assert not _has_safety_clearance(messages)
