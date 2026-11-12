@@ -741,7 +741,7 @@ def test_programming_gate_allows_programme_after_goal_equipment_experience_and_s
     assert _coaching_guardrail_reply(messages) is None
 
 
-def test_experience_prompt_does_not_claim_session_duration_is_known_from_frequency_alone():
+def test_experience_is_required_before_asking_for_session_duration():
     messages = [
         {"role": "user", "content": (
             "Nimam bolečin, poškodb ali omejitev. Moj cilj je moč. Imam ročke. "
@@ -750,8 +750,8 @@ def test_experience_prompt_does_not_claim_session_duration_is_known_from_frequen
     ]
     reply = _coaching_guardrail_reply(messages)
     assert reply is not None
-    assert "tedenska pogostost" in reply
-    assert "trajanje treninga" not in reply
+    assert "izkušnj" in reply.casefold()
+    assert "koliko časa" not in reply.casefold()
 
 
 def test_fat_loss_guidance_mentions_protein_and_moderate_energy_deficit():
