@@ -30,7 +30,7 @@ def test_needs_support_selects_a_verified_simpler_squat_variant_and_reduces_dose
     plan = generate_program(BASE, movement_assessment={"squat": "needs_support"})
     squats = _exercises(plan, "squat")
     assert squats
-    assert all(exercise["exercise_id"] in {"chair_sit_to_stand", "reaching_squat", "air_squat"} for exercise in squats)
+    assert all(exercise["exercise_id"] in {"supported_squat", "chair_sit_to_stand", "reaching_squat", "air_squat"} for exercise in squats)
     assert all(exercise["prescription"]["sets"] <= 2 for exercise in squats)
     assert all(exercise["prescription"]["rir"] >= 3 for exercise in squats)
     assert all(exercise["prescription"]["adjustment_note"] for exercise in squats)
