@@ -3005,6 +3005,8 @@ def save_six_pattern_movement_assessment(profile_id):
                     selected_exercise_id = None
                     reason = "Tudi regresirana različica ni bila ustrezno tolerirana; vzorec je izpuščen."
             if decision == "REGRESS":
+                if selected_exercise_id not in SUPPORTED_VARIANTS.get(pattern, ()):
+                    return jsonify({"error": f"Izbrana različica ni potrjena regresija za vzorec {pattern}."}), 400
                 try:
                     from training.movement_coaching import validate_symptom_regression_report
                     validate_symptom_regression_report(user_report, decision, selected_exercise_id)
