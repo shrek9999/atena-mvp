@@ -151,8 +151,8 @@ def _has_initial_health_gate_clearance(text):
     """Recognize the single structured onboarding answer about major health restrictions."""
     normalized = " ".join(str(text or "").split()).casefold()
     return bool(re.search(
-        r"varnostna potrditev:\\s*nimam\\s+večjih\\s+zdravstvenih\\s+omejitev.{0,100}"
-        r"(?:svežih\\s+poškodb|zdravniških\\s+prepovedi)",
+        r"varnostna potrditev:\s*nimam\s+večjih\s+zdravstvenih\s+omejitev.{0,100}"
+        r"(?:svežih\s+poškodb|zdravniških\s+prepovedi)",
         normalized,
     ))
 
