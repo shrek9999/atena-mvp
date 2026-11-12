@@ -205,16 +205,21 @@ def _profile_from_messages(messages):
 def _profile_available_equipment(messages):
     """Use structured equipment as authoritative; use text aliases only without a structured profile."""
     profile = _profile_from_messages(messages)
-    if profile.get("equipment_confirmed") is True and isinstance(profile.get("equipment"), list):
+    if isinstance(profile.get("equipment"), list) and (
+        profile.get("equipment_confirmed") is True or "equipment_confirmed" not in profile
+    ):
         return {
             value for value in profile["equipment"]
             if isinstance(value, str) and value.strip()
         }
 
     # An empty/unconfirmed structured field must not mask equipment stated in chat.
+    # Strip the serialized profile first so default values inside JSON are not
+    # mistaken for free-text confirmation.
     user_text = "\n".join(
         item.get("content", "") for item in messages if item.get("role") == "user"
     )
+    user_text = re.sub(r"\\{[^{}]*\\}", " ", user_text)
     lowered = user_text.casefold()
     available = set()
     aliases = {
@@ -1833,7 +1838,11 @@ def _coaching_guardrail_reply(messages):
     available_equipment = _profile_available_equipment(messages)
     # An empty equipment array means the profile form has not confirmed equipment.
     # Older clients injected household/bodyweight defaults even when untouched.
-    equipment_known = profile.get("equipment_confirmed") is True or bool(available_equipment)
+    equipment_known = (
+        profile.get("equipment_confirmed") is True
+        or ("equipment_confirmed" not in profile and bool(profile.get("equipment")))
+        or bool(available_equipment)
+    )
     goal_known = bool(isinstance(profile.get("goal"), str) and profile.get("goal").strip()) or bool(re.search(
         r"\b(?:moč\w*|strength|mišičn\w*\s+mas\w*|hipertrof\w*|hypertrophy|"
         r"maščob\w*|hujš\w*|fat\s+loss|weight\s+loss|kondic\w*|vzdržljiv\w*|"
@@ -1858,28 +1867,31 @@ def _coaching_guardrail_reply(messages):
         latest,
         re.IGNORECASE,
     ))
-    location_known = bool(re.search(
-        r"\b(?:doma|v fitnesu|v telovadnici|na prostem|home|at a gym|gym|outdoors)\b",
-        history_lower,
-        re.IGNORECASE,
-    ))
-    if fitness_intent and _has_safety_clearance(messages) and not latest_is_educational:
+    if (
+        fitness_intent
+        and _has_safety_clearance(messages)
+        and not latest_is_educational
+        and not substitution_intent_texts
+    ):
         if not goal_known:
             return (
                 "Kaj želiš predvsem izboljšati? Izberi najbližji cilj; če jih imaš več, "
                 "lahko pozneje sestaviva kombinacijo."
             )
-        if not experience_known:
+        experience_question_already_asked = any(
+            "izkušnje z vadbo moči" in item.casefold()
+            or "dosedanje izkušnje" in item.casefold()
+            for item in assistant_texts
+        )
+        if not experience_known and not experience_question_already_asked:
             return (
-                "Kako bi opisal svoje dosedanje izkušnje z vadbo? Si začetnik, imaš nekaj "
+                "Kakšne so tvoje dosedanje izkušnje z vadbo moči – si začetnik, imaš nekaj "
                 "izkušenj ali že redno treniraš?"
             )
         if not frequency_known:
             return "Kolikokrat na teden lahko realno treniraš?"
         if not duration_known:
             return "Koliko časa imaš običajno na voljo za posamezni trening?"
-        if not location_known:
-            return "Kje najpogosteje želiš trenirati – doma, v fitnesu ali na prostem?"
         if not equipment_known:
             return (
                 "Katero opremo imaš dejansko na voljo? Če nimaš ničesar, lahko "
