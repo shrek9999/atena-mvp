@@ -672,6 +672,10 @@ def generate_program(
                     f"Vzorec {pattern} je označen kot nejasen ali neocenjen, zato ne sme biti označen kot pripravljen."
                 )
             if report_status == "symptoms_reported":
+                if decision == "REGRESS" and target_id not in SUPPORTED_VARIANTS.get(pattern, ()):
+                    raise ProgramValidationError(
+                        f"Različica {target_id} ni potrjena regresija za gibalni vzorec {pattern}."
+                    )
                 try:
                     validate_symptom_regression_report(user_report, decision, target_id)
                 except MovementCoachingError as exc:
