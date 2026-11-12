@@ -1238,3 +1238,42 @@ def test_mild_experience_answer_counts_as_known_and_is_not_asked_again():
     ]
     reply = _coaching_guardrail_reply(messages)
     assert reply is None or "izkušnj" not in reply.casefold()
+
+
+def test_experience_is_clarified_before_weekly_frequency_in_guided_onboarding():
+    messages = [
+        {"role": "user", "content": "Želim moč in mišično maso."},
+        {"role": "model", "content": "Ali imaš kakršne koli bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "ne"},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "izkušnj" in reply.casefold()
+    assert "kolikokrat na teden" not in reply.casefold()
+
+
+def test_weekly_frequency_is_next_after_experience_is_known():
+    messages = [
+        {"role": "user", "content": "Želim moč in mišično maso."},
+        {"role": "model", "content": "Ali imaš kakršne koli bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "ne"},
+        {"role": "model", "content": "Kakšne so tvoje dosedanje izkušnje z vadbo moči?"},
+        {"role": "user", "content": "Nekaj izkušenj imam."},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "kolikokrat na teden" in reply.casefold()
+    assert "izkušnj" not in reply.casefold()
+
+
+def test_experience_is_required_before_creating_a_weekly_program():
+    messages = [
+        {"role": "user", "content": "Želim program za moč in mišično maso."},
+        {"role": "model", "content": "Ali imaš kakršne koli bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "ne"},
+        {"role": "user", "content": "Treniram dvakrat tedensko, imam 45 minut in kettlebell."},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "izkušnj" in reply.casefold()
+    assert "kolikokrat na teden" not in reply.casefold()
