@@ -1090,6 +1090,26 @@ def _onboarding_quick_replies(answer, messages=None, response_language="sl"):
     return choices or []
 
 
+def _has_contextual_frequency_answer(messages):
+    """Accept a bare 2–4 only as a direct answer to ATENA's weekly-frequency question."""
+    if len(messages) < 2:
+        return False
+    previous, latest = messages[-2], messages[-1]
+    if not (
+        isinstance(previous, dict) and previous.get("role") == "model"
+        and isinstance(latest, dict) and latest.get("role") == "user"
+    ):
+        return False
+    question = str(previous.get("content") or "").casefold()
+    answer = re.sub(r"[.!?,\s]+$", "", str(latest.get("content") or "").strip().casefold())
+    asked_frequency = bool(re.search(
+        r"(?:kolikokrat|koliko\s+krat|pogostost).{0,80}(?:teden|tedensko|week)|"
+        r"(?:how many times|days per week|weekly frequency)",
+        question,
+    ))
+    return asked_frequency and bool(re.fullmatch(r"(?:saj\s*,?\s*)?[2-4](?:\s*(?:x|krat))?", answer))
+
+
 def _coaching_guardrail_reply(messages):
     """Deterministic safety/persistence gate; never rely on model compliance alone."""
     user_texts = [
@@ -1821,7 +1841,7 @@ def _coaching_guardrail_reply(messages):
         r"\b(?:dvakrat|trikrat|štirikrat|[2-4]\s*[- ]?\s*krat|[2-4]x)\b.{0,35}(?:tedensko|na teden)|"
         r"(?:tedensko|na teden).{0,35}\b(?:dvakrat|trikrat|štirikrat|[2-4]\s*[- ]?\s*krat|[2-4]x)\b",
         history_lower,
-    ))
+    )) or _has_contextual_frequency_answer(messages)
     duration_known = profile_duration not in (None, "", 0, "0") or bool(re.search(
         r"\b(?:20|25|30|35|40|45|50|60|75|90)(?:\s*(?:[-–—]|do)\s*(?:20|25|30|35|40|45|50|60|75|90))?\s*(?:minut|min)\b|"
         r"\b(?:pol\s+ure|eno\s+uro|ura\s+vadbe)\b",
@@ -1830,6 +1850,7 @@ def _coaching_guardrail_reply(messages):
     schedule_known = frequency_known or duration_known
     experience_known = bool(re.search(
         r"\b(?:začetnik|začetnica|začetniški|srednje izkušen|izkušen|napreden|napredna|"
+        r"malo izkušenj|nekaj izkušenj|few years of experience|some experience|"
         r"beginner|intermediate|advanced)\b|"
         r"\b(?:treniram|trenirala sem|vadim).{0,45}\b(?:leto|leti|leta|let)\b|"
         r"\b(?:eno|dve|tri|štiri|pet|deset)\s+leta?\s+(?:redno\s+)?treninga\b",
