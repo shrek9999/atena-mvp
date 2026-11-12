@@ -546,7 +546,7 @@ def _sanitize_onboarding_questions(answer, messages):
     if not fitness_intent:
         return answer
 
-    safety_clear = _has_explicit_safety_clearance(user_history)
+    safety_clear = _has_safety_intake_resolution(user_history)
     safety_question_present = "?" in answer and bool(re.search(
         r"(bolečin\w*|poškodb\w*|omejitv\w*|zdravstven\w*|pain|injur\w*|health restriction)",
         answer,
@@ -1230,7 +1230,7 @@ def _coaching_guardrail_reply(messages):
     if (
         assistant_asked_setup
         and not assistant_asked_safety
-        and not _has_explicit_safety_clearance(history)
+        and not _has_safety_intake_resolution(history)
         and fitness_intent
     ):
         return (
@@ -1244,7 +1244,13 @@ def _coaching_guardrail_reply(messages):
         latest,
         re.IGNORECASE,
     ))
-    if assistant_asked_safety and not _has_explicit_safety_clearance(history) and not latest_reports_health_issue:
+    if assistant_asked_safety and latest_reports_health_issue and not _has_safety_intake_resolution(history):
+        return (
+            "Glede na opisano poškodbo, zdravstveno omejitev ali opozorilni simptom "
+            "ne bom nadaljeval/-a s samostojnim testiranjem tega področja. Najprej "
+            "pridobi ustrezno zdravstveno presojo; do takrat ne testiraj giba, ki sproža težavo."
+        )
+    if assistant_asked_safety and not _has_safety_intake_resolution(history) and not latest_reports_health_issue:
         # Ask the safety question at most twice (the original ask plus one reminder).
         # After that, acknowledge further intake details and explain the boundary
         # without repeating the same question on every turn.
