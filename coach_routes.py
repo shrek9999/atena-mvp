@@ -1852,6 +1852,7 @@ def _coaching_guardrail_reply(messages):
         r"\b(?:začetnik|začetnica|začetniški|srednje izkušen|izkušen|napreden|napredna|"
         r"malo izkušenj|nekaj izkušenj|few years of experience|some experience|"
         r"beginner|intermediate|advanced)\b|"
+        r"\b(?:redno\s+treniram|redno\s+vadim|train\s+regularly|I\s+train\s+regularly|regularly\s+train)\b|"
         r"\b(?:treniram|trenirala sem|vadim).{0,45}\b(?:leto|leti|leta|let)\b|"
         r"\b(?:eno|dve|tri|štiri|pet|deset)\s+leta?\s+(?:redno\s+)?treninga\b",
         history_lower,
@@ -1900,6 +1901,27 @@ def _coaching_guardrail_reply(messages):
                 "Kaj želiš predvsem izboljšati? Izberi najbližji cilj; če jih imaš več, "
                 "lahko pozneje sestaviva kombinacijo."
             )
+        experience_question_already_asked = any(
+            "izkušnje z vadbo moči" in item.casefold()
+            or "dosedanje izkušnje" in item.casefold()
+            for item in assistant_texts
+        )
+        if not experience_known:
+            if experience_question_already_asked:
+                if re.search(r"(ravnotež\w*|koordinacij\w*|eksploziv\w*|kondic\w*|moč\w*)", lowered):
+                    return (
+                        "Zabeležil sem tvoje prioritete glede moči, ravnotežja, koordinacije, "
+                        "eksplozivnosti in kondicije. Za določitev zahtevnosti programa mi "
+                        "še manjka podatek o tvojih izkušnjah z vadbo moči."
+                    )
+                return (
+                    "Oprema in časovni okvir sta zabeležena. Za določitev zahtevnosti "
+                    "programa mi še manjka podatek o tvojih izkušnjah z vadbo moči."
+                )
+            return (
+                "Kakšne so tvoje dosedanje izkušnje z vadbo moči – si začetnik, imaš nekaj "
+                "izkušenj ali že redno treniraš?"
+            )
         if not frequency_known:
             return "Kolikokrat na teden lahko realno treniraš?"
         if not duration_known:
@@ -1908,16 +1930,6 @@ def _coaching_guardrail_reply(messages):
             return (
                 "Katero opremo imaš dejansko na voljo? Če nimaš ničesar, lahko "
                 "načrtujem vadbo samo z lastno težo."
-            )
-        experience_question_already_asked = any(
-            "izkušnje z vadbo moči" in item.casefold()
-            or "dosedanje izkušnje" in item.casefold()
-            for item in assistant_texts
-        )
-        if not experience_known and not experience_question_already_asked:
-            return (
-                "Kakšne so tvoje dosedanje izkušnje z vadbo moči – si začetnik, imaš nekaj "
-                "izkušenj ali že redno treniraš?"
             )
 
     # A conversational request for a hard workout is not a training goal.
@@ -1949,6 +1961,12 @@ def _coaching_guardrail_reply(messages):
                 "funkcionalno pripravljenost ali kaj drugega?"
             )
         if weekly_program_intent:
+            if not experience_known:
+                return (
+                    "Preden določim zahtevnost in obseg tedenskega programa, mi povej še: "
+                    "kakšne so tvoje dosedanje izkušnje z vadbo moči – si začetnik, imaš nekaj "
+                    "izkušenj ali že redno treniraš?"
+                )
             if not frequency_known:
                 return "Kolikokrat na teden želiš oziroma realno lahko trenirati?"
             if not duration_known:
@@ -1960,12 +1978,6 @@ def _coaching_guardrail_reply(messages):
                 )
 
     if fitness_intent and _has_safety_clearance(messages) and schedule_known:
-        if not equipment_known:
-            return (
-                "Časovni okvir sem razumel. Da ne bom predpostavljal, da imaš ročke, klop "
-                "ali drugo opremo: kaj imaš dejansko na voljo za vadbo? Če nimaš ničesar, "
-                "lahko izhajava samo iz lastne teže."
-            )
         if not experience_known:
             experience_question_already_asked = any(
                 "izkušnje z vadbo moči" in item.casefold()
@@ -1977,22 +1989,26 @@ def _coaching_guardrail_reply(messages):
                     return (
                         "Zabeležil sem tvoje prioritete glede moči, ravnotežja, koordinacije, "
                         "eksplozivnosti in kondicije. Za določitev zahtevnosti programa mi "
-                        "še manjka podatek o tvojih izkušnjah z vadbo moči. Ne bom "
-                        "predpostavljal, da si začetnik ali napreden."
+                        "še manjka podatek o tvojih izkušnjah z vadbo moči."
                     )
                 return (
-                    "Oprema in tedenska pogostost sta zabeleženi. Za določitev zahtevnosti "
-                    "programa mi še manjka podatek o tvojih izkušnjah z vadbo moči. "
-                    "Ne bom predpostavljal, da si začetnik ali napreden; ko to pojasniš, "
-                    "lahko nadaljujeva."
+                    "Oprema in časovni okvir sta zabeležena. Za določitev zahtevnosti "
+                    "programa mi še manjka podatek o tvojih izkušnjah z vadbo moči."
                 )
-            schedule_label = "tedenska pogostost" if frequency_known else "trajanje treninga"
             return (
-                f"Oprema in {schedule_label} sta jasni. Preden določim zahtevnost vaj in obseg "
-                "programa, mi povej še: kako bi opisal svoje dosedanje izkušnje z vadbo moči – "
-                "si začetnik, redno treniraš ali imaš že več let sistematičnih izkušenj?"
+                "Preden izberem zahtevnost vaj, mi povej še: kakšne so tvoje dosedanje "
+                "izkušnje z vadbo moči – si začetnik, imaš nekaj izkušenj ali že redno treniraš?"
             )
-
+        if not frequency_known:
+            return "Kolikokrat na teden lahko realno treniraš?"
+        if not duration_known:
+            return "Koliko časa imaš običajno na voljo za posamezni trening?"
+        if not equipment_known:
+            return (
+                "Časovni okvir sem razumel. Da ne bom predpostavljal, da imaš ročke, klop "
+                "ali drugo opremo: kaj imaš dejansko na voljo za vadbo? Če nimaš ničesar, "
+                "lahko izhajava samo iz lastne teže."
+            )
     if (
         re.search(r"dva treninga sta bila lahka", history_lower)
         and re.search(r"vsaj tremi ponovitvami v rezervi", history_lower)
@@ -2014,13 +2030,15 @@ ROLE AND METHOD
 You are not a generic chatbot that simply prescribes an exercise in response to the last message. Act like a careful, proactive coach who first builds an adequate picture of the person, then gives a suitable next step and follows up over time. Use information already provided in the conversation; do not ask for it again. Do not pretend to remember information that is not in the conversation. Never invent or silently infer a user's training start date, years of experience, consistency, previous sessions, equipment, pain status or completed actions. When the profile and the user's description conflict, acknowledge the exact discrepancy and ask one focused clarification; do not invent a compromise explanation.
 
 ONBOARDING AND QUESTIONS
-Before prescribing an individualized workout or training plan, establish the minimum useful context:
-1) main goal (e.g. strength, muscle development, fat loss/body composition, conditioning, general functional fitness, explosive power or mobility);
-2) current experience and approximate ability;
-3) available equipment and realistic time;
-4) major health conditions, recent injuries, medical restrictions, and any discomfort that changes a movement;
-5) weekly availability and, only when relevant, age or other factors affecting exercise selection. Age alone is never an eligibility limit; adapt training to capacity, experience and recovery, not chronological age alone.
-Ask one concise, high-value question at a time. Never start an individualized programme until the user's experience and approximate ability are known; if the user has not stated them, ask one simple question instead of assuming beginner, intermediate or advanced ability. Never select exercises that require equipment the user has not confirmed; if equipment is unknown, ask what is available or clearly offer a bodyweight-only general example. SAFETY-FIRST ORDER: ask the broad health/safety intake question once, at the beginning, before individualized programming. Accept a clear negative answer (including a direct 'no' to that question) and retain that resolved state throughout this conversation. Never ask the same broad pain/injury/restriction question again after it has been answered. Do not reopen the initial gate merely because the user asks a follow-up or gives a short answer. If a new, localized symptom is later reported during a specific movement, address only that movement with the appropriate symptom protocol; do not repeat the full intake. If the initial answer is uncertain or positive, clarify only the relevant safety detail. Do not demand that a user be completely pain-free. If the user has only mild, familiar discomfort, clarify the affected movement and use the dose/tolerance process below; do not automatically exclude all training. Do not ask about equipment, time or training frequency before this initial safety check. If the user confirms no major restriction, continue with the main goal, experience, equipment, realistic training time and weekly availability, one question at a time. Do not overwhelm the user with a long intake form. If the request is simple and low risk, you may give a clearly labelled general example while explaining that it is not yet individualized, and ask the most important follow-up question. If safety-relevant information is missing, ask before recommending demanding exercise.
+Before prescribing an individualized workout or training plan, establish the minimum useful context in this order:
+1) major health conditions, recent injuries, medical restrictions, and any current symptom that may change exercise selection; ask this broad safety question once, at the beginning;
+2) main goal (e.g. strength, muscle development, fat loss/body composition, conditioning, general functional fitness, explosive power or mobility);
+3) current experience and approximate ability;
+4) realistic weekly availability (how many sessions the person can consistently complete);
+5) realistic time available for each session;
+6) equipment the person actually has available;
+7) only when relevant, age or other factors that materially affect exercise selection. Age alone is never an eligibility limit; adapt training to capacity, experience and recovery, not chronological age alone.
+Ask one concise, high-value question at a time. Never start an individualized programme until the user's experience and approximate ability are known; if the user has not stated them, ask one simple question instead of assuming beginner, intermediate or advanced ability. Never select exercises that require equipment the user has not confirmed; if equipment is unknown, ask what is available or clearly offer a bodyweight-only general example. SAFETY-FIRST ORDER: ask the broad health/safety intake question once, at the beginning, before individualized programming. Accept a clear negative answer (including a direct 'no' to that question) and retain that resolved state throughout this conversation. Never ask the same broad pain/injury/restriction question again after it has been answered. Do not reopen the initial gate merely because the user asks a follow-up or gives a short answer. If a new, localized symptom is later reported during a specific movement, address only that movement with the appropriate symptom protocol; do not repeat the full intake. If the initial answer is uncertain or positive, clarify only the relevant safety detail. Do not demand that a user be completely pain-free. If the user has only mild, familiar discomfort, clarify the affected movement and use the dose/tolerance process below; do not automatically exclude all training. Do not ask about equipment, time or training frequency before this initial safety check. If the user confirms no major restriction, continue with the main goal, experience, weekly availability, session duration and confirmed equipment, in that order and one question at a time. Do not overwhelm the user with a long intake form. If the request is simple and low risk, you may give a clearly labelled general example while explaining that it is not yet individualized, and ask the most important follow-up question. If safety-relevant information is missing, ask before recommending demanding exercise.
 
 CONVERSATIONAL EXPERIENCE AND GOAL CLARIFICATION
 - The conversation is the primary interface. Do not make the person feel they are completing an intake form. Build the picture gradually across turns.

@@ -518,7 +518,7 @@ def test_progression_sanitizer_does_not_duplicate_the_same_rule():
     assert result.count("Napredovanje je primerno šele") == 1
 
 
-def test_programme_request_without_equipment_asks_instead_of_assuming_dumbbells_or_bench():
+def test_programme_request_without_equipment_asks_experience_then_frequency_then_equipment():
     messages = [{
         "role": "user",
         "content": (
@@ -528,9 +528,25 @@ def test_programme_request_without_equipment_asks_instead_of_assuming_dumbbells_
     }]
     reply = _coaching_guardrail_reply(messages)
     assert reply is not None
-    assert "kaj imaš dejansko na voljo" in reply
+    assert "izkušnje z vadbo moči" in reply
+    assert "opremo" not in reply.casefold()
+
+    messages.extend([
+        {"role": "model", "content": reply},
+        {"role": "user", "content": "Redno treniram."},
+    ])
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "kolikokrat na teden" in reply.casefold()
+
+    messages.extend([
+        {"role": "model", "content": reply},
+        {"role": "user", "content": "Trikrat tedensko."},
+    ])
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "opremo" in reply.casefold()
     assert "če nimaš ničesar" in reply.casefold()
-    assert "pogostost" not in reply.casefold()
 
 
 def test_fat_loss_with_strength_preservation_answers_daily_hiit_question_before_intake_gate():
@@ -648,7 +664,7 @@ def test_programme_request_with_schedule_and_gym_but_unknown_experience_asks_fir
     assert "si začetnik" in reply
 
 
-def test_known_experience_and_equipment_allow_onboarding_to_continue():
+def test_known_experience_and_equipment_still_requires_session_duration():
     messages = [{
         "role": "user",
         "content": (
@@ -657,7 +673,8 @@ def test_known_experience_and_equipment_allow_onboarding_to_continue():
         ),
     }]
     reply = _coaching_guardrail_reply(messages)
-    assert reply is None
+    assert reply is not None
+    assert "koliko časa" in reply.casefold()
 
 
 def test_absence_of_health_report_is_not_explicit_safety_clearance():
@@ -741,7 +758,7 @@ def test_programming_gate_allows_programme_after_goal_equipment_experience_and_s
     assert _coaching_guardrail_reply(messages) is None
 
 
-def test_experience_prompt_does_not_claim_session_duration_is_known_from_frequency_alone():
+def test_experience_is_required_before_asking_for_session_duration():
     messages = [
         {"role": "user", "content": (
             "Nimam bolečin, poškodb ali omejitev. Moj cilj je moč. Imam ročke. "
@@ -750,8 +767,8 @@ def test_experience_prompt_does_not_claim_session_duration_is_known_from_frequen
     ]
     reply = _coaching_guardrail_reply(messages)
     assert reply is not None
-    assert "tedenska pogostost" in reply
-    assert "trajanje treninga" not in reply
+    assert "izkušnj" in reply.casefold()
+    assert "koliko časa" not in reply.casefold()
 
 
 def test_fat_loss_guidance_mentions_protein_and_moderate_energy_deficit():
@@ -1238,3 +1255,42 @@ def test_mild_experience_answer_counts_as_known_and_is_not_asked_again():
     ]
     reply = _coaching_guardrail_reply(messages)
     assert reply is None or "izkušnj" not in reply.casefold()
+
+
+def test_experience_is_clarified_before_weekly_frequency_in_guided_onboarding():
+    messages = [
+        {"role": "user", "content": "Želim moč in mišično maso."},
+        {"role": "model", "content": "Ali imaš kakršne koli bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "ne"},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "izkušnj" in reply.casefold()
+    assert "kolikokrat na teden" not in reply.casefold()
+
+
+def test_weekly_frequency_is_next_after_experience_is_known():
+    messages = [
+        {"role": "user", "content": "Želim moč in mišično maso."},
+        {"role": "model", "content": "Ali imaš kakršne koli bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "ne"},
+        {"role": "model", "content": "Kakšne so tvoje dosedanje izkušnje z vadbo moči?"},
+        {"role": "user", "content": "Nekaj izkušenj imam."},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "kolikokrat na teden" in reply.casefold()
+    assert "izkušnj" not in reply.casefold()
+
+
+def test_experience_is_required_before_creating_a_weekly_program():
+    messages = [
+        {"role": "user", "content": "Želim program za moč in mišično maso."},
+        {"role": "model", "content": "Ali imaš kakršne koli bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "ne"},
+        {"role": "user", "content": "Treniram dvakrat tedensko, imam 45 minut in kettlebell."},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "izkušnj" in reply.casefold()
+    assert "kolikokrat na teden" not in reply.casefold()
