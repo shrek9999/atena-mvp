@@ -36,7 +36,7 @@ from training.conditioning_progression import summarize_conditioning_progress
 from training.periodization import summarize_training_cycle
 from training.proactive_checkin import build_proactive_checkin
 from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL
-from training.movement_assessment import MovementAssessmentError, assess_movement_competence
+from training.movement_assessment import MovementAssessmentError, SYMPTOM_REGRESSION_VARIANTS, assess_movement_competence
 from training.camera_observations import CameraObservationError, validate_camera_observations
 from training.goals import normalize_goal, public_goal_options
 from training.movement_coaching import (
@@ -3005,7 +3005,7 @@ def save_six_pattern_movement_assessment(profile_id):
                     selected_exercise_id = None
                     reason = "Tudi regresirana različica ni bila ustrezno tolerirana; vzorec je izpuščen."
             if decision == "REGRESS":
-                if selected_exercise_id not in SUPPORTED_VARIANTS.get(pattern, ()):
+                if selected_exercise_id not in SYMPTOM_REGRESSION_VARIANTS.get(pattern, ()):
                     return jsonify({"error": f"Izbrana različica ni potrjena regresija za vzorec {pattern}."}), 400
                 try:
                     from training.movement_coaching import validate_symptom_regression_report
