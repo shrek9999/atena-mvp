@@ -815,7 +815,7 @@ def _sanitize_unverified_exercise_parameters(answer, messages):
         ))
         poor_recovery_reported = bool(re.search(
             r"(slab\w*\s+regeneracij|slabo\s+okrev|"
-            r"nenavadn\w*\s+utrujenost|še\s+sem\s+utrujen|"
+            r"nenavadn\w*\s+utrujen\w*|še\s+sem\s+utrujen|"
             r"poor\s+recovery|unusually\s+fatigued|still\s+fatigued)",
             user_history,
             re.IGNORECASE,
