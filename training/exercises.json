@@ -1139,9 +1139,7 @@
       "chin_up",
       "Zgib z dodatno obremenitvijo"
     ],
-    "alternatives": [
-      "Veslanje z lastno težo"
-    ],
+    "alternatives": [],
     "warnings": [
       "Prilagodi obseg in pomoč trenutni sposobnosti."
     ],
@@ -2994,7 +2992,7 @@
       "Dvig ramen proti ušesom."
     ],
     "regressions": [
-      "inverted_row_table"
+      "band_row"
     ],
     "progressions": [
       "Bolj vodoraven položaj telesa",
@@ -3063,7 +3061,7 @@
     ],
     "regressions": [
       "trx_row",
-      "inverted_row_table"
+      "band_row"
     ],
     "progressions": [
       "Veslanje z nogami na povišani podlagi"
@@ -5561,8 +5559,7 @@
     ],
     "regressions": [
       "trx_row",
-      "ring_row",
-      "inverted_row_table"
+      "ring_row"
     ],
     "progressions": [
       "Veslanje z večjo obremenitvijo ali premorom"
