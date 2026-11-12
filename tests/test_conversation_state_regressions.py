@@ -1096,15 +1096,13 @@ def test_guided_safety_question_offers_clear_yes_no_and_uncertain_choices():
 def test_general_fitness_is_recognized_as_a_real_goal():
     messages = [
         {"role": "user", "content": (
-            "Želim izboljšati splošno telesno pripravljenost in trenirati 3-krat tedensko."
+            "Želim izboljšati splošno telesno pripravljenost in trenirati 3-krat tedensko. "
+            "Sem začetnik, treniram doma samo z lastno težo po 30 minut."
         )},
         {"role": "model", "content": "Ali imaš kakšne bolečine, poškodbe ali omejitve?"},
         {"role": "user", "content": "ne"},
     ]
-    reply = _coaching_guardrail_reply(messages)
-    assert reply is not None
-    assert "izkušnj" in reply.casefold()
-    assert "glavni cilj" not in reply.casefold()
+    assert _coaching_guardrail_reply(messages) is None
 
 
 
