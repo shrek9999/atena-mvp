@@ -1294,3 +1294,61 @@ def test_experience_is_required_before_creating_a_weekly_program():
     assert reply is not None
     assert "izkušnj" in reply.casefold()
     assert "kolikokrat na teden" not in reply.casefold()
+
+
+
+def test_two_successful_exposures_do_not_allow_invented_load_or_set_count():
+    from coach_routes import _sanitize_unverified_exercise_parameters
+
+    messages = [{
+        "role": "user",
+        "content": (
+            "KONTEKST: V programu je cilj 8–10 ponovitev; v dveh zaporednih "
+            "primerljivih treningih je uporabnik izvedel vse serije po 10 ponovitev "
+            "z RIR 3 in stabilno tehniko.\n"
+            "Tehnika je bila dobra in trening ni bil pretežek. "
+            "Regeneracija naslednji dan je bila dobra."
+        ),
+    }]
+    answer = "Povečaj obremenitev za 2,5 kg in izvedi 3 × 10."
+    cleaned = _sanitize_unverified_exercise_parameters(answer, messages)
+
+    assert "2,5 kg" not in cleaned
+    assert "3 × 10" not in cleaned
+    assert "ne bom ugibal kilogramov ali obsega" in cleaned
+    assert cleaned.count("?") == 1
+
+
+def test_two_successful_exposures_require_recovery_check_before_progression():
+    from coach_routes import _sanitize_unverified_exercise_parameters
+
+    messages = [{
+        "role": "user",
+        "content": (
+            "V dveh zaporednih primerljivih treningih sem izvedel 10 ponovitev "
+            "z RIR 3 in stabilno tehniko. Regeneracije še nisem ocenil."
+        ),
+    }]
+    answer = "Povečaj obremenitev za 2,5 kg."
+    cleaned = _sanitize_unverified_exercise_parameters(answer, messages)
+
+    assert "2,5 kg" not in cleaned
+    assert "pred povečanjem obremenitve preveriva še regeneracijo" in cleaned
+    assert cleaned.count("?") == 1
+
+
+def test_poor_recovery_blocks_progression_after_two_successful_exposures():
+    from coach_routes import _sanitize_unverified_exercise_parameters
+
+    messages = [{
+        "role": "user",
+        "content": (
+            "V dveh zaporednih primerljivih treningih sem izvedel vse ponovitve "
+            "z dobro tehniko, vendar sem bil naslednji dan nenavadno utrujen."
+        ),
+    }]
+    answer = "Povečaj obremenitev za 2,5 kg."
+    cleaned = _sanitize_unverified_exercise_parameters(answer, messages)
+
+    assert "2,5 kg" not in cleaned
+    assert "obremenitve še ne povečava" in cleaned

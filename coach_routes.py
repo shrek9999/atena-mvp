@@ -800,6 +800,66 @@ def _sanitize_unverified_exercise_parameters(answer, messages):
         user_history,
         re.IGNORECASE,
     ))
+
+    # A successful two-exposure rule is not permission to invent a load or
+    # volume. If the conversation lacks the exact exercise, current load or
+    # set/rep prescription, ask for the missing record before giving numbers.
+    if two_exposures:
+        recovery_reported = bool(re.search(
+            r"regeneracij\w*.{0,40}(?:dobra|ustrezna|normalna)|"
+            r"(?:dobro|normalno)\s+okrev\w*|"
+            r"naslednji\s+dan.{0,50}(?:brez\s+težav|brez\s+bolečin|spoč|normalno)|"
+            r"(?:brez|ni)\s+(?:nenavadne\s+)?utrujenosti",
+            user_history,
+            re.IGNORECASE,
+        ))
+        poor_recovery_reported = bool(re.search(
+            r"(slab\w*\s+regeneracij|slabo\s+okrev|"
+            r"nenavadn\w*\s+utrujen\w*|še\s+sem\s+utrujen|"
+            r"poor\s+recovery|unusually\s+fatigued|still\s+fatigued)",
+            user_history,
+            re.IGNORECASE,
+        ))
+        progression_claim = bool(re.search(
+            r"(poveč\w*.{0,35}(?:tež\w*|obremen\w*|breme)|"
+            r"dodaj\w*.{0,25}(?:tež\w*|obremen\w*|breme)|"
+            r"(?:increase|add)\s+(?:the\s+)?(?:load|weight)|"
+            r"\b\d+(?:[.,]\d+)?\s*kg\b|\b\d+\s*[x×]\s*\d+\b)",
+            answer,
+            re.IGNORECASE,
+        ))
+        if progression_claim and poor_recovery_reported:
+            return (
+                "Čeprav sta bili izvedbi uspešni, je slabša regeneracija razlog, da "
+                "obremenitve še ne povečava. Najprej počakaj, da se počutje vrne na "
+                "običajno raven; nato ponovno oceni tehniko, napor in regeneracijo. "
+                "Za zdaj ohrani ali po potrebi nekoliko zmanjša trenutno dozo."
+            )
+        if progression_claim and not recovery_reported:
+            return (
+                "Dve primerljivi uspešni izvedbi sta dober znak, vendar pred povečanjem "
+                "obremenitve preveriva še regeneracijo. Kako si se počutil naslednji dan "
+                "po zadnjem treningu – običajno spočit ali nenavadno utrujen?"
+            )
+        if progression_claim and recovery_reported:
+            exercise_known = bool(re.search(
+                r"počep\w*|mrtv\w*\s+dvig\w*|deadlift|bench\s+press|"
+                r"potisk\w*|veslan\w*|row\b",
+                user_history,
+                re.IGNORECASE,
+            ))
+            load_known = bool(re.search(
+                r"\b\d+(?:[.,]\d+)?\s*kg\b", user_history, re.IGNORECASE
+            ))
+            set_count_known = bool(re.search(r"\b\d+\s*[x×]\s*\d+\b", user_history))
+            if not (exercise_known and load_known and set_count_known):
+                return (
+                    "Regeneracija je ustrezna, zato lahko razmisliva o majhnem napredku. "
+                    "Ker nimam zanesljivega zapisa konkretne vaje, trenutne obremenitve "
+                    "in števila serij ter ponovitev, ne bom ugibal kilogramov ali obsega. "
+                    "Katera vaja je v programu in kakšen odmerek trenutno izvajaš "
+                    "(obremenitev ter serije × ponovitve)?"
+                )
     progression_context = (
         two_exposures
         and bool(re.search(r"8[–-]10", user_history))
