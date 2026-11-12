@@ -15,6 +15,29 @@ ASSESSMENT_VERSION = "six-pattern-coaching-v1"
 VALID_DECISIONS = {"READY", "LEARN", "REGRESS", "UNASSESSABLE"}
 LEVEL_RANK = {"beginner": 0, "intermediate": 1, "advanced": 2}
 
+
+def validate_symptom_regression_report(user_report: dict, decision: str, selected_exercise_id: str | None) -> None:
+    """Permit a symptom-reported pattern only after a documented tolerated regression retest."""
+    if user_report.get("status") != "symptoms_reported":
+        return
+    test = user_report.get("regression_test")
+    if (
+        decision != "REGRESS"
+        or not isinstance(test, dict)
+        or test.get("status") != "tolerated"
+        or not selected_exercise_id
+        or test.get("variation_id") != selected_exercise_id
+        or isinstance(test.get("pain_during"), bool)
+        or not isinstance(test.get("pain_during"), (int, float))
+        or not 0 <= test.get("pain_during") <= 2
+        or test.get("worsened") is not False
+    ):
+        raise MovementCoachingError(
+            "Pri poročani bolečini je mogoče vzorec vključiti le po ponovnem preizkusu konkretne regresije: "
+            "status tolerated, enak ID različice, bolečina največ 2/10 in brez poslabšanja. "
+            "Sicer mora vzorec ostati neocenjen oziroma izpuščen."
+        )
+
 # Exercise IDs are intentionally explicit and verified against the live
 # catalogue at runtime. The order is for presentation only, never a progression.
 PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
