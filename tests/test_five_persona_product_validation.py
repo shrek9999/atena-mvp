@@ -168,9 +168,10 @@ def test_occasional_user_gets_a_conservative_two_day_plan():
 def test_home_user_without_equipment_gets_only_bodyweight_exercises():
     plan = generate_program(PERSONAS["home_no_equipment"])
     assert len(plan["sessions"]) == 2
-    assert { "squat", "hinge", "horizontal_push", "horizontal_pull" }.issubset(
-        _patterns(plan)
-    )
+    assert {"squat", "hinge", "horizontal_push"}.issubset(_patterns(plan))
+    # With bodyweight alone, ATENA must not fake a horizontal pull pattern.
+    assert "horizontal_pull" in plan["weekly_summary"]["unfilled_patterns"]
+    assert any("horizontalnega potega" in item for item in plan["limitations"])
     for exercise in _all_exercises(plan):
         assert set(exercise["equipment"]).issubset({"bodyweight"}), exercise
         catalogue_entry = get_exercise(exercise["exercise_id"])
