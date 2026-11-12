@@ -1388,7 +1388,7 @@ def _coaching_guardrail_reply(messages):
         if re.search(r"zamenj|nadomest|alternativ|namesto|swap|replace", text_value, re.IGNORECASE):
             substitution_intent_texts.append(text_value)
     if substitution_intent_texts:
-        if not _has_explicit_safety_clearance(history):
+        if not _has_safety_intake_resolution(history):
             return (
                 "Preden predlagam zamenjavo vaje, moram preveriti varnost: ali imaš trenutno "
                 "kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
