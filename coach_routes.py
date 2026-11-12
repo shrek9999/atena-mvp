@@ -806,25 +806,25 @@ def _sanitize_unverified_exercise_parameters(answer, messages):
     # set/rep prescription, ask for the missing record before giving numbers.
     if two_exposures:
         recovery_reported = bool(re.search(
-            r"regeneracij\\w*.{0,40}(?:dobra|ustrezna|normalna)|"
-            r"(?:dobro|normalno)\\s+okrev\\w*|"
-            r"naslednji\\s+dan.{0,50}(?:brez\\s+težav|brez\\s+bolečin|spoč|normalno)|"
-            r"(?:brez|ni)\\s+(?:nenavadne\\s+)?utrujenosti",
+            r"regeneracij\w*.{0,40}(?:dobra|ustrezna|normalna)|"
+            r"(?:dobro|normalno)\s+okrev\w*|"
+            r"naslednji\s+dan.{0,50}(?:brez\s+težav|brez\s+bolečin|spoč|normalno)|"
+            r"(?:brez|ni)\s+(?:nenavadne\s+)?utrujenosti",
             user_history,
             re.IGNORECASE,
         ))
         poor_recovery_reported = bool(re.search(
-            r"(slab\\w*\\s+regeneracij|slabo\\s+okrev|"
-            r"nenavadn\\w*\\s+utrujenost|še\\s+sem\\s+utrujen|"
-            r"poor\\s+recovery|unusually\\s+fatigued|still\\s+fatigued)",
+            r"(slab\w*\s+regeneracij|slabo\s+okrev|"
+            r"nenavadn\w*\s+utrujenost|še\s+sem\s+utrujen|"
+            r"poor\s+recovery|unusually\s+fatigued|still\s+fatigued)",
             user_history,
             re.IGNORECASE,
         ))
         progression_claim = bool(re.search(
-            r"(poveč\\w*.{0,35}(?:tež\\w*|obremen\\w*|breme)|"
-            r"dodaj\\w*.{0,25}(?:tež\\w*|obremen\\w*|breme)|"
-            r"(?:increase|add)\\s+(?:the\\s+)?(?:load|weight)|"
-            r"\\b\\d+(?:[.,]\\d+)?\\s*kg\\b|\\b\\d+\\s*[x×]\\s*\\d+\\b)",
+            r"(poveč\w*.{0,35}(?:tež\w*|obremen\w*|breme)|"
+            r"dodaj\w*.{0,25}(?:tež\w*|obremen\w*|breme)|"
+            r"(?:increase|add)\s+(?:the\s+)?(?:load|weight)|"
+            r"\b\d+(?:[.,]\d+)?\s*kg\b|\b\d+\s*[x×]\s*\d+\b)",
             answer,
             re.IGNORECASE,
         ))
@@ -843,15 +843,15 @@ def _sanitize_unverified_exercise_parameters(answer, messages):
             )
         if progression_claim and recovery_reported:
             exercise_known = bool(re.search(
-                r"počep\\w*|mrtv\\w*\\s+dvig\\w*|deadlift|bench\\s+press|"
-                r"potisk\\w*|veslan\\w*|row\\b",
+                r"počep\w*|mrtv\w*\s+dvig\w*|deadlift|bench\s+press|"
+                r"potisk\w*|veslan\w*|row\b",
                 user_history,
                 re.IGNORECASE,
             ))
             load_known = bool(re.search(
-                r"\\b\\d+(?:[.,]\\d+)?\\s*kg\\b", user_history, re.IGNORECASE
+                r"\b\d+(?:[.,]\d+)?\s*kg\b", user_history, re.IGNORECASE
             ))
-            set_count_known = bool(re.search(r"\\b\\d+\\s*[x×]\\s*\\d+\\b", user_history))
+            set_count_known = bool(re.search(r"\b\d+\s*[x×]\s*\d+\b", user_history))
             if not (exercise_known and load_known and set_count_known):
                 return (
                     "Regeneracija je ustrezna, zato lahko razmisliva o majhnem napredku. "
