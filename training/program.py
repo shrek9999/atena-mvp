@@ -995,8 +995,10 @@ def generate_program(
                 candidates = [item for item in candidates if item["id"] != "wall_push_up"]
             if planning_goal in {"endurance", "fat_loss"} and pattern == "locomotion":
                 candidates = [item for item in candidates if item.get("endurance_type") == "aerobic"]
-            if planning_goal == "functional":
-                # Never assume household furniture is a safe pulling anchor.
+            if pattern == "horizontal_pull":
+                # Generic household_support is not proof that a table is stable or safe.
+                # Until the user can explicitly confirm a suitable fixed anchor, never
+                # prescribe inverted rows under household furniture for any goal.
                 candidates = [item for item in candidates if item["id"] != "inverted_row_table"]
             if movement_status == "needs_support" and pattern != "balance":
                 preferred_ids = SUPPORTED_VARIANTS.get(pattern, ())
