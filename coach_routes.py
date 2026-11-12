@@ -1080,7 +1080,7 @@ def _onboarding_quick_replies(answer, messages=None, response_language="sl"):
         choices = ["Beginner / just starting", "Some experience", "I train regularly"] if english else ["Začetnik/-ca", "Nekaj izkušenj", "Redno treniram"]
     elif re.search(r"(kaj želiš|glavni cilj|predvsem razvijati|what would you like|main goal)", value):
         choices = ["Strength and muscle", "General fitness and energy", "Conditioning", "Functional fitness", "A combination"] if english else ["Moč in mišična masa", "Splošna pripravljenost in več energije", "Kondicija", "Funkcionalna pripravljenost", "Kombinacija ciljev"]
-    elif re.search(r"(kje.{0,20}treniraš|where.{0,20}train|training location)", value):
+    elif re.search(r"(kje.{0,30}(?:treniraš|trenirati)|where.{0,30}train|training location)", value):
         choices = ["At home", "At a gym", "Outdoors", "A mix of places"] if english else ["Doma", "V fitnesu", "Na prostem", "Kombinacija okolij"]
     return choices or []
 
@@ -1859,7 +1859,7 @@ def _coaching_guardrail_reply(messages):
         re.IGNORECASE,
     ))
     location_known = bool(re.search(
-        r"\\b(?:doma|v fitnesu|v telovadnici|na prostem|home|at a gym|gym|outdoors)\\b",
+        r"\b(?:doma|v fitnesu|v telovadnici|na prostem|home|at a gym|gym|outdoors)\b",
         history_lower,
         re.IGNORECASE,
     ))
