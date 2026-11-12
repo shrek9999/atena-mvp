@@ -560,7 +560,7 @@ def test_hypertrophy_without_weights_uses_scalable_posterior_chain_options():
     assert posterior
     assert all(exercise["exercise_id"] != "bodyweight_hip_hinge" for exercise in posterior)
     assert all(exercise["loading_potential"] in {"moderate", "high"} for exercise in posterior)
-    assert any(exercise["exercise_id"] == "inverted_row_table" for exercise in exercises)
+    assert not any(exercise["exercise_id"] == "inverted_row_table" for exercise in exercises)
     assert any(exercise["exercise_id"] == "single_leg_box_squat" for exercise in exercises)
 
 
