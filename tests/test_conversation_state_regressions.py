@@ -1,6 +1,6 @@
 """Regression tests for conversation state and conservative duration estimates."""
 
-from coach_routes import _coaching_guardrail_reply, _sanitize_onboarding_questions, _sanitize_unverified_safety_claim, _has_explicit_safety_clearance, _has_explicit_no_pain_confirmation, _chat_message_character_limit
+from coach_routes import _coaching_guardrail_reply, _sanitize_onboarding_questions, _sanitize_unverified_safety_claim, _has_explicit_safety_clearance, _has_explicit_no_pain_confirmation, _chat_message_character_limit, _has_contextual_frequency_answer
 from training.program import _estimated_minutes
 
 
