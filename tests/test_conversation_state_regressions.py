@@ -518,7 +518,7 @@ def test_progression_sanitizer_does_not_duplicate_the_same_rule():
     assert result.count("Napredovanje je primerno šele") == 1
 
 
-def test_programme_request_without_equipment_asks_instead_of_assuming_dumbbells_or_bench():
+def test_programme_request_without_equipment_asks_experience_then_frequency_then_equipment():
     messages = [{
         "role": "user",
         "content": (
@@ -528,9 +528,25 @@ def test_programme_request_without_equipment_asks_instead_of_assuming_dumbbells_
     }]
     reply = _coaching_guardrail_reply(messages)
     assert reply is not None
-    assert "kaj imaš dejansko na voljo" in reply
+    assert "izkušnje z vadbo moči" in reply
+    assert "opremo" not in reply.casefold()
+
+    messages.extend([
+        {"role": "model", "content": reply},
+        {"role": "user", "content": "Redno treniram."},
+    ])
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "kolikokrat na teden" in reply.casefold()
+
+    messages.extend([
+        {"role": "model", "content": reply},
+        {"role": "user", "content": "Trikrat tedensko."},
+    ])
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "opremo" in reply.casefold()
     assert "če nimaš ničesar" in reply.casefold()
-    assert "pogostost" not in reply.casefold()
 
 
 def test_fat_loss_with_strength_preservation_answers_daily_hiit_question_before_intake_gate():
