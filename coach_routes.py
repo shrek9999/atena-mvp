@@ -1979,10 +1979,30 @@ def _coaching_guardrail_reply(messages):
 
     if fitness_intent and _has_safety_clearance(messages) and schedule_known:
         if not experience_known:
+            experience_question_already_asked = any(
+                "izkušnje z vadbo moči" in item.casefold()
+                or "dosedanje izkušnje" in item.casefold()
+                for item in assistant_texts
+            )
+            if experience_question_already_asked:
+                if re.search(r"(ravnotež\w*|koordinacij\w*|eksploziv\w*|kondic\w*|moč\w*)", lowered):
+                    return (
+                        "Zabeležil sem tvoje prioritete glede moči, ravnotežja, koordinacije, "
+                        "eksplozivnosti in kondicije. Za določitev zahtevnosti programa mi "
+                        "še manjka podatek o tvojih izkušnjah z vadbo moči."
+                    )
+                return (
+                    "Oprema in časovni okvir sta zabeležena. Za določitev zahtevnosti "
+                    "programa mi še manjka podatek o tvojih izkušnjah z vadbo moči."
+                )
             return (
                 "Preden izberem zahtevnost vaj, mi povej še: kakšne so tvoje dosedanje "
                 "izkušnje z vadbo moči – si začetnik, imaš nekaj izkušenj ali že redno treniraš?"
             )
+        if not frequency_known:
+            return "Kolikokrat na teden lahko realno treniraš?"
+        if not duration_known:
+            return "Koliko časa imaš običajno na voljo za posamezni trening?"
         if not equipment_known:
             return (
                 "Časovni okvir sem razumel. Da ne bom predpostavljal, da imaš ročke, klop "
