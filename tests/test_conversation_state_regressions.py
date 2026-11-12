@@ -1181,3 +1181,16 @@ def test_unconfirmed_legacy_equipment_defaults_are_not_treated_as_selected():
         ),
     }]
     assert _profile_available_equipment(messages) == set()
+
+
+
+def test_goal_question_offers_concrete_choices_without_repeating_combination_option():
+    from coach_routes import _onboarding_quick_replies
+
+    choices = _onboarding_quick_replies("Kaj želiš predvsem izboljšati?")
+    assert choices == [
+        "Moč in mišična masa",
+        "Splošna pripravljenost in več energije",
+        "Kondicija",
+        "Funkcionalna pripravljenost",
+    ]
