@@ -122,6 +122,36 @@ def _has_explicit_safety_clearance(text):
         if negative and pain and injury and limitations and not positive_issue:
             return True
     return False
+def _has_adaptable_local_symptom_report(text):
+    """Allow only localized movement-linked discomfort to enter cautious regression testing."""
+    normalized = " ".join(str(text or "").split()).casefold()
+    if not re.search(r"\\b(?:boleč\\w*|boli\\w*|pain|soreness)\\b", normalized):
+        return False
+    red_flags = re.search(
+        r"(huda|močna|neznosna|nenadna|akutna|poslabšuj\\w*|poškodb\\w*|zlom|operacij|oteklin\\w*|"
+        r"zakle\\w*|klec\\w*|ne morem stopiti|ne morem obremeniti|nestabiln\\w*|otrpl\\w*|mravljin\\w*|"
+        r"izguba moči|bolečina v prsih|omedlevic\\w*|severe|sudden|worsening|acute injury|fracture|swelling|"
+        r"locking|giving way|cannot bear weight|numbness|weakness|chest pain|fainting)", normalized,
+    )
+    if red_flags:
+        return False
+    local_region = re.search(
+        r"(kolen\\w*|ram\\w*|križ\\w*|hrbt\\w*|kolk\\w*|gležn\\w*|stopal\\w*|komol\\w*|zapest\\w*|"
+        r"shoulder|knee|back|hip|ankle|foot|elbow|wrist)", normalized,
+    )
+    movement_context = re.search(
+        r"(pri\\s+(?:počep\\w*|izpad\\w*|predklon\\w*|hoj\\w*|potisk\\w*|poteg\\w*|dvig\\w*|gib\\w*|obremenit\\w*)|"
+        r"med\\s+(?:počep\\w*|hoj\\w*|gib\\w*|vadb\\w*)|when\\s+(?:squat\\w*|walking|bending|lifting|moving)|"
+        r"during\\s+(?:squat\\w*|movement|exercise))", normalized,
+    )
+    return bool(local_region and movement_context)
+
+
+def _has_safety_intake_resolution(text):
+    """Explicit no-concern answer or localized symptom report; neither is a medical clearance."""
+    return _has_explicit_safety_clearance(text) or _has_adaptable_local_symptom_report(text)
+
+
 def _profile_from_messages(messages):
     user_text = "\n".join(
         item.get("content", "") for item in messages if item.get("role") == "user"
@@ -1395,7 +1425,7 @@ def _coaching_guardrail_reply(messages):
         latest,
         re.IGNORECASE,
     ))
-    if prescription_request and not _has_explicit_safety_clearance(history):
+    if prescription_request and not _has_safety_intake_resolution(history):
         contradiction = bool(re.search(
             r"(začetnik|začetniški).{0,80}(deset let|dolgoletn|napreden)|"
             r"(deset let|dolgoletn|napreden).{0,80}(začetnik|začetniški)",
@@ -1457,7 +1487,7 @@ def _coaching_guardrail_reply(messages):
 
     # A conversational request for a hard workout is not a training goal.
     # Do not invent the goal, weekly frequency or session duration to fill gaps.
-    if programming_intent and _has_explicit_safety_clearance(history):
+    if programming_intent and _has_safety_intake_resolution(history):
         if not goal_known:
             goal_question_already_asked = any(
                 "kaj želiš predvsem razvijati" in item.casefold()
@@ -1494,7 +1524,7 @@ def _coaching_guardrail_reply(messages):
                     "načrtujem vadbo samo z lastno težo."
                 )
 
-    if fitness_intent and _has_explicit_safety_clearance(history) and schedule_known:
+    if fitness_intent and _has_safety_intake_resolution(history) and schedule_known:
         if not equipment_known:
             return (
                 "Časovni okvir sem razumel. Da ne bom predpostavljal, da imaš ročke, klop "
@@ -2094,8 +2124,14 @@ def coach_program():
         decision = record.get("decision") if isinstance(record, dict) else None
         if report_status not in valid_report_statuses:
             invalid_report_patterns.append(pattern)
-        elif report_status in {"uncertain", "symptoms_reported", "not_assessed"} and decision != "UNASSESSABLE":
+        elif report_status in {"uncertain", "not_assessed"} and decision != "UNASSESSABLE":
             invalid_report_patterns.append(pattern)
+        elif report_status == "symptoms_reported":
+            try:
+                from training.movement_coaching import validate_symptom_regression_report
+                validate_symptom_regression_report(report, decision, record.get("selected_exercise_id"))
+            except MovementCoachingError:
+                invalid_report_patterns.append(pattern)
         elif report_status == "needs_support" and decision == "READY":
             invalid_report_patterns.append(pattern)
     if invalid_report_patterns:
