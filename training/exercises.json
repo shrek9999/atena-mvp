@@ -2991,9 +2991,7 @@
       "Ugrezanje bokov.",
       "Dvig ramen proti ušesom."
     ],
-    "regressions": [
-      "inverted_row_table"
-    ],
+    "regressions": [],
     "progressions": [
       "Bolj vodoraven položaj telesa",
       "Enoročno veslanje"
@@ -3060,8 +3058,7 @@
       "Nenadzorovan povratek."
     ],
     "regressions": [
-      "trx_row",
-      "inverted_row_table"
+      "trx_row"
     ],
     "progressions": [
       "Veslanje z nogami na povišani podlagi"
@@ -5559,8 +5556,7 @@
     ],
     "regressions": [
       "trx_row",
-      "ring_row",
-      "inverted_row_table"
+      "ring_row"
     ],
     "progressions": [
       "Veslanje z večjo obremenitvijo ali premorom"
