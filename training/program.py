@@ -681,9 +681,12 @@ def generate_program(
                     f"Vzorec {pattern} potrebuje oporo ali lažjo različico in ne sme biti označen kot READY."
                 )
             if report_status == "symptoms_reported":
-                # User-reported symptoms override camera observations. A tolerated,
-                # documented regression permits only that tested lower-demand variation.
-                movement_status_by_pattern[pattern] = "needs_support"
+                # User-reported symptoms override camera observations. Only a documented,
+                # tolerated regression becomes needs_support; otherwise retain the symptom
+                # status so the pattern is omitted with an explicit symptom-review reason.
+                movement_status_by_pattern[pattern] = (
+                    "needs_support" if decision == "REGRESS" else "symptoms_reported"
+                )
             movement_decisions_by_pattern[pattern] = {
                 **record,
                 "decision": decision,
