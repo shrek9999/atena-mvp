@@ -11,7 +11,8 @@ from training.movement_assessment import (
     assess_movement_competence,
 )
 from training.movement_coaching import (
-    PATTERN_DEFINITIONS, VALID_DECISIONS, MovementCoachingError, get_exercise_options,\n    validate_symptom_regression_report,
+    PATTERN_DEFINITIONS, VALID_DECISIONS, MovementCoachingError, get_exercise_options,
+    validate_symptom_regression_report,
 )
 from training.video_demonstrations import get_video_demonstrations
 
