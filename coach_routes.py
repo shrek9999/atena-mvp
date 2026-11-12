@@ -1084,7 +1084,7 @@ def _onboarding_quick_replies(answer, messages=None, response_language="sl"):
     elif re.search(r"(izkušnj.{0,20}vadb|začetnik|beginner|training experience)", value):
         choices = ["Beginner / just starting", "Some experience", "I train regularly"] if english else ["Začetnik/-ca", "Nekaj izkušenj", "Redno treniram"]
     elif re.search(r"(kaj želiš|glavni cilj|predvsem razvijati|what would you like|main goal)", value):
-        choices = ["Strength and muscle", "General fitness and energy", "Conditioning", "Functional fitness", "A combination"] if english else ["Moč in mišična masa", "Splošna pripravljenost in več energije", "Kondicija", "Funkcionalna pripravljenost", "Kombinacija ciljev"]
+        choices = ["Strength and muscle", "General fitness and energy", "Conditioning", "Functional fitness"] if english else ["Moč in mišična masa", "Splošna pripravljenost in več energije", "Kondicija", "Funkcionalna pripravljenost"]
     elif re.search(r"(kje.{0,30}(?:treniraš|trenirati)|where.{0,30}train|training location)", value):
         choices = ["At home", "At a gym", "Outdoors", "A mix of places"] if english else ["Doma", "V fitnesu", "Na prostem", "Kombinacija okolij"]
     return choices or []
