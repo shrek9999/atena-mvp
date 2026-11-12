@@ -166,9 +166,10 @@ def _has_contextual_safety_clearance(messages):
                 and isinstance(item.get("content"), str)
             )
             prior_positive_symptom = bool(re.search(
-                r"(?:imam|občutim|čutim|me boli|boli me|me.{0,20}boli.{0,30}(?:kolen|ram|hrbt|gleženj|zapest)|"
-                r"bolečina|I have|I am experiencing).{0,80}"
-                r"(?:bolečin\w*|poškodb\w*|omejitv\w*|pain|injur\w*|limitation|kolen\w*|ram\w*|hrbt\w*|gleženj\w*|zapest\w*)",
+                r"\bme\b.{0,25}\bboli\b|\bboli me\b|"
+                r"\bimam\b.{0,60}(?:bolečin\w*|poškodb\w*|omejitv\w*)|"
+                r"\bI have\b.{0,50}(?:pain|injur\w*|limitation)|"
+                r"\bI am experiencing\b.{0,50}(?:pain|injur\w*|limitation)",
                 prior_user_history,
                 re.IGNORECASE,
             ))
