@@ -1031,7 +1031,7 @@ def test_onboarding_recognizes_three_times_weekly_and_30_to_45_minute_range():
 
 def test_onboarding_recognizes_30_to_45_minute_duration_without_reasking():
     messages = [
-        {"role": "user", "content": "Želim vaditi 30–45 minut na trening."},
+        {"role": "user", "content": "Želim izboljšati splošno telesno pripravljenost in vaditi 30–45 minut na trening."},
         {"role": "model", "content": "Ali imaš kakšne bolečine, poškodbe ali omejitve?"},
         {"role": "user", "content": "ne"},
     ]
@@ -1042,7 +1042,7 @@ def test_onboarding_recognizes_30_to_45_minute_duration_without_reasking():
 
 def test_onboarding_recognizes_three_times_weekly_without_reasking():
     messages = [
-        {"role": "user", "content": "Želim trenirati 3-krat tedensko."},
+        {"role": "user", "content": "Želim izboljšati splošno telesno pripravljenost in trenirati 3-krat tedensko."},
         {"role": "model", "content": "Ali imaš kakšne bolečine, poškodbe ali omejitve?"},
         {"role": "user", "content": "ne"},
     ]
