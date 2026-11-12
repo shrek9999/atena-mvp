@@ -205,12 +205,13 @@ def _profile_from_messages(messages):
 def _profile_available_equipment(messages):
     """Use structured equipment as authoritative; use text aliases only without a structured profile."""
     profile = _profile_from_messages(messages)
-    if isinstance(profile.get("equipment"), list):
+    if profile.get("equipment_confirmed") is True and isinstance(profile.get("equipment"), list):
         return {
             value for value in profile["equipment"]
             if isinstance(value, str) and value.strip()
         }
 
+    # An empty/unconfirmed structured field must not mask equipment stated in chat.
     user_text = "\n".join(
         item.get("content", "") for item in messages if item.get("role") == "user"
     )
@@ -1067,7 +1068,7 @@ def _onboarding_quick_replies(answer, messages=None, response_language="sl"):
     value = str(answer or "").casefold()
     english = str(response_language or "").casefold().startswith("en")
     choices = None
-    if re.search(r"(bolečin|poškodb|omejitv|zdravstven|pain|injur|medical restriction)", value) and "?" in value:
+    if _is_safety_question(answer):
         choices = ["No, none of these", "Yes, I have a limitation or injury", "I'm not sure"] if english else ["Ne, nimam teh težav", "Da, imam omejitev ali poškodbo", "Nisem prepričan/-a"]
     elif re.search(r"(kakšno opremo|katero opremo|oprema.{0,30}na voljo|equipment.{0,30}available)", value):
         choices = ["Bodyweight only", "Resistance bands", "Dumbbells", "Kettlebell", "Full gym"] if english else ["Samo lastna teža", "Elastike", "Ročke", "Kettlebell", "Polno opremljen fitnes"]
@@ -1812,8 +1813,8 @@ def _coaching_guardrail_reply(messages):
     profile_frequency = profile.get("sessions_per_week", profile.get("frequency"))
     profile_duration = profile.get("session_minutes", profile.get("duration"))
     frequency_known = profile_frequency not in (None, "", 0, "0") or bool(re.search(
-        r"\b(?:enkrat|dvakrat|trikrat|štirikrat|[1-4]\s*[- ]?\s*krat|[1-4]x)\b.{0,35}(?:tedensko|na teden)|"
-        r"(?:tedensko|na teden).{0,35}\b(?:enkrat|dvakrat|trikrat|štirikrat|[1-4]\s*[- ]?\s*krat|[1-4]x)\b",
+        r"\b(?:enkrat|dvakrat|trikrat|štirikrat|petkrat|[1-5]\s*[- ]?\s*krat|[1-5]x)\b.{0,35}(?:tedensko|na teden)|"
+        r"(?:tedensko|na teden).{0,35}\b(?:enkrat|dvakrat|trikrat|štirikrat|petkrat|[1-5]\s*[- ]?\s*krat|[1-5]x)\b",
         history_lower,
     ))
     duration_known = profile_duration not in (None, "", 0, "0") or bool(re.search(
@@ -1832,11 +1833,7 @@ def _coaching_guardrail_reply(messages):
     available_equipment = _profile_available_equipment(messages)
     # An empty equipment array means the profile form has not confirmed equipment.
     # Older clients injected household/bodyweight defaults even when untouched.
-    equipment_known = (
-        profile.get("equipment_confirmed") is True
-        or bool(profile.get("equipment"))
-        or bool(available_equipment)
-    )
+    equipment_known = profile.get("equipment_confirmed") is True or bool(available_equipment)
     goal_known = bool(isinstance(profile.get("goal"), str) and profile.get("goal").strip()) or bool(re.search(
         r"\b(?:moč\w*|strength|mišičn\w*\s+mas\w*|hipertrof\w*|hypertrophy|"
         r"maščob\w*|hujš\w*|fat\s+loss|weight\s+loss|kondic\w*|vzdržljiv\w*|"
@@ -1853,6 +1850,41 @@ def _coaching_guardrail_reply(messages):
         history_lower,
     ))
     weekly_program_intent = bool(re.search(r"\b(?:program\w*|tedenski\s+plan|weekly\s+plan)\b", history_lower))
+
+    # Guided onboarding: ATENA owns the question order and asks only for the next
+    # missing fact. Free-text answers and structured profile choices are both valid.
+    latest_is_educational = bool(re.search(
+        r"(kaj pomeni|kaj je|razloži|pojasni|kako deluje|what does|what is|explain|define)",
+        latest,
+        re.IGNORECASE,
+    ))
+    location_known = bool(re.search(
+        r"\\b(?:doma|v fitnesu|v telovadnici|na prostem|home|at a gym|gym|outdoors)\\b",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    if fitness_intent and _has_safety_clearance(messages) and not latest_is_educational:
+        if not goal_known:
+            return (
+                "Kaj želiš predvsem izboljšati? Izberi najbližji cilj; če jih imaš več, "
+                "lahko pozneje sestaviva kombinacijo."
+            )
+        if not experience_known:
+            return (
+                "Kako bi opisal svoje dosedanje izkušnje z vadbo? Si začetnik, imaš nekaj "
+                "izkušenj ali že redno treniraš?"
+            )
+        if not frequency_known:
+            return "Kolikokrat na teden lahko realno treniraš?"
+        if not duration_known:
+            return "Koliko časa imaš običajno na voljo za posamezni trening?"
+        if not location_known:
+            return "Kje najpogosteje želiš trenirati – doma, v fitnesu ali na prostem?"
+        if not equipment_known:
+            return (
+                "Katero opremo imaš dejansko na voljo? Če nimaš ničesar, lahko "
+                "načrtujem vadbo samo z lastno težo."
+            )
 
     # A conversational request for a hard workout is not a training goal.
     # Do not invent the goal, weekly frequency or session duration to fill gaps.
