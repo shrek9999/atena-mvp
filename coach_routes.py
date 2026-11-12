@@ -1900,6 +1900,21 @@ def _coaching_guardrail_reply(messages):
                 "Kaj želiš predvsem izboljšati? Izberi najbližji cilj; če jih imaš več, "
                 "lahko pozneje sestaviva kombinacijo."
             )
+        experience_question_already_asked = any(
+            "izkušnje z vadbo moči" in item.casefold()
+            or "dosedanje izkušnje" in item.casefold()
+            for item in assistant_texts
+        )
+        if not experience_known:
+            if experience_question_already_asked:
+                return (
+                    "Za določitev primerne zahtevnosti potrebujem še tvoje izkušnje z vadbo moči. "
+                    "Ali začenjaš, imaš nekaj izkušenj ali že redno treniraš?"
+                )
+            return (
+                "Kakšne so tvoje dosedanje izkušnje z vadbo moči – si začetnik, imaš nekaj "
+                "izkušenj ali že redno treniraš?"
+            )
         if not frequency_known:
             return "Kolikokrat na teden lahko realno treniraš?"
         if not duration_known:
@@ -1908,16 +1923,6 @@ def _coaching_guardrail_reply(messages):
             return (
                 "Katero opremo imaš dejansko na voljo? Če nimaš ničesar, lahko "
                 "načrtujem vadbo samo z lastno težo."
-            )
-        experience_question_already_asked = any(
-            "izkušnje z vadbo moči" in item.casefold()
-            or "dosedanje izkušnje" in item.casefold()
-            for item in assistant_texts
-        )
-        if not experience_known and not experience_question_already_asked:
-            return (
-                "Kakšne so tvoje dosedanje izkušnje z vadbo moči – si začetnik, imaš nekaj "
-                "izkušenj ali že redno treniraš?"
             )
 
     # A conversational request for a hard workout is not a training goal.
@@ -1949,6 +1954,12 @@ def _coaching_guardrail_reply(messages):
                 "funkcionalno pripravljenost ali kaj drugega?"
             )
         if weekly_program_intent:
+            if not experience_known:
+                return (
+                    "Preden določim zahtevnost in obseg tedenskega programa, mi povej še: "
+                    "kakšne so tvoje dosedanje izkušnje z vadbo moči – začenjaš, imaš nekaj "
+                    "izkušenj ali že redno treniraš?"
+                )
             if not frequency_known:
                 return "Kolikokrat na teden želiš oziroma realno lahko trenirati?"
             if not duration_known:
@@ -1960,6 +1971,11 @@ def _coaching_guardrail_reply(messages):
                 )
 
     if fitness_intent and _has_safety_clearance(messages) and schedule_known:
+        if not experience_known:
+            return (
+                "Preden izberem zahtevnost vaj, mi povej še: kakšne so tvoje dosedanje "
+                "izkušnje z vadbo moči – začenjaš, imaš nekaj izkušenj ali že redno treniraš?"
+            )
         if not equipment_known:
             return (
                 "Časovni okvir sem razumel. Da ne bom predpostavljal, da imaš ročke, klop "
