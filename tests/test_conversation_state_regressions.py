@@ -1195,3 +1195,46 @@ def test_goal_question_offers_concrete_choices_without_repeating_combination_opt
         "Uravnavanje telesne teže",
         "Splošna pripravljenost in več energije",
     ]
+
+
+def test_bare_numeric_frequency_is_accepted_only_after_weekly_frequency_question():
+    messages = [
+        {"role": "user", "content": "Želim moč in mišično maso. Sem začetnik."},
+        {"role": "model", "content": "Ali imaš kakršne koli bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "ne"},
+        {"role": "model", "content": "Kolikokrat na teden lahko realno treniraš?"},
+        {"role": "user", "content": "2"},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "kolikokrat na teden" not in reply.casefold()
+    assert "koliko časa" in reply.casefold()
+
+
+def test_contextual_frequency_accepts_compact_two_x_answer():
+    messages = [
+        {"role": "user", "content": "Želim moč in mišično maso."},
+        {"role": "model", "content": "Ali imaš kakršne koli bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "ne"},
+        {"role": "model", "content": "Kolikokrat na teden lahko realno treniraš?"},
+        {"role": "user", "content": "saj, 2x"},
+    ]
+    assert _has_contextual_frequency_answer(messages)
+
+
+def test_mild_experience_answer_counts_as_known_and_is_not_asked_again():
+    messages = [
+        {"role": "user", "content": "Želim moč in mišično maso."},
+        {"role": "model", "content": "Ali imaš kakršne koli bolečine, poškodbe ali omejitve?"},
+        {"role": "user", "content": "ne"},
+        {"role": "model", "content": "Kolikokrat na teden lahko realno treniraš?"},
+        {"role": "user", "content": "2"},
+        {"role": "model", "content": "Koliko časa imaš na voljo?"},
+        {"role": "user", "content": "45 minut"},
+        {"role": "model", "content": "Katero opremo imaš na voljo?"},
+        {"role": "user", "content": "Lastna teža in kettlebelli."},
+        {"role": "model", "content": "Kakšne so tvoje dosedanje izkušnje z vadbo moči?"},
+        {"role": "user", "content": "Malo izkušenj. Sem že izvajal počep in RDL."},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is None or "izkušnj" not in reply.casefold()
