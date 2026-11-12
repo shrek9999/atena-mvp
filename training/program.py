@@ -11,7 +11,7 @@ from training.movement_assessment import (
     assess_movement_competence,
 )
 from training.movement_coaching import (
-    PATTERN_DEFINITIONS, VALID_DECISIONS, get_exercise_options,
+    PATTERN_DEFINITIONS, VALID_DECISIONS, MovementCoachingError, get_exercise_options,\n    validate_symptom_regression_report,
 )
 from training.video_demonstrations import get_video_demonstrations
 
@@ -666,21 +666,23 @@ def generate_program(
                 "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed"
             }:
                 raise ProgramValidationError(f"Neveljaven status uporabnikovega poročila za {pattern}.")
-            if report_status in {"uncertain", "symptoms_reported", "not_assessed"} and decision != "UNASSESSABLE":
+            if report_status in {"uncertain", "not_assessed"} and decision != "UNASSESSABLE":
                 raise ProgramValidationError(
-                    f"Vzorec {pattern} je označen kot nejasen, simptomatski ali neocenjen, zato ne sme biti označen kot pripravljen."
+                    f"Vzorec {pattern} je označen kot nejasen ali neocenjen, zato ne sme biti označen kot pripravljen."
                 )
+            if report_status == "symptoms_reported":
+                try:
+                    validate_symptom_regression_report(user_report, decision, target_id)
+                except MovementCoachingError as exc:
+                    raise ProgramValidationError(str(exc)) from exc
             if report_status == "needs_support" and decision == "READY":
                 raise ProgramValidationError(
                     f"Vzorec {pattern} potrebuje oporo ali lažjo različico in ne sme biti označen kot READY."
                 )
             if report_status == "symptoms_reported":
-                # A symptom report takes precedence over any camera observation:
-                # omit this pattern pending clarification; never infer a diagnosis.
-                movement_status_by_pattern[pattern] = "symptoms_reported"
-                movement_tasks_by_pattern.setdefault(pattern, []).append(
-                    PATTERN_DEFINITIONS[pattern]["task_id"]
-                )
+                # User-reported symptoms override camera observations. A tolerated,
+                # documented regression permits only that tested lower-demand variation.
+                movement_status_by_pattern[pattern] = "needs_support"
             movement_decisions_by_pattern[pattern] = {
                 **record,
                 "decision": decision,
