@@ -637,7 +637,14 @@ def generate_program(
                         "Obremenjeno veslanje v predklonu zahteva predhodno oceno predklona kot READY. "
                         "Najprej utrdi predklon ali izberi horizontalno veslanje, ki ne zahteva predklona."
                     )
-            if decision in {"LEARN", "REGRESS"} and method is None and not record.get("selected_exercise_id"):
+            support_fallback_allowed = (
+                decision == "LEARN"
+                and method is None
+                and not record.get("selected_exercise_id")
+                and isinstance(record.get("user_report"), dict)
+                and record["user_report"].get("status") == "needs_support"
+            )
+            if decision in {"LEARN", "REGRESS"} and method is None and not record.get("selected_exercise_id") and not support_fallback_allowed:
                 raise ProgramValidationError(f"Za {decision} pri {pattern} mora biti izbrana učna metoda ali različica vaje.")
             if pattern in p["excluded_patterns"]:
                 raise ProgramValidationError(f"Gibalni vzorec {pattern} je izrecno izključen iz profila.")
@@ -656,9 +663,22 @@ def generate_program(
                     f"Vaja {target_id} za {pattern} ni združljiva z opremo ali izkušnjami v profilu."
                 )
             if decision in {"LEARN", "REGRESS"} and not target_id:
-                if not available_options:
-                    raise ProgramValidationError(f"Za učenje vzorca {pattern} ni ustrezne vaje v katalogu.")
-                target_id = available_options[0]["id"]
+                if support_fallback_allowed:
+                    preferred_ids = SUPPORTED_VARIANTS.get(pattern, ())
+                    target_id = next(
+                        (item["id"] for preferred in preferred_ids for item in available_options
+                         if item["id"] == preferred),
+                        None,
+                    )
+                    # If no verified, equipment-compatible support variant exists,
+                    # fail closed by omitting this pattern rather than selecting a
+                    # random exercise or claiming the user is ready.
+                    if target_id is None:
+                        decision = "UNASSESSABLE"
+                else:
+                    if not available_options:
+                        raise ProgramValidationError(f"Za učenje vzorca {pattern} ni ustrezne vaje v katalogu.")
+                    target_id = available_options[0]["id"]
             user_report = record.get("user_report", {})
             if not isinstance(user_report, dict):
                 raise ProgramValidationError(f"Uporabnikovo poročilo za {pattern} mora biti objekt.")
