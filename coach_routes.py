@@ -3149,12 +3149,17 @@ def coach_profile_program(profile_id):
     if not storage_enabled():
         return _storage_error(StorageUnavailable("Profile storage is not enabled or approved."))
     payload = request.get_json(silent=True)
-    if not isinstance(payload, dict) or set(payload) != {"no_current_pain_or_restrictions"}:
-        return jsonify({"error": "Potrjena mora biti samo trenutna varnostna izjava."}), 400
-    if payload.get("no_current_pain_or_restrictions") is not True:
+    if not isinstance(payload, dict) or set(payload) not in (
+        {"safety_intake_resolved"}, {"no_current_pain_or_restrictions"}
+    ):
+        return jsonify({"error": "Potrjena mora biti samo zaključena začetna varnostna presoja."}), 400
+    safety_intake_resolved = payload.get(
+        "safety_intake_resolved", payload.get("no_current_pain_or_restrictions")
+    )
+    if safety_intake_resolved is not True:
         return jsonify({
             "blocked": True,
-            "message": "Programa nisem ustvaril. Ob novi, hudi, slabšajoči se ali nepojasnjeni bolečini, sveži poškodbi ali pomembni zdravstveni omejitvi je najprej potrebna presoja ustreznega zdravstvenega strokovnjaka. Blago, znano nelagodje samo po sebi ne pomeni prepovedi vse vadbe; prizadeti gibalni vzorec je treba posebej razjasniti in prilagoditi.",
+            "message": "Programa nisem ustvaril. Ob sveži poškodbi, večji zdravstveni omejitvi ali opozorilnem simptomu je najprej potrebna ustrezna zdravstvena presoja. Lokalizirano, blago nelagodje samo po sebi ne prepoveduje vse vadbe; prizadeti gibalni vzorec mora ATENA posebej preveriti z varno regresijo.",
         }), 409
     token = _profile_token()
     try:
