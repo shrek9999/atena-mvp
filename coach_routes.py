@@ -1852,6 +1852,7 @@ def _coaching_guardrail_reply(messages):
         r"\b(?:začetnik|začetnica|začetniški|srednje izkušen|izkušen|napreden|napredna|"
         r"malo izkušenj|nekaj izkušenj|few years of experience|some experience|"
         r"beginner|intermediate|advanced)\b|"
+        r"\b(?:redno\s+treniram|redno\s+vadim|train\s+regularly|I\s+train\s+regularly|regularly\s+train)\b|"
         r"\b(?:treniram|trenirala sem|vadim).{0,45}\b(?:leto|leti|leta|let)\b|"
         r"\b(?:eno|dve|tri|štiri|pet|deset)\s+leta?\s+(?:redno\s+)?treninga\b",
         history_lower,
@@ -1907,9 +1908,15 @@ def _coaching_guardrail_reply(messages):
         )
         if not experience_known:
             if experience_question_already_asked:
+                if re.search(r"(ravnotež\w*|koordinacij\w*|eksploziv\w*|kondic\w*|moč\w*)", lowered):
+                    return (
+                        "Zabeležil sem tvoje prioritete glede moči, ravnotežja, koordinacije, "
+                        "eksplozivnosti in kondicije. Za določitev zahtevnosti programa mi "
+                        "še manjka podatek o tvojih izkušnjah z vadbo moči."
+                    )
                 return (
-                    "Za določitev primerne zahtevnosti potrebujem še tvoje izkušnje z vadbo moči. "
-                    "Ali začenjaš, imaš nekaj izkušenj ali že redno treniraš?"
+                    "Oprema in časovni okvir sta zabeležena. Za določitev zahtevnosti "
+                    "programa mi še manjka podatek o tvojih izkušnjah z vadbo moči."
                 )
             return (
                 "Kakšne so tvoje dosedanje izkušnje z vadbo moči – si začetnik, imaš nekaj "
@@ -1957,7 +1964,7 @@ def _coaching_guardrail_reply(messages):
             if not experience_known:
                 return (
                     "Preden določim zahtevnost in obseg tedenskega programa, mi povej še: "
-                    "kakšne so tvoje dosedanje izkušnje z vadbo moči – začenjaš, imaš nekaj "
+                    "kakšne so tvoje dosedanje izkušnje z vadbo moči – si začetnik, imaš nekaj "
                     "izkušenj ali že redno treniraš?"
                 )
             if not frequency_known:
@@ -1974,7 +1981,7 @@ def _coaching_guardrail_reply(messages):
         if not experience_known:
             return (
                 "Preden izberem zahtevnost vaj, mi povej še: kakšne so tvoje dosedanje "
-                "izkušnje z vadbo moči – začenjaš, imaš nekaj izkušenj ali že redno treniraš?"
+                "izkušnje z vadbo moči – si začetnik, imaš nekaj izkušenj ali že redno treniraš?"
             )
         if not equipment_known:
             return (
