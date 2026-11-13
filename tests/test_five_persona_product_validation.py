@@ -122,7 +122,7 @@ def test_mobility_limited_user_gets_supported_variants_and_no_automatic_progress
         for pattern in ("squat", "hinge", "lunge")
     }
     assert by_pattern["squat"]
-    assert all(item["exercise_id"] in {"chair_sit_to_stand", "reaching_squat", "air_squat"}
+    assert all(item["exercise_id"] in {"supported_squat", "chair_sit_to_stand", "reaching_squat", "air_squat"}
                for item in by_pattern["squat"])
     assert by_pattern["hinge"]
     assert all(item["exercise_id"] == "wall_hip_hinge" for item in by_pattern["hinge"])

@@ -8450,5 +8450,78 @@
     "stability_focus": [
       "trunk_control"
     ]
+  },
+  {
+    "id": "supported_squat",
+    "name": "Počep z oporo rok",
+    "name_en": "Supported squat with hand support",
+    "pattern": "squat",
+    "joint_type": "multi_joint",
+    "goals": [
+      "hypertrophy",
+      "strength",
+      "general_fitness",
+      "functional"
+    ],
+    "equipment": [],
+    "level": "beginner",
+    "primary_muscles": [
+      "quadriceps",
+      "gluteus_maximus"
+    ],
+    "secondary_muscles": [
+      "adductors",
+      "trunk"
+    ],
+    "cues": [
+      "Z obema rokama se rahlo oprimi potrjene stabilne opore v višini, ki ti omogoča nadzorovan počep.",
+      "Opora naj pomaga pri ravnotežju in razbremenitvi; ne vleci se z rokami navzgor.",
+      "Spuščaj se samo v amplitudo, ki jo lahko nadzoruješ brez stopnjevanja simptomov.",
+      "Ohrani stopala stabilna in kolena usmerjaj v smeri stopal."
+    ],
+    "common_errors": [
+      "Vlečenje telesa navzgor z rokami namesto nadzorovane izvedbe nog.",
+      "Uporaba premične ali nestabilne opore.",
+      "Siljenje v globino ali ponovitve kljub stopnjevanju bolečine."
+    ],
+    "regressions": [
+      "Vstajanje s stola (počep do stola)",
+      "Manjša amplituda ob stabilni opori"
+    ],
+    "progressions": [
+      "Počep z lastno težo (air squat)"
+    ],
+    "alternatives": [
+      "Vstajanje s stola (počep do stola)"
+    ],
+    "warnings": [
+      "Uporabi samo oporo, za katero je potrjeno, da je stabilna in varno pritrjena; TRX mora biti pravilno nameščen.",
+      "Če se bolečina poveča, postane ostra ali spremeni gibanje, test prekini. Oporna različica ni dovoljenje za gib skozi bolečino."
+    ],
+    "single_joint": false,
+    "equipment_any": [
+      "household_support",
+      "suspension_trainer"
+    ],
+    "loading_potential": "low",
+    "training_role": "main",
+    "time_based": false,
+    "movement_family": "knee_dominant",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ],
+    "movement_pattern": "squat",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
   }
 ]
