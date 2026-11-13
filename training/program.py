@@ -659,12 +659,16 @@ def generate_program(
                 raise ProgramValidationError(
                     f"Vaja {target_id} za {pattern} ni združljiva z opremo ali izkušnjami v profilu."
                 )
+            user_report = record.get("user_report", {})
+            if not isinstance(user_report, dict):
+                raise ProgramValidationError(f"Uporabnikovo poročilo za {pattern} mora biti objekt.")
+            report_status = user_report.get("status")
             omission_reason = None
-            if decision == "REGRESS" and not target_id:
+            if decision == "REGRESS" and report_status == "symptoms_reported" and not target_id:
                 raise ProgramValidationError(
                     f"Za simptomatsko regresijo vzorca {pattern} mora biti izbrana točno preizkušena vaja."
                 )
-            if decision == "LEARN" and not target_id:
+            if decision in {"LEARN", "REGRESS"} and not target_id and report_status != "symptoms_reported":
                 if not available_options:
                     # Omit only this pattern when no verified learning variation is available.
                     decision = "UNASSESSABLE"
@@ -677,10 +681,6 @@ def generate_program(
                             None,
                         )
                         method_id = method["id"] if method else None
-            user_report = record.get("user_report", {})
-            if not isinstance(user_report, dict):
-                raise ProgramValidationError(f"Uporabnikovo poročilo za {pattern} mora biti objekt.")
-            report_status = user_report.get("status")
             if report_status is not None and report_status not in {
                 "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed"
             }:
