@@ -52,6 +52,16 @@ from training.movement_coaching import (
 )
 
 logger = logging.getLogger(__name__)
+INITIAL_SAFETY_QUESTION_SL = (
+    "Ali imaš trenutno akutno ostro bolečino, novo oteklino, mišični spazem, "
+    "svežo poškodbo, nenadno izgubo funkcije ali večjo ortopedsko oziroma "
+    "zdravstveno omejitev, zaradi katere vadba trenutno ni primerna?"
+)
+INITIAL_SAFETY_QUESTION_EN = (
+    "Do you currently have acute sharp pain, new swelling, muscle spasm, a recent "
+    "injury, sudden loss of function, or a major orthopedic or medical restriction "
+    "that makes exercise unsuitable right now?"
+)
 coach_bp = Blueprint("coach", __name__)
 ALLOWED_ORIGINS = {
     "https://gregajenko.si",
@@ -644,9 +654,7 @@ def _sanitize_onboarding_questions(answer, messages):
         ):
             return (
                 "Preden pripravim individualni trening, najprej preveriva varnost: "
-                "ali imaš trenutno bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke, "
-                "zlasti akutno ostro bolečino, novo oteklino, mišični spazem, svežo poškodbo, "
-                "nenadno izgubo funkcije ali večjo ortopedsko oziroma zdravstveno omejitev, zaradi katere vadba trenutno ni primerna?"
+                INITIAL_SAFETY_QUESTION_SL
             )
         return answer
 
@@ -1070,14 +1078,14 @@ def _sanitize_unverified_training_dose(answer, messages, language="sl"):
         return (
             introduction
             + "\n\nBefore prescribing sets, repetitions, or a load, I need to check safety: "
-            "do you currently have any pain, injuries, movement limitations, or medical restrictions?"
+            INITIAL_SAFETY_QUESTION_EN
         )
     if not introduction:
         introduction = "Lahko ti razložim izvedbo in namen vaje."
     return (
         introduction
         + "\n\nPreden določim serije, ponovitve ali obremenitev, moram preveriti varnost: "
-        "ali imaš trenutno kakršne koli bolečine, poškodbe ali zdravstvene oziroma gibalne omejitve?"
+        INITIAL_SAFETY_QUESTION_SL
     )
 def _sanitize_unverified_safety_claim(answer, messages):
     """Reject model claims that the user cleared safety when no user did so."""
@@ -1115,13 +1123,11 @@ def _sanitize_unverified_safety_claim(answer, messages):
     if re.search(r"\b(?:since|because|you confirmed|you told me)\b", answer, re.IGNORECASE):
         return (
             "You have not explicitly confirmed that, so I will not assume you are free "
-            "from restrictions. Do you currently have any pain, injuries, movement "
-            "limitations, or medical restrictions I should take into account?"
+            "from restrictions. " + INITIAL_SAFETY_QUESTION_EN
         )
     return (
         "Tega še nisi izrecno potrdil, zato ne bom predpostavljal, da nimaš omejitev. "
-        "Ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve ali "
-        "zdravstvene zadržke, ki bi jih moral upoštevati?"
+        INITIAL_SAFETY_QUESTION_SL
     )
 
 
@@ -1218,8 +1224,7 @@ def _pending_safety_reply(latest, *, repeat_question=True):
     return (
         acknowledgement
         + " Varnostnega vprašanja pa še nisi odgovoril, zato ne bom sklepal, "
-        "da omejitev ni. Ali imaš trenutno kakršne koli bolečine, poškodbe, "
-        "gibalne omejitve ali zdravstvene zadržke?"
+        "da omejitev ni. " + INITIAL_SAFETY_QUESTION_SL
     )
 
 
@@ -1565,7 +1570,7 @@ def _coaching_guardrail_reply(messages):
             "povratne informacije pokažejo konkreten primanjkljaj nadzora ali kadar jih "
             "zahteva določena vaja. Pri hipertrofiji ostajajo v ospredju ustrezno odmerjene "
             "večsklepne vaje. Preden sestavim tvoj individualni program, moram preveriti: "
-            "ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
+            INITIAL_SAFETY_QUESTION_SL
         )
     missed_session = bool(re.search(
         r"(?:izpustil\w*|izpuščen\w*).{0,50}(?:trening\w*|vadb\w*)|"
@@ -1937,7 +1942,7 @@ def _coaching_guardrail_reply(messages):
         if not _has_safety_clearance(messages):
             return (
                 "Preden predlagam zamenjavo vaje, moram preveriti varnost: ali imaš trenutno "
-                "kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
+                INITIAL_SAFETY_QUESTION_SL
             )
         intent_text = " ".join(substitution_intent_texts).casefold()
         named_exercise = False
@@ -2016,8 +2021,7 @@ def _coaching_guardrail_reply(messages):
         if contradiction:
             return (
                 "Pred zahtevnejšim programom morava najprej preveriti varnost. "
-                "Ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve "
-                "ali zdravstvene zadržke? Opazil sem tudi neskladje med podatkom "
+                INITIAL_SAFETY_QUESTION_SL + " Opazil sem tudi neskladje med podatkom "
                 "»začetnik« in navedbo desetih let treninga; to bova razjasnila takoj zatem."
             )
         return (
