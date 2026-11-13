@@ -5,7 +5,7 @@ movement quality or live conversational usability.
 """
 from training.catalogue import get_exercise
 from training.program import generate_program
-from training.movement_coaching import build_movement_decision
+from training.movement_coaching import build_movement_decision, get_exercise_options
 
 
 PERSONAS = {
@@ -238,3 +238,15 @@ def test_mobility_limited_persona_adapts_only_the_assessed_squat_pattern():
         and event["action"] == "learning_or_regression_variant_selected"
         for event in events
     )
+
+
+
+def test_chair_sit_to_stand_is_registered_as_a_squat_learning_option():
+    profile = PERSONAS["mobility_limited"]
+    options = get_exercise_options(
+        "squat",
+        equipment=profile["equipment"],
+        experience=profile["experience"],
+        goal=None,
+    )
+    assert "chair_sit_to_stand" in {exercise["id"] for exercise in options}
