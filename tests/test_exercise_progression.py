@@ -545,3 +545,18 @@ def test_apply_progression_adds_explicit_load_guidance_for_mild_symptoms():
     assert prescription["rir"] == 4
     assert prescription["tempo"] == "4–1–2–0"
     assert "Zmanjšaj breme" in prescription["load_guidance"]
+
+
+def test_mild_stable_symptom_accepts_currently_tolerated_range_without_forcing_range_reduction():
+    symptomatic = exercise("squat_goblet")
+    session = record("2026-11-05", [symptomatic], difficulty="easy", discomfort=True)
+    session["session"]["discomfort_details"] = {
+        "exercise_id": "squat_goblet",
+        "pain_during": 3,
+        "worsened": False,
+        "tolerated": True,
+        "acute_warning_signs": [],
+        "modifications_applied": ["reduced_load", "slow_tempo", "range_within_tolerance"],
+    }
+    result = recommend_exercise_progression([session])
+    assert decision(result, "squat_goblet")["decision"] == "modify_symptomatic_exposure"
