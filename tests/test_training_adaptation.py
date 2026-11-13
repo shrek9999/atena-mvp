@@ -95,3 +95,19 @@ def test_worsening_or_untolerated_discomfort_keeps_review_gate():
     result = assess_next_step([session])
     assert result["decision"] == "pause_and_review"
     assert result["progression_allowed"] is False
+
+
+def test_acute_or_untolerated_complete_symptom_report_is_localized_to_one_exercise():
+    session = record("2026-11-02", difficulty="easy", discomfort=True)
+    session["session"]["discomfort_details"] = {
+        "exercise_id": "barbell_squat",
+        "pain_during": 6,
+        "worsened": True,
+        "tolerated": False,
+        "acute_warning_signs": ["acute_sharp_pain"],
+        "modifications_applied": [],
+    }
+    result = assess_next_step([session])
+    assert result["decision"] == "stop_symptomatic_exposure"
+    assert result["affected_exercise_ids"] == ["barbell_squat"]
+    assert result["volume_change"] == "symptomatic_exercise_only"
