@@ -659,8 +659,8 @@ def test_rdl_substitution_follow_up_acknowledges_training_intent():
     cleaned = coach_routes._sanitize_unverified_exercise_parameters(
         "RDL z ročkami: 3–4 serije po 8–12 ponovitev.", messages
     )
-    assert cleaned.startswith("Razumem — ohraniva namen z RDL")
-    assert "ni biomehansko enak" in cleaned
+    assert cleaned.startswith("Razumem. RDL ohranja soroden kolčni zgib")
+    assert "ni biomehansko enak" not in cleaned
     assert cleaned.count("?") == 1
 
 
@@ -688,9 +688,10 @@ def test_single_exposure_progression_first_reply_holds_load_and_asks_about_recov
     assert "2,5 kg" not in cleaned
 
 
-def test_single_exposure_progression_technique_follow_up_does_not_ask_about_equipment():
+def test_single_exposure_progression_does_not_repeat_recovery_question():
     messages = [
         {"role": "user", "content": "Pri počepu sem dosegel vse serije po 10 ponovitev z RIR 3, vendar je bil to šele prvi tak uspešen trening."},
+        {"role": "model", "content": "Kako si se počutil v 24–48 urah po treningu?"},
         {"role": "user", "content": "Tehnika je bila dobra, vendar je bil to šele prvi tak uspešen trening."},
     ]
     cleaned = coach_routes._sanitize_unverified_exercise_parameters(
@@ -698,8 +699,9 @@ def test_single_exposure_progression_technique_follow_up_does_not_ask_about_equi
     )
     assert "tehnika je bila dobra" in cleaned.casefold()
     assert "isto obremenitev" in cleaned
-    assert "regeneracijo" in cleaned
+    assert "regeneraciji" in cleaned
     assert "opremo" not in cleaned
+    assert cleaned.count("?") == 0
 
 
 def test_two_exposure_progression_waits_for_recovery_and_avoids_invented_load():
