@@ -653,7 +653,7 @@ def _sanitize_onboarding_questions(answer, messages):
             re.IGNORECASE,
         ):
             return (
-                "Preden pripravim individualni trening, najprej preveriva varnost: "
+                "Preden pripravim individualni trening, najprej preveriva varnost: " +
                 INITIAL_SAFETY_QUESTION_SL
             )
         return answer
@@ -1127,7 +1127,7 @@ def _sanitize_unverified_safety_claim(answer, messages):
         )
     return (
         "Tega še nisi izrecno potrdil, zato ne bom predpostavljal, da nimaš omejitev. "
-        INITIAL_SAFETY_QUESTION_SL
+        + INITIAL_SAFETY_QUESTION_SL
     )
 
 
@@ -1570,7 +1570,7 @@ def _coaching_guardrail_reply(messages):
             "povratne informacije pokažejo konkreten primanjkljaj nadzora ali kadar jih "
             "zahteva določena vaja. Pri hipertrofiji ostajajo v ospredju ustrezno odmerjene "
             "večsklepne vaje. Preden sestavim tvoj individualni program, moram preveriti: "
-            INITIAL_SAFETY_QUESTION_SL
+            + INITIAL_SAFETY_QUESTION_SL
         )
     missed_session = bool(re.search(
         r"(?:izpustil\w*|izpuščen\w*).{0,50}(?:trening\w*|vadb\w*)|"
@@ -1942,7 +1942,7 @@ def _coaching_guardrail_reply(messages):
         if not _has_safety_clearance(messages):
             return (
                 "Preden predlagam zamenjavo vaje, moram preveriti varnost: ali imaš trenutno "
-                INITIAL_SAFETY_QUESTION_SL
+                + INITIAL_SAFETY_QUESTION_SL
             )
         intent_text = " ".join(substitution_intent_texts).casefold()
         named_exercise = False
@@ -2021,7 +2021,7 @@ def _coaching_guardrail_reply(messages):
         if contradiction:
             return (
                 "Pred zahtevnejšim programom morava najprej preveriti varnost. "
-                INITIAL_SAFETY_QUESTION_SL + " Opazil sem tudi neskladje med podatkom "
+                + INITIAL_SAFETY_QUESTION_SL + " Opazil sem tudi neskladje med podatkom "
                 "»začetnik« in navedbo desetih let treninga; to bova razjasnila takoj zatem."
             )
         return (
