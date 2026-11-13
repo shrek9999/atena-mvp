@@ -644,9 +644,8 @@ def _sanitize_onboarding_questions(answer, messages):
         ):
             return (
                 "Preden pripravim individualni trening, najprej preveriva varnost: "
-                "ali imaš trenutno bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke "
-                "(zlasti akutno bolečino, svežo poškodbo, oteklino, mišični spazem, nenadno izgubo funkcije, "
-                "večjo ortopedsko omejitev ali zdravniško prepoved vadbe), zaradi katerih vadba trenutno ni primerna?"
+                "ali imaš trenutno akutno ostro bolečino, novo oteklino, mišični spazem, svežo poškodbo, "
+                "nenadno izgubo funkcije ali večjo ortopedsko oziroma zdravstveno omejitev, zaradi katere vadba trenutno ni primerna?"
             )
         return answer
 
@@ -2022,8 +2021,9 @@ def _coaching_guardrail_reply(messages):
             )
         return (
             "Preden pripravim individualni trening ali predlagam konkretne vaje in "
-            "obremenitve, moram preveriti varnost: ali imaš trenutno kakršne koli "
-            "bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
+            "obremenitve, moram preveriti varnost: ali imaš trenutno akutno ostro bolečino, "
+            "novo oteklino, mišični spazem, svežo poškodbo, nenadno izgubo funkcije ali večjo "
+            "ortopedsko oziroma zdravstveno omejitev, zaradi katere vadba trenutno ni primerna?"
         )
 
     # Before a programme is built, do not infer missing equipment or experience.
