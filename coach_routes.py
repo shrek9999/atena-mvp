@@ -1078,14 +1078,14 @@ def _sanitize_unverified_training_dose(answer, messages, language="sl"):
         return (
             introduction
             + "\n\nBefore prescribing sets, repetitions, or a load, I need to check safety: "
-            INITIAL_SAFETY_QUESTION_EN
+            + INITIAL_SAFETY_QUESTION_EN
         )
     if not introduction:
         introduction = "Lahko ti razložim izvedbo in namen vaje."
     return (
         introduction
         + "\n\nPreden določim serije, ponovitve ali obremenitev, moram preveriti varnost: "
-        INITIAL_SAFETY_QUESTION_SL
+        + INITIAL_SAFETY_QUESTION_SL
     )
 def _sanitize_unverified_safety_claim(answer, messages):
     """Reject model claims that the user cleared safety when no user did so."""
