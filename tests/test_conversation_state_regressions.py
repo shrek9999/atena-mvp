@@ -822,7 +822,7 @@ def test_functional_onboarding_answer_does_not_bundle_goal_and_health_questions(
     cleaned = _sanitize_onboarding_questions(answer, messages)
 
     assert cleaned.count("?") == 1
-    assert "zdravstvene zadržke" in cleaned
+    assert "večjo ortopedsko oziroma zdravstveno omejitev" in cleaned
     assert "glavni cilj" not in cleaned
 
 
@@ -851,7 +851,7 @@ def test_muscle_mass_genitive_triggers_safety_gate_and_one_question():
     messages = [{"role": "user", "content": "Rad bi pridobil nekaj mišične mase."}]
     answer = "Kakšno opremo imaš na voljo? Koliko dni na teden lahko treniraš?"
     cleaned = _sanitize_onboarding_questions(answer, messages)
-    assert "bolečine, poškodbe" in cleaned
+    assert "akutno ostro bolečino" in cleaned
     assert cleaned.count("?") == 1
     assert "opremo" not in cleaned
 
@@ -863,7 +863,7 @@ def test_general_physical_fitness_phrase_triggers_safety_gate():
     }]
     answer = "Kakšno opremo imaš doma? Kolikokrat tedensko lahko treniraš?"
     cleaned = _sanitize_onboarding_questions(answer, messages)
-    assert "bolečine, poškodbe" in cleaned
+    assert "akutno ostro bolečino" in cleaned
     assert cleaned.count("?") == 1
     assert "opremo" not in cleaned
 
