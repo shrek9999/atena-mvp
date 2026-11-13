@@ -411,7 +411,7 @@ def test_rdls_followup_acknowledges_preserved_training_intent_without_repeating_
     )
     cleaned = coach_routes._sanitize_unverified_exercise_parameters(answer, messages)
     assert cleaned.startswith("Razumem — ohraniva namen z RDL")
-    assert "ni biomehansko enak klasičnemu mrtvemu dvigu" in cleaned
+    assert "vendar ni biomehansko enak klasičnemu mrtvemu dvigu" in cleaned
     assert "prvotni odmerek (serije × ponovitve)" in cleaned
     assert "teže ročk" in cleaned
     assert cleaned.count("?") == 1
