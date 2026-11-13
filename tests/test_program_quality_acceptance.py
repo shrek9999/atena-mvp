@@ -212,7 +212,7 @@ def test_mobility_limited_persona_adapts_only_the_assessed_squat_pattern():
         "squat",
         "REGRESS",
         user_report={"status": "needs_support"},
-        selected_exercise_id="supported_squat",
+        selected_exercise_id="chair_sit_to_stand",
         decision_reason="Acceptance test: limited squat capacity requires a supported variation.",
     )
     adapted = generate_program(profile, movement_decisions={"squat": squat_decision})
@@ -226,7 +226,7 @@ def test_mobility_limited_persona_adapts_only_the_assessed_squat_pattern():
     baseline_patterns = exercise_ids_by_pattern(baseline)
     adapted_patterns = exercise_ids_by_pattern(adapted)
 
-    assert adapted_patterns.get("squat") == {"supported_squat"}
+    assert adapted_patterns.get("squat") == {"chair_sit_to_stand"}
     for pattern, exercise_ids in baseline_patterns.items():
         if pattern != "squat":
             assert adapted_patterns.get(pattern) == exercise_ids, pattern
