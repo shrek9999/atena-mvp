@@ -309,7 +309,7 @@ def recommend_exercise_progression(sessions):
         })
     for item in recommendations:
         if item["exercise_id"] in stop_symptomatic_ids:
-            item["decision"] = "pause_and_review"
+            item["decision"] = "stop_symptomatic_exposure"
             item["reason"] = (
                 "Pri tej vaji so bili zabeleženi opozorilni, stopnjujoči se ali nesprejemljivi "
                 "simptomi. Vajo izpusti do ustrezne razjasnitve; ob akutnih ali izrazitih znakih "
@@ -335,37 +335,60 @@ def recommend_exercise_progression(sessions):
 
 
 def apply_exercise_progression(program, recommendations):
-    """Attach exercise-specific next-step guidance to the generated programme.
-
-    Only the rep target is adjusted by one rep where justified. No kilogram
-    increase is invented or applied automatically.
-    """
+    """Apply exercise-specific progression, modification, or omission guidance."""
     if not isinstance(program, dict) or not isinstance(program.get("sessions"), list):
         return program
     by_id = {
         item.get("exercise_id"): item
-        for item in recommendations if isinstance(item, dict) and isinstance(item.get("exercise_id"), str)
+        for item in recommendations
+        if isinstance(item, dict) and isinstance(item.get("exercise_id"), str)
     }
     for session in program["sessions"]:
-        for exercise in session.get("exercises", []) if isinstance(session, dict) else []:
+        if not isinstance(session, dict) or not isinstance(session.get("exercises"), list):
+            continue
+        retained = []
+        excluded = list(session.get("excluded_exercises", [])) if isinstance(session.get("excluded_exercises"), list) else []
+        for exercise in session["exercises"]:
             if not isinstance(exercise, dict):
+                retained.append(exercise)
                 continue
             recommendation = by_id.get(exercise.get("exercise_id"))
             if not recommendation:
-                continue
-            prescription = exercise.get("prescription")
-            if not isinstance(prescription, dict):
+                retained.append(exercise)
                 continue
             decision = recommendation.get("decision")
             note = recommendation.get("reason", "")
+            if decision == "stop_symptomatic_exposure":
+                excluded.append({
+                    "exercise_id": exercise.get("exercise_id"),
+                    "name": exercise.get("name") or recommendation.get("exercise_name") or exercise.get("exercise_id"),
+                    "reason": note or "Vaja je začasno izpuščena do ustrezne razjasnitve simptomov.",
+                })
+                continue
+
+            prescription = exercise.get("prescription")
+            if not isinstance(prescription, dict):
+                retained.append(exercise)
+                continue
             if decision == "modify_symptomatic_exposure":
                 if isinstance(prescription.get("sets"), int):
                     prescription["sets"] = min(2, prescription["sets"])
                 elif isinstance(exercise.get("sets"), int):
                     exercise["sets"] = min(2, exercise["sets"])
-                prescription["rir"] = max(4, prescription.get("rir", 4) if isinstance(prescription.get("rir", 4), int) else 4)
+                prescription["rir"] = max(
+                    4,
+                    prescription.get("rir", 4) if isinstance(prescription.get("rir", 4), int) else 4,
+                )
                 prescription["tempo"] = "4–1–2–0"
-                prescription["symptom_range_guidance"] = "Samo trenutno toleriran obseg gibanja; ob stopnjevanju ali nesprejemljivosti simptoma prekini vajo."
+                prescription["load_guidance"] = (
+                    "Zmanjšaj breme glede na zadnjo izvedbo; izberi obremenitev, pri kateri "
+                    "ohraniš nadzor in najmanj 4 ponovitve v rezervi. ATENA ne določa "
+                    "samodejne spremembe kilogramov."
+                )
+                prescription["symptom_range_guidance"] = (
+                    "Uporabi samo trenutno toleriran obseg gibanja; ob stopnjevanju ali "
+                    "nesprejemljivosti simptoma prekini vajo."
+                )
             elif decision == "add_repetitions":
                 reps = prescription.get("reps", "")
                 parts = [int(value) for value in str(reps).split("–") if value.isdigit()]
@@ -392,4 +415,8 @@ def apply_exercise_progression(program, recommendations):
             if note:
                 existing = prescription.get("adjustment_note", "")
                 prescription["adjustment_note"] = (existing + " " + note).strip()
+            retained.append(exercise)
+        session["exercises"] = retained
+        if excluded:
+            session["excluded_exercises"] = excluded
     return program
