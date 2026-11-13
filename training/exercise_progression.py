@@ -260,7 +260,8 @@ def recommend_exercise_progression(sessions):
             and detail["worsened"] is False
             and detail["tolerated"] is True
             and detail["acute_warning_signs"] == []
-            and {"reduced_load", "slow_tempo", "reduced_range"}.issubset(set(detail.get("modifications_applied", [])))
+            and {"reduced_load", "slow_tempo"}.issubset(set(detail.get("modifications_applied", [])))
+            and bool({"reduced_range", "range_within_tolerance"} & set(detail.get("modifications_applied", [])))
         )
         if mild_tolerated:
             symptom_details.append(detail)
