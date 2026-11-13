@@ -3409,7 +3409,9 @@ def coach_training_sessions(profile_id):
         if not isinstance(acute_signs, list) or len(acute_signs) > len(valid_acute_signs) or any(x not in valid_acute_signs for x in acute_signs) or len(set(acute_signs)) != len(acute_signs):
             return jsonify({"error": "Opozorilni znaki niso veljavni."}), 400
         modifications = discomfort_details.get("modifications_applied")
-        valid_modifications = {"reduced_load", "slow_tempo", "reduced_range", "support"}
+        valid_modifications = {
+            "reduced_load", "slow_tempo", "reduced_range", "range_within_tolerance", "support",
+        }
         if not isinstance(modifications, list) or any(x not in valid_modifications for x in modifications) or len(set(modifications)) != len(modifications):
             return jsonify({"error": "Prilagoditve vaje niso veljavne."}), 400
         mild_tolerated = (
@@ -3418,8 +3420,12 @@ def coach_training_sessions(profile_id):
             and discomfort_details["tolerated"] is True
             and not acute_signs
         )
-        if mild_tolerated and not {"reduced_load", "slow_tempo", "reduced_range"}.issubset(set(modifications)):
-            return jsonify({"error": "Pri blagem nelagodju morajo biti potrjene manjša obremenitev, počasen tempo in toleriran obseg."}), 400
+        required_dose_changes = {"reduced_load", "slow_tempo"}
+        range_confirmed = bool({"reduced_range", "range_within_tolerance"} & set(modifications))
+        if mild_tolerated and (
+            not required_dose_changes.issubset(set(modifications)) or not range_confirmed
+        ):
+            return jsonify({"error": "Pri blagem nelagodju morajo biti potrjeni manjša obremenitev, počasen tempo in trenutno toleriran obseg; zmanjšanje amplitude ni obvezno, če je polni obseg toleriran."}), 400
         if discomfort is not True:
             return jsonify({"error": "Podrobnosti nelagodja zahtevajo discomfort_reported=true."}), 400
 

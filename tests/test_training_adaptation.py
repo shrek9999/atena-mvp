@@ -74,7 +74,7 @@ def test_mild_stable_tolerated_localized_discomfort_is_scoped_to_one_exercise():
         "worsened": False,
         "tolerated": True,
         "acute_warning_signs": [],
-        "modifications_applied": ["reduced_load", "slow_tempo", "reduced_range"],
+        "modifications_applied": ["reduced_load", "slow_tempo", "range_within_tolerance"],
     }
     result = assess_next_step([session, record("2026-10-29", difficulty="easy")])
     assert result["decision"] == "modify_symptomatic_exposure"
