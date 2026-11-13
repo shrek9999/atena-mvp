@@ -103,3 +103,12 @@ This is a programming option, not a mandatory sequence for every person or every
 ## Interpreting examples in the FZS seminar
 
 The seminar's example of reducing a squat load to roughly half, using two preparation sets and then returning to the usual load illustrates how a changed dose can alter the response to the same movement and similar ROM. It is an example of dose exploration, not a universal percentage-based rule or a prescription for every painful squat.
+
+
+## Post-session symptom feedback and next-program scope
+
+- A symptom report must be tied to an exercise actually recorded as performed. Store intensity (0–10), whether it worsened, whether the user tolerated it, acute warning signs, and the modifications used.
+- A complete report of mild (0–4/10), stable, explicitly tolerated discomfort with no acute warning signs and confirmed reduced load, slow tempo and tolerated range modifies only that exercise in the next programme. Use no more than two sets, at least four reps in reserve, tempo 4–1–2–0, and explicit guidance to reduce load relative to the last exposure. Do not invent a kilogram value or progress that exposure.
+- A complete report with acute warning signs, worsening, intensity above 4/10, or user non-tolerance stops that exercise from the next programme and records why it was omitted. Other exercises remain independently assessable.
+- A legacy or incomplete symptom report that cannot be safely localized keeps the conservative review hold; do not infer which exercise was affected.
+- The user may always stop an exercise, even when the reported intensity is below 4/10. A pain score is never, by itself, permission to continue.
