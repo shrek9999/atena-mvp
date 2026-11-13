@@ -194,12 +194,12 @@ def _has_localized_symptom_report(text):
     if _has_explicit_no_pain_confirmation(value):
         return False
     return bool(re.search(
-        r"(?:bolečin\\w*|pain).{0,65}(?:kolen\\w*|ramen\\w*|hrbt\\w*|kolk\\w*|gleženj|"
-        r"počep\\w*|izpadn\\w*|RDL|sklec\\w*)|"
-        r"(?:kolen\\w*|ramen\\w*|hrbt\\w*|kolk\\w*|gleženj).{0,65}"
-        r"(?:boli|bolečin\\w*|zaboli|pain)|"
-        r"(?:me\\s+(?:blago\\s+)?boli|boli\\s+me|me\\s+(?:blago\\s+)?zaboli|"
-        r"zaboli\\s+me).{0,45}(?:kolen\\w*|ramen\\w*|hrbt\\w*|kolk\\w*|gleženj)?",
+        r"(?:bolečin\w*|pain).{0,65}(?:kolen\w*|ramen\w*|hrbt\w*|kolk\w*|gleženj|"
+        r"počep\w*|izpadn\w*|RDL|sklec\w*)|"
+        r"(?:kolen\w*|ramen\w*|hrbt\w*|kolk\w*|gleženj).{0,65}"
+        r"(?:boli|bolečin\w*|zaboli|pain)|"
+        r"(?:me\s+(?:blago\s+)?boli|boli\s+me|me\s+(?:blago\s+)?zaboli|"
+        r"zaboli\s+me).{0,45}(?:kolen\w*|ramen\w*|hrbt\w*|kolk\w*|gleženj)?",
         value,
         re.IGNORECASE,
     ))
@@ -1905,8 +1905,8 @@ def _coaching_guardrail_reply(messages):
     if prescription_request and not _has_safety_clearance(messages):
         if _has_localized_symptom_report(history):
             pain_score_reported = bool(re.search(
-                r"\\b(?:10|[0-9])\\s*(?:/\\s*10|od\\s+10)\\b|"
-                r"\\b(?:jakost|intenzivnost)\\s+(?:je|okoli)\\s+\\d",
+                r"\b(?:10|[0-9])\s*(?:/\s*10|od\s+10)\b|"
+                r"\b(?:jakost|intenzivnost)\s+(?:je|okoli)\s+\d",
                 history_lower,
             ))
             pain_context_clarified = bool(re.search(
