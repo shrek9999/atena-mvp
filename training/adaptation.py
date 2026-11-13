@@ -26,16 +26,46 @@ def assess_next_step(sessions):
     recent = _ordered(sessions)[:3]
     completed = [(day, s) for day, s in recent if s.get("completed") is True]
 
-    if any(s.get("discomfort_reported") is True for _, s in recent):
+    discomfort_sessions = [
+        s for _, s in recent if s.get("discomfort_reported") is True
+    ]
+    if discomfort_sessions:
+        # Only a complete, tolerated, mild and stable localized report may be
+        # isolated to one exercise. Legacy/incomplete reports fail safe.
+        details = [s.get("discomfort_details") for s in discomfort_sessions]
+        localized = all(
+            isinstance(d, dict)
+            and isinstance(d.get("exercise_id"), str)
+            and isinstance(d.get("pain_during"), int)
+            and not isinstance(d.get("pain_during"), bool)
+            and 0 <= d["pain_during"] <= 4
+            and d.get("worsened") is False
+            and d.get("tolerated") is True
+            and d.get("acute_warning_signs") == []
+            for d in details
+        )
+        if localized:
+            return {
+                "decision": "modify_symptomatic_exposure",
+                "progression_allowed": False,
+                "volume_change": "symptomatic_exercise_only",
+                "reason_codes": ["mild_stable_localized_discomfort"],
+                "affected_exercise_ids": sorted({d["exercise_id"] for d in details}),
+                "message": (
+                    "Blago, stabilno nelagodje je vezano na posamezno vajo. Pri tej vaji "
+                    "ohrani konservativno prilagoditev; ostale vaje se presojajo ločeno. "
+                    "Če se bolečina stopnjuje ali ni več sprejemljiva, vajo prekini."
+                ),
+            }
         return {
             "decision": "pause_and_review",
             "progression_allowed": False,
             "volume_change": "none_automatic",
-            "reason_codes": ["discomfort_reported"],
+            "reason_codes": ["discomfort_requires_review"],
             "message": (
-                "Zabeleženo je nelagodje. Samodejno napredovanje se ustavi; najprej preveri "
-                "okoliščine, vrsto in trajanje težave. Ob vztrajni ali izraziti bolečini poišči "
-                "ustrezno zdravstveno oceno."
+                "Zabeleženo nelagodje nima popolne potrditve, da je blago, stabilno in "
+                "sprejemljivo. Prizadeto vajo za zdaj prekini oziroma razjasni; ob akutnih, "
+                "izrazitih ali slabšajočih se znakih poišči ustrezno strokovno oceno."
             ),
         }
 
