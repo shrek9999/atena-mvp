@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
-PATTERNS = {"squat", "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge"}
+PATTERNS = {"squat", "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge", "coordination"}
 SCALAR_KEYS = {
     "knee_flexion_proxy_deg", "heel_lift_visible", "bilateral_lower_limb_visibility",
     "hip_angle_proxy_deg", "torso_to_head_hip_alignment_error_proxy", "trunk_tilt_proxy_deg",
@@ -19,6 +19,8 @@ SCALAR_KEYS = {
     "trunk_shift_proxy", "elbow_visibility",
     "left_knee_angle_proxy_deg", "right_knee_angle_proxy_deg",
     "pelvis_level_difference_proxy", "stance_width_proxy",
+    "cross_body_alternation_observed", "left_to_right_contact_frames",
+    "right_to_left_contact_frames", "alternating_transitions_proxy",
 }
 
 
@@ -28,7 +30,7 @@ class CameraObservationError(ValueError):
 
 def validate_camera_observations(observations: Any, protocol: Any) -> tuple[dict, dict]:
     if not isinstance(observations, dict) or not observations or len(observations) > len(PATTERNS):
-        raise CameraObservationError("Kamerni podatki morajo vsebovati vsaj enega od šestih vzorcev.")
+        raise CameraObservationError("Kamerni podatki morajo vsebovati vsaj enega od šestih vzorcev ali koordinacijski preizkus.")
     normalized: dict[str, dict] = {}
     for pattern, record in observations.items():
         if pattern not in PATTERNS or not isinstance(record, dict):
@@ -55,6 +57,34 @@ def validate_camera_observations(observations: Any, protocol: Any) -> tuple[dict
             if isinstance(value, float) and (value != value or value in (float("inf"), float("-inf"))):
                 raise CameraObservationError("Kamerni podatki vsebujejo neveljavno številsko vrednost.")
             clean_values[key] = value
+        if pattern == "coordination":
+            required_coordination = {
+                "cross_body_alternation_observed", "left_to_right_contact_frames",
+                "right_to_left_contact_frames", "alternating_transitions_proxy",
+            }
+            if set(clean_values) != required_coordination:
+                raise CameraObservationError("Koordinacijski približek nima vseh zahtevanih polj.")
+            observed = clean_values["cross_body_alternation_observed"]
+            left_frames = clean_values["left_to_right_contact_frames"]
+            right_frames = clean_values["right_to_left_contact_frames"]
+            transitions = clean_values["alternating_transitions_proxy"]
+            if not isinstance(observed, bool):
+                raise CameraObservationError("Koordinacijski status mora biti logična vrednost.")
+            if any(
+                not isinstance(value, int) or isinstance(value, bool) or value < 0
+                for value in (left_frames, right_frames, transitions)
+            ):
+                raise CameraObservationError("Števci koordinacijskega približka morajo biti nenegativna cela števila.")
+            if (
+                left_frames > valid_frames or right_frames > valid_frames
+                or transitions > max(0, valid_frames - 1)
+                or (record["status"] == "observed" and (
+                    not observed or valid_frames < 3 or left_frames < 1
+                    or right_frames < 1 or transitions < 2
+                ))
+                or (record["status"] == "uncertain" and observed)
+            ):
+                raise CameraObservationError("Status in števci koordinacijskega približka si nasprotujejo.")
         normalized[pattern] = {
             "status": record["status"],
             "quality": record["quality"],
