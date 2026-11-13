@@ -42,6 +42,7 @@ def assess_next_step(sessions):
             and d.get("worsened") is False
             and d.get("tolerated") is True
             and d.get("acute_warning_signs") == []
+            and {"reduced_load", "slow_tempo", "reduced_range"}.issubset(set(d.get("modifications_applied", [])))
             for d in details
         )
         if localized:
