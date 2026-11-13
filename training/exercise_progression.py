@@ -239,6 +239,7 @@ def recommend_exercise_progression(sessions):
             and detail.get("worsened") is False
             and detail.get("tolerated") is True
             and detail.get("acute_warning_signs") == []
+            and {"reduced_load", "slow_tempo", "reduced_range"}.issubset(set(detail.get("modifications_applied", [])))
         ):
             affected_ids = {
                 exercise["exercise_id"]
