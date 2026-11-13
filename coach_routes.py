@@ -683,6 +683,25 @@ def _sanitize_deadlift_substitution_claims(answer, messages):
         answer,
         flags=re.IGNORECASE,
     )
+
+    answer = re.sub(
+        r"\b(?:RDL|romunsk\w*\s+mrtv\w*\s+dvig\w*)\s+"
+        r"(?:je|predstavlja)\s+(?:popolnoma\s+)?"
+        r"(?:enakovreden|enak|identičen)\s+(?:klasičnemu\s+)?mrtvemu\s+dvigu\b",
+        "RDL ohranja soroden vzorec kolčnega zgiba in poudarek na zadnji verigi, "
+        "vendar ni biomehansko enak klasičnemu mrtvemu dvigu",
+        answer,
+        flags=re.IGNORECASE,
+    )
+    answer = re.sub(
+        r"\b(?:RDL|Romanian deadlift)\s+(?:is|represents)\s+"
+        r"(?:fully\s+|completely\s+)?(?:equivalent|identical)\s+to\s+"
+        r"(?:a\s+)?(?:conventional\s+)?deadlift\b",
+        "RDL preserves a related hip-hinge and posterior-chain emphasis, but is "
+        "not biomechanically identical to a conventional deadlift",
+        answer,
+        flags=re.IGNORECASE,
+    )
     return answer
 
 
