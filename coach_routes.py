@@ -47,7 +47,7 @@ from training.goals import normalize_goal, public_goal_options
 from training.localization import resolve_response_language, language_instruction, localize_guardrail_reply
 from training.movement_coaching import (
     ASSESSMENT_VERSION as SIX_PATTERN_ASSESSMENT_VERSION,
-    PATTERN_DEFINITIONS, MovementCoachingError, build_movement_decision,
+    ACUTE_WARNING_SIGNS, PATTERN_DEFINITIONS, MovementCoachingError, build_movement_decision,
     validate_symptom_regression_report,
 )
 
