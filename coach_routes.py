@@ -3638,9 +3638,14 @@ def save_six_pattern_movement_assessment(profile_id):
                 regression_test = value["regression_test"]
                 if (
                     not isinstance(regression_test, dict)
-                    or set(regression_test) != {
+                    or not {
                         "status", "variation_id", "pain_during", "worsened",
                         "tempo", "load_adjustment", "range_adjustment", "acute_warning_signs",
+                    }.issubset(regression_test)
+                    or set(regression_test) - {
+                        "status", "variation_id", "pain_during", "worsened",
+                        "tempo", "load_adjustment", "range_adjustment", "acute_warning_signs",
+                        "support_method",
                     }
                     or regression_test.get("status") not in {"tolerated", "not_tolerated"}
                     or isinstance(regression_test.get("pain_during"), bool)
