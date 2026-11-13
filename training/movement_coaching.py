@@ -29,6 +29,12 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         ],
         "learning_methods": [
             {
+                "id": "supported_squat_assistance",
+                "label": "Počep z oporo rok",
+                "description": "Za razbremenitev in ravnotežje uporabi TRX, varno pritrjeno elastiko, fiksiran drog v racku približno v višini prsnega koša ali stabilno nepremično oporo. Z rokami si pomagaj toliko, da lahko noge še vedno nadzorovano izvajajo gib.",
+                "exercise_id": "supported_squat",
+            },
+            {
                 "id": "reaching_counterbalance",
                 "label": "Reaching squat s protiutežjo",
                 "description": "Izteg rok oziroma lahek kolut pred telesom uporabi kot protiutež za lažje učenje ravnotežja in organizacije počepa.",
@@ -66,7 +72,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "wall_hip_hinge",
                 "label": "Predklon ob steni",
-                "description": "Uči pomik bokov nazaj in nadzorovan predklon z nevtralnim položajem hrbtenice.",
+                "description": "Pri nelagodju v hrbtu zmanjša amplitudo in obremenitev; začni ob steni, ohrani nadzor trupa in ne sili v globino.",
                 "exercise_id": "wall_hip_hinge",
             },
         ],
@@ -130,7 +136,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "band_row",
                 "label": "Veslanje z elastiko",
-                "description": "Dodatna možnost za učenje poti komolcev in lopatic, kadar je elastika varno pritrjena.",
+                "description": "Za manjši upor uporabi lažjo elastiko, počasen povratek in nadzor lopatic; sidrišče mora biti varno pritrjeno.",
                 "exercise_id": "band_row",
             },
         ],
@@ -152,7 +158,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "band_overhead_press",
                 "label": "Potisk nad glavo z elastiko",
-                "description": "Elastika omogoča prilagoditev upora; preveri njeno stanje in varno postavitev.",
+                "description": "Za ramo izberi zelo lahek upor in samo tolerirano amplitudo; gib izvedi počasi, elastiko pa varno pritrdi in preveri.",
                 "exercise_id": "band_overhead_press",
             },
         ],
