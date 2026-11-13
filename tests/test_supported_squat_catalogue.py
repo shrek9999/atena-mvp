@@ -36,4 +36,27 @@ def test_supported_squat_has_explicit_stability_and_stop_cues():
     assert "stabilne opore" in text
     assert "bolečina" in text
     assert exercise["loading_potential"] == "low"
-    assert set(exercise["equipment_any"]) == {"household_support", "suspension_trainer"}
+    assert set(exercise["equipment_any"]) == {
+        "household_support", "suspension_trainer", "resistance_band", "rack"
+    }
+
+
+def test_band_support_requires_a_confirmed_anchor_point():
+    without_anchor = get_exercise_options(
+        "squat", equipment=["bodyweight", "resistance_band"],
+        experience="beginner", goal="functional",
+    )
+    with_anchor = get_exercise_options(
+        "squat", equipment=["bodyweight", "resistance_band", "anchor_point"],
+        experience="beginner", goal="functional",
+    )
+    assert "supported_squat" not in {item["id"] for item in without_anchor}
+    assert "supported_squat" in {item["id"] for item in with_anchor}
+
+
+def test_fixed_bar_support_requires_a_rack():
+    with_rack = get_exercise_options(
+        "squat", equipment=["bodyweight", "rack"],
+        experience="beginner", goal="functional",
+    )
+    assert "supported_squat" in {item["id"] for item in with_rack}
