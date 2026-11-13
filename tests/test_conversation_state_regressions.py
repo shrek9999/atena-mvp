@@ -14,6 +14,7 @@ def test_unanswered_health_question_is_not_implicit_clearance():
     assert reply is not None
     assert "še nisi odgovoril" in reply
     assert "ne bom sklepal" in reply
+    assert reply.count("?") == 0
 
 
 def test_pending_safety_question_detects_health_restriction_wording():
@@ -32,6 +33,7 @@ def test_pending_safety_question_detects_health_restriction_wording():
     assert reply is not None
     assert "še nisi odgovoril" in reply
     assert "ne bom sklepal" in reply
+    assert reply.count("?") == 0
 
 
 def test_omitting_health_information_is_not_a_negative_confirmation():
@@ -67,6 +69,7 @@ def test_emotional_reassurance_is_preserved_while_safety_answer_is_pending():
     assert reply is not None
     assert "Ničesar nisi pokvaril" in reply
     assert "varnostnega vprašanja" in reply.casefold()
+    assert reply.count("?") == 0
 
 
 def test_explicit_negative_answer_is_respected():
@@ -296,21 +299,28 @@ def test_unrequested_name_is_removed_even_inside_a_sentence():
 
 
 
-def test_safety_gate_does_not_repeat_the_same_question_after_one_reminder():
+def test_safety_gate_asks_once_and_never_repeats_after_skipped_answer():
     messages = [
-        {"role": "user", "content": "Rad bi bil bolj fit."},
+        {"role": "user", "content": "Rad bi pridobil nekaj mišične mase."},
         {"role": "model", "content": "Ali imaš trenutno kakšne bolečine, poškodbe ali omejitve?"},
-        {"role": "user", "content": "Rad bi imel več energije in se manj zadihal."},
-        {"role": "model", "content": "Ali imaš trenutno kakršne koli bolečine, poškodbe ali omejitve?"},
-        {"role": "user", "content": "Trenutno skoraj nič ne treniram."},
+        {"role": "user", "content": "Treniram že približno tri leta in imam dostop do fitnesa."},
     ]
-    reply = _coaching_guardrail_reply(messages)
-    assert reply is not None
-    assert "ne bom sestavil individualnega programa" in reply
-    assert "Ali imaš trenutno" not in reply
-    assert "ali imaš" not in reply.casefold()
-    assert "Ko boš pripravljen" in reply
-    assert reply.count("?") == 0
+    first_followup = _coaching_guardrail_reply(messages)
+    assert first_followup is not None
+    assert "ne bom sestavil individualnega programa" in first_followup
+    assert "varnostnega vprašanja še nisi odgovoril" in first_followup
+    assert first_followup.count("?") == 0
+
+    messages.extend([
+        {"role": "model", "content": first_followup},
+        {"role": "user", "content": "Lahko treniram trikrat tedensko."},
+    ])
+    second_followup = _coaching_guardrail_reply(messages)
+    assert second_followup is not None
+    assert "ne bom sestavil individualnega programa" in second_followup
+    assert "varnostnega vprašanja še nisi odgovoril" in second_followup
+    assert "Ali imaš" not in second_followup
+    assert second_followup.count("?") == 0
 
 
 def test_progression_prompt_returns_to_lower_end_of_rep_range_after_two_exposures():
