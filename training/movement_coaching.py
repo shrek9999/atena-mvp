@@ -325,6 +325,17 @@ def get_exercise_options(
             continue
         if optional and not (optional & available):
             continue
+        if exercise_id == "supported_squat":
+            # A band is only a support when anchored to a verified anchor point;
+            # a fixed bar must be a stable rack, not an improvised loose bar.
+            support_available = (
+                "household_support" in available
+                or "suspension_trainer" in available
+                or {"resistance_band", "anchor_point"}.issubset(available)
+                or "rack" in available
+            )
+            if not support_available:
+                continue
         if not _goal_matches(goal, exercise):
             continue
         options.append(deepcopy(exercise))
