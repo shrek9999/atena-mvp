@@ -53,14 +53,16 @@ from training.movement_coaching import (
 
 logger = logging.getLogger(__name__)
 INITIAL_SAFETY_QUESTION_SL = (
-    "Ali imaš trenutno akutno ostro bolečino, novo oteklino, mišični spazem, "
-    "svežo poškodbo, nenadno izgubo funkcije ali večjo ortopedsko oziroma "
-    "zdravstveno omejitev, zaradi katere vadba trenutno ni primerna?"
+    "Ali imaš trenutno kakršno koli bolečino, poškodbo, gibalno omejitev ali "
+    "zdravstveni zadržek, ki ga moram upoštevati pri vadbi — zlasti akutno ostro "
+    "bolečino, novo oteklino, mišični spazem, svežo poškodbo, nenadno izgubo "
+    "funkcije ali večjo ortopedsko oziroma zdravstveno omejitev?"
 )
 INITIAL_SAFETY_QUESTION_EN = (
-    "Do you currently have acute sharp pain, new swelling, muscle spasm, a recent "
-    "injury, sudden loss of function, or a major orthopedic or medical restriction "
-    "that makes exercise unsuitable right now?"
+    "Do you currently have any pain, injury, movement limitation, or health "
+    "restriction I should account for in your training — especially acute sharp "
+    "pain, new swelling, muscle spasm, a recent injury, sudden loss of function, "
+    "or a major orthopedic or medical restriction?"
 )
 coach_bp = Blueprint("coach", __name__)
 ALLOWED_ORIGINS = {
