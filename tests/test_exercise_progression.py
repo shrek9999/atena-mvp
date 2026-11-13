@@ -488,7 +488,7 @@ def test_acute_complete_symptom_report_stops_only_the_affected_exercise():
         [exercise("squat_goblet"), exercise("push_up")],
         discomfort=True,
     )
-    session["discomfort_details"] = {
+    session["session"]["discomfort_details"] = {
         "exercise_id": "squat_goblet",
         "pain_during": 7,
         "worsened": True,
