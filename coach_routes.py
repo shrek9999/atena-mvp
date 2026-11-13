@@ -195,7 +195,11 @@ def _has_safety_clearance(messages):
         if isinstance(item, dict) and item.get("role") == "user"
         and isinstance(item.get("content"), str)
     )
-    return (\n        _has_explicit_safety_clearance(user_history)\n        or _has_initial_health_gate_clearance(user_history)\n        or _has_contextual_safety_clearance(messages)\n    )
+    return (
+        _has_explicit_safety_clearance(user_history)
+        or _has_initial_health_gate_clearance(user_history)
+        or _has_contextual_safety_clearance(messages)
+    )
 
 
 def _has_localized_symptom_report(text):
