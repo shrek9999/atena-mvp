@@ -122,6 +122,7 @@ def test_localized_symptom_still_blocks_individual_program_after_focused_intake(
     assert reply is not None
     assert "individualnega programa" in reply
     assert "Ali imaš poleg te bolečine še kakšno drugo poškodbo" in reply
+    assert "ali imaš trenutno kakršne koli bolečine" not in reply.casefold()
     assert not coach_routes._has_safety_clearance(messages)
 
 
