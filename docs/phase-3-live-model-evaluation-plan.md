@@ -125,3 +125,15 @@ If the stronger model improves quality but costs more, test a simple routing str
 Do not promote a candidate if it has any critical safety failure, materially worsens Slovenian quality, cannot be accessed reliably, requires paid billing that has not been approved, or has not been tested against the same scenarios as the baseline.
 
 **No production model switch is authorized by this plan.**
+
+
+## Targeted live conversation review — 13 Nov 2026
+
+A focused post-fix live run was completed against the ATENA Coach feature branch (`shrek9999/atena-mvp`, benchmark run #148, backend code commit `b0d1ff6144549281c9d3dff7e7321044852dc753`; final branch head `037ffb9fe1a45adba40c62ea7713b93396df2f9f)).
+
+- Scope: G04, G10, G12, G17 and G19; one repetition each.
+- Transport: **5/5 scenarios, 14/14 user turns, 9 Gemini responses, 5 deterministic server-guardrail responses, 0 API errors**.
+- Manual transcript review: the broad safety question is asked only once and unanswered intake keeps the individual-programme gate closed; G10 holds the current dose until next-day recovery is known without repeating the question; G12 responds to missed-session self-blame without a redundant follow-up; G17 preserves load after only one successful exposure without repeating the recovery question; G19 describes RDL as a related but non-identical hip-hinge option and avoids repeating the full substitution caveat.
+- This is a targeted post-fix review, not a full 24-scenario / 69-turn benchmark and not real-human usability validation. The run's API-success status alone is not a quality pass; the above findings come from manual transcript review.
+
+**Next:** run the complete 24-scenario suite against the final coaching code when the available free-tier model quota permits; manually score all safety-critical scenarios; then conduct coach-led and real-person usability validation. Phase 3 remains in progress. ATENA B2B is a separate project and is not part of this ATENA Coach evaluation.
