@@ -30,43 +30,64 @@ def assess_next_step(sessions):
         s for _, s in recent if s.get("discomfort_reported") is True
     ]
     if discomfort_sessions:
-        # Only a complete, tolerated, mild and stable localized report may be
-        # isolated to one exercise. Legacy/incomplete reports fail safe.
         details = [s.get("discomfort_details") for s in discomfort_sessions]
-        localized = all(
+        complete = all(
             isinstance(d, dict)
             and isinstance(d.get("exercise_id"), str)
             and isinstance(d.get("pain_during"), int)
             and not isinstance(d.get("pain_during"), bool)
-            and 0 <= d["pain_during"] <= 4
-            and d.get("worsened") is False
-            and d.get("tolerated") is True
-            and d.get("acute_warning_signs") == []
+            and 0 <= d["pain_during"] <= 10
+            and isinstance(d.get("worsened"), bool)
+            and isinstance(d.get("tolerated"), bool)
+            and isinstance(d.get("acute_warning_signs"), list)
+            for d in details
+        )
+        if not complete:
+            return {
+                "decision": "pause_and_review",
+                "progression_allowed": False,
+                "volume_change": "none_automatic",
+                "reason_codes": ["discomfort_requires_review"],
+                "message": (
+                    "Poročilo o nelagodju ni popolno ali ga ni mogoče povezati z eno vajo. "
+                    "Pred nadaljnjo progresijo je potrebna razjasnitev."
+                ),
+            }
+
+        mild_tolerated = all(
+            d["pain_during"] <= 4
+            and d["worsened"] is False
+            and d["tolerated"] is True
+            and d["acute_warning_signs"] == []
             and {"reduced_load", "slow_tempo", "reduced_range"}.issubset(set(d.get("modifications_applied", [])))
             for d in details
         )
-        if localized:
+        affected_ids = sorted({d["exercise_id"] for d in details})
+        if mild_tolerated:
             return {
                 "decision": "modify_symptomatic_exposure",
                 "progression_allowed": False,
                 "volume_change": "symptomatic_exercise_only",
                 "reason_codes": ["mild_stable_localized_discomfort"],
-                "affected_exercise_ids": sorted({d["exercise_id"] for d in details}),
+                "affected_exercise_ids": affected_ids,
                 "message": (
                     "Blago, stabilno nelagodje je vezano na posamezno vajo. Pri tej vaji "
                     "ohrani konservativno prilagoditev; ostale vaje se presojajo ločeno. "
                     "Če se bolečina stopnjuje ali ni več sprejemljiva, vajo prekini."
                 ),
             }
+
         return {
-            "decision": "pause_and_review",
+            "decision": "stop_symptomatic_exposure",
             "progression_allowed": False,
-            "volume_change": "none_automatic",
-            "reason_codes": ["discomfort_requires_review"],
+            "volume_change": "symptomatic_exercise_only",
+            "reason_codes": ["symptomatic_exposure_requires_review"],
+            "affected_exercise_ids": affected_ids,
             "message": (
-                "Zabeleženo nelagodje nima popolne potrditve, da je blago, stabilno in "
-                "sprejemljivo. Prizadeto vajo za zdaj prekini oziroma razjasni; ob akutnih, "
-                "izrazitih ali slabšajočih se znakih poišči ustrezno strokovno oceno."
+                "Prekini samo vajo, pri kateri se je pojavilo nelagodje, in je ne vključuj "
+                "v naslednjo vadbo do ustrezne razjasnitve. Ob akutnih znakih, izraziti ali "
+                "slabšajoči se bolečini poišči ustrezno strokovno oceno. Druge vaje se "
+                "presojajo ločeno."
             ),
         }
 
