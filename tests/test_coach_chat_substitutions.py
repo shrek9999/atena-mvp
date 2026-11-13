@@ -274,7 +274,7 @@ def test_onboarding_safety_gate_precedes_equipment_question():
 
     assert reply is not None
     assert "najprej preveriti varnost" in reply
-    assert "bolečin, poškodb" in reply
+    assert "bolečine, poškodbe" in reply
     assert "kakšno opremo" not in reply
 
 
