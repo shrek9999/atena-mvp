@@ -3376,6 +3376,9 @@ def coach_training_sessions(profile_id):
             return jsonify({"error": error}), 400
         clean_exercises.append(entry)
 
+    discomfort = payload.get("discomfort_reported")
+    if discomfort is not None and not isinstance(discomfort, bool):
+        return jsonify({"error": "discomfort_reported mora biti true ali false."}), 400
     discomfort_details = payload.get("discomfort_details")
     if discomfort_details is not None:
         if (
@@ -3430,9 +3433,6 @@ def coach_training_sessions(profile_id):
             return jsonify({"error": error}), 400
         clean_conditioning.append(entry)
 
-    discomfort = payload.get("discomfort_reported")
-    if discomfort is not None and not isinstance(discomfort, bool):
-        return jsonify({"error": "discomfort_reported mora biti true ali false."}), 400
     session = {
         "duration_minutes": duration, "difficulty": difficulty,
         "recovery": recovery, "completed": payload["completed"], "exercises": clean_exercises,
