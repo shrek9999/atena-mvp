@@ -40,6 +40,8 @@ def assess_next_step(sessions):
             and isinstance(d.get("worsened"), bool)
             and isinstance(d.get("tolerated"), bool)
             and isinstance(d.get("acute_warning_signs"), list)
+            and isinstance(d.get("modifications_applied"), list)
+            and all(isinstance(item, str) for item in d.get("modifications_applied", []))
             for d in details
         )
         if not complete:
