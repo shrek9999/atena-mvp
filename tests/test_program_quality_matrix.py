@@ -108,6 +108,18 @@ def test_trunk_stability_is_only_added_after_specific_control_feedback():
     assert targeted["sessions"][0]["exercises"][0]["pattern"] == "trunk_stability"
 
 
+def test_structured_movement_decisions_require_exactly_all_six_patterns():
+    profile = {
+        "goal": "hypertrophy",
+        "experience": "intermediate",
+        "sessions_per_week": 2,
+        "session_minutes": 60,
+        "equipment": _complete_equipment_set(),
+    }
+    with pytest.raises(ProgramSafetyBlock):
+        generate_program(profile, movement_decisions={"squat": {}})
+
+
 def test_discomfort_feedback_blocks_automatic_programme_adaptation():
     profile = {
         "goal": "hypertrophy",
