@@ -1206,11 +1206,9 @@ def test_goal_question_offers_concrete_choices_without_repeating_combination_opt
 
     choices = _onboarding_quick_replies("Kaj želiš predvsem izboljšati?")
     assert choices == [
-        "Moč in mišična masa",
+        "Moč + mišična masa",
         "Funkcionalna pripravljenost",
-        "Kondicija",
-        "Uravnavanje telesne teže",
-        "Splošna pripravljenost in več energije",
+        "Zmanjšanje maščobne mase",
     ]
 
 
