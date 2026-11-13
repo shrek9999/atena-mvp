@@ -659,7 +659,7 @@ def test_rdl_substitution_follow_up_acknowledges_training_intent():
     cleaned = coach_routes._sanitize_unverified_exercise_parameters(
         "RDL z ročkami: 3–4 serije po 8–12 ponovitev.", messages
     )
-    assert cleaned.startswith("Se strinjam: ohraniva soroden vzorec predklona")
+    assert cleaned.startswith("Razumem — ohraniva obremenjen kolčni zgib")
     assert "ni biomehansko enak" in cleaned
     assert cleaned.count("?") == 1
 
