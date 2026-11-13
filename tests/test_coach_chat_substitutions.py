@@ -644,7 +644,7 @@ def test_rdl_substitution_follow_up_acknowledges_equipment_without_repeating_ful
     cleaned = coach_routes._sanitize_unverified_exercise_parameters(
         "Predlagam RDL z ročkami: 3 × 10 ponovitev.", messages
     )
-    assert cleaned.startswith("Razumem: imaš ročke in lastno težo")
+    assert cleaned.startswith("Razumem: na voljo imaš ročke in lastno težo")
     assert "prvotni odmerek" in cleaned
     assert cleaned.count("?") == 1
 
@@ -659,7 +659,7 @@ def test_rdl_substitution_follow_up_acknowledges_training_intent():
     cleaned = coach_routes._sanitize_unverified_exercise_parameters(
         "RDL z ročkami: 3–4 serije po 8–12 ponovitev.", messages
     )
-    assert cleaned.startswith("Razumem — ohraniva obremenjen kolčni zgib")
+    assert cleaned.startswith("Razumem — ohraniva namen z RDL")
     assert "ni biomehansko enak" in cleaned
     assert cleaned.count("?") == 1
 
@@ -723,8 +723,10 @@ def test_two_exposure_progression_waits_for_recovery_and_avoids_invented_load():
     second = coach_routes._sanitize_unverified_exercise_parameters(
         "Izvedi 3 serije po 8 ponovitev.", messages
     )
-    assert "regeneracijo" in second
-    assert second.count("?") == 1
+    assert "regeneraciji" in second
+    assert "obremenitve še ne povečuj" in second
+    assert "ohrani enako dozo" in second
+    assert second.count("?") == 0
 
     messages.append({"role": "model", "content": second})
     messages.append({"role": "user", "content": "Naslednji dan sem se normalno počutil in bil spočit."})
