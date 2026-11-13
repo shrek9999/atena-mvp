@@ -757,7 +757,7 @@ def _sanitize_unverified_exercise_parameters(answer, messages):
         if already_asked and re.search(r"(ohraniti vzorec|enak namen|namen treninga)", latest_user, re.IGNORECASE):
             return (
                 "Razumem — ohraniva namen z RDL kot sorodno različico predklona in zadnje "
-                "verige; ni pa biomehansko enak klasičnemu mrtvemu dvigu. Za konkreten "
+                "verige, vendar ni biomehansko enak klasičnemu mrtvemu dvigu. Za konkreten "
                 "odmerek mi manjkata še prvotni odmerek (serije × ponovitve) in teže ročk. "
                 "Kakšen je bil prvotni odmerek in katere teže ročk imaš?"
             )
@@ -869,6 +869,20 @@ def _sanitize_unverified_exercise_parameters(answer, messages):
                 "Za zdaj ohrani ali po potrebi nekoliko zmanjša trenutno dozo."
             )
         if progression_claim and not recovery_reported:
+            recovery_question_already_asked = bool(re.search(
+                r"(?:regeneracij\w*|naslednji\s+dan).{0,160}"
+                r"(?:spoč|utrujen|bolečin|recovery|fatigue)|"
+                r"(?:spoč|utrujen).{0,160}(?:naslednji\s+dan|regeneracij)",
+                assistant_history,
+                re.IGNORECASE,
+            ))
+            if recovery_question_already_asked:
+                return (
+                    "Dobra tehnika in primeren občutek napora sta pozitivna. Ker še nimam "
+                    "podatka o regeneraciji naslednji dan, obremenitve še ne povečuj; za zdaj "
+                    "ohrani enako dozo. Ko boš lahko, sporoči, ali si bil naslednji dan "
+                    "običajno spočit ali nenavadno utrujen."
+                )
             return (
                 "Dve primerljivi uspešni izvedbi sta dober znak, vendar pred povečanjem "
                 "obremenitve preveriva še regeneracijo. Kako si se počutil naslednji dan "
@@ -1162,10 +1176,11 @@ def _pending_safety_reply(latest, *, repeat_question=True):
     if not repeat_question:
         return (
             acknowledgement
-            + " Varnostnega vprašanja še nisi odgovoril. Brez te potrditve ne bom "
-            "sestavil individualnega programa ali določal obremenitev. Splošne informacije "
-            "lahko še vedno razložim. Ko boš pripravljen, odgovori na varnostno vprašanje; "
-            "do takrat lahko ostaneva pri splošnih informacijah, ne pri individualnem programu."
+            + " Varnostnega vprašanja še nisi odgovoril, zato ne bom sklepal, da nimaš "
+            "bolečin, poškodb, gibalnih omejitev ali zdravstvenih zadržkov. Brez te potrditve "
+            "ne bom sestavil individualnega programa ali določal obremenitev. Splošne "
+            "informacije lahko še vedno razložim; do takrat ostaneva pri splošnih informacijah, "
+            "ne pri individualnem programu."
         )
     return (
         acknowledgement
