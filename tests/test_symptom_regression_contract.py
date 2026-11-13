@@ -35,6 +35,7 @@ def _report(
             "load_adjustment": "bodyweight_or_assisted",
             "range_adjustment": "within_tolerance",
             "acute_warning_signs": acute_warning_signs or [],
+            "support_method": "stable_support" if variation == "supported_squat" else None,
         },
     }
 
