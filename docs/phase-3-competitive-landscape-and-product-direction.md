@@ -8,7 +8,7 @@
 
 Prioritize **ATENA Coach: a Slovenian-first digital personal trainer for the general population**. Its primary user is an everyday person who wants to become stronger, fitter, more enduring and more capable in daily life. It must work for beginners as well as experienced recreational trainees.
 
-Keep the existing ATENA decision API/MCP capability as a separate technical/product line. Do not let the B2B agent-infrastructure business model determine the consumer coaching UX or near-term roadmap.
+Keep the ATENA B2B decision API/MCP as a separate project, with its own roadmap and product decisions. Do not let the B2B agent-infrastructure business model determine the consumer coaching UX or near-term roadmap.
 
 The differentiation should not be “we also generate workouts” or “we use AI”. It should be:
 
@@ -86,7 +86,7 @@ Based on the reviewed code at the baseline commit:
 
 ### P0 — protect and clarify the product
 - Resolve repository visibility/licensing with an informed decision (see the separate IP/security review).
-- Define ATENA Coach as the primary product and keep B2B decision API/MCP as a separate optional line.
+- Define ATENA Coach as the primary product in this roadmap. Treat ATENA B2B decision API/MCP as a separate project, not as a feature or monetization path within ATENA Coach.
 - Keep production, user data, credentials and paid services untouched during this review.
 
 ### P1 — measure real coaching quality
