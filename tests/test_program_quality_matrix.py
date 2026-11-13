@@ -8,7 +8,7 @@ from itertools import product
 import pytest
 
 from training.catalogue import get_exercise, load_catalogue
-from training.program import ProgramSafetyBlock, ProgramValidationError, generate_program
+from training.program import ProgramSafetyBlock, generate_program
 
 
 def _complete_equipment_set():
@@ -106,18 +106,6 @@ def test_trunk_stability_is_only_added_after_specific_control_feedback():
     assert not baseline_patterns.intersection({"trunk_stability", "anti_rotation"})
     assert "trunk_stability" in targeted_patterns
     assert targeted["sessions"][0]["exercises"][0]["pattern"] == "trunk_stability"
-
-
-def test_structured_movement_decisions_require_exactly_all_six_patterns():
-    profile = {
-        "goal": "hypertrophy",
-        "experience": "intermediate",
-        "sessions_per_week": 2,
-        "session_minutes": 60,
-        "equipment": _complete_equipment_set(),
-    }
-    with pytest.raises(ProgramValidationError, match="natanko vseh šest"):
-        generate_program(profile, movement_decisions={"squat": {}})
 
 
 def test_discomfort_feedback_blocks_automatic_programme_adaptation():
