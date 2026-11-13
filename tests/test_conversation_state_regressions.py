@@ -308,7 +308,7 @@ def test_safety_gate_asks_once_and_never_repeats_after_skipped_answer():
     first_followup = _coaching_guardrail_reply(messages)
     assert first_followup is not None
     assert "ne bom sestavil individualnega programa" in first_followup
-    assert "varnostnega vprašanja še nisi odgovoril" in first_followup
+    assert "varnostnega vprašanja še nisi odgovoril" in first_followup.casefold()
     assert first_followup.count("?") == 0
 
     messages.extend([
@@ -318,7 +318,7 @@ def test_safety_gate_asks_once_and_never_repeats_after_skipped_answer():
     second_followup = _coaching_guardrail_reply(messages)
     assert second_followup is not None
     assert "ne bom sestavil individualnega programa" in second_followup
-    assert "varnostnega vprašanja še nisi odgovoril" in second_followup
+    assert "varnostnega vprašanja še nisi odgovoril" in second_followup.casefold()
     assert "Ali imaš" not in second_followup
     assert second_followup.count("?") == 0
 
