@@ -458,7 +458,7 @@ def test_mild_stable_symptom_holds_only_affected_exercise_and_allows_other_exerc
     symptomatic = exercise("squat_goblet")
     unaffected = exercise("push_up")
     session = record("2026-11-03", [symptomatic, unaffected], difficulty="easy", discomfort=True)
-    session["discomfort_details"] = {
+    session["session"]["discomfort_details"] = {
         "exercise_id": "squat_goblet",
         "pain_during": 2,
         "worsened": False,
