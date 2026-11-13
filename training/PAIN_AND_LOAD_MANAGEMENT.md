@@ -40,6 +40,26 @@ Do not automatically remove the movement pattern. When appropriate and within co
 
 A lower-load, controlled preparation set may be useful when it is comfortable and the person's response supports continuing. If symptoms persist, increase, or the response is unfavourable, further modify the task or stop that exercise for now. Do not force progression.
 
+## ATENA default for its target population
+
+ATENA is primarily a general fitness coach for generally healthy people without major unresolved orthopedic problems. It is not designed to replace individual assessment or rehabilitation for significant orthopedic conditions.
+
+For mild, familiar discomfort of approximately 3–4/10 or less, the score is only one part of the decision. Continuing a modified exercise may be considered when symptoms remain stable, do not worsen during or after the set, do not change movement quality, and no acute warning signs are present. The default modification order is practical rather than rigid:
+- reduce the external load/resistance by one manageable step, or use bodyweight/assistance;
+- slow the movement and maintain a controlled tempo (a default 4–1–2–0 can be used for suitable strength exercises);
+- reduce ROM to the currently tolerated range;
+- use stable support where it reduces balance demand or permits partial unloading.
+
+For a squat, supported options may include TRX, a securely anchored resistance band, a fixed bar secured in a rack at approximately chest height, or another stable immovable support. A band requires a verified anchor point; a bar must be secured in a rack. Support is not permission to pull through pain.
+
+For back/hinge discomfort, reduce resistance and ROM and consider a wall hip hinge or unloaded hinge while maintaining control. For shoulder-related pushing or pulling, use lighter resistance, a suitable higher incline or band variation, slower execution and a tolerated range; do not force overhead ROM.
+
+For a tolerated symptomatic exposure, begin conservatively (usually no more than two sets and at least four repetitions in reserve) and do not progress that exposure until the response is consistently good. Stop if symptoms increase, become sharp, alter movement quality or are worse later or the following day. The user may always choose to stop a test even when the numeric pain score is low.
+
+Acute sharp pain, new swelling, muscle spasm, sudden loss of function, acute trauma or rapidly worsening symptoms are not situations for training through or automated regression testing. Stop exercise for the affected area and recommend appropriate healthcare assessment. Marked swelling, locking, giving way, inability to bear weight, severe or unexplained symptoms, or major/unresolved orthopedic conditions require professional assessment before individualized loading. A localized issue does not automatically prohibit unrelated, unaffected training, provided it is otherwise appropriate.
+
+This is an ATENA coaching default for a generally healthy target population, not a universal medical pain threshold or treatment rule.
+
 ## Progression
 
 Progression is not limited to adding weight. Depending on the goal and response, capacity can be developed through gradual changes in load, ROM, volume, frequency, speed, coordination or task complexity. Reassess the response before increasing demands. ROM is a tool, not dogma: full ROM is often useful for strength, muscle and function, but the tolerable range is individual and can be developed progressively. Capacity is dynamic; fatigue, sleep, stress, pain and prior loading can change what a person tolerates on a given day.
