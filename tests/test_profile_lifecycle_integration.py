@@ -251,7 +251,7 @@ def test_session_discomfort_details_are_validated_and_saved(monkeypatch, tmp_pat
             "worsened": False,
             "tolerated": True,
             "acute_warning_signs": [],
-            "modifications_applied": ["reduced_load", "slow_tempo", "reduced_range"],
+            "modifications_applied": ["reduced_load", "slow_tempo", "range_within_tolerance"],
         },
         "exercises": [{
             "exercise_id": exercise_id,
@@ -269,6 +269,19 @@ def test_session_discomfort_details_are_validated_and_saved(monkeypatch, tmp_pat
     assert logged.status_code == 201
     saved = logged.get_json()["session"]["session"]["discomfort_details"]
     assert saved == payload["discomfort_details"]
+
+    missing_range_confirmation = dict(payload)
+    missing_range_confirmation["session_date"] = "2026-11-04"
+    missing_range_confirmation["discomfort_details"] = dict(payload["discomfort_details"])
+    missing_range_confirmation["discomfort_details"]["modifications_applied"] = [
+        "reduced_load", "slow_tempo",
+    ]
+    rejected_range = client.post(
+        f"/coach/profile/{profile_id}/sessions",
+        headers=headers,
+        json=missing_range_confirmation,
+    )
+    assert rejected_range.status_code == 400
 
     invalid = dict(payload)
     invalid["discomfort_reported"] = False
