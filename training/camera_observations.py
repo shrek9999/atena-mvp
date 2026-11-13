@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
-PATTERNS = {"squat", "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge"}
+PATTERNS = {"squat", "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge", "coordination"}
 SCALAR_KEYS = {
     "knee_flexion_proxy_deg", "heel_lift_visible", "bilateral_lower_limb_visibility",
     "hip_angle_proxy_deg", "torso_to_head_hip_alignment_error_proxy", "trunk_tilt_proxy_deg",
@@ -19,6 +19,8 @@ SCALAR_KEYS = {
     "trunk_shift_proxy", "elbow_visibility",
     "left_knee_angle_proxy_deg", "right_knee_angle_proxy_deg",
     "pelvis_level_difference_proxy", "stance_width_proxy",
+    "cross_body_alternation_observed", "left_to_right_contact_frames",
+    "right_to_left_contact_frames", "alternating_transitions_proxy",
 }
 
 
@@ -28,7 +30,7 @@ class CameraObservationError(ValueError):
 
 def validate_camera_observations(observations: Any, protocol: Any) -> tuple[dict, dict]:
     if not isinstance(observations, dict) or not observations or len(observations) > len(PATTERNS):
-        raise CameraObservationError("Kamerni podatki morajo vsebovati vsaj enega od šestih vzorcev.")
+        raise CameraObservationError("Kamerni podatki morajo vsebovati vsaj enega od podprtih gibalnih ali koordinacijskih opažanj.")
     normalized: dict[str, dict] = {}
     for pattern, record in observations.items():
         if pattern not in PATTERNS or not isinstance(record, dict):
