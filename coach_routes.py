@@ -3314,7 +3314,7 @@ def coach_training_sessions(profile_id):
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return jsonify({"error": "Pričakovan je JSON objekt."}), 400
-    allowed = {"session_date", "duration_minutes", "difficulty", "completed", "exercises", "conditioning", "discomfort_reported", "recovery", "completion_reason", "adaptation_response", "difficulty_scope", "affected_exercise_id", "program_version_id"}
+    allowed = {"session_date", "duration_minutes", "difficulty", "completed", "exercises", "conditioning", "discomfort_reported", "discomfort_details", "recovery", "completion_reason", "adaptation_response", "difficulty_scope", "affected_exercise_id", "program_version_id"}
     if set(payload) - allowed:
         return jsonify({"error": "Vadbeni zapis vsebuje nepodprta polja; prosto besedilo ni dovoljeno."}), 400
     session_date = payload.get("session_date")
@@ -3376,6 +3376,42 @@ def coach_training_sessions(profile_id):
             return jsonify({"error": error}), 400
         clean_exercises.append(entry)
 
+    discomfort_details = payload.get("discomfort_details")
+    if discomfort_details is not None:
+        if (
+            not isinstance(discomfort_details, dict)
+            or set(discomfort_details) != {
+                "exercise_id", "pain_during", "worsened", "tolerated",
+                "acute_warning_signs", "modifications_applied",
+            }
+        ):
+            return jsonify({"error": "Podrobnosti o nelagodju niso veljavne."}), 400
+        detail_exercise_id = discomfort_details.get("exercise_id")
+        pain_during = discomfort_details.get("pain_during")
+        if (
+            not isinstance(detail_exercise_id, str)
+            or get_exercise(detail_exercise_id) is None
+            or detail_exercise_id not in {
+                item.get("exercise_id") for item in clean_exercises
+                if isinstance(item, dict)
+            }
+        ):
+            return jsonify({"error": "Nelagodje mora biti vezano na izvedeno vajo iz kataloga."}), 400
+        if not isinstance(pain_during, int) or isinstance(pain_during, bool) or not 0 <= pain_during <= 10:
+            return jsonify({"error": "Ocena nelagodja mora biti med 0 in 10."}), 400
+        if not isinstance(discomfort_details.get("worsened"), bool) or not isinstance(discomfort_details.get("tolerated"), bool):
+            return jsonify({"error": "Odziv na nelagodje mora vsebovati veljavni potrditvi."}), 400
+        acute_signs = discomfort_details.get("acute_warning_signs")
+        valid_acute_signs = set(ACUTE_WARNING_SIGNS)
+        if not isinstance(acute_signs, list) or len(acute_signs) > len(valid_acute_signs) or any(x not in valid_acute_signs for x in acute_signs) or len(set(acute_signs)) != len(acute_signs):
+            return jsonify({"error": "Opozorilni znaki niso veljavni."}), 400
+        modifications = discomfort_details.get("modifications_applied")
+        valid_modifications = {"reduced_load", "slow_tempo", "reduced_range", "support"}
+        if not isinstance(modifications, list) or not modifications or any(x not in valid_modifications for x in modifications) or len(set(modifications)) != len(modifications):
+            return jsonify({"error": "Prilagoditve vaje niso veljavne."}), 400
+        if discomfort is not True:
+            return jsonify({"error": "Podrobnosti nelagodja zahtevajo discomfort_reported=true."}), 400
+
     conditioning = payload.get("conditioning", [])
     if not isinstance(conditioning, list) or len(conditioning) > 8:
         return jsonify({"error": "Vadbeni zapis lahko vsebuje največ 8 kondicijskih blokov."}), 400
@@ -3411,6 +3447,15 @@ def coach_training_sessions(profile_id):
             return jsonify({"error": "Za shranjevanje podatka o nelagodju ali srčnem utripu je potrebna ločena privolitev za zdravstvene podatke."}), 403
         if discomfort is not None:
             session["discomfort_reported"] = discomfort
+        if discomfort_details is not None:
+            session["discomfort_details"] = {
+                "exercise_id": discomfort_details["exercise_id"],
+                "pain_during": discomfort_details["pain_during"],
+                "worsened": discomfort_details["worsened"],
+                "tolerated": discomfort_details["tolerated"],
+                "acute_warning_signs": list(discomfort_details["acute_warning_signs"]),
+                "modifications_applied": list(discomfort_details["modifications_applied"]),
+            }
         if adaptation_response is not None:
             target_version_id = adaptation_response["program_version_id"]
             target_version = store_get_program_version(profile_id, token, target_version_id)
