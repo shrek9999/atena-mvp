@@ -49,6 +49,8 @@ Never confuse:
 - Distinguish exact demonstrations from generic pattern references. Never map an inverted-row clip to a vertical pull-up.
 - Preferred demos are short movement-only clips (about 5–12 seconds). If exact clip/duration/rights cannot be verified, mark it pending/reference-only; never fabricate IDs or claim an external page is an approved embed.
 - Camera output is approximate observation, not diagnosis or clinical measurement. Insufficient landmarks/low confidence means uncertainty.
+- Camera may influence programming only through a positive-only, optional coordination warm-up add-on: require an adequate-quality observed cross-body alternation proxy, at least six valid frames, evidence in both directions and at least two alternating transitions. This may add one beginner-level, bodyweight, 10-second controlled lateral-step drill to warm-up.
+- Camera must never infer a deficit, readiness, safety, pain, diagnosis, load, progression, or main-exercise choice. Uncertain, skipped, insufficient-quality or unobserved results cause no camera-based change and are never treated as negative evidence. User self-report and symptom rules remain authoritative.
 - Keep symptoms separate from camera evidence. New pain/symptoms must not trigger diagnosis or unsafe automatic progression.
 - Do not store/upload camera video unless explicitly designed, disclosed and approved.
 - Prefer lean/free infrastructure. No paid services or spending without approval.

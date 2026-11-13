@@ -202,7 +202,7 @@ def test_program_route_passes_structured_six_pattern_decisions(monkeypatch, clie
 
     called = {}
 
-    def fake_generate_program(profile, feedback=None, movement_assessment=None, movement_decisions=None):
+    def fake_generate_program(profile, feedback=None, movement_assessment=None, movement_decisions=None, camera_coordination_observed=False):
         called["movement_decisions"] = movement_decisions
         return {
             "goal": "hypertrophy",

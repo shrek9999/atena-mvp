@@ -2829,11 +2829,24 @@ def coach_program():
             "assessment_required": True,
             "message": "Vseh šest vzorcev je trenutno neocenjenih ali nejasnih. Pred individualnim programom je treba vsaj en vzorec varno oceniti; sicer program ne bi imel zanesljivega gibalnega izhodišča.",
         }), 409
+    coordination_record = (camera_observations or {}).get("coordination", {})
+    coordination_values = coordination_record.get("observations", {}) if isinstance(coordination_record, dict) else {}
+    camera_coordination_observed = bool(
+        isinstance(coordination_record, dict)
+        and coordination_record.get("status") == "observed"
+        and coordination_record.get("quality") == "adequate"
+        and coordination_record.get("valid_frames", 0) >= 6
+        and coordination_values.get("cross_body_alternation_observed") is True
+        and coordination_values.get("left_to_right_contact_frames", 0) >= 1
+        and coordination_values.get("right_to_left_contact_frames", 0) >= 1
+        and coordination_values.get("alternating_transitions_proxy", 0) >= 2
+    )
     try:
         result = generate_program(
             profile,
             feedback=feedback,
             movement_decisions=movement_decisions,
+            camera_coordination_observed=camera_coordination_observed,
         )
     except ProgramSafetyBlock as exc:
         return jsonify({"blocked": True, "message": str(exc)}), 409
@@ -2851,12 +2864,17 @@ def coach_program():
     response["movement_assessment_stored"] = False
     response["movement_decisions_stored"] = False
     if camera_observations is not None:
-        # Camera-derived pose proxies are returned separately; they never
-        # influence programme selection or readiness and are not persisted.
+        # Only a clear, adequate positive coordination proxy can add one
+        # low-demand warm-up drill. Camera never determines readiness, deficits,
+        # symptoms, loading or main exercise selection; observations are not stored.
         response["camera_observations"] = camera_observations
         response["camera_protocol"] = camera_protocol
         response["camera_observations_stored"] = False
-        response["camera_observations_used_for_programme_decisions"] = False
+        response["camera_coordination_add_on_applied"] = bool(
+            result.get("camera_coordination_add_on_applied")
+        )
+        response["camera_observations_used_for_programme_decisions"] = response["camera_coordination_add_on_applied"]
+        response["camera_observations_used_for_readiness_or_main_exercise_selection"] = False
     return jsonify(response), 200
 
 

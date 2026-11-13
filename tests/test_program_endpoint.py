@@ -209,3 +209,179 @@ def test_program_endpoint_rejects_camera_payload_claiming_video_storage(monkeypa
         "/coach/program", headers={"X-Pilot-Token": "test-only-secret"}, json=payload
     )
     assert response.status_code == 400
+
+
+def test_clear_coordination_proxy_adds_only_a_low_demand_warmup_drill(monkeypatch):
+    client = _client(monkeypatch)
+    coordination = {
+        "status": "observed",
+        "quality": "adequate",
+        "valid_frames": 12,
+        "total_frames": 16,
+        "observations": {
+            "cross_body_alternation_observed": True,
+            "left_to_right_contact_frames": 4,
+            "right_to_left_contact_frames": 4,
+            "alternating_transitions_proxy": 3,
+        },
+        "limitations": "Grobi 2D približek izmeničnega dotika nasprotne roke in kolena.",
+        "source": "browser_pose_landmarker",
+        "analysis_version": "six-pattern-proxy-v1",
+    }
+    payload = {
+        "movement_assessment_consent": True,
+        "movement_decisions": _six_pattern_decisions(),
+        "profile": {
+            "goal": "functional", "experience": "beginner",
+            "equipment": ["bodyweight", "resistance_band"], "sessions_per_week": 2,
+            "session_minutes": 45,
+        },
+        "camera_observations": {"coordination": coordination},
+        "camera_protocol": {
+            "version": "six-pattern-camera-flow-v1",
+            "dowel_three_contact_user_confirmed": False,
+            "push_up_support_height": "floor",
+            "video_stored": False,
+            "video_uploaded": False,
+        },
+    }
+    response = client.post(
+        "/coach/program", headers={"X-Pilot-Token": "test-only-secret"}, json=payload
+    )
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["camera_observations"]["coordination"] == coordination
+    assert body["camera_observations_stored"] is False
+    assert body["camera_coordination_add_on_applied"] is True
+    assert body["camera_observations_used_for_programme_decisions"] is True
+    assert body["camera_observations_used_for_readiness_or_main_exercise_selection"] is False
+    for session in body["program"]["sessions"]:
+        block = session["camera_coordination_block"]
+        assert block["is_readiness_assessment"] is False
+        assert block["exercises"][0]["exercise_id"] == "controlled_lateral_step"
+        assert block["exercises"][0]["sets"] == 1
+        assert block["exercises"][0]["work_seconds"] == 10
+
+
+def test_program_endpoint_rejects_contradictory_coordination_proxy_status(monkeypatch):
+    payload = {
+        "movement_assessment_consent": True,
+        "movement_decisions": _six_pattern_decisions(),
+        "profile": {
+            "goal": "functional", "experience": "beginner",
+            "equipment": ["bodyweight", "resistance_band"], "sessions_per_week": 2,
+            "session_minutes": 45,
+        },
+        "camera_observations": {
+            "coordination": {
+                "status": "uncertain", "quality": "adequate",
+                "valid_frames": 12, "total_frames": 16,
+                "observations": {
+                    "cross_body_alternation_observed": True,
+                    "left_to_right_contact_frames": 4,
+                    "right_to_left_contact_frames": 4,
+                    "alternating_transitions_proxy": 3,
+                },
+                "limitations": "Grobi 2D približek.",
+                "source": "browser_pose_landmarker",
+                "analysis_version": "six-pattern-proxy-v1",
+            }
+        },
+        "camera_protocol": {
+            "version": "six-pattern-camera-flow-v1",
+            "dowel_three_contact_user_confirmed": False,
+            "push_up_support_height": "floor",
+            "video_stored": False,
+            "video_uploaded": False,
+        },
+    }
+    response = _client(monkeypatch).post(
+        "/coach/program", headers={"X-Pilot-Token": "test-only-secret"}, json=payload
+    )
+    assert response.status_code == 400
+
+
+def test_program_endpoint_accepts_skipped_coordination_as_uncertain_context(monkeypatch):
+    payload = {
+        "movement_assessment_consent": True,
+        "movement_decisions": _six_pattern_decisions(),
+        "profile": {
+            "goal": "functional", "experience": "beginner",
+            "equipment": ["bodyweight"], "sessions_per_week": 2,
+            "session_minutes": 45,
+        },
+        "camera_observations": {
+            "coordination": {
+                "status": "uncertain", "quality": "insufficient",
+                "valid_frames": 0, "total_frames": 0,
+                "observations": {
+                    "cross_body_alternation_observed": False,
+                    "left_to_right_contact_frames": 0,
+                    "right_to_left_contact_frames": 0,
+                    "alternating_transitions_proxy": 0,
+                },
+                "limitations": "Koordinacijski preizkus je bil preskočen ali ni bilo dovolj vidnih sličic.",
+                "source": "browser_pose_landmarker",
+                "analysis_version": "six-pattern-proxy-v1",
+            }
+        },
+        "camera_protocol": {
+            "version": "six-pattern-camera-flow-v1",
+            "dowel_three_contact_user_confirmed": False,
+            "push_up_support_height": "floor",
+            "video_stored": False,
+            "video_uploaded": False,
+        },
+    }
+    response = _client(monkeypatch).post(
+        "/coach/program", headers={"X-Pilot-Token": "test-only-secret"}, json=payload
+    )
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["camera_observations"]["coordination"]["status"] == "uncertain"
+    assert body["camera_coordination_add_on_applied"] is False
+    assert body["camera_observations_used_for_programme_decisions"] is False
+    assert all("camera_coordination_block" not in session for session in body["program"]["sessions"])
+
+
+
+def test_insufficient_quality_coordination_proxy_does_not_add_warmup_drill(monkeypatch):
+    payload = {
+        "movement_assessment_consent": True,
+        "movement_decisions": _six_pattern_decisions(),
+        "profile": {
+            "goal": "functional", "experience": "beginner",
+            "equipment": ["bodyweight"], "sessions_per_week": 2,
+            "session_minutes": 45,
+        },
+        "camera_observations": {
+            "coordination": {
+                "status": "observed", "quality": "insufficient",
+                "valid_frames": 12, "total_frames": 16,
+                "observations": {
+                    "cross_body_alternation_observed": True,
+                    "left_to_right_contact_frames": 4,
+                    "right_to_left_contact_frames": 4,
+                    "alternating_transitions_proxy": 3,
+                },
+                "limitations": "Kakovost slike ni zadostna za uporabo pri izbiri dodatne vaje.",
+                "source": "browser_pose_landmarker",
+                "analysis_version": "six-pattern-proxy-v1",
+            }
+        },
+        "camera_protocol": {
+            "version": "six-pattern-camera-flow-v1",
+            "dowel_three_contact_user_confirmed": False,
+            "push_up_support_height": "floor",
+            "video_stored": False,
+            "video_uploaded": False,
+        },
+    }
+    response = _client(monkeypatch).post(
+        "/coach/program", headers={"X-Pilot-Token": "test-only-secret"}, json=payload
+    )
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["camera_coordination_add_on_applied"] is False
+    assert body["camera_observations_used_for_programme_decisions"] is False
+    assert all("camera_coordination_block" not in session for session in body["program"]["sessions"])

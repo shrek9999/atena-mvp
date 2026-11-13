@@ -61,6 +61,12 @@ The service rejects incomplete or unknown pattern sets. It does not infer readin
 
 The deterministic programme engine also omits any `UNASSESSABLE`, `uncertain` or `not_assessed` pattern. A missing assessment is never treated as READY. Symptoms are kept distinct from movement-quality observations; ATENA does not diagnose or automatically substitute a different exercise.
 
+## Optional camera coordination contribution
+
+The browser camera may contribute only a positive, low-dose skill emphasis. The backend accepts the coordination proxy as usable for this purpose only when status is `observed`, quality is `adequate`, at least six frames are valid, both cross-body directions are represented, and at least two alternating transitions are observed. When all conditions are met, the programme may add one 10-second set of the beginner-level, bodyweight **controlled lateral step** to the warm-up.
+
+This is not a coordination score or a general movement-quality finding. It does not establish readiness, safety, absence of symptoms, or competence in other tasks. It never changes main exercise selection, load, progression, or the six self-reported movement decisions. If the task is skipped, unclear, insufficient-quality or not observed, no camera-based change is made and no deficit is inferred. Camera data remains transient and is not stored or uploaded.
+
 ## Current implementation boundary
 
 This commit establishes and tests the backend contract and programme gate. The separate Cloudflare Pages onboarding interface still needs to present the six guided checks, submit this endpoint, and show users how to retry or skip a check. Do not expose the profile-program button as ready until that UI flow is connected and tested end to end.

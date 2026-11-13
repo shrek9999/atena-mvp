@@ -583,8 +583,11 @@ def generate_program(
     feedback: object = None,
     movement_assessment: object = None,
     movement_decisions: object = None,
+    camera_coordination_observed: bool = False,
 ) -> dict:
     """Generate a repeatable catalogue plan, conservatively adapting to the last session."""
+    if not isinstance(camera_coordination_observed, bool):
+        raise ProgramValidationError("camera_coordination_observed mora biti true ali false.")
     p = validate_profile(profile)
     planning_goal = p["goal"]
     if p["goal"] == "strength_hypertrophy" and p["experience"] == "advanced":
@@ -793,6 +796,24 @@ def generate_program(
     reference_catalogue = get_exercises(include_accessories=True)
     catalogue_names = {item["id"]: item["name"] for item in reference_catalogue}
     reference_by_name = {item["name"]: item for item in reference_catalogue}
+    # Camera may add only this low-demand, beginner-level warm-up skill drill.
+    # It never changes readiness, symptoms, loading, or main exercise selection.
+    camera_coordination_exercise = next(
+        (
+            item for item in reference_catalogue
+            if item["id"] == "controlled_lateral_step"
+            and item.get("pattern") == "coordination"
+            and item.get("level") == "beginner"
+            and item["id"] not in p["excluded_exercise_ids"]
+            and "coordination" not in p["excluded_patterns"]
+            and set(item.get("equipment", [])).issubset(set(p["equipment"]))
+            and (
+                not item.get("equipment_any")
+                or set(item["equipment_any"]).intersection(set(p["equipment"]))
+            )
+        ),
+        None,
+    ) if camera_coordination_observed else None
 
     def safe_references(values: list[str], current_id: str, current_pattern: str) -> list[str]:
         resolved = []
@@ -892,6 +913,24 @@ def generate_program(
             p["experience"], p["session_minutes"]
         )
         warm_up_minutes = 5 if p["session_minutes"] <= 30 else (7 if p["session_minutes"] <= 60 else 10)
+        camera_coordination_block = None
+        if camera_coordination_exercise is not None:
+            camera_coordination_block = {
+                "source": "adequate_positive_camera_proxy",
+                "purpose": "Neobvezna, kratka koordinacijska priprava; ne predstavlja ocene pripravljenosti ali pomanjkljivosti.",
+                "is_readiness_assessment": False,
+                "exercises": [{
+                    "exercise_id": camera_coordination_exercise["id"],
+                    "name": camera_coordination_exercise["name"],
+                    "component": "koordinacija",
+                    "sets": 1,
+                    "work_seconds": 10,
+                    "tempo": "počasi in nadzorovano",
+                    "equipment": camera_coordination_exercise["equipment"],
+                    "cues": camera_coordination_exercise["cues"],
+                    "warnings": camera_coordination_exercise["warnings"],
+                }],
+            }
         mobility_block = None
         if p["goal"] == "functional" and by_pattern.get("mobility") and "mobility" not in p["excluded_patterns"]:
             # Functional preparation must represent all declared pillars, not
@@ -1606,6 +1645,7 @@ def generate_program(
             "warm_up_minutes": warm_up_minutes,
             "warm_up_range": "5–7 min" if p["session_minutes"] <= 30 else "5–10 min",
             **({"mobility_block": mobility_block} if mobility_block else {}),
+            **({"camera_coordination_block": camera_coordination_block} if camera_coordination_block else {}),
             "exercise_count": len(selected),
             "work_sets": sum(item["prescription"]["sets"] for item in selected),
             "estimated_minutes": estimated,
@@ -1663,6 +1703,7 @@ def generate_program(
     canonical_goal = normalize_goal(p["goal"])
     return {
         "program_version": "3.1.0",
+        "camera_coordination_add_on_applied": camera_coordination_exercise is not None,
         "goal_framework": CANONICAL_GOALS[canonical_goal],
         "nutrition_guidance": list(CANONICAL_GOALS[canonical_goal].get("nutrition_guidance", [])),
         "movement_adaptation": {
