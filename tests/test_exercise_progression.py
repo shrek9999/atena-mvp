@@ -452,3 +452,31 @@ def test_incomplete_session_holds_only_the_named_difficult_exercise():
     assert decision(result, "squat_goblet")["decision"] == "increase_load"
     assert decision(result, "push_up")["decision"] == "hold"
     assert "Ostale vaje se presojajo ločeno" in decision(result, "push_up")["reason"]
+
+
+def test_mild_stable_symptom_holds_only_affected_exercise_and_allows_other_exercise_review():
+    symptomatic = exercise("squat_goblet")
+    unaffected = exercise("push_up")
+    session = record("2026-11-03", [symptomatic, unaffected], difficulty="easy", discomfort=True)
+    session["discomfort_details"] = {
+        "exercise_id": "squat_goblet",
+        "pain_during": 2,
+        "worsened": False,
+        "tolerated": True,
+        "acute_warning_signs": [],
+        "modifications_applied": ["reduced_load", "slow_tempo", "reduced_range"],
+    }
+    previous = record("2026-10-30", [exercise("squat_goblet"), exercise("push_up")], difficulty="easy")
+    result = recommend_exercise_progression([session, previous])
+    assert decision(result, "squat_goblet")["decision"] == "modify_symptomatic_exposure"
+    assert decision(result, "push_up")["decision"] != "pause_and_review"
+
+
+def test_legacy_or_incomplete_discomfort_report_remains_conservative_global_hold():
+    sessions = [
+        record("2026-11-03", [exercise("squat_goblet"), exercise("push_up")], discomfort=True),
+        record("2026-10-30", [exercise("squat_goblet"), exercise("push_up")]),
+    ]
+    result = recommend_exercise_progression(sessions)
+    assert decision(result, "squat_goblet")["decision"] == "pause_and_review"
+    assert decision(result, "push_up")["decision"] == "pause_and_review"
