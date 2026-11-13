@@ -756,10 +756,9 @@ def _sanitize_unverified_exercise_parameters(answer, messages):
             )
         if already_asked and re.search(r"(ohraniti vzorec|enak namen|namen treninga)", latest_user, re.IGNORECASE):
             return (
-                "Razumem — ohraniva namen z RDL kot sorodno različico predklona in zadnje "
-                "verige, vendar ni biomehansko enak klasičnemu mrtvemu dvigu. Za konkreten "
-                "odmerek mi manjkata še prvotni odmerek (serije × ponovitve) in teže ročk. "
-                "Kakšen je bil prvotni odmerek in katere teže ročk imaš?"
+                "Razumem. RDL ohranja soroden kolčni zgib in poudarek na zadnji verigi. "
+                "Za konkreten odmerek mi manjkata še prvotni odmerek (serije × ponovitve) "
+                "in teže ročk. Kakšen je bil prvotni odmerek in katere teže ročk imaš?"
             )
         return (
             "Z ročkami je lahko primerna alternativa **predklon z nevtralno hrbtenico (RDL)**, "
@@ -812,6 +811,22 @@ def _sanitize_unverified_exercise_parameters(answer, messages):
                     "povečanju obremenitve."
                 )
             if re.search(r"tehnik\w*", latest_user, re.IGNORECASE):
+                recovery_question_already_asked = bool(re.search(
+                    r"(?:regeneracij\w*|naslednji\s+dan|24\s*[–-]?\s*48).{0,120}"
+                    r"(?:počutil|spoč|utrujen|bolečin)|"
+                    r"(?:počutil|spoč|utrujen).{0,120}(?:naslednji\s+dan|24\s*[–-]?\s*48|po\s+treningu)",
+                    assistant_history,
+                    re.IGNORECASE,
+                ))
+                if recovery_question_already_asked:
+                    return (
+                        "Dobro, tehnika je bila dobra. Ker še nimam podatka o regeneraciji po "
+                        "treningu, obdrži isto obremenitev in enako število serij kot zadnjič. "
+                        f"Ohrani {reps} ponovitev na serijo z {effort}; breme povečaj šele po "
+                        "drugi primerljivi uspešni izvedbi z ustrezno regeneracijo. "
+                        "Ko boš lahko, sporoči, ali si v 24–48 urah po treningu okreval "
+                        "običajno, brez nenavadne utrujenosti ali bolečin."
+                    )
                 return (
                     "Dobro, tehnika je bila dobra. Ker je bila to še vedno samo ena uspešna "
                     "izpostavitev, naslednjič ohrani isto obremenitev in enako število serij "
@@ -1565,7 +1580,7 @@ def _coaching_guardrail_reply(messages):
                 "Ničesar nisi pokvaril. En izpuščen trening ne izniči napredka. "
                 "Ne poskušaj ga nadoknaditi z dvojnim obsegom; nadaljuj z naslednjim "
                 "načrtovanim treningom. Če se to ponavlja, prilagodiva tedenski obseg, "
-                "da bo realističen. Bi ti bolj ustrezala dva krajša treninga?"
+                "da bo realističen. Za zdaj se osredotoči samo na naslednji načrtovani trening."
             )
         if low_energy:
             return (
