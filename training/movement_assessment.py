@@ -63,6 +63,18 @@ SUPPORTED_VARIANTS = {
 }
 
 
+# Only exact, catalogued low-demand variants may be used after a symptom retest.
+# This is deliberately narrower than the general supported-variant registry.
+SYMPTOM_REGRESSION_VARIANTS = {
+    "squat": ("supported_squat", "chair_sit_to_stand", "reaching_squat", "air_squat"),
+    "hinge": ("wall_hip_hinge", "bodyweight_hip_hinge"),
+    "horizontal_push": ("push_up_incline",),
+    "vertical_push": ("band_overhead_press",),
+    "horizontal_pull": ("band_row", "trx_row"),
+    "lunge": ("supported_split_squat",),
+}
+
+
 class MovementAssessmentError(ValueError):
     """Raised when a self-reported movement assessment is malformed."""
 
