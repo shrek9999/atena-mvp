@@ -750,19 +750,16 @@ def _sanitize_unverified_exercise_parameters(answer, messages):
         already_asked = "prvotni odmerek" in assistant_history.casefold()
         if already_asked and re.search(r"(na voljo imam|klopi nimam|ročk)", latest_user, re.IGNORECASE):
             return (
-                "Razumem: imaš ročke in lastno težo, klopi pa ne potrebuješ za RDL. "
-                "RDL ohranja soroden vzorec predklona in poudarek na zadnji verigi, "
-                "vendar ni biomehansko enak klasičnemu mrtvemu dvigu. Da ne bom ugibal "
-                "o odmerku ali obremenitvi, mi povej še: kakšen je bil prvotni odmerek "
-                "mrtvega dviga (serije × ponovitve) in katere teže ročk imaš?"
+                "Razumem: na voljo imaš ročke in lastno težo, klopi pa za RDL ne potrebuješ. "
+                "Da ne bom ugibal o odmerku ali obremenitvi, mi povej še: kakšen je bil "
+                "prvotni odmerek mrtvega dviga (serije × ponovitve) in katere teže ročk imaš?"
             )
         if already_asked and re.search(r"(ohraniti vzorec|enak namen|namen treninga)", latest_user, re.IGNORECASE):
             return (
-                "Razumem — ohraniva obremenjen kolčni zgib in poudarek na zadnji verigi. "
-                "RDL je sorodna možnost, vendar ni biomehansko enak klasičnemu mrtvemu dvigu. "
-                "Da ne bom ugibal o odmerku, potrebujem še prvotni odmerek mrtvega dviga "
-                "(serije × ponovitve) in podatek, katere teže ročk imaš na voljo. "
-                "Katere teže ročk imaš?"
+                "Razumem — ohraniva namen z RDL kot sorodno različico predklona in zadnje "
+                "verige; ni pa biomehansko enak klasičnemu mrtvemu dvigu. Za konkreten "
+                "odmerek mi manjkata še prvotni odmerek (serije × ponovitve) in teže ročk. "
+                "Kakšen je bil prvotni odmerek in katere teže ročk imaš?"
             )
         return (
             "Z ročkami je lahko primerna alternativa **predklon z nevtralno hrbtenico (RDL)**, "
@@ -918,6 +915,20 @@ def _sanitize_unverified_exercise_parameters(answer, messages):
             re.IGNORECASE,
         ))
         if not recovery_reported:
+            recovery_question_already_asked = bool(re.search(
+                r"(?:regeneracij\w*|naslednji\s+dan).{0,120}"
+                r"(?:spoč|utrujen|bolečin|recovery|fatigue)|"
+                r"(?:spoč|utrujen).{0,120}(?:naslednji\s+dan|regeneracij)",
+                assistant_history,
+                re.IGNORECASE,
+            ))
+            if recovery_question_already_asked:
+                return (
+                    "Dobra tehnika in primeren občutek napora sta pozitivna. Ker še nimam "
+                    "podatka o regeneraciji naslednji dan, obremenitve še ne povečuj; za zdaj "
+                    "ohrani enako dozo. Ko boš lahko, sporoči, ali si bil naslednji dan "
+                    "običajno spočit ali nenavadno utrujen."
+                )
             if technique_and_effort:
                 return (
                     "Dobro, to potrjuje stabilno tehniko in primeren občutek napora. "
@@ -1741,10 +1752,9 @@ def _coaching_guardrail_reply(messages):
         re.IGNORECASE,
     ))
     if assistant_asked_safety and not _has_safety_clearance(messages) and not latest_reports_health_issue and not symptom_clarification_active:
-        # Ask the safety question at most twice (the original ask plus one reminder).
-        # After that, acknowledge further intake details and explain the boundary
-        # without repeating the same question on every turn.
-        pending = _pending_safety_reply(latest, repeat_question=safety_question_count < 2)
+        # The broad safety intake is a one-time question. If the user skips it,
+        # acknowledge new information and keep the programme gate closed without asking again.
+        pending = _pending_safety_reply(latest, repeat_question=safety_question_count < 1)
         if safety_question_count >= 2:
             return pending
         safety_question = pending.split(". ", 1)[-1]
