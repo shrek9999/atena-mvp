@@ -182,8 +182,8 @@ def _has_initial_health_gate_clearance(text):
     """Recognize the structured one-time profile answer; never infer it from local symptoms."""
     normalized = " ".join(str(text or "").split()).casefold()
     return bool(re.search(
-        r"varnostna potrditev:\\s*nimam\\s+večjih\\s+zdravstvenih\\s+omejitev.{0,100}"
-        r"(?:svežih\\s+poškodb|zdravniških\\s+prepovedi)",
+        r"varnostna potrditev:\s*nimam\s+večjih\s+zdravstvenih\s+omejitev.{0,100}"
+        r"(?:svežih\s+poškodb|zdravniških\s+prepovedi)",
         normalized,
     ))
 
