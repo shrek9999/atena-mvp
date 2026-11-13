@@ -701,6 +701,21 @@ def generate_program(
                     )
                 except MovementCoachingError as exc:
                     raise ProgramValidationError(str(exc)) from exc
+                regression_test = user_report.get("regression_test", {})
+                if decision == "REGRESS" and target_id == "supported_squat":
+                    support_requirements = {
+                        "trx": {"suspension_trainer"},
+                        "band": {"resistance_band", "anchor_point"},
+                        "fixed_bar": {"rack"},
+                        "stable_support": {"household_support"},
+                    }
+                    support_method = regression_test.get("support_method")
+                    required_support = support_requirements.get(support_method, set())
+                    if not required_support or not required_support.issubset(set(p["equipment"])):
+                        raise ProgramValidationError(
+                            "Izbrana opora za podprti počep ni potrjena v uporabnikovi opremi. "
+                            "Za elastiko je potrebno tudi varno sidrišče; za drog stabilen rack."
+                        )
                 # Only a specifically retested, tolerated regression is eligible
                 # for a supported variant; all other symptom reports stay omitted.
                 movement_status_by_pattern[pattern] = (
