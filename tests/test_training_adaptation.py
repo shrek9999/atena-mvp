@@ -93,7 +93,8 @@ def test_worsening_or_untolerated_discomfort_keeps_review_gate():
         "modifications_applied": ["reduced_load"],
     }
     result = assess_next_step([session])
-    assert result["decision"] == "pause_and_review"
+    assert result["decision"] == "stop_symptomatic_exposure"
+    assert result["affected_exercise_ids"] == ["barbell_squat"]
     assert result["progression_allowed"] is False
 
 
