@@ -3632,6 +3632,8 @@ def save_six_pattern_movement_assessment(profile_id):
                 "not_assessed": "Gibalni vzorec še ni bil ocenjen.",
                 "symptoms_reported": "Pri osnovni različici se je pojavila bolečina ali nelagodje; vzorec ostane izpuščen brez uspešnega ponovnega preizkusa.",
             }[status]
+            if status == "symptoms_reported" and selected_exercise_id and "regression_test" not in value:
+                return jsonify({"error": f"Izbrana regresija za {pattern} mora imeti zabeležen ponovni preizkus."}), 400
             if status == "symptoms_reported" and "regression_test" in value:
                 regression_test = value["regression_test"]
                 if (
@@ -3652,10 +3654,11 @@ def save_six_pattern_movement_assessment(profile_id):
                     decision = "REGRESS"
                     reason = "Konkretna regresija je bila ponovno preizkušena; program lahko uporabi samo točno to različico."
                 else:
+                    if selected_exercise_id is not None:
+                        return jsonify({"error": f"Netolerirana regresija za {pattern} ne sme izbrati vaje."}), 400
                     decision = "UNASSESSABLE"
-                    selected_exercise_id = None
                     reason = "Regresija ni bila ustrezno tolerirana; prizadeti vzorec ostane izpuščen."
-            if decision == "REGRESS":
+            if status == "symptoms_reported":
                 try:
                     validate_symptom_regression_report(
                         user_report, decision, selected_exercise_id,
