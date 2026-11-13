@@ -61,7 +61,8 @@ def assess_next_step(sessions):
             and d["worsened"] is False
             and d["tolerated"] is True
             and d["acute_warning_signs"] == []
-            and {"reduced_load", "slow_tempo", "reduced_range"}.issubset(set(d.get("modifications_applied", [])))
+            and {"reduced_load", "slow_tempo"}.issubset(set(d["modifications_applied"]))
+            and bool({"reduced_range", "range_within_tolerance"} & set(d["modifications_applied"]))
             for d in details
         )
         affected_ids = sorted({d["exercise_id"] for d in details})
