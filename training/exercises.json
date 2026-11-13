@@ -8474,7 +8474,9 @@
       "trunk"
     ],
     "cues": [
-      "Z obema rokama se rahlo oprimi potrjene stabilne opore v višini, ki ti omogoča nadzorovan počep.",
+      "Izberi eno potrjeno oporo: TRX, varno pritrjeno elastiko, stabilen fiksni drog v višini prsnega koša ali nepremično oporo.",
+      "TRX ali elastika naj pomagata pri ravnotežju in razbremenitvi; pri elastiki preveri namensko sidrišče in stanje materiala.",
+      "Pri drogu uporabi samo stabilen rack; drog mora biti fiksiran in približno v višini prsnega koša.",
       "Opora naj pomaga pri ravnotežju in razbremenitvi; ne vleci se z rokami navzgor.",
       "Spuščaj se samo v amplitudo, ki jo lahko nadzoruješ brez stopnjevanja simptomov.",
       "Ohrani stopala stabilna in kolena usmerjaj v smeri stopal."
@@ -8495,13 +8497,16 @@
       "Vstajanje s stola (počep do stola)"
     ],
     "warnings": [
-      "Uporabi samo oporo, za katero je potrjeno, da je stabilna in varno pritrjena; TRX mora biti pravilno nameščen.",
-      "Če se bolečina poveča, postane ostra ali spremeni gibanje, test prekini. Oporna različica ni dovoljenje za gib skozi bolečino."
+      "Uporabi samo oporo, ki je stabilna in varno pritrjena. Elastika zahteva namensko sidrišče; drog mora biti zavarovan v racku.",
+      "Če se bolečina stopnjuje, postane ostra, spremeni gibanje ali se pojavi akutna oteklina oziroma spazem, test prekini.",
+      "Oporna različica ni dovoljenje za gib skozi akutno ali stopnjujočo se bolečino."
     ],
     "single_joint": false,
     "equipment_any": [
       "household_support",
-      "suspension_trainer"
+      "suspension_trainer",
+      "resistance_band",
+      "rack"
     ],
     "loading_potential": "low",
     "training_role": "main",
