@@ -7,11 +7,12 @@ from typing import Any
 from training.catalogue import get_exercises
 from training.goals import CANONICAL_GOALS, normalize_goal
 from training.movement_assessment import (
-    MovementAssessmentError, SUPPORTED_VARIANTS, TASK_PATTERNS,
+    MovementAssessmentError, SUPPORTED_VARIANTS, SYMPTOM_REGRESSION_VARIANTS, TASK_PATTERNS,
     assess_movement_competence,
 )
 from training.movement_coaching import (
-    PATTERN_DEFINITIONS, VALID_DECISIONS, get_exercise_options,
+    PATTERN_DEFINITIONS, VALID_DECISIONS, MovementCoachingError, get_exercise_options,
+    validate_symptom_regression_report,
 )
 from training.video_demonstrations import get_video_demonstrations
 
@@ -659,13 +660,13 @@ def generate_program(
                     f"Vaja {target_id} za {pattern} ni združljiva z opremo ali izkušnjami v profilu."
                 )
             omission_reason = None
-            if decision in {"LEARN", "REGRESS"} and not target_id:
+            if decision == "REGRESS" and not target_id:
+                raise ProgramValidationError(
+                    f"Za simptomatsko regresijo vzorca {pattern} mora biti izbrana točno preizkušena vaja."
+                )
+            if decision == "LEARN" and not target_id:
                 if not available_options:
-                    # A self-report that an exercise needs support must not make
-                    # the entire programme fail when this profile has no safe,
-                    # catalogue-backed learning variation for that pattern.
-                    # Keep the saved self-report unchanged; omit only this pattern
-                    # for this programme and retry automatically if equipment changes.
+                    # Omit only this pattern when no verified learning variation is available.
                     decision = "UNASSESSABLE"
                     omission_reason = "no_equipment_compatible_learning_variant"
                 else:
@@ -684,20 +685,33 @@ def generate_program(
                 "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed"
             }:
                 raise ProgramValidationError(f"Neveljaven status uporabnikovega poročila za {pattern}.")
-            if report_status in {"uncertain", "symptoms_reported", "not_assessed"} and decision != "UNASSESSABLE":
+            if report_status in {"uncertain", "not_assessed"} and decision != "UNASSESSABLE":
                 raise ProgramValidationError(
-                    f"Vzorec {pattern} je označen kot nejasen, simptomatski ali neocenjen, zato ne sme biti označen kot pripravljen."
+                    f"Vzorec {pattern} je označen kot nejasen ali neocenjen, zato ne sme biti označen kot READY."
+                )
+            if report_status == "symptoms_reported":
+                allowed_regressions = SYMPTOM_REGRESSION_VARIANTS.get(pattern, ())
+                if decision == "REGRESS" and target_id not in allowed_regressions:
+                    raise ProgramValidationError(
+                        f"Vaja {target_id} ni potrjena simptomatska regresija za vzorec {pattern}."
+                    )
+                try:
+                    validate_symptom_regression_report(
+                        user_report, decision, target_id, allowed_regressions
+                    )
+                except MovementCoachingError as exc:
+                    raise ProgramValidationError(str(exc)) from exc
+                # Only a specifically retested, tolerated regression is eligible
+                # for a supported variant; all other symptom reports stay omitted.
+                movement_status_by_pattern[pattern] = (
+                    "needs_support" if decision == "REGRESS" else "symptoms_reported"
+                )
+                movement_tasks_by_pattern.setdefault(pattern, []).append(
+                    PATTERN_DEFINITIONS[pattern]["task_id"]
                 )
             if report_status == "needs_support" and decision == "READY":
                 raise ProgramValidationError(
                     f"Vzorec {pattern} potrebuje oporo ali lažjo različico in ne sme biti označen kot READY."
-                )
-            if report_status == "symptoms_reported":
-                # A symptom report takes precedence over any camera observation:
-                # omit this pattern pending clarification; never infer a diagnosis.
-                movement_status_by_pattern[pattern] = "symptoms_reported"
-                movement_tasks_by_pattern.setdefault(pattern, []).append(
-                    PATTERN_DEFINITIONS[pattern]["task_id"]
                 )
             movement_decisions_by_pattern[pattern] = {
                 **record,
