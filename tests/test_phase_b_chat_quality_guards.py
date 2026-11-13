@@ -375,6 +375,29 @@ def test_bodyweight_only_program_discloses_missing_loaded_pull_pattern():
     assert "ni enakovreden obremenjenemu RDL" in note
 
 
+@pytest.mark.parametrize(
+    "goal",
+    [
+        "Želim pridobiti mišične mase.",
+        "Rad bi izboljšal splošno telesno pripravljenost.",
+    ],
+)
+def test_slovene_fitness_goal_variants_trigger_single_safety_question(goal):
+    messages = _user_messages(goal)
+    answer = "Kolikokrat na teden želiš trenirati? Kakšno opremo imaš na voljo?"
+    cleaned = coach_routes._sanitize_onboarding_questions(answer, messages)
+    assert cleaned.count("?") == 1
+    assert "bolečine, poškodbe, gibalne omejitve" in cleaned
+
+
+def test_rdls_substitution_is_not_described_as_equivalent_to_deadlift():
+    messages = _user_messages("Kaj lahko delam namesto mrtvega dviga?")
+    answer = "RDL je enakovreden mrtvemu dvigu."
+    cleaned = coach_routes._sanitize_deadlift_substitution_claims(answer, messages)
+    assert "soroden vzorec kolčnega zgiba" in cleaned
+    assert "ni biomehansko enak" in cleaned
+
+
 def test_slovene_coaching_term_normalizer_corrects_known_errors():
     source = "prsni tisk; trilogije (tricepsa); säte; zadnji del hrbet; mišične masa"
     cleaned = coach_routes._normalize_slovene_coaching_terms(source)
