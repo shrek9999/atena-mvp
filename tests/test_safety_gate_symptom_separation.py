@@ -42,3 +42,13 @@ def test_local_symptom_alone_cannot_unlock_individualized_dose():
     answer = "Pri počepu izvedi 3 serije po 8 ponovitev."
     safe = _sanitize_unverified_training_dose(answer, messages)
     assert "3 serije po 8 ponovitev" not in safe
+
+
+def test_substitution_fallback_uses_the_standardized_one_time_safety_screen():
+    messages = [
+        {"role": "user", "content": "Želim zamenjati počep."},
+    ]
+    reply = _coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "akutno ostro bolečino" in reply
+    assert "kakršne koli bolečine" not in reply
