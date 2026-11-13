@@ -342,3 +342,46 @@ def test_program_endpoint_accepts_skipped_coordination_as_uncertain_context(monk
     assert body["camera_coordination_add_on_applied"] is False
     assert body["camera_observations_used_for_programme_decisions"] is False
     assert all("camera_coordination_block" not in session for session in body["program"]["sessions"])
+
+
+
+def test_insufficient_quality_coordination_proxy_does_not_add_warmup_drill(monkeypatch):
+    payload = {
+        "movement_assessment_consent": True,
+        "movement_decisions": _six_pattern_decisions(),
+        "profile": {
+            "goal": "functional", "experience": "beginner",
+            "equipment": ["bodyweight"], "sessions_per_week": 2,
+            "session_minutes": 45,
+        },
+        "camera_observations": {
+            "coordination": {
+                "status": "observed", "quality": "insufficient",
+                "valid_frames": 12, "total_frames": 16,
+                "observations": {
+                    "cross_body_alternation_observed": True,
+                    "left_to_right_contact_frames": 4,
+                    "right_to_left_contact_frames": 4,
+                    "alternating_transitions_proxy": 3,
+                },
+                "limitations": "Kakovost slike ni zadostna za uporabo pri izbiri dodatne vaje.",
+                "source": "browser_pose_landmarker",
+                "analysis_version": "six-pattern-proxy-v1",
+            }
+        },
+        "camera_protocol": {
+            "version": "six-pattern-camera-flow-v1",
+            "dowel_three_contact_user_confirmed": False,
+            "push_up_support_height": "floor",
+            "video_stored": False,
+            "video_uploaded": False,
+        },
+    }
+    response = _client(monkeypatch).post(
+        "/coach/program", headers={"X-Pilot-Token": "test-only-secret"}, json=payload
+    )
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["camera_coordination_add_on_applied"] is False
+    assert body["camera_observations_used_for_programme_decisions"] is False
+    assert all("camera_coordination_block" not in session for session in body["program"]["sessions"])
