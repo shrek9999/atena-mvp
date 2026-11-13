@@ -23,11 +23,17 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "task_id": "controlled_squat",
         "task": "Kontroliran počep v osebno ustrezni amplitudi; ne zahtevaj položaja počitka.",
         "exercise_ids": [
-            "chair_sit_to_stand", "reaching_squat", "air_squat", "squat_goblet", "loaded_deep_squat",
+            "supported_squat", "chair_sit_to_stand", "reaching_squat", "air_squat", "squat_goblet", "loaded_deep_squat",
             "two_dumbbell_squat", "dumbbell_squat_side",
             "dumbbell_squat_front_rack", "back_squat", "front_squat",
         ],
         "learning_methods": [
+            {
+                "id": "supported_squat_assistance",
+                "label": "Počep z oporo rok",
+                "description": "Za razbremenitev in ravnotežje uporabi TRX, varno pritrjeno elastiko, fiksiran drog v racku približno v višini prsnega koša ali stabilno nepremično oporo. Z rokami si pomagaj toliko, da lahko noge še vedno nadzorovano izvajajo gib.",
+                "exercise_id": "supported_squat",
+            },
             {
                 "id": "reaching_counterbalance",
                 "label": "Reaching squat s protiutežjo",
@@ -66,7 +72,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "wall_hip_hinge",
                 "label": "Predklon ob steni",
-                "description": "Uči pomik bokov nazaj in nadzorovan predklon z nevtralnim položajem hrbtenice.",
+                "description": "Uči pomik bokov nazaj in nadzorovan predklon z nevtralnim položajem hrbtenice. Pri nelagodju v hrbtu zmanjša amplitudo in obremenitev; začni ob steni, ohrani nadzor trupa in ne sili v globino.",
                 "exercise_id": "wall_hip_hinge",
             },
         ],
@@ -130,7 +136,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "band_row",
                 "label": "Veslanje z elastiko",
-                "description": "Dodatna možnost za učenje poti komolcev in lopatic, kadar je elastika varno pritrjena.",
+                "description": "Za manjši upor uporabi lažjo elastiko, počasen povratek in nadzor lopatic; sidrišče mora biti varno pritrjeno.",
                 "exercise_id": "band_row",
             },
         ],
@@ -152,7 +158,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "band_overhead_press",
                 "label": "Potisk nad glavo z elastiko",
-                "description": "Elastika omogoča prilagoditev upora; preveri njeno stanje in varno postavitev.",
+                "description": "Za ramo izberi zelo lahek upor in samo tolerirano amplitudo; gib izvedi počasi, elastiko pa varno pritrdi in preveri.",
                 "exercise_id": "band_overhead_press",
             },
         ],
@@ -185,6 +191,96 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
 
 class MovementCoachingError(ValueError):
     """Raised when movement coaching data is invalid or unsupported."""
+
+
+ACUTE_WARNING_SIGNS = {
+    "acute_sharp_pain",
+    "new_swelling",
+    "muscle_spasm",
+    "sudden_loss_of_function",
+    "rapidly_worsening_symptoms",
+}
+
+
+def validate_symptom_regression_report(
+    user_report: dict,
+    decision: str,
+    selected_exercise_id: str | None,
+    allowed_variants: tuple[str, ...],
+) -> None:
+    """Validate symptom response using tolerance, symptom behavior and acute warning signs."""
+    if not isinstance(user_report, dict) or user_report.get("status") != "symptoms_reported":
+        return
+    report_flags = user_report.get("acute_warning_signs", [])
+    if not isinstance(report_flags, list) or any(flag not in ACUTE_WARNING_SIGNS for flag in report_flags):
+        raise MovementCoachingError("Seznam akutnih opozorilnih znakov ni veljaven.")
+    test = user_report.get("regression_test")
+    if report_flags:
+        if decision != "UNASSESSABLE" or selected_exercise_id is not None or test is not None:
+            raise MovementCoachingError("Ob akutnem opozorilnem znaku prizadeti vzorec ne sme biti vključen v program.")
+        return
+    if decision == "UNASSESSABLE":
+        if selected_exercise_id is not None:
+            raise MovementCoachingError("Neocenjen simptomatski vzorec ne sme imeti izbrane vaje.")
+        if test is not None:
+            if not isinstance(test, dict):
+                raise MovementCoachingError("Ponovni preizkus mora biti objekt.")
+            pain = test.get("pain_during")
+            flags = test.get("acute_warning_signs", [])
+            if (
+                test.get("status") != "not_tolerated"
+                or test.get("variation_id") not in allowed_variants
+                or isinstance(pain, bool)
+                or not isinstance(pain, (int, float))
+                or not 0 <= pain <= 10
+                or not isinstance(test.get("worsened"), bool)
+                or not isinstance(flags, list)
+                or any(flag not in ACUTE_WARNING_SIGNS for flag in flags)
+                or (test.get("anchor_point_confirmed") is not None and not isinstance(test.get("anchor_point_confirmed"), bool))
+            ):
+                raise MovementCoachingError(
+                    "Netoleriran preizkus mora vsebovati veljaven status, oceno bolečine in seznam opozorilnih znakov."
+                )
+        return
+
+    if not isinstance(test, dict):
+        raise MovementCoachingError("Za vključitev simptomatskega vzorca je potreben zabeležen ponovni preizkus.")
+    pain = test.get("pain_during")
+    flags = test.get("acute_warning_signs", [])
+    support_method = test.get("support_method")
+    valid_support_methods = {"trx", "band", "fixed_bar", "stable_support"}
+    if support_method is not None and support_method not in valid_support_methods:
+        raise MovementCoachingError("Neveljaven način opore pri regresijskem počepu.")
+    if test.get("variation_id") == "supported_squat" and support_method not in valid_support_methods:
+        raise MovementCoachingError(
+            "Pri podprtem počepu mora biti navedena preverjena opora: TRX, elastika, fiksni drog ali stabilna opora."
+        )
+    if test.get("variation_id") in {"supported_squat", "band_row", "band_overhead_press"} and support_method == "band" and test.get("anchor_point_confirmed") is not True:
+        raise MovementCoachingError("Za uporabo elastike mora biti potrjeno varno, namensko sidrišče.")
+    if test.get("variation_id") == "trx_row" and support_method != "trx":
+        raise MovementCoachingError("Za veslanje s TRX mora biti izrecno potrjena uporaba TRX.")
+    if (
+        decision != "REGRESS"
+        or test.get("status") != "tolerated"
+        or not selected_exercise_id
+        or selected_exercise_id not in allowed_variants
+        or test.get("variation_id") != selected_exercise_id
+        or isinstance(pain, bool)
+        or not isinstance(pain, (int, float))
+        or not 0 <= pain <= 4
+        or test.get("worsened") is not False
+        or not isinstance(flags, list)
+        or flags
+        or any(flag not in ACUTE_WARNING_SIGNS for flag in flags)
+        or test.get("tempo") != "slow_controlled"
+        or test.get("load_adjustment") not in {"reduced", "bodyweight_or_assisted"}
+        or test.get("range_adjustment") != "within_tolerance"
+    ):
+        raise MovementCoachingError(
+            "Blago nelagodje do 4/10 je mogoče tolerirati le, če se ne stopnjuje, "
+            "ni opozorilnih znakov ter so breme, tempo in amplituda ustrezno prilagojeni. "
+            "Akutna bolečina, nova oteklina ali spazem zahtevajo prekinitev vadbe prizadetega področja."
+        )
 
 
 def _catalogue_index() -> dict[str, dict]:
@@ -281,6 +377,17 @@ def get_exercise_options(
             continue
         if optional and not (optional & available):
             continue
+        if exercise_id == "supported_squat":
+            # A band is only a support when anchored to a verified anchor point;
+            # a fixed bar must be a stable rack, not an improvised loose bar.
+            support_available = (
+                "household_support" in available
+                or "suspension_trainer" in available
+                or {"resistance_band", "anchor_point"}.issubset(available)
+                or "rack" in available
+            )
+            if not support_available:
+                continue
         if not _goal_matches(goal, exercise):
             continue
         options.append(deepcopy(exercise))

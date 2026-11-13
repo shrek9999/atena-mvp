@@ -274,7 +274,7 @@ def test_onboarding_safety_gate_precedes_equipment_question():
 
     assert reply is not None
     assert "najprej preveriti varnost" in reply
-    assert "bolečine, poškodbe" in reply
+    assert "akutno ostro bolečino" in reply
     assert "kakšno opremo" not in reply
 
 
@@ -468,7 +468,7 @@ def test_onboarding_sanitizer_replaces_equipment_first_question_with_safety_gate
     messages = [{"role": "user", "content": "Želim izboljšati kondicijo brez teka."}]
     answer = "Katero opremo imaš doma in kakšne aktivnosti so ti všeč?"
     cleaned = coach_routes._sanitize_onboarding_questions(answer, messages)
-    assert "bolečine, poškodbe" in cleaned
+    assert "akutno ostro bolečino" in cleaned
     assert cleaned.count("?") == 1
     assert "opremo" not in cleaned
 
@@ -479,7 +479,7 @@ def test_onboarding_sanitizer_keeps_only_safety_question_when_model_bundles_inta
         "Kakšno opremo imaš na voljo? Ali imaš kakšne zdravstvene omejitve ali bolečine?"
     )
     cleaned = coach_routes._sanitize_onboarding_questions(answer, messages)
-    assert "bolečine, poškodbe" in cleaned
+    assert "akutno ostro bolečino" in cleaned
     assert cleaned.count("?") == 1
     assert "opremo" not in cleaned
 

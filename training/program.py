@@ -7,11 +7,12 @@ from typing import Any
 from training.catalogue import get_exercises
 from training.goals import CANONICAL_GOALS, normalize_goal
 from training.movement_assessment import (
-    MovementAssessmentError, SUPPORTED_VARIANTS, TASK_PATTERNS,
+    MovementAssessmentError, SUPPORTED_VARIANTS, SYMPTOM_REGRESSION_VARIANTS, TASK_PATTERNS,
     assess_movement_competence,
 )
 from training.movement_coaching import (
-    PATTERN_DEFINITIONS, VALID_DECISIONS, get_exercise_options,
+    PATTERN_DEFINITIONS, VALID_DECISIONS, MovementCoachingError, get_exercise_options,
+    validate_symptom_regression_report,
 )
 from training.video_demonstrations import get_video_demonstrations
 
@@ -658,14 +659,18 @@ def generate_program(
                 raise ProgramValidationError(
                     f"Vaja {target_id} za {pattern} ni združljiva z opremo ali izkušnjami v profilu."
                 )
+            user_report = record.get("user_report", {})
+            if not isinstance(user_report, dict):
+                raise ProgramValidationError(f"Uporabnikovo poročilo za {pattern} mora biti objekt.")
+            report_status = user_report.get("status")
             omission_reason = None
-            if decision in {"LEARN", "REGRESS"} and not target_id:
+            if decision == "REGRESS" and report_status == "symptoms_reported" and not target_id:
+                raise ProgramValidationError(
+                    f"Za simptomatsko regresijo vzorca {pattern} mora biti izbrana točno preizkušena vaja."
+                )
+            if decision in {"LEARN", "REGRESS"} and not target_id and report_status != "symptoms_reported":
                 if not available_options:
-                    # A self-report that an exercise needs support must not make
-                    # the entire programme fail when this profile has no safe,
-                    # catalogue-backed learning variation for that pattern.
-                    # Keep the saved self-report unchanged; omit only this pattern
-                    # for this programme and retry automatically if equipment changes.
+                    # Omit only this pattern when no verified learning variation is available.
                     decision = "UNASSESSABLE"
                     omission_reason = "no_equipment_compatible_learning_variant"
                 else:
@@ -676,28 +681,64 @@ def generate_program(
                             None,
                         )
                         method_id = method["id"] if method else None
-            user_report = record.get("user_report", {})
-            if not isinstance(user_report, dict):
-                raise ProgramValidationError(f"Uporabnikovo poročilo za {pattern} mora biti objekt.")
-            report_status = user_report.get("status")
             if report_status is not None and report_status not in {
                 "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed"
             }:
                 raise ProgramValidationError(f"Neveljaven status uporabnikovega poročila za {pattern}.")
-            if report_status in {"uncertain", "symptoms_reported", "not_assessed"} and decision != "UNASSESSABLE":
+            if report_status in {"uncertain", "not_assessed"} and decision != "UNASSESSABLE":
                 raise ProgramValidationError(
-                    f"Vzorec {pattern} je označen kot nejasen, simptomatski ali neocenjen, zato ne sme biti označen kot pripravljen."
+                    f"Vzorec {pattern} je označen kot nejasen ali neocenjen, zato ne sme biti označen kot READY."
+                )
+            if report_status == "symptoms_reported":
+                allowed_regressions = SYMPTOM_REGRESSION_VARIANTS.get(pattern, ())
+                if decision == "REGRESS" and target_id not in allowed_regressions:
+                    raise ProgramValidationError(
+                        f"Vaja {target_id} ni potrjena simptomatska regresija za vzorec {pattern}."
+                    )
+                try:
+                    validate_symptom_regression_report(
+                        user_report, decision, target_id, allowed_regressions
+                    )
+                except MovementCoachingError as exc:
+                    raise ProgramValidationError(str(exc)) from exc
+                regression_test = user_report.get("regression_test", {})
+                if decision == "REGRESS":
+                    support_requirements = {
+                        "supported_squat": {
+                            "trx": {"suspension_trainer"},
+                            "band": {"resistance_band", "anchor_point"},
+                            "fixed_bar": {"rack"},
+                            "stable_support": {"household_support"},
+                        },
+                        "band_row": {"band": {"resistance_band", "anchor_point"}},
+                        "band_overhead_press": {"band": {"resistance_band", "anchor_point"}},
+                        "trx_row": {"trx": {"suspension_trainer"}},
+                    }
+                    if target_id in support_requirements:
+                        support_method = regression_test.get("support_method")
+                        method_requirements = support_requirements[target_id]
+                        if target_id == "supported_squat":
+                            required_support = method_requirements.get(support_method, set())
+                        else:
+                            required_support = method_requirements.get(support_method, set())
+                        if not required_support or not required_support.issubset(set(p["equipment"])):
+                            raise ProgramValidationError(
+                                "Izbrana opora ni potrjena v uporabnikovi opremi. "
+                                "Elastika zahteva namensko sidrišče, TRX pa izrecno potrjeno uporabo."
+                            )
+                        if support_method == "band" and regression_test.get("anchor_point_confirmed") is not True:
+                            raise ProgramValidationError("Elastika nima potrjenega varnega sidrišča.")
+                # Only a specifically retested, tolerated regression is eligible
+                # for a supported variant; all other symptom reports stay omitted.
+                movement_status_by_pattern[pattern] = (
+                    "needs_support" if decision == "REGRESS" else "symptoms_reported"
+                )
+                movement_tasks_by_pattern.setdefault(pattern, []).append(
+                    PATTERN_DEFINITIONS[pattern]["task_id"]
                 )
             if report_status == "needs_support" and decision == "READY":
                 raise ProgramValidationError(
                     f"Vzorec {pattern} potrebuje oporo ali lažjo različico in ne sme biti označen kot READY."
-                )
-            if report_status == "symptoms_reported":
-                # A symptom report takes precedence over any camera observation:
-                # omit this pattern pending clarification; never infer a diagnosis.
-                movement_status_by_pattern[pattern] = "symptoms_reported"
-                movement_tasks_by_pattern.setdefault(pattern, []).append(
-                    PATTERN_DEFINITIONS[pattern]["task_id"]
                 )
             movement_decisions_by_pattern[pattern] = {
                 **record,
@@ -945,12 +986,22 @@ def generate_program(
             seen_patterns.add(pattern)
             movement_status = movement_status_by_pattern.get(pattern)
             affected_tasks = movement_tasks_by_pattern.get(pattern, [])
+            structured_decision = movement_decisions_by_pattern.get(pattern)
+            early_symptom_report = (
+                structured_decision.get("user_report", {})
+                if structured_decision and isinstance(structured_decision.get("user_report"), dict)
+                else {}
+            )
+            symptom_tolerated = (
+                early_symptom_report.get("status") == "symptoms_reported"
+                and structured_decision.get("decision") == "REGRESS"
+            )
             if pattern == "locomotion" and movement_status == "needs_support":
                 raise ProgramValidationError(
                     "Pri hoji si navedel/-la uporabo opore ali pomoč druge osebe. ATENA ti ne bo samodejno predpisala hitre hoje. "
                     "Pred pripravo kondicijskega programa morava v pogovoru razjasniti, kakšna hoja je zate običajna in varna."
                 )
-            if movement_status == "symptoms_reported":
+            if movement_status == "symptoms_reported" and not symptom_tolerated:
                 missing_patterns.add(pattern)
                 movement_adaptation_events.append({
                     "pattern": pattern, "tasks": affected_tasks,
@@ -1195,6 +1246,15 @@ def generate_program(
             used_counts[candidate["id"]] += 1
             prescription = _prescription(planning_goal, p["experience"], effective_pattern, candidate, p["session_minutes"])
             movement_note = None
+            symptom_report = (
+                structured_decision.get("user_report", {})
+                if structured_decision and isinstance(structured_decision.get("user_report"), dict)
+                else {}
+            )
+            symptom_tolerated = (
+                symptom_report.get("status") == "symptoms_reported"
+                and structured_decision.get("decision") == "REGRESS"
+            )
             if structured_decision and structured_decision["decision"] in {"LEARN", "REGRESS"}:
                 prescription["sets"] = min(2, prescription.get("sets", 2))
                 if prescription.get("rir") is not None:
@@ -1226,7 +1286,39 @@ def generate_program(
                     "action": "ready_for_conservative_starting_variation",
                     "message": "Samoocena potrjuje udobje pri osnovnem gibalnem vzorcu, ne pa tolerance na veliko breme. Program zato začne s konservativno različico; večje obremenitve zahtevajo ločeno, ponovljivo izvedbo in zabeleženo povratno informacijo.",
                 })
-            if movement_status == "needs_support":
+            if symptom_tolerated:
+                # Mild, stable discomfort is not an automatic exclusion. Keep the
+                # exact tested variant, reduce resistance, slow the tempo and
+                # stay inside the tolerated range; never progress this exposure.
+                prescription["sets"] = min(2, prescription.get("sets", 2))
+                if prescription.get("rir") is not None:
+                    prescription["rir"] = max(4, prescription["rir"])
+                if prescription.get("rir_range") is not None:
+                    prescription["rir_range"] = "4+"
+                prescription["tempo"] = "4–1–2–0"
+                prescription["tempo_description"] = (
+                    "Počasen, nadzorovan tempo: 4 s spuščanje, 1 s nadzor, "
+                    "2 s vračanje. Ne pospešuj izvedbe."
+                )
+                prescription["tempo_seconds_per_rep"] = 7
+                movement_note = (
+                    (movement_note + " " if movement_note else "")
+                    + "Ker si navedel/-la blago nelagodje, začni z manjšo obremenitvijo "
+                    "(eno stopnjo lažje oziroma lastna teža), največ dvema serijama, "
+                    "tempom 4–1–2–0 in samo v amplitudi, ki ostaja tolerirana. "
+                    "Če se bolečina stopnjuje, postane ostra ali spremeni gibanje, prekini."
+                )
+                movement_adaptation_events.append({
+                    "pattern": pattern,
+                    "action": "mild_symptom_load_tempo_and_rom_adjustment",
+                    "exercise_id": candidate["id"],
+                    "pain_during": symptom_report["regression_test"]["pain_during"],
+                    "load_guidance": "reduce_one_step_or_use_bodyweight",
+                    "range_guidance": "stay_within_tolerated_range",
+                    "progression_allowed": False,
+                    "message": movement_note,
+                })
+            if movement_status == "needs_support" and not symptom_tolerated:
                 if pattern == "balance":
                     movement_note = "Izvedi ob stabilni opori, ki jo lahko z roko dosežeš; obseg in trajanje prilagodi tako, da ostaneta nadzorovana."
                 else:

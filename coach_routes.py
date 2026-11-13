@@ -39,16 +39,31 @@ from training.coaching_protocols import (
     RDL_TECHNIQUE_PROTOCOL, RDL_SUBSTITUTION_ACCURACY,
     RDL_TECHNIQUE_PROTOCOL_EN, RDL_SUBSTITUTION_ACCURACY_EN,
 )
-from training.movement_assessment import MovementAssessmentError, assess_movement_competence
+from training.movement_assessment import (
+    MovementAssessmentError, SYMPTOM_REGRESSION_VARIANTS, assess_movement_competence,
+)
 from training.camera_observations import CameraObservationError, validate_camera_observations
 from training.goals import normalize_goal, public_goal_options
 from training.localization import resolve_response_language, language_instruction, localize_guardrail_reply
 from training.movement_coaching import (
     ASSESSMENT_VERSION as SIX_PATTERN_ASSESSMENT_VERSION,
-    PATTERN_DEFINITIONS, MovementCoachingError, build_movement_decision,
+    ACUTE_WARNING_SIGNS, PATTERN_DEFINITIONS, MovementCoachingError, build_movement_decision,
+    validate_symptom_regression_report,
 )
 
 logger = logging.getLogger(__name__)
+INITIAL_SAFETY_QUESTION_SL = (
+    "Ali imaš trenutno kakršno koli bolečino, poškodbo, gibalno omejitev ali "
+    "zdravstveni zadržek, ki ga moram upoštevati pri vadbi — zlasti akutno ostro "
+    "bolečino, novo oteklino, mišični spazem, svežo poškodbo, nenadno izgubo "
+    "funkcije ali večjo ortopedsko oziroma zdravstveno omejitev?"
+)
+INITIAL_SAFETY_QUESTION_EN = (
+    "Do you currently have any pain, injury, movement limitation, or health "
+    "restriction I should account for in your training — especially acute sharp "
+    "pain, new swelling, muscle spasm, a recent injury, sudden loss of function, "
+    "or a major orthopedic or medical restriction?"
+)
 coach_bp = Blueprint("coach", __name__)
 ALLOWED_ORIGINS = {
     "https://gregajenko.si",
@@ -178,6 +193,16 @@ def _has_contextual_safety_clearance(messages):
     return False
 
 
+def _has_initial_health_gate_clearance(text):
+    """Recognize the structured one-time profile answer; never infer it from local symptoms."""
+    normalized = " ".join(str(text or "").split()).casefold()
+    return bool(re.search(
+        r"varnostna potrditev:\s*nimam\s+večjih\s+zdravstvenih\s+omejitev.{0,100}"
+        r"(?:svežih\s+poškodb|zdravniških\s+prepovedi)",
+        normalized,
+    ))
+
+
 def _has_safety_clearance(messages):
     """Resolve the one-time safety gate from explicit wording or a contextual yes/no answer."""
     user_history = "\n".join(
@@ -185,7 +210,11 @@ def _has_safety_clearance(messages):
         if isinstance(item, dict) and item.get("role") == "user"
         and isinstance(item.get("content"), str)
     )
-    return _has_explicit_safety_clearance(user_history) or _has_contextual_safety_clearance(messages)
+    return (
+        _has_explicit_safety_clearance(user_history)
+        or _has_initial_health_gate_clearance(user_history)
+        or _has_contextual_safety_clearance(messages)
+    )
 
 
 def _has_localized_symptom_report(text):
@@ -626,9 +655,8 @@ def _sanitize_onboarding_questions(answer, messages):
             re.IGNORECASE,
         ):
             return (
-                "Preden pripravim individualni trening, najprej preveriva varnost: "
-                "ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve "
-                "ali zdravstvene zadržke?"
+                "Preden pripravim individualni trening, najprej preveriva varnost: " +
+                INITIAL_SAFETY_QUESTION_SL
             )
         return answer
 
@@ -1052,14 +1080,14 @@ def _sanitize_unverified_training_dose(answer, messages, language="sl"):
         return (
             introduction
             + "\n\nBefore prescribing sets, repetitions, or a load, I need to check safety: "
-            "do you currently have any pain, injuries, movement limitations, or medical restrictions?"
+            + INITIAL_SAFETY_QUESTION_EN
         )
     if not introduction:
         introduction = "Lahko ti razložim izvedbo in namen vaje."
     return (
         introduction
         + "\n\nPreden določim serije, ponovitve ali obremenitev, moram preveriti varnost: "
-        "ali imaš trenutno kakršne koli bolečine, poškodbe ali zdravstvene oziroma gibalne omejitve?"
+        + INITIAL_SAFETY_QUESTION_SL
     )
 def _sanitize_unverified_safety_claim(answer, messages):
     """Reject model claims that the user cleared safety when no user did so."""
@@ -1097,13 +1125,11 @@ def _sanitize_unverified_safety_claim(answer, messages):
     if re.search(r"\b(?:since|because|you confirmed|you told me)\b", answer, re.IGNORECASE):
         return (
             "You have not explicitly confirmed that, so I will not assume you are free "
-            "from restrictions. Do you currently have any pain, injuries, movement "
-            "limitations, or medical restrictions I should take into account?"
+            "from restrictions. " + INITIAL_SAFETY_QUESTION_EN
         )
     return (
         "Tega še nisi izrecno potrdil, zato ne bom predpostavljal, da nimaš omejitev. "
-        "Ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve ali "
-        "zdravstvene zadržke, ki bi jih moral upoštevati?"
+        + INITIAL_SAFETY_QUESTION_SL
     )
 
 
@@ -1200,8 +1226,7 @@ def _pending_safety_reply(latest, *, repeat_question=True):
     return (
         acknowledgement
         + " Varnostnega vprašanja pa še nisi odgovoril, zato ne bom sklepal, "
-        "da omejitev ni. Ali imaš trenutno kakršne koli bolečine, poškodbe, "
-        "gibalne omejitve ali zdravstvene zadržke?"
+        "da omejitev ni. " + INITIAL_SAFETY_QUESTION_SL
     )
 
 
@@ -1547,7 +1572,7 @@ def _coaching_guardrail_reply(messages):
             "povratne informacije pokažejo konkreten primanjkljaj nadzora ali kadar jih "
             "zahteva določena vaja. Pri hipertrofiji ostajajo v ospredju ustrezno odmerjene "
             "večsklepne vaje. Preden sestavim tvoj individualni program, moram preveriti: "
-            "ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
+            + INITIAL_SAFETY_QUESTION_SL
         )
     missed_session = bool(re.search(
         r"(?:izpustil\w*|izpuščen\w*).{0,50}(?:trening\w*|vadb\w*)|"
@@ -1772,8 +1797,9 @@ def _coaching_guardrail_reply(messages):
     ):
         return (
             "Preden se lotiva opreme in časovnega načrta, moram najprej preveriti varnost: "
-            "ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve "
-            "ali zdravstvene zadržke?"
+            "ali imaš trenutno akutno ostro bolečino, novo oteklino, mišični spazem, "
+            "svežo poškodbo, nenadno izgubo funkcije ali večjo ortopedsko oziroma "
+            "zdravstveno omejitev, zaradi katere vadba trenutno ni primerna?"
         )
     latest_reports_health_issue = bool(re.search(
         r"(imam|občutim|čutim|pojavlja se|pojavila se je|I have|I am experiencing|I feel).{0,70}"
@@ -1782,7 +1808,7 @@ def _coaching_guardrail_reply(messages):
         re.IGNORECASE,
     ))
     if assistant_asked_safety and not _has_safety_clearance(messages) and not latest_reports_health_issue and not symptom_clarification_active:
-        # The broad safety intake is a one-time question. If the user skips it,
+        # The acute/major-restriction safety intake is a one-time question. If the user skips it,
         # acknowledge new information and keep the programme gate closed without asking again.
         pending = _pending_safety_reply(latest, repeat_question=False)
         if re.search(r"(vse sem pokvaril|vse pokvaril|pokvaril sem vse)", lowered):
@@ -1918,7 +1944,7 @@ def _coaching_guardrail_reply(messages):
         if not _has_safety_clearance(messages):
             return (
                 "Preden predlagam zamenjavo vaje, moram preveriti varnost: ali imaš trenutno "
-                "kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
+                + INITIAL_SAFETY_QUESTION_SL
             )
         intent_text = " ".join(substitution_intent_texts).casefold()
         named_exercise = False
@@ -1997,14 +2023,14 @@ def _coaching_guardrail_reply(messages):
         if contradiction:
             return (
                 "Pred zahtevnejšim programom morava najprej preveriti varnost. "
-                "Ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve "
-                "ali zdravstvene zadržke? Opazil sem tudi neskladje med podatkom "
+                + INITIAL_SAFETY_QUESTION_SL + " Opazil sem tudi neskladje med podatkom "
                 "»začetnik« in navedbo desetih let treninga; to bova razjasnila takoj zatem."
             )
         return (
             "Preden pripravim individualni trening ali predlagam konkretne vaje in "
-            "obremenitve, moram preveriti varnost: ali imaš trenutno kakršne koli "
-            "bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
+            "obremenitve, moram preveriti varnost: ali imaš trenutno akutno ostro bolečino, "
+            "novo oteklino, mišični spazem, svežo poškodbo, nenadno izgubo funkcije ali večjo "
+            "ortopedsko oziroma zdravstveno omejitev, zaradi katere vadba trenutno ni primerna?"
         )
 
     # Before a programme is built, do not infer missing equipment or experience.
@@ -2231,7 +2257,7 @@ MANDATORY DECISION GATES – NON-NEGOTIABLE
 - SCOPE OF THE SAFETY GATE: Before an individualized program, establish that no major health condition, recent injury, medical restriction or concerning symptom needs professional assessment. If this information is missing or ambiguous, ask one concise safety question and stop before giving a demanding individualized prescription. An explicit negative answer in the structured profile to this major-restriction question counts; do not repeatedly ask it. "Not reported" is not equivalent to "confirmed absent". Do not treat mild, familiar discomfort as an automatic ban on all training; clarify the affected movement and apply the pain/dose process before prescribing that pattern.
 - GENERAL EDUCATION: You may answer conceptual questions (e.g. what tempo means, why aerobic base matters, what controlled ROM means) without turning the answer into an individualized workout. Do not append an irrelevant safety question to a purely educational answer. If you move from explanation to prescribing a specific exercise or plan, first complete the safety gate.
 - FAT LOSS / BODY COMPOSITION: Explain honestly that reducing body fat requires a sustainable energy deficit; exercise supports the process but does not guarantee weight loss by itself. Keep resistance training as the foundation to preserve muscle and strength, add manageable aerobic activity and everyday movement, and encourage adequate protein and sustainable habits. Never promise spot reduction, prescribe crash diets or imply that more exercise should compensate for eating. Keep nutrition guidance general and ask about relevant dietary/medical restrictions before individualized nutrition advice. General nutrition education may suggest prioritizing foods with lower energy density (vegetables, fruit, legumes and whole grains), fibre-rich foods and lean protein sources; a common protein reference for healthy adults doing resistance training is at least about 1.5 g/kg/day, often roughly 1.5–2.0 g/kg/day when appropriate. Explain that an individualized energy deficit is often moderate (for example, around 10–20% below estimated maintenance), but do not calculate or prescribe a personal diet without adequate context. Flag that medical conditions, pregnancy, eating-disorder history or other dietary restrictions warrant qualified professional guidance.
-- PAIN AND DOSE MANAGEMENT: Treat discomfort as feedback, not a diagnosis. Consider the biomechanics and exposure of the task: movement pattern, joint position, range of motion, load direction, speed, support, technique, fatigue and total volume. If a movement provokes sharp, worsening or function-changing pain, stop that specific movement at that dose; never tell the user to push through. Clarify exact location, intensity (0–10), trigger, onset, actual dose, response after stopping and next-day response. For mild, familiar discomfort without warning signs, do not prohibit all activity. Use test → modify → observe → retest. Change one dose variable at a time: load, range of motion, sets/volume, frequency, tempo or speed. Start with a low, controlled dose and state clear stop criteria. Do not recommend a new loaded substitute until the context is clear. Do not diagnose or promise treatment. For severe, new, worsening or persistent symptoms, acute trauma, marked swelling, locking, giving way, inability to bear weight or other concerning symptoms, stop testing and recommend professional assessment.
+- PAIN AND DOSE MANAGEMENT: Treat discomfort as feedback, not a diagnosis. This is a general fitness coach primarily for generally healthy people without major unresolved orthopedic problems; it is not a rehabilitation service. Consider the biomechanics and exposure of the task: movement pattern, joint position, range of motion, load direction, speed, support, technique, fatigue and total volume. Pain score alone is never clearance. Clarify exact location, intensity (0–10), trigger, onset, actual dose, response after stopping and next-day response when those details are needed. Use test → modify → observe → retest. For mild, familiar discomfort (often up to about 3–4/10) that remains stable, does not worsen during or after the set, does not alter movement quality and has no acute warning signs, do not automatically ban the exercise or all training. First reduce external resistance by one practical step (or use bodyweight/assistance), slow the tempo, reduce the range to the currently tolerated range and/or use stable support. Use one change at a time where possible, then observe and retest. Do not recommend a new loaded substitute until the context is clear. For a squat regression, options may include TRX, a securely anchored resistance band, a fixed bar secured in a rack around chest height, or another stable immovable support; support is for balance and partial unloading, never for pulling through pain. For back/hinge discomfort, reduce load and range and begin with a wall hip hinge or unloaded hinge while maintaining control. For shoulder-related push/pull discomfort, reduce resistance, use a lighter band or higher stable incline where pattern-appropriate, slow the movement and stay within tolerated range; never force overhead range. For tolerated mild symptoms, begin conservatively (no more than two sets, at least four repetitions in reserve, slow controlled tempo such as 4–1–2–0) and do not progress the symptomatic exposure until the response is consistently good. If a movement provokes sharp, worsening or function-changing pain, stop that specific movement at that dose; never tell the user to push through. If pain increases, changes movement quality or is worse later/next day, stop that specific movement and reassess. Acute sharp pain, new swelling, muscle spasm, sudden loss of function, acute trauma or rapidly worsening symptoms are not training-through situations: stop exercise for the affected area and recommend appropriate healthcare assessment. For marked swelling, locking, giving way, inability to bear weight, severe or unexplained symptoms, or major/unresolved orthopedic conditions, do not prescribe individualized loading until assessed by an appropriate professional. Never diagnose or promise treatment.
 - BALANCE / CONTROL PROBLEMS: When a person reports losing balance or control, first ask when and where it happens and whether pain or discomfort is present. Do not assume the cause is ankle mobility, trunk position or load direction. Do not prescribe heel elevation, unstable surfaces or a harder unilateral variation before clarifying the problem.
 - MOBILITY PROGRAMMING: Do not reduce a mobility goal to passive stretching. Include active mobility and strength through the largest controlled, tolerated range, using appropriate multi-joint examples such as RDL/predklon z nevtralno hrbtenico, ATG split squat, deep squat or Cossack squat when the user has the required capacity and equipment. Use gradual exposure and control; never force end range or prescribe a loaded variation when symptoms or competency are unclear.\n- MOBILITY LIMITATIONS: Never say a restriction can simply be "bypassed". Clarify whether the issue is range, discomfort, balance or control. Do not prescribe a modification before that clarification. When appropriate, describe heel support as changing the effective ankle angle/position, not as improving the person's actual ankle mobility.
 - FUNCTIONAL FITNESS: A functional plan must cover strength, conditioning, explosive actions, balance and coordination across the weekly plan. Include practical, progressive balance and coordination drills; do not equate functional training with random instability or only circuit training. Keep landing, deceleration and direction-change demands appropriate to skill and environment.
@@ -2776,8 +2802,16 @@ def coach_program():
         decision = record.get("decision") if isinstance(record, dict) else None
         if report_status not in valid_report_statuses:
             invalid_report_patterns.append(pattern)
-        elif report_status in {"uncertain", "symptoms_reported", "not_assessed"} and decision != "UNASSESSABLE":
+        elif report_status in {"uncertain", "not_assessed"} and decision != "UNASSESSABLE":
             invalid_report_patterns.append(pattern)
+        elif report_status == "symptoms_reported":
+            try:
+                allowed_regressions = SYMPTOM_REGRESSION_VARIANTS.get(pattern, ())
+                validate_symptom_regression_report(
+                    report, decision, record.get("selected_exercise_id"), allowed_regressions
+                )
+            except MovementCoachingError:
+                invalid_report_patterns.append(pattern)
         elif report_status == "needs_support" and decision == "READY":
             invalid_report_patterns.append(pattern)
     if invalid_report_patterns:
@@ -3286,7 +3320,7 @@ def coach_training_sessions(profile_id):
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return jsonify({"error": "Pričakovan je JSON objekt."}), 400
-    allowed = {"session_date", "duration_minutes", "difficulty", "completed", "exercises", "conditioning", "discomfort_reported", "recovery", "completion_reason", "adaptation_response", "difficulty_scope", "affected_exercise_id", "program_version_id"}
+    allowed = {"session_date", "duration_minutes", "difficulty", "completed", "exercises", "conditioning", "discomfort_reported", "discomfort_details", "recovery", "completion_reason", "adaptation_response", "difficulty_scope", "affected_exercise_id", "program_version_id"}
     if set(payload) - allowed:
         return jsonify({"error": "Vadbeni zapis vsebuje nepodprta polja; prosto besedilo ni dovoljeno."}), 400
     session_date = payload.get("session_date")
@@ -3348,6 +3382,59 @@ def coach_training_sessions(profile_id):
             return jsonify({"error": error}), 400
         clean_exercises.append(entry)
 
+    discomfort = payload.get("discomfort_reported")
+    if discomfort is not None and not isinstance(discomfort, bool):
+        return jsonify({"error": "discomfort_reported mora biti true ali false."}), 400
+    discomfort_details = payload.get("discomfort_details")
+    if discomfort_details is not None:
+        if (
+            not isinstance(discomfort_details, dict)
+            or set(discomfort_details) != {
+                "exercise_id", "pain_during", "worsened", "tolerated",
+                "acute_warning_signs", "modifications_applied",
+            }
+        ):
+            return jsonify({"error": "Podrobnosti o nelagodju niso veljavne."}), 400
+        detail_exercise_id = discomfort_details.get("exercise_id")
+        pain_during = discomfort_details.get("pain_during")
+        if (
+            not isinstance(detail_exercise_id, str)
+            or get_exercise(detail_exercise_id) is None
+            or detail_exercise_id not in {
+                item.get("exercise_id") for item in clean_exercises
+                if isinstance(item, dict)
+            }
+        ):
+            return jsonify({"error": "Nelagodje mora biti vezano na izvedeno vajo iz kataloga."}), 400
+        if not isinstance(pain_during, int) or isinstance(pain_during, bool) or not 0 <= pain_during <= 10:
+            return jsonify({"error": "Ocena nelagodja mora biti med 0 in 10."}), 400
+        if not isinstance(discomfort_details.get("worsened"), bool) or not isinstance(discomfort_details.get("tolerated"), bool):
+            return jsonify({"error": "Odziv na nelagodje mora vsebovati veljavni potrditvi."}), 400
+        acute_signs = discomfort_details.get("acute_warning_signs")
+        valid_acute_signs = set(ACUTE_WARNING_SIGNS)
+        if not isinstance(acute_signs, list) or len(acute_signs) > len(valid_acute_signs) or any(x not in valid_acute_signs for x in acute_signs) or len(set(acute_signs)) != len(acute_signs):
+            return jsonify({"error": "Opozorilni znaki niso veljavni."}), 400
+        modifications = discomfort_details.get("modifications_applied")
+        valid_modifications = {
+            "reduced_load", "slow_tempo", "reduced_range", "range_within_tolerance", "support",
+        }
+        if not isinstance(modifications, list) or any(x not in valid_modifications for x in modifications) or len(set(modifications)) != len(modifications):
+            return jsonify({"error": "Prilagoditve vaje niso veljavne."}), 400
+        mild_tolerated = (
+            pain_during <= 4
+            and discomfort_details["worsened"] is False
+            and discomfort_details["tolerated"] is True
+            and not acute_signs
+        )
+        required_dose_changes = {"reduced_load", "slow_tempo"}
+        range_confirmed = bool({"reduced_range", "range_within_tolerance"} & set(modifications))
+        if mild_tolerated and (
+            not required_dose_changes.issubset(set(modifications)) or not range_confirmed
+        ):
+            return jsonify({"error": "Pri blagem nelagodju morajo biti potrjeni manjša obremenitev, počasen tempo in trenutno toleriran obseg; zmanjšanje amplitude ni obvezno, če je polni obseg toleriran."}), 400
+        if discomfort is not True:
+            return jsonify({"error": "Podrobnosti nelagodja zahtevajo discomfort_reported=true."}), 400
+
     conditioning = payload.get("conditioning", [])
     if not isinstance(conditioning, list) or len(conditioning) > 8:
         return jsonify({"error": "Vadbeni zapis lahko vsebuje največ 8 kondicijskih blokov."}), 400
@@ -3358,9 +3445,6 @@ def coach_training_sessions(profile_id):
             return jsonify({"error": error}), 400
         clean_conditioning.append(entry)
 
-    discomfort = payload.get("discomfort_reported")
-    if discomfort is not None and not isinstance(discomfort, bool):
-        return jsonify({"error": "discomfort_reported mora biti true ali false."}), 400
     session = {
         "duration_minutes": duration, "difficulty": difficulty,
         "recovery": recovery, "completed": payload["completed"], "exercises": clean_exercises,
@@ -3383,6 +3467,15 @@ def coach_training_sessions(profile_id):
             return jsonify({"error": "Za shranjevanje podatka o nelagodju ali srčnem utripu je potrebna ločena privolitev za zdravstvene podatke."}), 403
         if discomfort is not None:
             session["discomfort_reported"] = discomfort
+        if discomfort_details is not None:
+            session["discomfort_details"] = {
+                "exercise_id": discomfort_details["exercise_id"],
+                "pain_during": discomfort_details["pain_during"],
+                "worsened": discomfort_details["worsened"],
+                "tolerated": discomfort_details["tolerated"],
+                "acute_warning_signs": list(discomfort_details["acute_warning_signs"]),
+                "modifications_applied": list(discomfort_details["modifications_applied"]),
+            }
         if adaptation_response is not None:
             target_version_id = adaptation_response["program_version_id"]
             target_version = store_get_program_version(profile_id, token, target_version_id)
@@ -3587,22 +3680,85 @@ def save_six_pattern_movement_assessment(profile_id):
     try:
         for pattern in PATTERN_DEFINITIONS:
             value = supplied[pattern]
-            if not isinstance(value, dict) or set(value) != {"status"}:
-                return jsonify({"error": f"Vzorec {pattern} mora vsebovati samo status."}), 400
+            if not isinstance(value, dict):
+                return jsonify({"error": f"Vzorec {pattern} mora biti objekt."}), 400
             status = value.get("status")
             if not isinstance(status, str) or status not in status_to_decision:
                 return jsonify({"error": f"Neveljaven status za vzorec {pattern}."}), 400
+            allowed_keys = {"status"}
+            if status == "symptoms_reported":
+                allowed_keys |= {"regression_test", "selected_exercise_id", "acute_warning_signs"}
+            if set(value) - allowed_keys:
+                return jsonify({"error": f"Vzorec {pattern} vsebuje nepričakovana polja."}), 400
+            user_report = {"status": status}
+            selected_exercise_id = value.get("selected_exercise_id")
+            decision = status_to_decision[status]
+            if "acute_warning_signs" in value:
+                warning_flags = value["acute_warning_signs"]
+                if (
+                    not isinstance(warning_flags, list)
+                    or any(flag not in ACUTE_WARNING_SIGNS for flag in warning_flags)
+                ):
+                    return jsonify({"error": f"Akutni opozorilni znaki za {pattern} niso veljavni."}), 400
+                user_report["acute_warning_signs"] = warning_flags
+                if warning_flags and (selected_exercise_id is not None or "regression_test" in value):
+                    return jsonify({"error": f"Ob akutnem opozorilnem znaku se vzorec {pattern} ne sme ponovno testirati."}), 400
             reason = {
                 "comfortable": "Uporabnik poroča, da je osnovno izvedbo opravil udobno in nadzorovano.",
                 "needs_support": "Uporabnik poroča, da pri izvedbi potrebuje podporo ali lažjo različico.",
                 "uncertain": "Uporabnik ni prepričan o kakovosti ali udobju izvedbe.",
                 "not_assessed": "Gibalni vzorec še ni bil ocenjen.",
-                "symptoms_reported": "Uporabnik je pri gibalnem vzorcu navedel simptome; vzorec ostane izpuščen do razjasnitve.",
+                "symptoms_reported": "Pri osnovni različici se je pojavilo nelagodje; ATENA preveri opozorilne znake in toleranco prilagojene različice.",
             }[status]
+            if status == "symptoms_reported" and selected_exercise_id and "regression_test" not in value:
+                return jsonify({"error": f"Izbrana regresija za {pattern} mora imeti zabeležen ponovni preizkus."}), 400
+            if status == "symptoms_reported" and "regression_test" in value:
+                regression_test = value["regression_test"]
+                if (
+                    not isinstance(regression_test, dict)
+                    or not {
+                        "status", "variation_id", "pain_during", "worsened",
+                        "tempo", "load_adjustment", "range_adjustment", "acute_warning_signs",
+                    }.issubset(regression_test)
+                    or set(regression_test) - {
+                        "status", "variation_id", "pain_during", "worsened",
+                        "tempo", "load_adjustment", "range_adjustment", "acute_warning_signs",
+                        "support_method", "anchor_point_confirmed",
+                    }
+                    or regression_test.get("status") not in {"tolerated", "not_tolerated"}
+                    or isinstance(regression_test.get("pain_during"), bool)
+                    or not isinstance(regression_test.get("pain_during"), (int, float))
+                    or not 0 <= regression_test.get("pain_during") <= 10
+                    or not isinstance(regression_test.get("worsened"), bool)
+                    or not isinstance(regression_test.get("acute_warning_signs"), list)
+                    or ("anchor_point_confirmed" in regression_test and not isinstance(regression_test.get("anchor_point_confirmed"), bool))
+                ):
+                    return jsonify({"error": f"Ponovni preizkus za {pattern} nima veljavne strukture."}), 400
+                allowed_regressions = SYMPTOM_REGRESSION_VARIANTS.get(pattern, ())
+                if regression_test.get("variation_id") not in allowed_regressions:
+                    return jsonify({"error": f"Preizkušena različica ni dovoljena za vzorec {pattern}."}), 400
+                user_report["regression_test"] = regression_test
+                if regression_test["status"] == "tolerated":
+                    decision = "REGRESS"
+                    reason = "Prilagojena različica je bila ponovno preizkušena brez poslabšanja; program uporabi počasnejši tempo, manjše breme in tolerirano amplitudo."
+                else:
+                    if selected_exercise_id is not None:
+                        return jsonify({"error": f"Netolerirana regresija za {pattern} ne sme izbrati vaje."}), 400
+                    decision = "UNASSESSABLE"
+                    reason = "Preizkus ni bil ustrezno toleriran ali so prisotni opozorilni znaki; prizadeto področje ostane izpuščeno iz vadbe."
+            if status == "symptoms_reported":
+                try:
+                    validate_symptom_regression_report(
+                        user_report, decision, selected_exercise_id,
+                        SYMPTOM_REGRESSION_VARIANTS.get(pattern, ()),
+                    )
+                except MovementCoachingError as exc:
+                    return jsonify({"error": str(exc)}), 400
             decisions[pattern] = build_movement_decision(
                 pattern,
-                status_to_decision[status],
-                user_report={"status": status},
+                decision,
+                user_report=user_report,
+                selected_exercise_id=selected_exercise_id,
                 decision_reason=reason,
             )
         token = _profile_token()

@@ -52,7 +52,7 @@ TASK_PATTERNS = {
 # Candidate order is conservative. The programme generator verifies goal,
 # equipment, exclusions, pattern and exercise level before using a variant.
 SUPPORTED_VARIANTS = {
-    "squat": ("chair_sit_to_stand", "reaching_squat", "air_squat"),
+    "squat": ("supported_squat", "chair_sit_to_stand", "reaching_squat", "air_squat"),
     "hinge": ("wall_hip_hinge", "bodyweight_hip_hinge"),
     "horizontal_push": ("push_up_incline",),
     "vertical_push": ("band_overhead_press",),
@@ -60,6 +60,18 @@ SUPPORTED_VARIANTS = {
     "vertical_pull": ("band_assisted_pull_up", "foot_assisted_pull_up", "band_lat_pulldown"),
     "lunge": ("supported_split_squat",),
     # A report of needing support for a lunge is not clearance for brisk walking.
+}
+
+
+# Only exact, catalogued low-demand variants may be used after a symptom retest.
+# This is deliberately narrower than the general supported-variant registry.
+SYMPTOM_REGRESSION_VARIANTS = {
+    "squat": ("supported_squat", "chair_sit_to_stand", "reaching_squat", "air_squat"),
+    "hinge": ("wall_hip_hinge", "bodyweight_hip_hinge"),
+    "horizontal_push": ("push_up_incline",),
+    "vertical_push": ("band_overhead_press",),
+    "horizontal_pull": ("band_row", "trx_row"),
+    "lunge": ("supported_split_squat",),
 }
 
 
