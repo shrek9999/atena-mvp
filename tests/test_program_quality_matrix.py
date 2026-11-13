@@ -8,7 +8,7 @@ from itertools import product
 import pytest
 
 from training.catalogue import get_exercise, load_catalogue
-from training.program import ProgramSafetyBlock, generate_program
+from training.program import ProgramSafetyBlock, ProgramValidationError, generate_program
 
 
 def _complete_equipment_set():
@@ -116,7 +116,7 @@ def test_structured_movement_decisions_require_exactly_all_six_patterns():
         "session_minutes": 60,
         "equipment": _complete_equipment_set(),
     }
-    with pytest.raises(ProgramSafetyBlock):
+    with pytest.raises(ProgramValidationError, match="natanko vseh šest"):
         generate_program(profile, movement_decisions={"squat": {}})
 
 
