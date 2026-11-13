@@ -178,6 +178,16 @@ def _has_contextual_safety_clearance(messages):
     return False
 
 
+def _has_initial_health_gate_clearance(text):
+    """Recognize the structured one-time profile answer; never infer it from local symptoms."""
+    normalized = " ".join(str(text or "").split()).casefold()
+    return bool(re.search(
+        r"varnostna potrditev:\s*nimam\s+večjih\s+zdravstvenih\s+omejitev.{0,100}"
+        r"(?:svežih\s+poškodb|zdravniških\s+prepovedi)",
+        normalized,
+    ))
+
+
 def _has_safety_clearance(messages):
     """Resolve the one-time safety gate from explicit wording or a contextual yes/no answer."""
     user_history = "\n".join(
@@ -185,7 +195,11 @@ def _has_safety_clearance(messages):
         if isinstance(item, dict) and item.get("role") == "user"
         and isinstance(item.get("content"), str)
     )
-    return _has_explicit_safety_clearance(user_history) or _has_contextual_safety_clearance(messages)
+    return (
+        _has_explicit_safety_clearance(user_history)
+        or _has_initial_health_gate_clearance(user_history)
+        or _has_contextual_safety_clearance(messages)
+    )
 
 
 def _has_localized_symptom_report(text):
