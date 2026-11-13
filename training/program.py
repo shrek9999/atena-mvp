@@ -986,12 +986,22 @@ def generate_program(
             seen_patterns.add(pattern)
             movement_status = movement_status_by_pattern.get(pattern)
             affected_tasks = movement_tasks_by_pattern.get(pattern, [])
+            structured_decision = movement_decisions_by_pattern.get(pattern)
+            early_symptom_report = (
+                structured_decision.get("user_report", {})
+                if structured_decision and isinstance(structured_decision.get("user_report"), dict)
+                else {}
+            )
+            symptom_tolerated = (
+                early_symptom_report.get("status") == "symptoms_reported"
+                and structured_decision.get("decision") == "REGRESS"
+            )
             if pattern == "locomotion" and movement_status == "needs_support":
                 raise ProgramValidationError(
                     "Pri hoji si navedel/-la uporabo opore ali pomoč druge osebe. ATENA ti ne bo samodejno predpisala hitre hoje. "
                     "Pred pripravo kondicijskega programa morava v pogovoru razjasniti, kakšna hoja je zate običajna in varna."
                 )
-            if movement_status == "symptoms_reported":
+            if movement_status == "symptoms_reported" and not symptom_tolerated:
                 missing_patterns.add(pattern)
                 movement_adaptation_events.append({
                     "pattern": pattern, "tasks": affected_tasks,
