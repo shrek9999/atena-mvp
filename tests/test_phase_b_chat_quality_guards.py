@@ -805,3 +805,34 @@ def test_slovene_normalizer_fixes_recurring_live_benchmark_typographic_errors():
     cleaned = coach_routes._normalize_slovene_coaching_terms(answer)
     assert cleaned.startswith("Pozdravljen!")
     assert "izvedbo gibanja" in cleaned
+
+def test_public_onboarding_exposes_only_three_canonical_goal_tracks():
+    sl = coach_routes._onboarding_quick_replies("Kaj želiš predvsem razvijati?")
+    en = coach_routes._onboarding_quick_replies(
+        "What is your main goal?", response_language="en"
+    )
+    assert sl == [
+        "Moč + mišična masa",
+        "Funkcionalna pripravljenost",
+        "Zmanjšanje maščobne mase",
+    ]
+    assert en == ["Strength + muscle mass", "Functional fitness", "Fat loss"]
+
+
+def test_public_onboarding_uses_two_experience_groups():
+    sl = coach_routes._onboarding_quick_replies(
+        "Kakšne so tvoje izkušnje z vadbo?"
+    )
+    en = coach_routes._onboarding_quick_replies(
+        "What is your training experience?", response_language="en"
+    )
+    assert sl == ["Začetnik/-ca ali malo izkušenj", "Redno treniram"]
+    assert en == ["Beginner / limited experience", "I train regularly"]
+
+
+def test_system_prompt_maps_regular_training_to_intermediate_not_automatically_advanced():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "Public onboarding uses two experience groups" in prompt
+    assert "Map regular training to intermediate by default" in prompt
+    assert "Never infer advanced ability" in prompt
+
