@@ -187,6 +187,50 @@ class MovementCoachingError(ValueError):
     """Raised when movement coaching data is invalid or unsupported."""
 
 
+def validate_symptom_regression_report(
+    user_report: dict,
+    decision: str,
+    selected_exercise_id: str | None,
+    allowed_variants: tuple[str, ...],
+) -> None:
+    """Fail closed unless a localized symptom is followed by a specific, tolerated retest."""
+    if not isinstance(user_report, dict) or user_report.get("status") != "symptoms_reported":
+        return
+    test = user_report.get("regression_test")
+    if decision == "UNASSESSABLE":
+        if selected_exercise_id is not None:
+            raise MovementCoachingError("Neocenjen simptomatski vzorec ne sme imeti izbrane vaje.")
+        if test is not None:
+            if (
+                not isinstance(test, dict)
+                or test.get("status") != "not_tolerated"
+                or test.get("variation_id") not in allowed_variants
+                or isinstance(test.get("pain_during"), bool)
+                or not isinstance(test.get("pain_during"), (int, float))
+                or not 0 <= test.get("pain_during") <= 10
+                or not isinstance(test.get("worsened"), bool)
+                or not (test.get("pain_during") > 2 or test.get("worsened") is True)
+            ):
+                raise MovementCoachingError("Neuspešen ponovni preizkus mora biti zabeležen kot netoleriran in vsebovati veljavno oceno.")
+        return
+    if (
+        decision != "REGRESS"
+        or not isinstance(test, dict)
+        or test.get("status") != "tolerated"
+        or not selected_exercise_id
+        or selected_exercise_id not in allowed_variants
+        or test.get("variation_id") != selected_exercise_id
+        or isinstance(test.get("pain_during"), bool)
+        or not isinstance(test.get("pain_during"), (int, float))
+        or not 0 <= test.get("pain_during") <= 2
+        or test.get("worsened") is not False
+    ):
+        raise MovementCoachingError(
+            "Simptomatski vzorec je mogoče vključiti le po ponovnem preizkusu dovoljene regresije: "
+            "ista različica, bolečina največ 2/10 in brez poslabšanja. Sicer mora vzorec ostati izpuščen."
+        )
+
+
 def _catalogue_index() -> dict[str, dict]:
     return {item["id"]: item for item in load_catalogue()}
 
