@@ -52,7 +52,7 @@ TASK_PATTERNS = {
 # Candidate order is conservative. The programme generator verifies goal,
 # equipment, exclusions, pattern and exercise level before using a variant.
 SUPPORTED_VARIANTS = {
-    "squat": ("chair_sit_to_stand", "reaching_squat", "air_squat"),
+    "squat": ("supported_squat", "chair_sit_to_stand", "reaching_squat", "air_squat"),
     "hinge": ("wall_hip_hinge", "bodyweight_hip_hinge"),
     "horizontal_push": ("push_up_incline",),
     "vertical_push": ("band_overhead_press",),
