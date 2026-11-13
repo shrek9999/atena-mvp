@@ -188,6 +188,23 @@ def _has_safety_clearance(messages):
     return _has_explicit_safety_clearance(user_history) or _has_contextual_safety_clearance(messages)
 
 
+def _has_localized_symptom_report(text):
+    """Recognize a localized symptom as an answered intake item, never as medical clearance."""
+    value = str(text or "")
+    if _has_explicit_no_pain_confirmation(value):
+        return False
+    return bool(re.search(
+        r"(?:bolečin\\w*|pain).{0,65}(?:kolen\\w*|ramen\\w*|hrbt\\w*|kolk\\w*|gleženj|"
+        r"počep\\w*|izpadn\\w*|RDL|sklec\\w*)|"
+        r"(?:kolen\\w*|ramen\\w*|hrbt\\w*|kolk\\w*|gleženj).{0,65}"
+        r"(?:boli|bolečin\\w*|zaboli|pain)|"
+        r"(?:me\\s+(?:blago\\s+)?boli|boli\\s+me|me\\s+(?:blago\\s+)?zaboli|"
+        r"zaboli\\s+me).{0,45}(?:kolen\\w*|ramen\\w*|hrbt\\w*|kolk\\w*|gleženj)?",
+        value,
+        re.IGNORECASE,
+    ))
+
+
 def _profile_from_messages(messages):
     user_text = "\n".join(
         item.get("content", "") for item in messages if item.get("role") == "user"
@@ -1657,6 +1674,18 @@ def _coaching_guardrail_reply(messages):
         )
     )
     assistant_asked_safety = safety_question_count > 0
+    localized_symptom_reported = _has_localized_symptom_report(latest)
+    symptom_clarification_active = any(
+        re.search(r"(?:kolikšna je bolečina|bolečina od 0 do 10|ali je bolečina nova|"
+                  r"ali se bolečina stopnjuje)", item, re.IGNORECASE)
+        for item in assistant_texts
+    )
+    if assistant_asked_safety and not _has_safety_clearance(messages) and localized_symptom_reported:
+        return (
+            "Razumem: navedel si lokalno bolečino, zato začetnega splošnega vprašanja ne bom ponavljal. "
+            "To še ne pomeni, da je varnostna ocena zaključena ali da lahko že sestavim program. "
+            "Kolikšna je bolečina od 0 do 10?"
+        )
     assistant_asked_setup = any(
         "?" in item and re.search(
             r"(oprem\w*|koliko časa|časovn\w* okvir|minut|tedensk\w*|pogostost|"
@@ -1692,7 +1721,7 @@ def _coaching_guardrail_reply(messages):
         latest,
         re.IGNORECASE,
     ))
-    if assistant_asked_safety and not _has_safety_clearance(messages) and not latest_reports_health_issue:
+    if assistant_asked_safety and not _has_safety_clearance(messages) and not latest_reports_health_issue and not symptom_clarification_active:
         # Ask the safety question at most twice (the original ask plus one reminder).
         # After that, acknowledge further intake details and explain the boundary
         # without repeating the same question on every turn.
@@ -1874,6 +1903,36 @@ def _coaching_guardrail_reply(messages):
         re.IGNORECASE,
     ))
     if prescription_request and not _has_safety_clearance(messages):
+        if _has_localized_symptom_report(history):
+            pain_score_reported = bool(re.search(
+                r"\\b(?:10|[0-9])\\s*(?:/\\s*10|od\\s+10)\\b|"
+                r"\\b(?:jakost|intenzivnost)\\s+(?:je|okoli)\\s+\\d",
+                history_lower,
+            ))
+            pain_context_clarified = bool(re.search(
+                r"(nova bolečina|bolečina je nova|že od prej|že dolgo|poznana bolečina|"
+                r"familiar pain|new pain|known pain)",
+                history_lower,
+            ))
+            pain_trend_clarified = bool(re.search(
+                r"(se ne stopnjuje|ni slabše|ne slabša se|se stopnjuje|postaja hujša|"
+                r"worsening|not getting worse|not worsening)",
+                history_lower,
+            ))
+            if not pain_score_reported:
+                question = "Kolikšna je bolečina od 0 do 10?"
+            elif not pain_context_clarified:
+                question = "Ali je bolečina nova ali jo poznaš že od prej?"
+            elif not pain_trend_clarified:
+                question = "Ali se bolečina v zadnjem času stopnjuje?"
+            else:
+                question = "Ali imaš poleg te bolečine še kakšno drugo poškodbo, gibalno omejitev ali zdravstveni zadržek?"
+            return (
+                "Ker si navedel lokalno bolečino, individualnega programa ali obremenjene zamenjave "
+                "še ne bom predpisal. Najprej morava razjasniti simptome in varnost; bolečina sama "
+                "ni diagnoza in ne pomeni samodejne prepovedi vse neboleče aktivnosti. "
+                + question
+            )
         contradiction = bool(re.search(
             r"(začetnik|začetniški).{0,80}(deset let|dolgoletn|napreden)|"
             r"(deset let|dolgoletn|napreden).{0,80}(začetnik|začetniški)",
