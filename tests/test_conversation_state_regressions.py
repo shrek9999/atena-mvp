@@ -905,7 +905,8 @@ def test_missed_session_guardrail_handles_word_order_and_self_blame():
     third = _coaching_guardrail_reply(messages)
     assert third is not None
     assert "Ničesar nisi pokvaril" in third
-    assert third.count("?") == 1
+    assert "naslednji načrtovani trening" in third
+    assert third.count("?") == 0
 
 
 def test_deadlift_to_rdl_substitution_is_not_described_as_biomechanically_identical():
