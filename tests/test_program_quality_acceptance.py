@@ -5,6 +5,7 @@ movement quality or live conversational usability.
 """
 from training.catalogue import get_exercise
 from training.program import generate_program
+from training.movement_coaching import build_movement_decision
 
 
 PERSONAS = {
@@ -200,3 +201,40 @@ def test_reported_discomfort_blocks_programme_adaptation():
     except ProgramSafetyBlock:
         return
     raise AssertionError("Reported discomfort must block automatic programme adaptation")
+
+
+
+def test_mobility_limited_persona_adapts_only_the_assessed_squat_pattern():
+    profile = PERSONAS["mobility_limited"]
+    baseline = generate_program(profile)
+
+    squat_decision = build_movement_decision(
+        "squat",
+        "REGRESS",
+        user_report={"status": "needs_support"},
+        selected_exercise_id="supported_squat",
+        decision_reason="Acceptance test: limited squat capacity requires a supported variation.",
+    )
+    adapted = generate_program(profile, movement_decisions={"squat": squat_decision})
+
+    def exercise_ids_by_pattern(plan):
+        result = {}
+        for exercise in _all_exercises(plan):
+            result.setdefault(exercise["pattern"], set()).add(exercise["exercise_id"])
+        return result
+
+    baseline_patterns = exercise_ids_by_pattern(baseline)
+    adapted_patterns = exercise_ids_by_pattern(adapted)
+
+    assert adapted_patterns.get("squat") == {"supported_squat"}
+    for pattern, exercise_ids in baseline_patterns.items():
+        if pattern != "squat":
+            assert adapted_patterns.get(pattern) == exercise_ids, pattern
+    assert any(pattern != "squat" for pattern in adapted_patterns)
+
+    events = adapted["movement_adaptation"]["events"]
+    assert any(
+        event["pattern"] == "squat"
+        and event["action"] == "learning_or_regression_variant_selected"
+        for event in events
+    )
