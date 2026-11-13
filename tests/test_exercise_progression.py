@@ -480,3 +480,26 @@ def test_legacy_or_incomplete_discomfort_report_remains_conservative_global_hold
     result = recommend_exercise_progression(sessions)
     assert decision(result, "squat_goblet")["decision"] == "pause_and_review"
     assert decision(result, "push_up")["decision"] == "pause_and_review"
+
+
+def test_acute_complete_symptom_report_stops_only_the_affected_exercise():
+    session = record(
+        "2026-11-04",
+        [exercise("squat_goblet"), exercise("push_up")],
+        discomfort=True,
+    )
+    session["discomfort_details"] = {
+        "exercise_id": "squat_goblet",
+        "pain_during": 7,
+        "worsened": True,
+        "tolerated": False,
+        "acute_warning_signs": ["acute_sharp_pain"],
+        "modifications_applied": [],
+    }
+    previous = record(
+        "2026-11-01",
+        [exercise("squat_goblet"), exercise("push_up")],
+    )
+    result = recommend_exercise_progression([session, previous])
+    assert decision(result, "squat_goblet")["decision"] == "pause_and_review"
+    assert decision(result, "push_up")["decision"] != "pause_and_review"
