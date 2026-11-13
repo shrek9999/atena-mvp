@@ -22,7 +22,7 @@ PROFILE = {
 
 def _report(
     *, status="tolerated", variation="supported_squat", pain=1,
-    worsened=False, acute_warning_signs=None,
+    worsened=False, acute_warning_signs=None, support_method=None,
 ):
     return {
         "status": "symptoms_reported",
@@ -35,7 +35,10 @@ def _report(
             "load_adjustment": "bodyweight_or_assisted",
             "range_adjustment": "within_tolerance",
             "acute_warning_signs": acute_warning_signs or [],
-            "support_method": "stable_support" if variation == "supported_squat" else None,
+            "support_method": (
+                support_method or "stable_support" if variation == "supported_squat"
+                else support_method
+            ),
         },
     }
 
@@ -124,6 +127,20 @@ def test_generator_uses_only_the_exact_retested_regression():
     assert squats
     assert {exercise["exercise_id"] for exercise in squats} == {"supported_squat"}
     assert all(exercise["prescription"]["sets"] <= 2 for exercise in squats)
+    assert all(exercise["prescription"]["tempo"] == "4–1–2–0" for exercise in squats)
+    assert all(exercise["prescription"]["rir"] >= 4 for exercise in squats)
+    assert all("manjšo obremenitvijo" in exercise["movement_adaptation_note"] for exercise in squats)
+
+
+def test_support_method_must_match_confirmed_profile_equipment():
+    decision = build_movement_decision(
+        "squat", "REGRESS",
+        user_report=_report(support_method="trx"),
+        selected_exercise_id="supported_squat",
+        decision_reason="Synthetic support equipment test",
+    )
+    with pytest.raises(ProgramValidationError):
+        generate_program(PROFILE, movement_decisions={"squat": decision})
 
 
 def test_symptomatic_pattern_is_omitted_after_failed_retest():
