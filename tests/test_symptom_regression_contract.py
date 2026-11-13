@@ -71,6 +71,26 @@ def test_invalid_or_mismatched_retest_is_rejected(report, decision, exercise, al
         validate_symptom_regression_report(report, decision, exercise, allowed)
 
 
+def test_acute_warning_signs_on_user_report_keep_pattern_unassessable():
+    validate_symptom_regression_report(
+        {"status": "symptoms_reported", "acute_warning_signs": ["new_swelling"]},
+        "UNASSESSABLE", None, SYMPTOM_REGRESSION_VARIANTS["squat"],
+    )
+
+
+def test_supported_squat_with_band_requires_a_confirmed_anchor():
+    report = _report(support_method="band")
+    report["regression_test"]["anchor_point_confirmed"] = True
+    validate_symptom_regression_report(
+        report, "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["squat"],
+    )
+    report["regression_test"].pop("anchor_point_confirmed")
+    with pytest.raises(MovementCoachingError):
+        validate_symptom_regression_report(
+            report, "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["squat"],
+        )
+
+
 def test_symptom_without_successful_retest_remains_unassessable():
     validate_symptom_regression_report(
         {"status": "symptoms_reported"}, "UNASSESSABLE", None,
