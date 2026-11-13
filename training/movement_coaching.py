@@ -187,13 +187,22 @@ class MovementCoachingError(ValueError):
     """Raised when movement coaching data is invalid or unsupported."""
 
 
+ACUTE_WARNING_SIGNS = {
+    "acute_sharp_pain",
+    "new_swelling",
+    "muscle_spasm",
+    "sudden_loss_of_function",
+    "rapidly_worsening_symptoms",
+}
+
+
 def validate_symptom_regression_report(
     user_report: dict,
     decision: str,
     selected_exercise_id: str | None,
     allowed_variants: tuple[str, ...],
 ) -> None:
-    """Fail closed unless a localized symptom is followed by a specific, tolerated retest."""
+    """Validate symptom response using tolerance, symptom behavior and acute warning signs."""
     if not isinstance(user_report, dict) or user_report.get("status") != "symptoms_reported":
         return
     test = user_report.get("regression_test")
@@ -201,33 +210,59 @@ def validate_symptom_regression_report(
         if selected_exercise_id is not None:
             raise MovementCoachingError("Neocenjen simptomatski vzorec ne sme imeti izbrane vaje.")
         if test is not None:
+            if not isinstance(test, dict):
+                raise MovementCoachingError("Ponovni preizkus mora biti objekt.")
+            pain = test.get("pain_during")
+            flags = test.get("acute_warning_signs", [])
             if (
-                not isinstance(test, dict)
-                or test.get("status") != "not_tolerated"
+                test.get("status") != "not_tolerated"
                 or test.get("variation_id") not in allowed_variants
-                or isinstance(test.get("pain_during"), bool)
-                or not isinstance(test.get("pain_during"), (int, float))
-                or not 0 <= test.get("pain_during") <= 10
+                or isinstance(pain, bool)
+                or not isinstance(pain, (int, float))
+                or not 0 <= pain <= 10
                 or not isinstance(test.get("worsened"), bool)
-                or not (test.get("pain_during") > 2 or test.get("worsened") is True)
+                or not isinstance(flags, list)
+                or any(flag not in ACUTE_WARNING_SIGNS for flag in flags)
+                or not (pain > 4 or test.get("worsened") is True or bool(flags))
             ):
-                raise MovementCoachingError("Neuspešen ponovni preizkus mora biti zabeležen kot netoleriran in vsebovati veljavno oceno.")
+                raise MovementCoachingError(
+                    "Netoleriran preizkus mora zabeležiti bolečino nad 4/10, poslabšanje ali opozorilni znak."
+                )
         return
+
+    if not isinstance(test, dict):
+        raise MovementCoachingError("Za vključitev simptomatskega vzorca je potreben zabeležen ponovni preizkus.")
+    pain = test.get("pain_during")
+    flags = test.get("acute_warning_signs", [])
+    support_method = test.get("support_method")
+    valid_support_methods = {"trx", "band", "fixed_bar", "stable_support"}
+    if support_method is not None and support_method not in valid_support_methods:
+        raise MovementCoachingError("Neveljaven način opore pri regresijskem počepu.")
+    if test.get("variation_id") == "supported_squat" and support_method not in valid_support_methods:
+        raise MovementCoachingError(
+            "Pri podprtem počepu mora biti navedena preverjena opora: TRX, elastika, fiksni drog ali stabilna opora."
+        )
     if (
         decision != "REGRESS"
-        or not isinstance(test, dict)
         or test.get("status") != "tolerated"
         or not selected_exercise_id
         or selected_exercise_id not in allowed_variants
         or test.get("variation_id") != selected_exercise_id
-        or isinstance(test.get("pain_during"), bool)
-        or not isinstance(test.get("pain_during"), (int, float))
-        or not 0 <= test.get("pain_during") <= 2
+        or isinstance(pain, bool)
+        or not isinstance(pain, (int, float))
+        or not 0 <= pain <= 4
         or test.get("worsened") is not False
+        or not isinstance(flags, list)
+        or flags
+        or any(flag not in ACUTE_WARNING_SIGNS for flag in flags)
+        or test.get("tempo") != "slow_controlled"
+        or test.get("load_adjustment") not in {"reduced", "bodyweight_or_assisted"}
+        or test.get("range_adjustment") != "within_tolerance"
     ):
         raise MovementCoachingError(
-            "Simptomatski vzorec je mogoče vključiti le po ponovnem preizkusu dovoljene regresije: "
-            "ista različica, bolečina največ 2/10 in brez poslabšanja. Sicer mora vzorec ostati izpuščen."
+            "Blago nelagodje do 4/10 je mogoče tolerirati le, če se ne stopnjuje, "
+            "ni opozorilnih znakov ter so breme, tempo in amplituda ustrezno prilagojeni. "
+            "Akutna bolečina, nova oteklina ali spazem zahtevajo prekinitev vadbe prizadetega področja."
         )
 
 
