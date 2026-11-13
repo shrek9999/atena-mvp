@@ -211,7 +211,7 @@ def test_program_endpoint_rejects_camera_payload_claiming_video_storage(monkeypa
     assert response.status_code == 400
 
 
-def test_program_endpoint_accepts_optional_coordination_proxy_as_non_decisional_context(monkeypatch):
+def test_clear_coordination_proxy_adds_only_a_low_demand_warmup_drill(monkeypatch):
     client = _client(monkeypatch)
     coordination = {
         "status": "observed",
@@ -252,7 +252,15 @@ def test_program_endpoint_accepts_optional_coordination_proxy_as_non_decisional_
     body = response.get_json()
     assert body["camera_observations"]["coordination"] == coordination
     assert body["camera_observations_stored"] is False
-    assert body["camera_observations_used_for_programme_decisions"] is False
+    assert body["camera_coordination_add_on_applied"] is True
+    assert body["camera_observations_used_for_programme_decisions"] is True
+    assert body["camera_observations_used_for_readiness_or_main_exercise_selection"] is False
+    for session in body["program"]["sessions"]:
+        block = session["camera_coordination_block"]
+        assert block["is_readiness_assessment"] is False
+        assert block["exercises"][0]["exercise_id"] == "controlled_lateral_step"
+        assert block["exercises"][0]["sets"] == 1
+        assert block["exercises"][0]["work_seconds"] == 10
 
 
 def test_program_endpoint_rejects_contradictory_coordination_proxy_status(monkeypatch):
@@ -331,4 +339,6 @@ def test_program_endpoint_accepts_skipped_coordination_as_uncertain_context(monk
     assert response.status_code == 200
     body = response.get_json()
     assert body["camera_observations"]["coordination"]["status"] == "uncertain"
+    assert body["camera_coordination_add_on_applied"] is False
     assert body["camera_observations_used_for_programme_decisions"] is False
+    assert all("camera_coordination_block" not in session for session in body["program"]["sessions"])
