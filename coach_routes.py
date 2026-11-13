@@ -3630,7 +3630,7 @@ def save_six_pattern_movement_assessment(profile_id):
                 "needs_support": "Uporabnik poroča, da pri izvedbi potrebuje podporo ali lažjo različico.",
                 "uncertain": "Uporabnik ni prepričan o kakovosti ali udobju izvedbe.",
                 "not_assessed": "Gibalni vzorec še ni bil ocenjen.",
-                "symptoms_reported": "Pri osnovni različici se je pojavila bolečina ali nelagodje; vzorec ostane izpuščen brez uspešnega ponovnega preizkusa.",
+                "symptoms_reported": "Pri osnovni različici se je pojavilo nelagodje; ATENA preveri opozorilne znake in toleranco prilagojene različice.",
             }[status]
             if status == "symptoms_reported" and selected_exercise_id and "regression_test" not in value:
                 return jsonify({"error": f"Izbrana regresija za {pattern} mora imeti zabeležen ponovni preizkus."}), 400
@@ -3638,12 +3638,16 @@ def save_six_pattern_movement_assessment(profile_id):
                 regression_test = value["regression_test"]
                 if (
                     not isinstance(regression_test, dict)
-                    or set(regression_test) != {"status", "variation_id", "pain_during", "worsened"}
+                    or set(regression_test) != {
+                        "status", "variation_id", "pain_during", "worsened",
+                        "tempo", "load_adjustment", "range_adjustment", "acute_warning_signs",
+                    }
                     or regression_test.get("status") not in {"tolerated", "not_tolerated"}
                     or isinstance(regression_test.get("pain_during"), bool)
                     or not isinstance(regression_test.get("pain_during"), (int, float))
                     or not 0 <= regression_test.get("pain_during") <= 10
                     or not isinstance(regression_test.get("worsened"), bool)
+                    or not isinstance(regression_test.get("acute_warning_signs"), list)
                 ):
                     return jsonify({"error": f"Ponovni preizkus za {pattern} nima veljavne strukture."}), 400
                 allowed_regressions = SYMPTOM_REGRESSION_VARIANTS.get(pattern, ())
@@ -3652,12 +3656,12 @@ def save_six_pattern_movement_assessment(profile_id):
                 user_report["regression_test"] = regression_test
                 if regression_test["status"] == "tolerated":
                     decision = "REGRESS"
-                    reason = "Konkretna regresija je bila ponovno preizkušena; program lahko uporabi samo točno to različico."
+                    reason = "Prilagojena različica je bila ponovno preizkušena brez poslabšanja; program uporabi počasnejši tempo, manjše breme in tolerirano amplitudo."
                 else:
                     if selected_exercise_id is not None:
                         return jsonify({"error": f"Netolerirana regresija za {pattern} ne sme izbrati vaje."}), 400
                     decision = "UNASSESSABLE"
-                    reason = "Regresija ni bila ustrezno tolerirana; prizadeti vzorec ostane izpuščen."
+                    reason = "Preizkus ni bil ustrezno toleriran ali so prisotni opozorilni znaki; prizadeto področje ostane izpuščeno iz vadbe."
             if status == "symptoms_reported":
                 try:
                     validate_symptom_regression_report(
