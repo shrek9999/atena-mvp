@@ -1754,21 +1754,18 @@ def _coaching_guardrail_reply(messages):
     if assistant_asked_safety and not _has_safety_clearance(messages) and not latest_reports_health_issue and not symptom_clarification_active:
         # The broad safety intake is a one-time question. If the user skips it,
         # acknowledge new information and keep the programme gate closed without asking again.
-        pending = _pending_safety_reply(latest, repeat_question=safety_question_count < 1)
-        if safety_question_count >= 2:
-            return pending
-        safety_question = pending.split(". ", 1)[-1]
+        pending = _pending_safety_reply(latest, repeat_question=False)
         if re.search(r"(vse sem pokvaril|vse pokvaril|pokvaril sem vse)", lowered):
             return (
                 "Ničesar nisi pokvaril. En izpuščen trening ne izbriše napredka; pomembno je, "
                 "da se vrneš v ritem brez lovljenja zamujenega obsega. "
-                + safety_question
+                + pending
             )
         if re.search(r"(brez energije|utrujen|izčrpan)", lowered):
             return (
                 "Razumem; utrujenost po službi je pomemben podatek in trening lahko prilagodiva, "
                 "namesto da siliš skozi izčrpanost. "
-                + safety_question
+                + pending
             )
         return pending
 
