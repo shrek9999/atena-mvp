@@ -399,6 +399,44 @@ def test_rdls_substitution_is_not_described_as_equivalent_to_deadlift():
     assert "ni biomehansko enak" in cleaned
 
 
+def test_progression_does_not_invent_load_or_sets_before_recovery_check():
+    profile = (
+        "V programu je cilj 8–10 ponovitev; v dveh zaporednih primerljivih treningih "
+        "sem izvedel vse serije po 10 ponovitev z RIR 3 in stabilno tehniko."
+    )
+    messages = _user_messages(
+        profile,
+        "Vse serije sem opravil. Na koncu vsake serije bi lahko naredil še približno tri ponovitve.",
+        "Tehnika je bila dobra in trening ni bil pretežek.",
+    )
+    answer = (
+        "Odlično. Naslednjič povečaj obremenitev za 1–2 kg na ročko ali 2,5 kg na palico "
+        "in naredi 3 serije po 10 ponovitev."
+    )
+    cleaned = coach_routes._sanitize_unverified_exercise_parameters(answer, messages)
+    assert "regeneracijo" in cleaned.lower()
+    assert "naslednji dan" in cleaned.lower()
+    assert "1–2 kg" not in cleaned
+    assert "2,5 kg" not in cleaned
+    assert "3 serije" not in cleaned
+
+
+def test_progression_with_recovery_still_requires_known_exercise_and_dose():
+    profile = (
+        "V programu je cilj 8–10 ponovitev; v dveh zaporednih primerljivih treningih "
+        "sem izvedel vse serije po 10 ponovitev z RIR 3 in stabilno tehniko."
+    )
+    messages = _user_messages(
+        profile,
+        "Tehnika je bila dobra, trening ni bil pretežek in naslednji dan sem bil normalno spočit.",
+    )
+    answer = "Povečaj obremenitev za 2,5 kg in naredi 3 serije."
+    cleaned = coach_routes._sanitize_unverified_exercise_parameters(answer, messages)
+    assert "ne bom ugibal kilogramov" in cleaned
+    assert "Katera vaja je v programu" in cleaned
+    assert "2,5 kg" not in cleaned
+
+
 def test_slovene_coaching_term_normalizer_corrects_known_errors():
     source = "prsni tisk; trilogije (tricepsa); säte; zadnji del hrbet; mišične masa"
     cleaned = coach_routes._normalize_slovene_coaching_terms(source)
