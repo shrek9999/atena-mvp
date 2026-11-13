@@ -85,6 +85,13 @@ def test_failed_retest_is_recorded_but_cannot_select_an_exercise():
     )
 
 
+def test_user_can_stop_a_retest_even_when_pain_is_below_four():
+    validate_symptom_regression_report(
+        _report(status="not_tolerated", pain=3),
+        "UNASSESSABLE", None, SYMPTOM_REGRESSION_VARIANTS["squat"],
+    )
+
+
 def test_acute_warning_signs_are_not_tolerated_even_with_low_pain():
     validate_symptom_regression_report(
         _report(status="not_tolerated", pain=1, acute_warning_signs=["new_swelling"]),
