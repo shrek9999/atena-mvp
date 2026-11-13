@@ -1915,7 +1915,7 @@ def _coaching_guardrail_reply(messages):
                 history_lower,
             ))
             pain_trend_clarified = bool(re.search(
-                r"(se ne stopnjuje|ni slabše|ne slabša se|se stopnjuje|postaja hujša|"
+                r"(se ne stopnjuje|ne stopnjuje se|ni slabše|ne slabša se|se stopnjuje|postaja hujša|"
                 r"worsening|not getting worse|not worsening)",
                 history_lower,
             ))
