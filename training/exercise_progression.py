@@ -223,23 +223,38 @@ def _classify(history):
 def recommend_exercise_progression(sessions):
     """Return one independently reasoned recommendation per exercise ID."""
     ordered = _ordered_sessions(sessions)
-    # A reported symptom is a global safety hold, not a signal to work around it.
-    if any(session.get("discomfort_reported") is True for _, session in ordered[:3]):
-        affected_ids = set()
-        for _, session in ordered[:3]:
-            exercises = session.get("exercises", [])
-            if not isinstance(exercises, list):
-                continue
-            affected_ids.update(
-                exercise["exercise_id"] for exercise in exercises
+    # A complete mild/stable localized report affects only its named exercise.
+    # Any legacy, incomplete or acute report retains the conservative global hold.
+    symptom_details = []
+    for _, session in ordered[:3]:
+        if session.get("discomfort_reported") is not True:
+            continue
+        detail = session.get("discomfort_details")
+        if not (
+            isinstance(detail, dict)
+            and isinstance(detail.get("exercise_id"), str)
+            and isinstance(detail.get("pain_during"), int)
+            and not isinstance(detail.get("pain_during"), bool)
+            and 0 <= detail["pain_during"] <= 4
+            and detail.get("worsened") is False
+            and detail.get("tolerated") is True
+            and detail.get("acute_warning_signs") == []
+        ):
+            affected_ids = {
+                exercise["exercise_id"]
+                for _, item in ordered[:3]
+                for exercise in item.get("exercises", [])
                 if isinstance(exercise, dict) and isinstance(exercise.get("exercise_id"), str)
-            )
-        return [{
-            "exercise_id": exercise_id,
-            "decision": "pause_and_review",
-            "exposures_recorded": 0,
-            "reason": "Zabeleženo je bilo nelagodje. Samodejno napredovanje vseh vaj je ustavljeno do ustrezne presoje.",
-        } for exercise_id in sorted(affected_ids)]
+            }
+            return [{
+                "exercise_id": exercise_id,
+                "decision": "pause_and_review",
+                "exposures_recorded": 0,
+                "reason": "Nelagodje ni bilo dovolj natančno opredeljeno kot blago, stabilno in sprejemljivo. Pred progresijo je potrebna razjasnitev.",
+            } for exercise_id in sorted(affected_ids)]
+        symptom_details.append(detail)
+
+    symptomatic_ids = {detail["exercise_id"] for detail in symptom_details}
 
     targeted_difficulty_ids = {
         session.get("affected_exercise_id")
@@ -280,6 +295,13 @@ def recommend_exercise_progression(sessions):
             "reason": reason,
         })
     for item in recommendations:
+        if item["exercise_id"] in symptomatic_ids:
+            item["decision"] = "modify_symptomatic_exposure"
+            item["reason"] = (
+                "Pri tej vaji je bilo zabeleženo blago, stabilno in sprejemljivo nelagodje. "
+                "Naslednjič največ 2 seriji, najmanj 4 ponovitve v rezervi, tempo 4–1–2–0 "
+                "in samo neboleč oziroma trenutno toleriran obseg. Breme zmanjšaj; ne stopnjuj."
+            )
         exercise = get_exercise(item["exercise_id"])
         item["exercise_name"] = exercise.get("name") if isinstance(exercise, dict) else item["exercise_id"]
         if item["exercise_id"] in targeted_difficulty_ids:
@@ -316,7 +338,15 @@ def apply_exercise_progression(program, recommendations):
                 continue
             decision = recommendation.get("decision")
             note = recommendation.get("reason", "")
-            if decision == "add_repetitions":
+            if decision == "modify_symptomatic_exposure":
+                if isinstance(prescription.get("sets"), int):
+                    prescription["sets"] = min(2, prescription["sets"])
+                elif isinstance(exercise.get("sets"), int):
+                    exercise["sets"] = min(2, exercise["sets"])
+                prescription["rir"] = max(4, prescription.get("rir", 4) if isinstance(prescription.get("rir", 4), int) else 4)
+                prescription["tempo"] = "4–1–2–0"
+                prescription["symptom_range_guidance"] = "Samo trenutno toleriran obseg gibanja; ob stopnjevanju ali nesprejemljivosti simptoma prekini vajo."
+            elif decision == "add_repetitions":
                 reps = prescription.get("reps", "")
                 parts = [int(value) for value in str(reps).split("–") if value.isdigit()]
                 if len(parts) == 2 and parts[0] < parts[1]:
