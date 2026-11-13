@@ -39,13 +39,16 @@ from training.coaching_protocols import (
     RDL_TECHNIQUE_PROTOCOL, RDL_SUBSTITUTION_ACCURACY,
     RDL_TECHNIQUE_PROTOCOL_EN, RDL_SUBSTITUTION_ACCURACY_EN,
 )
-from training.movement_assessment import MovementAssessmentError, assess_movement_competence
+from training.movement_assessment import (
+    MovementAssessmentError, SYMPTOM_REGRESSION_VARIANTS, assess_movement_competence,
+)
 from training.camera_observations import CameraObservationError, validate_camera_observations
 from training.goals import normalize_goal, public_goal_options
 from training.localization import resolve_response_language, language_instruction, localize_guardrail_reply
 from training.movement_coaching import (
     ASSESSMENT_VERSION as SIX_PATTERN_ASSESSMENT_VERSION,
     PATTERN_DEFINITIONS, MovementCoachingError, build_movement_decision,
+    validate_symptom_regression_report,
 )
 
 logger = logging.getLogger(__name__)
@@ -2790,8 +2793,16 @@ def coach_program():
         decision = record.get("decision") if isinstance(record, dict) else None
         if report_status not in valid_report_statuses:
             invalid_report_patterns.append(pattern)
-        elif report_status in {"uncertain", "symptoms_reported", "not_assessed"} and decision != "UNASSESSABLE":
+        elif report_status in {"uncertain", "not_assessed"} and decision != "UNASSESSABLE":
             invalid_report_patterns.append(pattern)
+        elif report_status == "symptoms_reported":
+            try:
+                allowed_regressions = SYMPTOM_REGRESSION_VARIANTS.get(pattern, ())
+                validate_symptom_regression_report(
+                    report, decision, record.get("selected_exercise_id"), allowed_regressions
+                )
+            except MovementCoachingError:
+                invalid_report_patterns.append(pattern)
         elif report_status == "needs_support" and decision == "READY":
             invalid_report_patterns.append(pattern)
     if invalid_report_patterns:
@@ -3601,22 +3612,62 @@ def save_six_pattern_movement_assessment(profile_id):
     try:
         for pattern in PATTERN_DEFINITIONS:
             value = supplied[pattern]
-            if not isinstance(value, dict) or set(value) != {"status"}:
-                return jsonify({"error": f"Vzorec {pattern} mora vsebovati samo status."}), 400
+            if not isinstance(value, dict):
+                return jsonify({"error": f"Vzorec {pattern} mora biti objekt."}), 400
             status = value.get("status")
             if not isinstance(status, str) or status not in status_to_decision:
                 return jsonify({"error": f"Neveljaven status za vzorec {pattern}."}), 400
+            allowed_keys = {"status"}
+            if status == "symptoms_reported":
+                allowed_keys |= {"regression_test", "selected_exercise_id"}
+            if set(value) - allowed_keys:
+                return jsonify({"error": f"Vzorec {pattern} vsebuje nepričakovana polja."}), 400
+            user_report = {"status": status}
+            selected_exercise_id = value.get("selected_exercise_id")
+            decision = status_to_decision[status]
             reason = {
                 "comfortable": "Uporabnik poroča, da je osnovno izvedbo opravil udobno in nadzorovano.",
                 "needs_support": "Uporabnik poroča, da pri izvedbi potrebuje podporo ali lažjo različico.",
                 "uncertain": "Uporabnik ni prepričan o kakovosti ali udobju izvedbe.",
                 "not_assessed": "Gibalni vzorec še ni bil ocenjen.",
-                "symptoms_reported": "Uporabnik je pri gibalnem vzorcu navedel simptome; vzorec ostane izpuščen do razjasnitve.",
+                "symptoms_reported": "Pri osnovni različici se je pojavila bolečina ali nelagodje; vzorec ostane izpuščen brez uspešnega ponovnega preizkusa.",
             }[status]
+            if status == "symptoms_reported" and "regression_test" in value:
+                regression_test = value["regression_test"]
+                if (
+                    not isinstance(regression_test, dict)
+                    or set(regression_test) != {"status", "variation_id", "pain_during", "worsened"}
+                    or regression_test.get("status") not in {"tolerated", "not_tolerated"}
+                    or isinstance(regression_test.get("pain_during"), bool)
+                    or not isinstance(regression_test.get("pain_during"), (int, float))
+                    or not 0 <= regression_test.get("pain_during") <= 10
+                    or not isinstance(regression_test.get("worsened"), bool)
+                ):
+                    return jsonify({"error": f"Ponovni preizkus za {pattern} nima veljavne strukture."}), 400
+                allowed_regressions = SYMPTOM_REGRESSION_VARIANTS.get(pattern, ())
+                if regression_test.get("variation_id") not in allowed_regressions:
+                    return jsonify({"error": f"Preizkušena različica ni dovoljena za vzorec {pattern}."}), 400
+                user_report["regression_test"] = regression_test
+                if regression_test["status"] == "tolerated":
+                    decision = "REGRESS"
+                    reason = "Konkretna regresija je bila ponovno preizkušena; program lahko uporabi samo točno to različico."
+                else:
+                    decision = "UNASSESSABLE"
+                    selected_exercise_id = None
+                    reason = "Regresija ni bila ustrezno tolerirana; prizadeti vzorec ostane izpuščen."
+            if decision == "REGRESS":
+                try:
+                    validate_symptom_regression_report(
+                        user_report, decision, selected_exercise_id,
+                        SYMPTOM_REGRESSION_VARIANTS.get(pattern, ()),
+                    )
+                except MovementCoachingError as exc:
+                    return jsonify({"error": str(exc)}), 400
             decisions[pattern] = build_movement_decision(
                 pattern,
-                status_to_decision[status],
-                user_report={"status": status},
+                decision,
+                user_report=user_report,
+                selected_exercise_id=selected_exercise_id,
                 decision_reason=reason,
             )
         token = _profile_token()
