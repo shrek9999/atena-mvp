@@ -211,7 +211,14 @@ def validate_symptom_regression_report(
     """Validate symptom response using tolerance, symptom behavior and acute warning signs."""
     if not isinstance(user_report, dict) or user_report.get("status") != "symptoms_reported":
         return
+    report_flags = user_report.get("acute_warning_signs", [])
+    if not isinstance(report_flags, list) or any(flag not in ACUTE_WARNING_SIGNS for flag in report_flags):
+        raise MovementCoachingError("Seznam akutnih opozorilnih znakov ni veljaven.")
     test = user_report.get("regression_test")
+    if report_flags:
+        if decision != "UNASSESSABLE" or selected_exercise_id is not None or test is not None:
+            raise MovementCoachingError("Ob akutnem opozorilnem znaku prizadeti vzorec ne sme biti vključen v program.")
+        return
     if decision == "UNASSESSABLE":
         if selected_exercise_id is not None:
             raise MovementCoachingError("Neocenjen simptomatski vzorec ne sme imeti izbrane vaje.")
@@ -229,6 +236,7 @@ def validate_symptom_regression_report(
                 or not isinstance(test.get("worsened"), bool)
                 or not isinstance(flags, list)
                 or any(flag not in ACUTE_WARNING_SIGNS for flag in flags)
+                or (test.get("anchor_point_confirmed") is not None and not isinstance(test.get("anchor_point_confirmed"), bool))
             ):
                 raise MovementCoachingError(
                     "Netoleriran preizkus mora vsebovati veljaven status, oceno bolečine in seznam opozorilnih znakov."
@@ -247,6 +255,10 @@ def validate_symptom_regression_report(
         raise MovementCoachingError(
             "Pri podprtem počepu mora biti navedena preverjena opora: TRX, elastika, fiksni drog ali stabilna opora."
         )
+    if test.get("variation_id") in {"supported_squat", "band_row", "band_overhead_press"} and support_method == "band" and test.get("anchor_point_confirmed") is not True:
+        raise MovementCoachingError("Za uporabo elastike mora biti potrjeno varno, namensko sidrišče.")
+    if test.get("variation_id") == "trx_row" and support_method != "trx":
+        raise MovementCoachingError("Za veslanje s TRX mora biti izrecno potrjena uporaba TRX.")
     if (
         decision != "REGRESS"
         or test.get("status") != "tolerated"
