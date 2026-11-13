@@ -50,6 +50,7 @@ def test_english_individualized_dose_is_withheld_before_safety_clearance():
     safe = _sanitize_unverified_training_dose(answer, messages, "en")
     assert "3 sets of 8 reps" not in safe
     assert "Before prescribing sets, repetitions, or a load" in safe
+    assert "any pain" in safe
     assert "acute sharp pain" in safe
     assert "recent injury" in safe
 
@@ -72,7 +73,8 @@ def test_english_safety_claim_cannot_infer_clearance_from_missing_information():
     answer = "Since you did not mention pain, I assume you have no injuries or limitations."
     safe = _sanitize_unverified_safety_claim(answer, messages)
     assert "You have not explicitly confirmed that" in safe
-    assert "Do you currently have acute sharp pain" in safe
+    assert "Do you currently have any pain" in safe
+    assert "acute sharp pain" in safe
 
 
 def test_english_unanswered_safety_question_still_blocks_programming():
