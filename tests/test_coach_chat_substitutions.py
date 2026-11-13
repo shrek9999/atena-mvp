@@ -274,7 +274,7 @@ def test_onboarding_safety_gate_precedes_equipment_question():
 
     assert reply is not None
     assert "najprej preveriti varnost" in reply
-    assert "bolečine, poškodbe" in reply
+    assert "bolečin, poškodb" in reply
     assert "kakšno opremo" not in reply
 
 
@@ -302,7 +302,7 @@ def test_pending_safety_acknowledges_frequency_without_claiming_it_was_saved():
     assert reply is not None
     assert "dvakrat tedensko" in reply
     assert "Zabeležil sem" not in reply
-    assert "bolečine, poškodbe" in reply
+    assert "bolečin, poškodb" in reply
 
 
 def test_pending_safety_acknowledges_goal_change():
@@ -316,7 +316,7 @@ def test_pending_safety_acknowledges_goal_change():
 
     assert reply is not None
     assert "prednost vzdržljivost" in reply
-    assert "bolečine, poškodbe" in reply
+    assert "bolečin, poškodb" in reply
 
 
 def test_pending_safety_acknowledges_equipment_context():
@@ -330,7 +330,7 @@ def test_pending_safety_acknowledges_equipment_context():
 
     assert reply is not None
     assert "Sobno kolo in sprehodi" in reply
-    assert "bolečine, poškodbe" in reply
+    assert "bolečin, poškodb" in reply
 
 
 def test_slovene_coaching_normalizer_fixes_live_benchmark_typos():
