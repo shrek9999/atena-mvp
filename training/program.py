@@ -702,20 +702,32 @@ def generate_program(
                 except MovementCoachingError as exc:
                     raise ProgramValidationError(str(exc)) from exc
                 regression_test = user_report.get("regression_test", {})
-                if decision == "REGRESS" and target_id == "supported_squat":
+                if decision == "REGRESS":
                     support_requirements = {
-                        "trx": {"suspension_trainer"},
-                        "band": {"resistance_band", "anchor_point"},
-                        "fixed_bar": {"rack"},
-                        "stable_support": {"household_support"},
+                        "supported_squat": {
+                            "trx": {"suspension_trainer"},
+                            "band": {"resistance_band", "anchor_point"},
+                            "fixed_bar": {"rack"},
+                            "stable_support": {"household_support"},
+                        },
+                        "band_row": {"band": {"resistance_band", "anchor_point"}},
+                        "band_overhead_press": {"band": {"resistance_band", "anchor_point}},
+                        "trx_row": {"trx": {"suspension_trainer"}},
                     }
-                    support_method = regression_test.get("support_method")
-                    required_support = support_requirements.get(support_method, set())
-                    if not required_support or not required_support.issubset(set(p["equipment"])):
-                        raise ProgramValidationError(
-                            "Izbrana opora za podprti počep ni potrjena v uporabnikovi opremi. "
-                            "Za elastiko je potrebno tudi varno sidrišče; za drog stabilen rack."
-                        )
+                    if target_id in support_requirements:
+                        support_method = regression_test.get("support_method")
+                        method_requirements = support_requirements[target_id]
+                        if target_id == "supported_squat":
+                            required_support = method_requirements.get(support_method, set())
+                        else:
+                            required_support = method_requirements.get(support_method, set())
+                        if not required_support or not required_support.issubset(set(p["equipment"])):
+                            raise ProgramValidationError(
+                                "Izbrana opora ni potrjena v uporabnikovi opremi. "
+                                "Elastika zahteva namensko sidrišče, TRX pa izrecno potrjeno uporabo."
+                            )
+                        if support_method == "band" and regression_test.get("anchor_point_confirmed") is not True:
+                            raise ProgramValidationError("Elastika nima potrjenega varnega sidrišča.")
                 # Only a specifically retested, tolerated regression is eligible
                 # for a supported variant; all other symptom reports stay omitted.
                 movement_status_by_pattern[pattern] = (
