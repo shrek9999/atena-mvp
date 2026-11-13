@@ -1,5 +1,5 @@
 name: ATENA live conversation quality benchmark
-# Live model calls are opt-in through explicit commit markers or manual workflow dispatch.
+# Live model calls are opt-in through explicit commit markers or manual workflow dispatch. Targeted post-fix review covers G04/G10/G12/G17/G19.
 
 on:
   push:
