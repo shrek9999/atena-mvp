@@ -3407,8 +3407,16 @@ def coach_training_sessions(profile_id):
             return jsonify({"error": "Opozorilni znaki niso veljavni."}), 400
         modifications = discomfort_details.get("modifications_applied")
         valid_modifications = {"reduced_load", "slow_tempo", "reduced_range", "support"}
-        if not isinstance(modifications, list) or not modifications or any(x not in valid_modifications for x in modifications) or len(set(modifications)) != len(modifications):
+        if not isinstance(modifications, list) or any(x not in valid_modifications for x in modifications) or len(set(modifications)) != len(modifications):
             return jsonify({"error": "Prilagoditve vaje niso veljavne."}), 400
+        mild_tolerated = (
+            pain_during <= 4
+            and discomfort_details["worsened"] is False
+            and discomfort_details["tolerated"] is True
+            and not acute_signs
+        )
+        if mild_tolerated and not {"reduced_load", "slow_tempo", "reduced_range"}.issubset(set(modifications)):
+            return jsonify({"error": "Pri blagem nelagodju morajo biti potrjene manjša obremenitev, počasen tempo in toleriran obseg."}), 400
         if discomfort is not True:
             return jsonify({"error": "Podrobnosti nelagodja zahtevajo discomfort_reported=true."}), 400
 
