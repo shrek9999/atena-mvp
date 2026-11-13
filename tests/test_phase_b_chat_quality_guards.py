@@ -410,10 +410,34 @@ def test_rdls_followup_acknowledges_preserved_training_intent_without_repeating_
         "Kakšen je bil prvotni odmerek mrtvega dviga?"
     )
     cleaned = coach_routes._sanitize_unverified_exercise_parameters(answer, messages)
-    assert cleaned.startswith("Razumem — ohraniva obremenjen kolčni zgib")
-    assert "ni biomehansko enak" in cleaned
-    assert "Katere teže ročk imaš?" in cleaned
+    assert cleaned.startswith("Razumem — ohraniva namen z RDL")
+    assert "ni biomehansko enak klasičnemu mrtvemu dvigu" in cleaned
+    assert "prvotni odmerek (serije × ponovitve)" in cleaned
+    assert "teže ročk" in cleaned
     assert cleaned.count("?") == 1
+
+
+def test_progression_does_not_repeat_recovery_question_after_user_does_not_answer():
+    profile = (
+        "V programu je cilj 8–10 ponovitev; v dveh zaporednih primerljivih treningih "
+        "sem izvedel vse serije po 10 ponovitev z RIR 3 in stabilno tehniko."
+    )
+    messages = [
+        {"role": "user", "content": profile},
+        {"role": "user", "content": "Vse serije sem opravil. Na koncu vsake serije bi lahko naredil še približno tri ponovitve."},
+        {"role": "model", "content": "Dve primerljivi uspešni izvedbi sta dober znak, vendar pred povečanjem obremenitve preveriva še regeneracijo. Kako si se počutil naslednji dan po zadnjem treningu – običajno spočit ali nenavadno utrujen?"},
+        {"role": "user", "content": "Tehnika je bila dobra in trening ni bil pretežek."},
+    ]
+    answer = (
+        "Dobro, to potrjuje stabilno tehniko in primeren občutek napora. "
+        "Pred povečanjem bremena preveriva še regeneracijo: ali si bil naslednji "
+        "dan običajno spočit, brez nenavadne utrujenosti ali bolečin?"
+    )
+    cleaned = coach_routes._sanitize_unverified_exercise_parameters(answer, messages)
+    assert "Dobra tehnika in primeren občutek napora" in cleaned
+    assert "obremenitve še ne povečuj" in cleaned
+    assert "ohrani enako dozo" in cleaned
+    assert cleaned.count("?") == 0
 
 
 def test_progression_does_not_invent_load_or_sets_before_recovery_check():
