@@ -711,7 +711,7 @@ def generate_program(
                             "stable_support": {"household_support"},
                         },
                         "band_row": {"band": {"resistance_band", "anchor_point"}},
-                        "band_overhead_press": {"band": {"resistance_band", "anchor_point}},
+                        "band_overhead_press": {"band": {"resistance_band", "anchor_point"}},
                         "trx_row": {"trx": {"suspension_trainer"}},
                     }
                     if target_id in support_requirements:
