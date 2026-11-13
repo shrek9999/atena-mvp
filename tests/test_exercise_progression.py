@@ -501,5 +501,47 @@ def test_acute_complete_symptom_report_stops_only_the_affected_exercise():
         [exercise("squat_goblet"), exercise("push_up")],
     )
     result = recommend_exercise_progression([session, previous])
-    assert decision(result, "squat_goblet")["decision"] == "pause_and_review"
+    assert decision(result, "squat_goblet")["decision"] == "stop_symptomatic_exposure"
     assert decision(result, "push_up")["decision"] != "pause_and_review"
+
+
+
+def test_apply_progression_omits_acute_symptomatic_exercise_but_keeps_other_exercises():
+    program = {
+        "sessions": [{
+            "title": "Trening A",
+            "exercises": [
+                {"exercise_id": "squat_goblet", "name": "Goblet počep", "prescription": {"sets": 3, "reps": "8–12"}},
+                {"exercise_id": "push_up", "name": "Skleca", "prescription": {"sets": 3, "reps": "8–12"}},
+            ],
+        }]
+    }
+    result = apply_exercise_progression(program, [
+        {"exercise_id": "squat_goblet", "decision": "stop_symptomatic_exposure", "reason": "Opozorilni znaki."},
+    ])
+    session = result["sessions"][0]
+    assert [item["exercise_id"] for item in session["exercises"]] == ["push_up"]
+    assert session["excluded_exercises"] == [{
+        "exercise_id": "squat_goblet",
+        "name": "Goblet počep",
+        "reason": "Opozorilni znaki.",
+    }]
+
+
+def test_apply_progression_adds_explicit_load_guidance_for_mild_symptoms():
+    program = {
+        "sessions": [{
+            "exercises": [{
+                "exercise_id": "squat_goblet",
+                "prescription": {"sets": 3, "reps": "8–12", "rir": 3},
+            }],
+        }]
+    }
+    result = apply_exercise_progression(program, [
+        {"exercise_id": "squat_goblet", "decision": "modify_symptomatic_exposure", "reason": "Blago nelagodje."},
+    ])
+    prescription = result["sessions"][0]["exercises"][0]["prescription"]
+    assert prescription["sets"] == 2
+    assert prescription["rir"] == 4
+    assert prescription["tempo"] == "4–1–2–0"
+    assert "Zmanjšaj breme" in prescription["load_guidance"]
