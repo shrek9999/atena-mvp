@@ -1209,6 +1209,15 @@ def generate_program(
             used_counts[candidate["id"]] += 1
             prescription = _prescription(planning_goal, p["experience"], effective_pattern, candidate, p["session_minutes"])
             movement_note = None
+            symptom_report = (
+                structured_decision.get("user_report", {})
+                if structured_decision and isinstance(structured_decision.get("user_report"), dict)
+                else {}
+            )
+            symptom_tolerated = (
+                symptom_report.get("status") == "symptoms_reported"
+                and structured_decision.get("decision") == "REGRESS"
+            )
             if structured_decision and structured_decision["decision"] in {"LEARN", "REGRESS"}:
                 prescription["sets"] = min(2, prescription.get("sets", 2))
                 if prescription.get("rir") is not None:
@@ -1240,7 +1249,39 @@ def generate_program(
                     "action": "ready_for_conservative_starting_variation",
                     "message": "Samoocena potrjuje udobje pri osnovnem gibalnem vzorcu, ne pa tolerance na veliko breme. Program zato začne s konservativno različico; večje obremenitve zahtevajo ločeno, ponovljivo izvedbo in zabeleženo povratno informacijo.",
                 })
-            if movement_status == "needs_support":
+            if symptom_tolerated:
+                # Mild, stable discomfort is not an automatic exclusion. Keep the
+                # exact tested variant, reduce resistance, slow the tempo and
+                # stay inside the tolerated range; never progress this exposure.
+                prescription["sets"] = min(2, prescription.get("sets", 2))
+                if prescription.get("rir") is not None:
+                    prescription["rir"] = max(4, prescription["rir"])
+                if prescription.get("rir_range") is not None:
+                    prescription["rir_range"] = "4+"
+                prescription["tempo"] = "4–1–2–0"
+                prescription["tempo_description"] = (
+                    "Počasen, nadzorovan tempo: 4 s spuščanje, 1 s nadzor, "
+                    "2 s vračanje. Ne pospešuj izvedbe."
+                )
+                prescription["tempo_seconds_per_rep"] = 7
+                movement_note = (
+                    (movement_note + " " if movement_note else "")
+                    + "Ker si navedel/-la blago nelagodje, začni z manjšo obremenitvijo "
+                    "(eno stopnjo lažje oziroma lastna teža), največ dvema serijama, "
+                    "tempom 4–1–2–0 in samo v amplitudi, ki ostaja tolerirana. "
+                    "Če se bolečina stopnjuje, postane ostra ali spremeni gibanje, prekini."
+                )
+                movement_adaptation_events.append({
+                    "pattern": pattern,
+                    "action": "mild_symptom_load_tempo_and_rom_adjustment",
+                    "exercise_id": candidate["id"],
+                    "pain_during": symptom_report["regression_test"]["pain_during"],
+                    "load_guidance": "reduce_one_step_or_use_bodyweight",
+                    "range_guidance": "stay_within_tolerated_range",
+                    "progression_allowed": False,
+                    "message": movement_note,
+                })
+            if movement_status == "needs_support" and not symptom_tolerated:
                 if pattern == "balance":
                     movement_note = "Izvedi ob stabilni opori, ki jo lahko z roko dosežeš; obseg in trajanje prilagodi tako, da ostaneta nadzorovana."
                 else:
