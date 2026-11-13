@@ -1790,8 +1790,9 @@ def _coaching_guardrail_reply(messages):
     ):
         return (
             "Preden se lotiva opreme in časovnega načrta, moram najprej preveriti varnost: "
-            "ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve "
-            "ali zdravstvene zadržke?"
+            "ali imaš trenutno akutno ostro bolečino, novo oteklino, mišični spazem, "
+            "svežo poškodbo, nenadno izgubo funkcije ali večjo ortopedsko oziroma "
+            "zdravstveno omejitev, zaradi katere vadba trenutno ni primerna?"
         )
     latest_reports_health_issue = bool(re.search(
         r"(imam|občutim|čutim|pojavlja se|pojavila se je|I have|I am experiencing|I feel).{0,70}"
@@ -1800,7 +1801,7 @@ def _coaching_guardrail_reply(messages):
         re.IGNORECASE,
     ))
     if assistant_asked_safety and not _has_safety_clearance(messages) and not latest_reports_health_issue and not symptom_clarification_active:
-        # The broad safety intake is a one-time question. If the user skips it,
+        # The acute/major-restriction safety intake is a one-time question. If the user skips it,
         # acknowledge new information and keep the programme gate closed without asking again.
         pending = _pending_safety_reply(latest, repeat_question=False)
         if re.search(r"(vse sem pokvaril|vse pokvaril|pokvaril sem vse)", lowered):
