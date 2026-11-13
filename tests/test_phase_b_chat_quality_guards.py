@@ -399,6 +399,23 @@ def test_rdls_substitution_is_not_described_as_equivalent_to_deadlift():
     assert "ni biomehansko enak" in cleaned
 
 
+def test_rdls_followup_acknowledges_preserved_training_intent_without_repeating_full_explanation():
+    messages = [
+        {"role": "user", "content": "Danes nimam dostopa do olimpijske palice. V programu imam mrtvi dvig. S čim ga lahko zamenjam?"},
+        {"role": "model", "content": "RDL je sorodna možnost. Kakšen je bil prvotni odmerek mrtvega dviga (serije in ponovitve) in katere teže ročk imaš na voljo?"},
+        {"role": "user", "content": "Želim ohraniti vzorec kolčnega iztega in približno enak namen treninga."},
+    ]
+    answer = (
+        "Z ročkami je lahko primerna alternativa predklon z nevtralno hrbtenico (RDL). "
+        "Kakšen je bil prvotni odmerek mrtvega dviga?"
+    )
+    cleaned = coach_routes._sanitize_unverified_exercise_parameters(answer, messages)
+    assert cleaned.startswith("Razumem — ohraniva obremenjen kolčni zgib")
+    assert "ni biomehansko enak" in cleaned
+    assert "Katere teže ročk imaš?" in cleaned
+    assert cleaned.count("?") == 1
+
+
 def test_progression_does_not_invent_load_or_sets_before_recovery_check():
     profile = (
         "V programu je cilj 8–10 ponovitev; v dveh zaporednih primerljivih treningih "
