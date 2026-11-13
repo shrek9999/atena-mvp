@@ -98,6 +98,33 @@ def test_server_guardrail_stops_painful_exercise_before_substitution():
     assert "Goblet počep" not in reply
 
 
+def test_localized_symptom_answers_initial_intake_without_granting_clearance():
+    messages = [
+        {"role": "model", "content": "Ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"},
+        {"role": "user", "content": "Bolečina v kolenu pri počepu."},
+    ]
+    reply = coach_routes._coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "Kolikšna je bolečina od 0 do 10?" in reply
+    assert "ali imaš trenutno kakršne koli bolečine" not in reply.casefold()
+    assert not coach_routes._has_safety_clearance(messages)
+
+
+def test_localized_symptom_still_blocks_individual_program_after_focused_intake():
+    messages = [
+        {"role": "model", "content": "Ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"},
+        {"role": "user", "content": "Bolečina v kolenu pri počepu."},
+        {"role": "model", "content": "Kolikšna je bolečina od 0 do 10?"},
+        {"role": "user", "content": "2/10, poznana bolečina, ne stopnjuje se."},
+        {"role": "user", "content": "Pripravi mi individualni program za moč."},
+    ]
+    reply = coach_routes._coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "individualnega programa" in reply
+    assert "Ali imaš poleg te bolečine še kakšno drugo poškodbo" in reply
+    assert not coach_routes._has_safety_clearance(messages)
+
+
 def test_server_guardrail_asks_about_balance_before_suggesting_modification():
     reply = coach_routes._coaching_guardrail_reply(_user_messages(
         "Pri počepu izgubljam ravnotežje. Kaj naj naredim?",
