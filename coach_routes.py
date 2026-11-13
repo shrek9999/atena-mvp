@@ -3621,12 +3621,22 @@ def save_six_pattern_movement_assessment(profile_id):
                 return jsonify({"error": f"Neveljaven status za vzorec {pattern}."}), 400
             allowed_keys = {"status"}
             if status == "symptoms_reported":
-                allowed_keys |= {"regression_test", "selected_exercise_id"}
+                allowed_keys |= {"regression_test", "selected_exercise_id", "acute_warning_signs"}
             if set(value) - allowed_keys:
                 return jsonify({"error": f"Vzorec {pattern} vsebuje nepričakovana polja."}), 400
             user_report = {"status": status}
             selected_exercise_id = value.get("selected_exercise_id")
             decision = status_to_decision[status]
+            if "acute_warning_signs" in value:
+                warning_flags = value["acute_warning_signs"]
+                if (
+                    not isinstance(warning_flags, list)
+                    or any(flag not in ACUTE_WARNING_SIGNS for flag in warning_flags)
+                ):
+                    return jsonify({"error": f"Akutni opozorilni znaki za {pattern} niso veljavni."}), 400
+                user_report["acute_warning_signs"] = warning_flags
+                if warning_flags and (selected_exercise_id is not None or "regression_test" in value):
+                    return jsonify({"error": f"Ob akutnem opozorilnem znaku se vzorec {pattern} ne sme ponovno testirati."}), 400
             reason = {
                 "comfortable": "Uporabnik poroča, da je osnovno izvedbo opravil udobno in nadzorovano.",
                 "needs_support": "Uporabnik poroča, da pri izvedbi potrebuje podporo ali lažjo različico.",
