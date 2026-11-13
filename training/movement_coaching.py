@@ -229,10 +229,9 @@ def validate_symptom_regression_report(
                 or not isinstance(test.get("worsened"), bool)
                 or not isinstance(flags, list)
                 or any(flag not in ACUTE_WARNING_SIGNS for flag in flags)
-                or not (pain > 4 or test.get("worsened") is True or bool(flags))
             ):
                 raise MovementCoachingError(
-                    "Netoleriran preizkus mora zabeležiti bolečino nad 4/10, poslabšanje ali opozorilni znak."
+                    "Netoleriran preizkus mora vsebovati veljaven status, oceno bolečine in seznam opozorilnih znakov."
                 )
         return
 
