@@ -644,9 +644,9 @@ def _sanitize_onboarding_questions(answer, messages):
         ):
             return (
                 "Preden pripravim individualni trening, najprej preveriva varnost: "
-                "ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke "
-                "(na primer svežo poškodbo, oteklino, mišični spazem ali zdravniško prepoved vadbe); "
-                "če da, kje in kaj se dogaja?"
+                "ali imaš trenutno akutno ostro bolečino, novo oteklino, mišični spazem, svežo poškodbo, "
+                "nenadno izgubo funkcije ali večjo ortopedsko oziroma zdravstveno omejitev, "
+                "zaradi katere vadba trenutno ni primerna?"
             )
         return answer
 
@@ -3646,7 +3646,7 @@ def save_six_pattern_movement_assessment(profile_id):
                     or set(regression_test) - {
                         "status", "variation_id", "pain_during", "worsened",
                         "tempo", "load_adjustment", "range_adjustment", "acute_warning_signs",
-                        "support_method",
+                        "support_method", "anchor_point_confirmed",
                     }
                     or regression_test.get("status") not in {"tolerated", "not_tolerated"}
                     or isinstance(regression_test.get("pain_during"), bool)
@@ -3654,6 +3654,7 @@ def save_six_pattern_movement_assessment(profile_id):
                     or not 0 <= regression_test.get("pain_during") <= 10
                     or not isinstance(regression_test.get("worsened"), bool)
                     or not isinstance(regression_test.get("acute_warning_signs"), list)
+                    or ("anchor_point_confirmed" in regression_test and not isinstance(regression_test.get("anchor_point_confirmed"), bool))
                 ):
                     return jsonify({"error": f"Ponovni preizkus za {pattern} nima veljavne strukture."}), 400
                 allowed_regressions = SYMPTOM_REGRESSION_VARIANTS.get(pattern, ())
