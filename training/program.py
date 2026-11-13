@@ -617,9 +617,20 @@ def generate_program(
             )
         if not isinstance(movement_decisions, dict) or not movement_decisions:
             raise ProgramValidationError("movement_decisions mora biti neprazen JSON objekt.")
-        unknown_patterns = sorted(set(movement_decisions) - set(PATTERN_DEFINITIONS))
-        if unknown_patterns:
-            raise ProgramValidationError("Neznani gibalni vzorci: " + ", ".join(unknown_patterns))
+        supplied_patterns = set(movement_decisions)
+        expected_patterns = set(PATTERN_DEFINITIONS)
+        missing_patterns = sorted(expected_patterns - supplied_patterns)
+        unknown_patterns = sorted(supplied_patterns - expected_patterns)
+        if missing_patterns or unknown_patterns:
+            details = []
+            if missing_patterns:
+                details.append("manjkajo: " + ", ".join(missing_patterns))
+            if unknown_patterns:
+                details.append("neznani: " + ", ".join(unknown_patterns))
+            raise ProgramValidationError(
+                "Strukturirana samoocena mora vsebovati natanko vseh šest osnovnih gibalnih vzorcev (" 
+                + "; ".join(details) + ")."
+            )
         for pattern, record in movement_decisions.items():
             if not isinstance(record, dict):
                 raise ProgramValidationError(f"Ocena za {pattern} mora biti JSON objekt.")
