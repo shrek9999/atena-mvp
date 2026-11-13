@@ -226,21 +226,22 @@ def recommend_exercise_progression(sessions):
     # A complete mild/stable localized report affects only its named exercise.
     # Any legacy, incomplete or acute report retains the conservative global hold.
     symptom_details = []
+    stop_symptomatic_ids = set()
     for _, session in ordered[:3]:
         if session.get("discomfort_reported") is not True:
             continue
         detail = session.get("discomfort_details")
-        if not (
+        complete = (
             isinstance(detail, dict)
             and isinstance(detail.get("exercise_id"), str)
             and isinstance(detail.get("pain_during"), int)
             and not isinstance(detail.get("pain_during"), bool)
-            and 0 <= detail["pain_during"] <= 4
-            and detail.get("worsened") is False
-            and detail.get("tolerated") is True
-            and detail.get("acute_warning_signs") == []
-            and {"reduced_load", "slow_tempo", "reduced_range"}.issubset(set(detail.get("modifications_applied", [])))
-        ):
+            and 0 <= detail["pain_during"] <= 10
+            and isinstance(detail.get("worsened"), bool)
+            and isinstance(detail.get("tolerated"), bool)
+            and isinstance(detail.get("acute_warning_signs"), list)
+        )
+        if not complete:
             affected_ids = {
                 exercise["exercise_id"]
                 for _, item in ordered[:3]
@@ -251,9 +252,20 @@ def recommend_exercise_progression(sessions):
                 "exercise_id": exercise_id,
                 "decision": "pause_and_review",
                 "exposures_recorded": 0,
-                "reason": "Nelagodje ni bilo dovolj natančno opredeljeno kot blago, stabilno in sprejemljivo. Pred progresijo je potrebna razjasnitev.",
+                "reason": "Poročilo o nelagodju ni popolno ali ga ni mogoče povezati z eno vajo. Pred progresijo je potrebna razjasnitev.",
             } for exercise_id in sorted(affected_ids)]
-        symptom_details.append(detail)
+
+        mild_tolerated = (
+            detail["pain_during"] <= 4
+            and detail["worsened"] is False
+            and detail["tolerated"] is True
+            and detail["acute_warning_signs"] == []
+            and {"reduced_load", "slow_tempo", "reduced_range"}.issubset(set(detail.get("modifications_applied", [])))
+        )
+        if mild_tolerated:
+            symptom_details.append(detail)
+        else:
+            stop_symptomatic_ids.add(detail["exercise_id"])
 
     symptomatic_ids = {detail["exercise_id"] for detail in symptom_details}
 
@@ -296,7 +308,14 @@ def recommend_exercise_progression(sessions):
             "reason": reason,
         })
     for item in recommendations:
-        if item["exercise_id"] in symptomatic_ids:
+        if item["exercise_id"] in stop_symptomatic_ids:
+            item["decision"] = "pause_and_review"
+            item["reason"] = (
+                "Pri tej vaji so bili zabeleženi opozorilni, stopnjujoči se ali nesprejemljivi "
+                "simptomi. Vajo izpusti do ustrezne razjasnitve; ob akutnih ali izrazitih znakih "
+                "poišči strokovno oceno. Druge vaje se presojajo ločeno."
+            )
+        elif item["exercise_id"] in symptomatic_ids:
             item["decision"] = "modify_symptomatic_exposure"
             item["reason"] = (
                 "Pri tej vaji je bilo zabeleženo blago, stabilno in sprejemljivo nelagodje. "
