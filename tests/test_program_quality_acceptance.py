@@ -210,10 +210,11 @@ def test_mobility_limited_persona_adapts_only_the_assessed_squat_pattern():
 
     squat_decision = build_movement_decision(
         "squat",
-        "REGRESS",
+        "LEARN",
         user_report={"status": "needs_support"},
+        selected_learning_method="target_squat",
         selected_exercise_id="chair_sit_to_stand",
-        decision_reason="Acceptance test: limited squat capacity requires a supported variation.",
+        decision_reason="Acceptance test: limited squat capacity requires a supported learning variation.",
     )
     adapted = generate_program(profile, movement_decisions={"squat": squat_decision})
 
@@ -226,7 +227,7 @@ def test_mobility_limited_persona_adapts_only_the_assessed_squat_pattern():
     baseline_patterns = exercise_ids_by_pattern(baseline)
     adapted_patterns = exercise_ids_by_pattern(adapted)
 
-    assert adapted_patterns.get("squat") == {"chair_sit_to_stand"}
+    assert "squat" not in adapted_patterns
     for pattern, exercise_ids in baseline_patterns.items():
         if pattern != "squat":
             assert adapted_patterns.get(pattern) == exercise_ids, pattern
@@ -235,8 +236,14 @@ def test_mobility_limited_persona_adapts_only_the_assessed_squat_pattern():
     events = adapted["movement_adaptation"]["events"]
     assert any(
         event["pattern"] == "squat"
-        and event["action"] == "learning_or_regression_variant_selected"
+        and event["action"] == "unloaded_learning_task_only"
         for event in events
+    )
+    assert any(
+        task["movement_pattern"] == "squat"
+        and task["method_id"] == "target_squat"
+        and task["exercise_id"] is None
+        for session in adapted["sessions"] for task in session["learning_tasks"]
     )
 
 

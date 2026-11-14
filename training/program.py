@@ -192,16 +192,19 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # Functional fitness is built from fundamental movement patterns and
         # locomotion, not generic balance/coordination add-ons.
         patterns = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
-        # Vertical pull is a required supplementary strength pattern, not a camera-assessment task.
+        # Vertical pull is a supplementary strength pattern, not a camera-assessment task.
+        # Keep all six assessed patterns represented across the week while
+        # preserving locomotion and conditioning as distinct functional work.
+        # Day 1: horizontal push + vertical pull + unilateral knee pattern.
+        # Day 2: retain squat/hinge/horizontal pull, rotate push to vertical,
+        # then add locomotion and controlled conditioning when time permits.
         if session_index == 0:
-            patterns.append("vertical_pull")
-        # Rotate unilateral knee-dominant work and locomotion across sessions.
-        patterns.append("lunge" if session_index % 2 == 0 else "locomotion")
-        # Rotate conditioning into the later session rather than stacking it
-        # on top of all six strength patterns in one workout. This preserves
-        # vertical pulling across the week and keeps each session <= 6 exercises.
-        if session_minutes > 30 and session_index > 0:
-            patterns.append("conditioning")
+            patterns.extend(["vertical_pull", "lunge"])
+        else:
+            patterns.remove("horizontal_push")
+            patterns.extend(["vertical_push", "locomotion"])
+            if session_minutes > 30:
+                patterns.append("conditioning")
         if include_stability:
             patterns.insert(0, "trunk_stability")
         # Experience is not a landing-readiness screen: no default jumps.
@@ -589,6 +592,7 @@ def generate_program(
     if not isinstance(camera_coordination_observed, bool):
         raise ProgramValidationError("camera_coordination_observed mora biti true ali false.")
     p = validate_profile(profile)
+    available_equipment = set(p["equipment"]) | {"bodyweight"}
     planning_goal = p["goal"]
     if p["goal"] == "strength_hypertrophy" and p["experience"] == "advanced":
         if p["training_emphasis"] in {"strength", "hypertrophy"}:
@@ -635,6 +639,32 @@ def generate_program(
             method_id = record.get("selected_learning_method")
             method_options = PATTERN_DEFINITIONS[pattern]["learning_methods"]
             method = next((item for item in method_options if item["id"] == method_id), None)
+            user_report = record.get("user_report", {})
+            if not isinstance(user_report, dict):
+                raise ProgramValidationError(f"Uporabnikovo poročilo za {pattern} mora biti objekt.")
+            report_status = user_report.get("status")
+            if (
+                decision in {"LEARN", "REGRESS"}
+                and report_status != "symptoms_reported"
+                and method is None
+            ):
+                preferred_learning_methods = {
+                    "squat": "supported_squat_assistance" if report_status == "needs_support" else "reaching_counterbalance",
+                    "hinge": "wall_hip_hinge" if report_status == "needs_support" else "dowel_four_point",
+                    "horizontal_push": "incline_push_up",
+                    "horizontal_pull": "scapular_coordination",
+                    "vertical_push": "unloaded_overhead_reach",
+                    "lunge": "supported_split_squat",
+                }
+                preferred_id = preferred_learning_methods.get(pattern)
+                method = next(
+                    (
+                        item for item in method_options
+                        if item["id"] == preferred_id and item.get("learning_only") is True
+                    ),
+                    None,
+                )
+                method_id = method["id"] if method else None
             if method_id is not None and method is None:
                 raise ProgramValidationError(f"Učna metoda {method_id} ne pripada vzorcu {pattern}.")
             if pattern == "horizontal_pull" and method_id in {
@@ -656,16 +686,39 @@ def generate_program(
             ]
             available_ids = {item["id"] for item in available_options}
             selected_id = record.get("selected_exercise_id")
-            method_exercise_id = method.get("exercise_id") if method else None
-            target_id = selected_id or method_exercise_id
+            # LEARN and non-symptom REGRESS are teaching phases, not work sets.
+            # Older records may carry the catalogue ID of the teaching variation;
+            # accept it only when it matches that explicitly learning-only method.
+            learning_phase = decision == "LEARN" or (
+                decision == "REGRESS" and report_status != "symptoms_reported"
+            )
+            if learning_phase:
+                if method is None or method.get("learning_only") is not True:
+                    raise ProgramValidationError(
+                        f"Za vzorec {pattern} mora biti izbrana izrecna neobremenjena učna metoda."
+                    )
+                if selected_id is not None and selected_id != method.get("exercise_id"):
+                    raise ProgramValidationError(
+                        f"Izbrana učna metoda in različica za {pattern} se ne ujemata."
+                    )
+                target_id = None
+            else:
+                target_id = selected_id or (
+                    method.get("exercise_id")
+                    if method and method.get("learning_only") is not True else None
+                )
             if target_id and target_id not in available_ids:
                 raise ProgramValidationError(
                     f"Vaja {target_id} za {pattern} ni združljiva z opremo ali izkušnjami v profilu."
                 )
-            user_report = record.get("user_report", {})
-            if not isinstance(user_report, dict):
-                raise ProgramValidationError(f"Uporabnikovo poročilo za {pattern} mora biti objekt.")
-            report_status = user_report.get("status")
+            if decision == "REGRESS" and report_status not in {"symptoms_reported", "needs_support", None}:
+                raise ProgramValidationError(
+                    f"Regresija vzorca {pattern} nima ustreznega poročila za učno ali simptomatsko prilagoditev."
+                )
+            if decision == "LEARN" and report_status not in {"comfortable", "needs_support", None}:
+                raise ProgramValidationError(
+                    f"Učna faza vzorca {pattern} zahteva udobno samooceno ali potrebo po opori."
+                )
             omission_reason = None
             if decision == "REGRESS" and report_status == "symptoms_reported" and not target_id:
                 raise ProgramValidationError(
@@ -675,6 +728,10 @@ def generate_program(
                 if method is not None and method.get("learning_only") is True:
                     # A no-load coordination task is intentionally not replaced by a loaded catalogue exercise.
                     pass
+                elif decision == "LEARN":
+                    raise ProgramValidationError(
+                        f"Vzorec {pattern} mora ostati v neobremenjeni učni fazi do potrditve vseh kriterijev."
+                    )
                 elif not available_options:
                     # Omit only this pattern when no verified learning variation is available.
                     decision = "UNASSESSABLE"
@@ -709,8 +766,8 @@ def generate_program(
                     "hinge": {"tempo", "hip_hinge_coordination", "spine_control", "balance", "tolerated_rom"},
                     "horizontal_push": {"tempo", "shoulder_elbow_wrist_control", "trunk_control", "stable_support", "tolerated_rom"},
                     "horizontal_pull": {"tempo", "scapular_arm_control", "trunk_control", "stable_base", "tolerated_rom"},
-                    "vertical_push": {"tempo", "overhead_control", "trunk_control", "balance", "tolerated_rom"},
-                    "lunge": {"tempo", "balance", "pelvis_hip_knee_foot_control", "trunk_control", "tolerated_rom"},
+                    "vertical_push": {"tempo", "overhead_control", "trunk_control", "scapular_control", "tolerated_rom"},
+                    "lunge": {"tempo", "balance", "pelvis_hip_knee_foot_control", "hip_extension", "trunk_control", "tolerated_rom"},
                 }[pattern]
                 control = user_report.get("movement_control")
                 criteria = control.get("criteria") if isinstance(control, dict) else None
@@ -1054,6 +1111,7 @@ def generate_program(
                 "exercises": prep_exercises,
             }
         selected = []
+        learning_tasks_for_session = []
         seen_patterns = set()
         for pattern in patterns:
             if pattern in seen_patterns and planning_goal != "mobility":
@@ -1161,6 +1219,22 @@ def generate_program(
                     None,
                 )
                 if target_id is None and method is not None and method.get("learning_only") is True:
+                    learning_tasks_for_session.append({
+                        "movement_pattern": pattern,
+                        "task_id": PATTERN_DEFINITIONS[pattern]["task_id"],
+                        "method_id": method["id"],
+                        "method": method["label"],
+                        "description": method["description"],
+                        "exercise_id": None,
+                        "demo_url": method.get("demo_url"),
+                        "demonstration_videos": _learning_task_videos(pattern, method["id"], None),
+                        "decision": structured_decision["decision"],
+                        "sets": 1,
+                        "reps": "2–3 kontrolirane ponovitve",
+                        "tempo": "3-1-1",
+                        "rest_seconds": 30,
+                        "estimated_minutes": 2,
+                    })
                     movement_adaptation_events.append({
                         "pattern": pattern,
                         "tasks": affected_tasks,
@@ -1679,18 +1753,29 @@ def generate_program(
                 for muscle in removed["primary_muscles"]:
                     exposure[muscle] -= removed["prescription"]["sets"]
 
-        estimated = _estimated_minutes(selected, warm_up_minutes)
+        estimated = _estimated_minutes(selected, warm_up_minutes) + sum(
+            task["estimated_minutes"] for task in learning_tasks_for_session
+        )
         if estimated > p["session_minutes"]:
             raise ProgramValidationError(
                 f"Z razpoložljivim časom {p['session_minutes']} min ni mogoče sestaviti uravnoteženega treninga. Povečaj čas ali zmanjša zahtevnost cilja."
             )
-        if len(selected) < 3:
+        if len(selected) < 3 and not learning_tasks_for_session:
             raise ProgramValidationError(
-                "Za izbrano opremo in omejitve ni dovolj preverjenih vaj. Potrebujem več opreme ali manj izključitev."
+                "Za izbrano opremo in omejitve ni dovolj preverjenih vaj ali učnih nalog. Potrebujem več opreme ali manj izključitev."
             )
         plans.append({
             "session": session_index + 1,
-            "title": (f"Trening {session_index + 1} – vzdržljivost" if planning_goal == "endurance" else f"Trening {session_index + 1} – mobilnost in gibljivost" if planning_goal == "mobility" else f"Trening {session_index + 1} – funkcionalna pripravljenost" if planning_goal == "functional" else f"Trening {session_index + 1} – aerobna in kondicijska priprava" if planning_goal == "fat_loss" and session_index >= 2 else f"Trening {session_index + 1} – celotno telo"),
+            "title": (
+                f"Trening {session_index + 1} – učenje gibalnih vzorcev"
+                if not selected and learning_tasks_for_session else
+                f"Trening {session_index + 1} – vzdržljivost" if planning_goal == "endurance" else
+                f"Trening {session_index + 1} – mobilnost in gibljivost" if planning_goal == "mobility" else
+                f"Trening {session_index + 1} – funkcionalna pripravljenost" if planning_goal == "functional" else
+                f"Trening {session_index + 1} – aerobna in kondicijska priprava" if planning_goal == "fat_loss" and session_index >= 2 else
+                f"Trening {session_index + 1} – celotno telo"
+            ),
+            "session_phase": "movement_learning" if not selected and learning_tasks_for_session else "mixed_or_capacity",
             "warm_up_minutes": warm_up_minutes,
             "warm_up_range": "5–7 min" if p["session_minutes"] <= 30 else "5–10 min",
             **({"mobility_block": mobility_block} if mobility_block else {}),
@@ -1700,33 +1785,7 @@ def generate_program(
             "estimated_minutes": estimated,
             "available_minutes": p["session_minutes"],
             "volume_adjustments": volume_adjustments,
-            "learning_tasks": [
-                {
-                    "movement_pattern": pattern_key,
-                    "task_id": PATTERN_DEFINITIONS[pattern_key]["task_id"],
-                    "method_id": record.get("selected_learning_method"),
-                    "method": next(
-                        (item["label"] for item in PATTERN_DEFINITIONS[pattern_key]["learning_methods"]
-                         if item["id"] == record.get("selected_learning_method")),
-                        "Izvedi izbrano učno metodo.",
-                    ),
-                    "description": next(
-                        (item["description"] for item in PATTERN_DEFINITIONS[pattern_key]["learning_methods"]
-                         if item["id"] == record.get("selected_learning_method")),
-                        "",
-                    ),
-                    "exercise_id": record.get("resolved_exercise_id"),
-                    "demonstration_videos": _learning_task_videos(
-                        pattern_key,
-                        record.get("selected_learning_method"),
-                        record.get("resolved_exercise_id"),
-                    ),
-                    "decision": record["decision"],
-                }
-                for pattern_key, record in movement_decisions_by_pattern.items()
-                if record["decision"] in {"LEARN", "REGRESS"}
-                and (record.get("learning_only") is True or any(item["pattern"] == pattern_key for item in selected))
-            ],
+            "learning_tasks": learning_tasks_for_session,
             "exercises": selected,
         })
 
