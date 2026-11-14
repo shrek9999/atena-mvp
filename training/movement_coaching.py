@@ -39,6 +39,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "reaching_counterbalance",
                 "learning_only": True,
+                "demo_url": "https://youtu.be/vGu9T3FFjmc",
                 "label": "Reaching squat s protiutežjo",
                 "description": "Izteg rok oziroma lahek kolut pred telesom uporabi kot protiutež za lažje učenje ravnotežja in organizacije počepa.",
                 "exercise_id": "reaching_squat",
@@ -46,6 +47,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "target_squat",
                 "learning_only": True,
+                "demo_url": "https://youtu.be/vGu9T3FFjmc",
                 "label": "Počep do stabilne tarče",
                 "description": "Višino tarče prilagodi tako, da posameznik lahko ponovi nadzorovan spust in vstajanje.",
                 "exercise_id": "chair_sit_to_stand",
@@ -78,6 +80,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "wall_hip_hinge",
                 "learning_only": True,
+                "demo_url": "https://youtu.be/8KhEVCDOkRk",
                 "label": "Predklon ob steni",
                 "description": "Uči pomik bokov nazaj in nadzorovan predklon z nevtralnim položajem hrbtenice. Pri nelagodju v hrbtu zmanjša amplitudo in obremenitev; začni ob steni, ohrani nadzor trupa in ne sili v globino.",
                 "exercise_id": "wall_hip_hinge",
@@ -201,6 +204,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "static_split_squat",
                 "learning_only": True,
+                "demo_url": "https://youtu.be/MYg8xEdmTGk",
                 "label": "Statični izpadni počep",
                 "description": "Najprej utrdi položaj stopal in nadzor spuščanja, nato izberi dinamično različico.",
                 "exercise_id": "split_squat",
