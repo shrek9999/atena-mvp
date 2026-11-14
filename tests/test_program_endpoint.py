@@ -385,3 +385,87 @@ def test_insufficient_quality_coordination_proxy_does_not_add_warmup_drill(monke
     assert body["camera_coordination_add_on_applied"] is False
     assert body["camera_observations_used_for_programme_decisions"] is False
     assert all("camera_coordination_block" not in session for session in body["program"]["sessions"])
+
+
+def test_program_endpoint_accepts_six_pattern_camera_proxy_v2_protocol_v3(monkeypatch):
+    client = _client(monkeypatch)
+    payload = {
+        "movement_assessment_consent": True,
+        "movement_decisions": _six_pattern_decisions(),
+        "profile": {
+            "goal": "functional", "experience": "beginner",
+            "equipment": ["bodyweight"], "sessions_per_week": 2,
+            "session_minutes": 45,
+        },
+        "camera_observations": {
+            "squat": {
+                "status": "observed", "quality": "adequate",
+                "valid_frames": 18, "total_frames": 24,
+                "observations": {
+                    "knee_flexion_proxy_deg": 92,
+                    "heel_contact_check": "user_confirmation_required",
+                },
+                "limitations": "Grobi 2D približek; ne potrjuje kakovosti ali pripravljenosti.",
+                "source": "browser_pose_landmarker",
+                "analysis_version": "six-pattern-proxy-v2",
+            },
+            "hinge": {
+                "status": "uncertain", "quality": "insufficient",
+                "valid_frames": 2, "total_frames": 24,
+                "observations": {},
+                "limitations": "Premalo zanesljivih sličic.",
+                "source": "browser_pose_landmarker",
+                "analysis_version": "six-pattern-proxy-v2",
+            },
+        },
+        "camera_protocol": {
+            "version": "six-pattern-camera-flow-v3",
+            "views": 8,
+            "repetitions": 2,
+            "tempo": "3-1-1",
+            "lunge_repetitions_total": 2,
+            "lunge_one_per_side": True,
+            "dowel_three_contact_user_confirmed": True,
+            "push_up_support_height": "floor",
+            "video_stored": False,
+            "video_uploaded": False,
+        },
+    }
+    response = client.post("/coach/program", headers={"X-Pilot-Token": "test-only-secret"}, json=payload)
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["camera_observations"]["squat"]["analysis_version"] == "six-pattern-proxy-v2"
+    assert body["camera_observations"]["hinge"]["status"] == "uncertain"
+    assert body["camera_observations_stored"] is False
+    assert body["camera_observations_used_for_programme_decisions"] is False
+    assert body["camera_protocol"]["version"] == "six-pattern-camera-flow-v3"
+
+
+def test_camera_v3_protocol_rejects_wrong_view_count(monkeypatch):
+    payload = {
+        "camera_observations": {
+            "squat": {
+                "status": "uncertain", "quality": "insufficient",
+                "valid_frames": 0, "total_frames": 0,
+                "observations": {}, "limitations": "Premalo sličic.",
+                "source": "browser_pose_landmarker",
+                "analysis_version": "six-pattern-proxy-v2",
+            }
+        },
+        "camera_protocol": {
+            "version": "six-pattern-camera-flow-v3",
+            "views": 6,
+            "repetitions": 2,
+            "tempo": "3-1-1",
+            "lunge_repetitions_total": 2,
+            "lunge_one_per_side": True,
+            "dowel_three_contact_user_confirmed": False,
+            "push_up_support_height": "floor",
+            "video_stored": False,
+            "video_uploaded": False,
+        },
+    }
+    response = _client(monkeypatch).post(
+        "/coach/program", headers={"X-Pilot-Token": "test-only-secret"}, json=payload
+    )
+    assert response.status_code == 400
