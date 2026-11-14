@@ -22,6 +22,8 @@ SCALAR_KEYS = {
     "cross_body_alternation_observed", "left_to_right_contact_frames",
     "right_to_left_contact_frames", "alternating_transitions_proxy",
     "knee_position_change_proxy_deg", "repetitions_detected", "range_of_motion_proxy",
+    "left_knee_tracking_proxy", "right_knee_tracking_proxy", "knee_angle_asymmetry_proxy_deg",
+    "hip_vertical_excursion_proxy", "pelvic_control",
     "observed_camera_side", "visible_side", "side_arm_raise_angle_proxy_deg",
     "side_trunk_tilt_proxy_deg", "side_elbow_angle_proxy_deg",
 }
