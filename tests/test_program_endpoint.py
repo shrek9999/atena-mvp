@@ -708,6 +708,8 @@ def test_all_unmastered_patterns_can_form_a_learning_only_program(monkeypatch):
             exercise["pattern"] in PATTERN_DEFINITIONS
             for exercise in session["exercises"]
         )
+        assert session["session_phase"] == "movement_learning"
+        assert "učenje gibalnih vzorcev" in session["title"].lower()
         assert session["learning_tasks"]
         assert all(task["exercise_id"] is None for task in session["learning_tasks"])
         assert all(task["decision"] == "LEARN" for task in session["learning_tasks"])
