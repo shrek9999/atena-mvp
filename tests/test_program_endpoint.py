@@ -549,3 +549,58 @@ def test_camera_v4_protocol_accepts_nine_views_for_frontal_lunge(monkeypatch):
     assert body["camera_protocol"]["views"] == 9
     assert body["camera_observations"]["lunge"]["observations"]["hip_extension_excursion_proxy_deg"] == 28
     assert body["camera_observations_used_for_programme_decisions"] is False
+
+def test_program_endpoint_accepts_current_vertical_push_and_lunge_mastery_criteria(monkeypatch):
+    from training.movement_coaching import build_movement_decision
+
+    decisions = _six_pattern_decisions()
+    criteria_by_pattern = {
+        "vertical_push": {
+            "tempo": True,
+            "overhead_control": True,
+            "trunk_control": True,
+            "scapular_control": True,
+            "tolerated_rom": True,
+        },
+        "lunge": {
+            "tempo": True,
+            "balance": True,
+            "pelvis_hip_knee_foot_control": True,
+            "hip_extension": True,
+            "trunk_control": True,
+            "tolerated_rom": True,
+        },
+    }
+    for pattern, criteria in criteria_by_pattern.items():
+        record = build_movement_decision(
+            pattern,
+            "READY",
+            user_report={
+                "status": "movement_controlled",
+                "movement_control": {
+                    "confirmed_by_user": True,
+                    "repeatable": True,
+                    "criteria": criteria,
+                },
+            },
+            decision_reason="Vsi kriteriji so bili neposredno preverjeni in ponovljivi.",
+        )
+        record["training_phase"] = "capacity_development"
+        decisions[pattern] = record
+
+    response = _client(monkeypatch).post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-secret"},
+        json={
+            "movement_assessment_consent": True,
+            "movement_decisions": decisions,
+            "profile": {
+                "goal": "functional",
+                "experience": "beginner",
+                "equipment": ["bodyweight", "dumbbell", "kettlebell", "barbell", "bench", "rack", "resistance_band"],
+                "sessions_per_week": 2,
+                "session_minutes": 45,
+            },
+        },
+    )
+    assert response.status_code == 200, response.get_json()
