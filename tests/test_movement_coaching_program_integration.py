@@ -77,8 +77,16 @@ def test_ready_decision_starts_conservatively_without_automatic_progression():
     baseline = generate_program(BASE)
     ready = build_movement_decision(
         "squat", "READY",
-        decision_reason="Osnovni vzorec je bil udoben in nadzorovan.",
+        user_report={"status": "movement_controlled", "movement_control": {
+            "confirmed_by_user": True, "repeatable": True,
+            "criteria": {
+                "tempo": True, "balance": True, "knee_hip_foot_control": True,
+                "lumbopelvic_control": True, "tolerated_rom": True,
+            },
+        }},
+        decision_reason="Po učenju je počep ponovljivo nadzorovan.",
     )
+    ready["training_phase"] = "capacity_development"
     assessed = generate_program(BASE, movement_decisions={"squat": ready})
     selected = _pattern_exercises(assessed, "squat")
     assert selected
@@ -175,8 +183,16 @@ def test_loaded_bent_over_row_learning_requires_hinge_ready():
 def test_loaded_bent_over_row_is_allowed_after_hinge_is_marked_ready():
     hinge = build_movement_decision(
         "hinge", "READY",
-        decision_reason="Uporabnik poroča o običajni nadzorovani izvedbi predklona.",
+        user_report={"status": "movement_controlled", "movement_control": {
+            "confirmed_by_user": True, "repeatable": True,
+            "criteria": {
+                "tempo": True, "balance": True, "hip_hinge_coordination": True,
+                "spine_control": True, "tolerated_rom": True,
+            },
+        }},
+        decision_reason="Predklon je po učenju ponovljivo obvladan.",
     )
+    hinge["training_phase"] = "capacity_development"
     row = build_movement_decision(
         "horizontal_pull", "LEARN",
         equipment=["dumbbell"],
