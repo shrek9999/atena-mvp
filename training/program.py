@@ -195,13 +195,16 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # Vertical pull is a required supplementary strength pattern, not a camera-assessment task.
         if session_index == 0:
             patterns.append("vertical_pull")
-        # Keep all six assessed patterns represented across the week:
-        # vertical pull supplements the first session; vertical push is trained
-        # in the second. Conditioning is added only when session time permits.
+        # Keep all six assessed patterns represented across the week while
+        # preserving locomotion and conditioning as distinct functional work.
+        # Day 1: horizontal push + vertical pull + unilateral knee pattern.
+        # Day 2: retain squat/hinge/horizontal pull, rotate push to vertical,
+        # then add locomotion and controlled conditioning when time permits.
         if session_index == 0:
             patterns.extend(["vertical_pull", "lunge"])
         else:
-            patterns.append("vertical_push")
+            patterns.remove("horizontal_push")
+            patterns.extend(["vertical_push", "locomotion"])
             if session_minutes > 30:
                 patterns.append("conditioning")
         if include_stability:
