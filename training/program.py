@@ -672,7 +672,7 @@ def generate_program(
                     f"Za simptomatsko regresijo vzorca {pattern} mora biti izbrana točno preizkušena vaja."
                 )
             if decision in {"LEARN", "REGRESS"} and not target_id and report_status != "symptoms_reported":
-                if method is not None and method.get("exercise_id") is None:
+                if method is not None and method.get("learning_only") is True:
                     # A no-load coordination task is intentionally not replaced by a loaded catalogue exercise.
                     pass
                 elif not available_options:
@@ -1154,6 +1154,19 @@ def generate_program(
             structured_decision = movement_decisions_by_pattern.get(pattern)
             if structured_decision and structured_decision["decision"] in {"LEARN", "REGRESS"}:
                 target_id = structured_decision.get("resolved_exercise_id")
+                method = next(
+                    (item for item in PATTERN_DEFINITIONS[pattern]["learning_methods"]
+                     if item["id"] == structured_decision.get("selected_learning_method")),
+                    None,
+                )
+                if target_id is None and method is not None and method.get("learning_only") is True:
+                    movement_adaptation_events.append({
+                        "pattern": pattern,
+                        "tasks": affected_tasks,
+                        "action": "unloaded_learning_task_only",
+                        "message": "ATENA najprej vodi učenje koordinacije brez zunanjega bremena. Obremenjena vaja se uvede šele po ponovljivi potrditvi motoričnega nadzora.",
+                    })
+                    continue
                 target = next((item for item in reference_catalogue if item["id"] == target_id), None)
                 if target is None or target["pattern"] != pattern:
                     raise ProgramValidationError(f"Izbrana učna različica {target_id} za {pattern} ni v potrjenem katalogu.")
