@@ -519,7 +519,7 @@ def test_six_pattern_assessment_maps_self_report_statuses_conservatively(monkeyp
     assert response.status_code == 200
     decisions = response.get_json()["movement_decisions"]
     assert decisions["squat"]["decision"] == "LEARN"
-    assert decisions["hinge"]["decision"] == "READY"
+    assert decisions["hinge"]["decision"] == "LEARN"
     assert decisions["horizontal_push"]["decision"] == "UNASSESSABLE"
     assert decisions["horizontal_pull"]["decision"] == "UNASSESSABLE"
     assert decisions["vertical_push"]["decision"] == "UNASSESSABLE"
