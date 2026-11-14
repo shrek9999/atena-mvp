@@ -443,6 +443,13 @@ def test_program_endpoint_accepts_six_pattern_camera_proxy_v2_protocol_v3(monkey
 
 def test_camera_v3_protocol_rejects_wrong_view_count(monkeypatch):
     payload = {
+        "movement_assessment_consent": True,
+        "movement_decisions": _six_pattern_decisions(),
+        "profile": {
+            "goal": "functional", "experience": "beginner",
+            "equipment": ["bodyweight"], "sessions_per_week": 2,
+            "session_minutes": 45,
+        },
         "camera_observations": {
             "squat": {
                 "status": "uncertain", "quality": "insufficient",
