@@ -635,6 +635,20 @@ def generate_program(
             method_id = record.get("selected_learning_method")
             method_options = PATTERN_DEFINITIONS[pattern]["learning_methods"]
             method = next((item for item in method_options if item["id"] == method_id), None)
+            user_report = record.get("user_report", {})
+            if not isinstance(user_report, dict):
+                raise ProgramValidationError(f"Uporabnikovo poročilo za {pattern} mora biti objekt.")
+            report_status = user_report.get("status")
+            if (
+                decision in {"LEARN", "REGRESS"}
+                and report_status != "symptoms_reported"
+                and method is None
+            ):
+                method = next(
+                    (item for item in method_options if item.get("learning_only") is True),
+                    None,
+                )
+                method_id = method["id"] if method else None
             if method_id is not None and method is None:
                 raise ProgramValidationError(f"Učna metoda {method_id} ne pripada vzorcu {pattern}.")
             if pattern == "horizontal_pull" and method_id in {
@@ -656,37 +670,38 @@ def generate_program(
             ]
             available_ids = {item["id"] for item in available_options}
             selected_id = record.get("selected_exercise_id")
-            # LEARN is a separate motor-learning phase, never a catalogue work set.
-            # A teaching method may reference a supported demo exercise, but that
-            # reference must not leak into the strength/conditioning prescription.
-            if decision == "LEARN" and selected_id is not None:
-                raise ProgramValidationError(
-                    f"Učna faza {pattern} ne sme vsebovati predpisane delovne vaje."
-                )
-            if decision == "LEARN" and (method is None or method.get("learning_only") is not True):
-                raise ProgramValidationError(
-                    f"Za vzorec {pattern} mora biti izbrana izrecna neobremenjena učna metoda."
-                )
-            method_exercise_id = (
-                method.get("exercise_id")
-                if method and method.get("learning_only") is not True else None
+            # LEARN and non-symptom REGRESS are teaching phases, not work sets.
+            # Older records may carry the catalogue ID of the teaching variation;
+            # accept it only when it matches that explicitly learning-only method.
+            learning_phase = decision == "LEARN" or (
+                decision == "REGRESS" and report_status != "symptoms_reported"
             )
-            target_id = None if decision == "LEARN" else (selected_id or method_exercise_id)
+            if learning_phase:
+                if method is None or method.get("learning_only") is not True:
+                    raise ProgramValidationError(
+                        f"Za vzorec {pattern} mora biti izbrana izrecna neobremenjena učna metoda."
+                    )
+                if selected_id is not None and selected_id != method.get("exercise_id"):
+                    raise ProgramValidationError(
+                        f"Izbrana učna metoda in različica za {pattern} se ne ujemata."
+                    )
+                target_id = None
+            else:
+                target_id = selected_id or (
+                    method.get("exercise_id")
+                    if method and method.get("learning_only") is not True else None
+                )
             if target_id and target_id not in available_ids:
                 raise ProgramValidationError(
                     f"Vaja {target_id} za {pattern} ni združljiva z opremo ali izkušnjami v profilu."
                 )
-            user_report = record.get("user_report", {})
-            if not isinstance(user_report, dict):
-                raise ProgramValidationError(f"Uporabnikovo poročilo za {pattern} mora biti objekt.")
-            report_status = user_report.get("status")
-            if decision == "REGRESS" and report_status != "symptoms_reported":
+            if decision == "REGRESS" and report_status not in {"symptoms_reported", "needs_support", None}:
                 raise ProgramValidationError(
-                    f"Regresija vzorca {pattern} mora temeljiti na izrecno preverjenem poročilu o simptomih."
+                    f"Regresija vzorca {pattern} nima ustreznega poročila za učno ali simptomatsko prilagoditev."
                 )
-            if decision == "LEARN" and report_status not in {"comfortable", "needs_support"}:
+            if decision == "LEARN" and report_status not in {"comfortable", "needs_support", None}:
                 raise ProgramValidationError(
-                    f"Učna faza vzorca {pattern} zahteva status comfortable ali needs_support."
+                    f"Učna faza vzorca {pattern} zahteva udobno samooceno ali potrebo po opori."
                 )
             omission_reason = None
             if decision == "REGRESS" and report_status == "symptoms_reported" and not target_id:
