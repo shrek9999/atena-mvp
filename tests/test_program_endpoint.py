@@ -661,3 +661,53 @@ def test_learn_decision_creates_learning_task_not_a_loaded_work_set(monkeypatch)
         assert squat_tasks[0]["method_id"] == "reaching_counterbalance"
         assert squat_tasks[0]["exercise_id"] is None
         assert squat_tasks[0]["decision"] == "LEARN"
+
+def test_all_unmastered_patterns_can_form_a_learning_only_program(monkeypatch):
+    from training.program import generate_program
+    from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
+
+    methods = {
+        "squat": "reaching_counterbalance",
+        "hinge": "dowel_four_point",
+        "horizontal_push": "incline_push_up",
+        "horizontal_pull": "scapular_coordination",
+        "vertical_push": "unloaded_overhead_reach",
+        "lunge": "supported_split_squat",
+    }
+    decisions = {
+        pattern: {
+            **build_movement_decision(
+                pattern,
+                "LEARN",
+                selected_learning_method=methods[pattern],
+                user_report={"status": "comfortable"},
+                decision_reason="Učenje motoričnega nadzora pred razvojem zmogljivosti.",
+            ),
+            "training_phase": "movement_learning",
+        }
+        for pattern in PATTERN_DEFINITIONS
+    }
+    program = generate_program(
+        {
+            "goal": "functional",
+            "experience": "beginner",
+            "equipment": [
+                "bodyweight", "household_support", "chair", "wall",
+                "resistance_band", "anchor_point", "dumbbell", "kettlebell",
+                "barbell", "rack", "bench", "pull_up_bar", "suspension_trainer",
+            ],
+            "sessions_per_week": 2,
+            "session_minutes": 60,
+        },
+        movement_decisions=decisions,
+    )
+
+    assert len(program["sessions"]) == 2
+    for session in program["sessions"]:
+        assert not any(
+            exercise["pattern"] in PATTERN_DEFINITIONS
+            for exercise in session["exercises"]
+        )
+        assert session["learning_tasks"]
+        assert all(task["exercise_id"] is None for task in session["learning_tasks"])
+        assert all(task["decision"] == "LEARN" for task in session["learning_tasks"])
