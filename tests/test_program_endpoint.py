@@ -691,13 +691,9 @@ def test_all_unmastered_patterns_can_form_a_learning_only_program(monkeypatch):
         {
             "goal": "functional",
             "experience": "beginner",
-            "equipment": [
-                "bodyweight", "household_support", "chair", "wall",
-                "resistance_band", "anchor_point", "dumbbell", "kettlebell",
-                "barbell", "rack", "bench", "pull_up_bar", "suspension_trainer",
-            ],
+            "equipment": ["bodyweight", "household_support", "chair", "wall"],
             "sessions_per_week": 2,
-            "session_minutes": 60,
+            "session_minutes": 30,
         },
         movement_decisions=decisions,
     )
