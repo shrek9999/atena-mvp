@@ -14,12 +14,32 @@ def _client(monkeypatch):
 
 def _six_pattern_decisions():
     from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
+
+    criteria_by_pattern = {
+        "squat": {"tempo", "balance", "knee_hip_foot_control", "lumbopelvic_control", "tolerated_rom"},
+        "hinge": {"tempo", "hip_hinge_coordination", "spine_control", "balance", "tolerated_rom"},
+        "horizontal_push": {"tempo", "shoulder_elbow_wrist_control", "trunk_control", "stable_support", "tolerated_rom"},
+        "horizontal_pull": {"tempo", "scapular_arm_control", "trunk_control", "stable_base", "tolerated_rom"},
+        "vertical_push": {"tempo", "overhead_control", "trunk_control", "scapular_control", "tolerated_rom"},
+        "lunge": {"tempo", "balance", "pelvis_hip_knee_foot_control", "hip_extension", "trunk_control", "tolerated_rom"},
+    }
     return {
-        pattern: build_movement_decision(
-            pattern, "LEARN",
-            user_report={"status": "comfortable"},
-            decision_reason="Osnovno gibanje je po samooceni udobno in nadzorovano.",
-        )
+        pattern: {
+            **build_movement_decision(
+                pattern,
+                "READY",
+                user_report={
+                    "status": "movement_controlled",
+                    "movement_control": {
+                        "confirmed_by_user": True,
+                        "repeatable": True,
+                        "criteria": {key: True for key in criteria_by_pattern[pattern]},
+                    },
+                },
+                decision_reason="Vsi kriteriji motoričnega nadzora so ponovljivi in potrjeni.",
+            ),
+            "training_phase": "capacity_development",
+        }
         for pattern in PATTERN_DEFINITIONS
     }
 
@@ -604,3 +624,40 @@ def test_program_endpoint_accepts_current_vertical_push_and_lunge_mastery_criter
         },
     )
     assert response.status_code == 200, response.get_json()
+
+def test_learn_decision_creates_learning_task_not_a_loaded_work_set(monkeypatch):
+    from training.program import generate_program
+    from training.movement_coaching import build_movement_decision
+
+    decisions = _six_pattern_decisions()
+    decisions["squat"] = {
+        **build_movement_decision(
+            "squat",
+            "LEARN",
+            selected_learning_method="reaching_counterbalance",
+            user_report={"status": "comfortable"},
+            decision_reason="Prijetna samoocena še ne potrdi motoričnega nadzora.",
+        ),
+        "training_phase": "movement_learning",
+    }
+    program = generate_program(
+        {
+            "goal": "strength_hypertrophy",
+            "experience": "beginner",
+            "equipment": ["bodyweight", "household_support", "chair", "wall", "dumbbell", "kettlebell"],
+            "sessions_per_week": 2,
+            "session_minutes": 45,
+        },
+        movement_decisions=decisions,
+    )
+
+    for session in program["sessions"]:
+        assert all(item["pattern"] != "squat" for item in session["exercises"])
+        squat_tasks = [
+            task for task in session["learning_tasks"]
+            if task["movement_pattern"] == "squat"
+        ]
+        assert len(squat_tasks) == 1
+        assert squat_tasks[0]["method_id"] == "reaching_counterbalance"
+        assert squat_tasks[0]["exercise_id"] is None
+        assert squat_tasks[0]["decision"] == "LEARN"
