@@ -501,3 +501,51 @@ def test_camera_v3_protocol_rejects_wrong_view_count(monkeypatch):
         "/coach/program", headers={"X-Pilot-Token": "test-only-secret"}, json=payload
     )
     assert response.status_code == 400
+
+
+def test_camera_v4_protocol_accepts_nine_views_for_frontal_lunge(monkeypatch):
+    payload = {
+        "movement_assessment_consent": True,
+        "movement_decisions": _six_pattern_decisions(),
+        "profile": {
+            "goal": "functional", "experience": "beginner",
+            "equipment": ["bodyweight"], "sessions_per_week": 2,
+            "session_minutes": 45,
+        },
+        "camera_observations": {
+            "lunge": {
+                "status": "observed", "quality": "adequate",
+                "valid_frames": 24, "total_frames": 24,
+                "observations": {
+                    "hip_extension_excursion_proxy_deg": 28,
+                    "frontal_pelvis_level_difference_proxy": 0.04,
+                    "frontal_left_knee_tracking_proxy": 0.12,
+                    "frontal_right_knee_tracking_proxy": 0.11,
+                },
+                "limitations": "Čelni in bočni 2D približki; medenico in stopalo preveri neposredno.",
+                "source": "browser_pose_landmarker",
+                "analysis_version": "six-pattern-proxy-v2",
+            }
+        },
+        "camera_protocol": {
+            "version": "six-pattern-camera-flow-v4",
+            "views": 9,
+            "repetitions": 2,
+            "tempo": "3-1-1",
+            "lunge_repetitions_total": 2,
+            "lunge_one_per_side": True,
+            "dowel_three_contact_user_confirmed": True,
+            "push_up_support_height": "floor",
+            "video_stored": False,
+            "video_uploaded": False,
+        },
+    }
+    response = _client(monkeypatch).post(
+        "/coach/program", headers={"X-Pilot-Token": "test-only-secret"}, json=payload
+    )
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["camera_protocol"]["version"] == "six-pattern-camera-flow-v4"
+    assert body["camera_protocol"]["views"] == 9
+    assert body["camera_observations"]["lunge"]["observations"]["hip_extension_excursion_proxy_deg"] == 28
+    assert body["camera_observations_used_for_programme_decisions"] is False
