@@ -20,7 +20,7 @@ MOVEMENT_RUBRICS = {
             "ankle_dorsiflexion": "Doseže potrebno dorzalno fleksijo brez izgube opore stopala.",
             "knee_control": "Koleno sledi smeri stopala brez nenadzorovanega medialnega pomika.",
             "trunk_control": "Ohranja nadzorovan položaj trupa skozi celotno amplitudo.",
-            "pelvic_control": "Ohranja nadzor medenice; morebitno podvijanje ocenimo glede na obseg, obremenitev in simptome.",
+            "pelvic_control": "V izbrani, ponovljivi amplitudi ohranja nadzor medenice in ledveno-medeničnega položaja. Brez nenadzorovanega posteriornega nagiba medenice (butt-wink) z izgubo nadzora; globino omeji pred to točko in jo razvijaj postopno.",
             "range_control": "Uporabi največjo razpoložljivo amplitudo, ki jo lahko nadzoruje.",
             "tempo_control": "Ohranja predpisani tempo, npr. 3 s spust, 1 s zadržek, 1 s dvig.",
         },
