@@ -680,6 +680,14 @@ def generate_program(
             if not isinstance(user_report, dict):
                 raise ProgramValidationError(f"Uporabnikovo poročilo za {pattern} mora biti objekt.")
             report_status = user_report.get("status")
+            if decision == "REGRESS" and report_status != "symptoms_reported":
+                raise ProgramValidationError(
+                    f"Regresija vzorca {pattern} mora temeljiti na izrecno preverjenem poročilu o simptomih."
+                )
+            if decision == "LEARN" and report_status not in {"comfortable", "needs_support"}:
+                raise ProgramValidationError(
+                    f"Učna faza vzorca {pattern} zahteva status comfortable ali needs_support."
+                )
             omission_reason = None
             if decision == "REGRESS" and report_status == "symptoms_reported" and not target_id:
                 raise ProgramValidationError(
@@ -1072,6 +1080,7 @@ def generate_program(
                 "exercises": prep_exercises,
             }
         selected = []
+        learning_tasks_for_session = []
         seen_patterns = set()
         for pattern in patterns:
             if pattern in seen_patterns and planning_goal != "mobility":
@@ -1179,6 +1188,21 @@ def generate_program(
                     None,
                 )
                 if target_id is None and method is not None and method.get("learning_only") is True:
+                    learning_tasks_for_session.append({
+                        "movement_pattern": pattern,
+                        "task_id": PATTERN_DEFINITIONS[pattern]["task_id"],
+                        "method_id": method["id"],
+                        "method": method["label"],
+                        "description": method["description"],
+                        "exercise_id": None,
+                        "demonstration_videos": _learning_task_videos(pattern, method["id"], None),
+                        "decision": structured_decision["decision"],
+                        "sets": 1,
+                        "reps": "2–3 kontrolirane ponovitve",
+                        "tempo": "3-1-1",
+                        "rest_seconds": 30,
+                        "estimated_minutes": 2,
+                    })
                     movement_adaptation_events.append({
                         "pattern": pattern,
                         "tasks": affected_tasks,
@@ -1697,14 +1721,16 @@ def generate_program(
                 for muscle in removed["primary_muscles"]:
                     exposure[muscle] -= removed["prescription"]["sets"]
 
-        estimated = _estimated_minutes(selected, warm_up_minutes)
+        estimated = _estimated_minutes(selected, warm_up_minutes) + sum(
+            task["estimated_minutes"] for task in learning_tasks_for_session
+        )
         if estimated > p["session_minutes"]:
             raise ProgramValidationError(
                 f"Z razpoložljivim časom {p['session_minutes']} min ni mogoče sestaviti uravnoteženega treninga. Povečaj čas ali zmanjša zahtevnost cilja."
             )
-        if len(selected) < 3:
+        if len(selected) < 3 and not learning_tasks_for_session:
             raise ProgramValidationError(
-                "Za izbrano opremo in omejitve ni dovolj preverjenih vaj. Potrebujem več opreme ali manj izključitev."
+                "Za izbrano opremo in omejitve ni dovolj preverjenih vaj ali učnih nalog. Potrebujem več opreme ali manj izključitev."
             )
         plans.append({
             "session": session_index + 1,
@@ -1718,33 +1744,7 @@ def generate_program(
             "estimated_minutes": estimated,
             "available_minutes": p["session_minutes"],
             "volume_adjustments": volume_adjustments,
-            "learning_tasks": [
-                {
-                    "movement_pattern": pattern_key,
-                    "task_id": PATTERN_DEFINITIONS[pattern_key]["task_id"],
-                    "method_id": record.get("selected_learning_method"),
-                    "method": next(
-                        (item["label"] for item in PATTERN_DEFINITIONS[pattern_key]["learning_methods"]
-                         if item["id"] == record.get("selected_learning_method")),
-                        "Izvedi izbrano učno metodo.",
-                    ),
-                    "description": next(
-                        (item["description"] for item in PATTERN_DEFINITIONS[pattern_key]["learning_methods"]
-                         if item["id"] == record.get("selected_learning_method")),
-                        "",
-                    ),
-                    "exercise_id": record.get("resolved_exercise_id"),
-                    "demonstration_videos": _learning_task_videos(
-                        pattern_key,
-                        record.get("selected_learning_method"),
-                        record.get("resolved_exercise_id"),
-                    ),
-                    "decision": record["decision"],
-                }
-                for pattern_key, record in movement_decisions_by_pattern.items()
-                if record["decision"] in {"LEARN", "REGRESS"}
-                and (record.get("learning_only") is True or any(item["pattern"] == pattern_key for item in selected))
-            ],
+            "learning_tasks": learning_tasks_for_session,
             "exercises": selected,
         })
 
