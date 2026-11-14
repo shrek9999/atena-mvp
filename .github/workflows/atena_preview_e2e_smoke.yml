@@ -96,7 +96,8 @@ jobs:
               "movement_decisions": {
                   pattern: {
                       "movement_pattern": pattern,
-                      "decision": "READY",
+                      "decision": "LEARN",
+                      "training_phase": "movement_learning",
                       "user_report": {"status": "comfortable"}
                   }
                   for pattern in patterns
