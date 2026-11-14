@@ -24,6 +24,7 @@ def add_app_cors_headers(response):
         "https://www.gregajenko.si",
         "https://deploy-preview-7--tiny-figolla-016703.netlify.app",
         "https://pilot-atena-profile-history.atena-ai-trener.pages.dev",
+        "https://feature-camera-v2-transport.atena-ai-trener.pages.dev",
     }
     if origin in allowed_origins:
         response.headers["Access-Control-Allow-Origin"] = origin
