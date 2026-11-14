@@ -196,6 +196,88 @@ def test_program_route_rejects_ready_decision_when_user_report_is_unassessed(cli
     assert response.get_json()["invalid_report_patterns"] == ["squat"]
 
 
+def test_program_route_rejects_comfortable_self_report_as_ready(client):
+    from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
+
+    decisions = {
+        pattern: build_movement_decision(
+            pattern, "LEARN", user_report={"status": "comfortable"}
+        )
+        for pattern in PATTERN_DEFINITIONS
+    }
+    decisions["squat"] = build_movement_decision(
+        "squat", "READY", user_report={"status": "comfortable"}
+    )
+    decisions["squat"]["training_phase"] = "capacity_development"
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-token"},
+        json={
+            "movement_assessment_consent": True,
+            "profile": {
+                "goal": "functional", "experience": "beginner",
+                "equipment": ["bodyweight"], "sessions_per_week": 2,
+                "session_minutes": 45,
+            },
+            "movement_decisions": decisions,
+        },
+    )
+    assert response.status_code == 400
+    assert response.get_json()["invalid_report_patterns"] == ["squat"]
+
+
+def test_program_route_accepts_ready_only_with_repeatable_control_checklist(monkeypatch, client):
+    import coach_routes
+    from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
+
+    def fake_generate_program(profile, feedback=None, movement_assessment=None, movement_decisions=None, camera_coordination_observed=False):
+        return {
+            "goal": "functional",
+            "sessions": [{"session": 1, "exercises": [], "learning_tasks": []}],
+            "movement_adaptation": {
+                "source": "structured_six_pattern_decisions",
+                "is_diagnosis": False,
+                "events": [],
+                "summary": None,
+            },
+        }
+
+    monkeypatch.setattr(coach_routes, "generate_program", fake_generate_program)
+    decisions = {
+        pattern: build_movement_decision(
+            pattern, "LEARN", user_report={"status": "comfortable"}
+        )
+        for pattern in PATTERN_DEFINITIONS
+    }
+    decisions["squat"] = build_movement_decision(
+        "squat", "READY", user_report={
+            "status": "movement_controlled",
+            "movement_control": {
+                "confirmed_by_user": True, "repeatable": True,
+                "criteria": {
+                    "tempo": True, "balance": True, "knee_hip_foot_control": True,
+                    "lumbopelvic_control": True, "tolerated_rom": True,
+                },
+            },
+        }
+    )
+    decisions["squat"]["training_phase"] = "capacity_development"
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-token"},
+        json={
+            "movement_assessment_consent": True,
+            "profile": {
+                "goal": "functional", "experience": "beginner",
+                "equipment": ["bodyweight"], "sessions_per_week": 2,
+                "session_minutes": 45,
+            },
+            "movement_decisions": decisions,
+        },
+    )
+    assert response.status_code == 200
+
+
 def test_program_route_passes_structured_six_pattern_decisions(monkeypatch, client):
     import coach_routes
     from training.movement_coaching import build_movement_decision
