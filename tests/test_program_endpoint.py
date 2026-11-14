@@ -425,6 +425,22 @@ def test_program_endpoint_accepts_six_pattern_camera_proxy_v2_protocol_v3(monkey
                 "source": "browser_pose_landmarker",
                 "analysis_version": "six-pattern-proxy-v2",
             },
+            "lunge": {
+                "status": "observed", "quality": "adequate",
+                "valid_frames": 12, "total_frames": 12,
+                "observations": {
+                    "visible_side": "left",
+                    "knee_flexion_proxy_deg": 105,
+                    "hip_angle_proxy_deg": 132,
+                    "trunk_tilt_proxy_deg": 18,
+                    "hip_vertical_excursion_proxy": 0.12,
+                    "repetitions_detected": 2,
+                    "range_of_motion_proxy": "partial",
+                },
+                "limitations": "Bočni 2D približki ne potrjujejo obeh strani ali ravnotežja.",
+                "source": "browser_pose_landmarker",
+                "analysis_version": "six-pattern-proxy-v2",
+            },
         },
         "camera_protocol": {
             "version": "six-pattern-camera-flow-v3",
@@ -444,6 +460,7 @@ def test_program_endpoint_accepts_six_pattern_camera_proxy_v2_protocol_v3(monkey
     body = response.get_json()
     assert body["camera_observations"]["squat"]["analysis_version"] == "six-pattern-proxy-v2"
     assert body["camera_observations"]["hinge"]["status"] == "uncertain"
+    assert body["camera_observations"]["lunge"]["observations"]["visible_side"] == "left"
     assert body["camera_observations_stored"] is False
     assert body["camera_observations_used_for_programme_decisions"] is False
     assert body["camera_protocol"]["version"] == "six-pattern-camera-flow-v3"
