@@ -672,7 +672,10 @@ def generate_program(
                     f"Za simptomatsko regresijo vzorca {pattern} mora biti izbrana točno preizkušena vaja."
                 )
             if decision in {"LEARN", "REGRESS"} and not target_id and report_status != "symptoms_reported":
-                if not available_options:
+                if method is not None and method.get("exercise_id") is None:
+                    # A no-load coordination task is intentionally not replaced by a loaded catalogue exercise.
+                    pass
+                elif not available_options:
                     # Omit only this pattern when no verified learning variation is available.
                     decision = "UNASSESSABLE"
                     omission_reason = "no_equipment_compatible_learning_variant"
