@@ -292,6 +292,7 @@ def test_kettlebell_only_hinge_row_uses_the_kettlebell_catalogue_variant():
         }},
         decision_reason="Predklon je po učenju ponovljivo obvladan.",
     )
+    hinge["training_phase"] = "capacity_development"
     row = build_movement_decision(
         "horizontal_pull", "LEARN",
         equipment=["kettlebell"],
