@@ -31,6 +31,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "supported_squat_assistance",
                 "label": "Počep z oporo rok",
+                "demo_url": "https://youtu.be/vGu9T3FFjmc",
                 "description": "Za razbremenitev in ravnotežje uporabi TRX, varno pritrjeno elastiko, fiksiran drog v racku približno v višini prsnega koša ali stabilno nepremično oporo. Z rokami si pomagaj toliko, da lahko noge še vedno nadzorovano izvajajo gib.",
                 "exercise_id": "supported_squat",
             },
@@ -60,6 +61,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "dowel_four_point",
                 "label": "Predklon s palico – tri stične in ena kontrolna točka",
+                "demo_url": "https://youtu.be/8KhEVCDOkRk",
                 "description": (
                     "Palica ohranja stik s trtico oziroma križnično-sakralnim predelom, "
                     "torakalnim delom hrbtenice in zadnjim delom glave. Četrta kontrolna "
@@ -89,6 +91,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "incline_push_up",
                 "label": "Skleca na povišani opori",
+                "demo_url": "https://youtu.be/fAMAAO21OC0",
                 "description": "Višino stabilne opore izberi tako, da je celotna ponovitev nadzorovana.",
                 "exercise_id": "push_up_incline",
             },
@@ -105,6 +108,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "learning_methods": [
             {
                 "id": "scapular_coordination",
+                "demo_url": "https://youtu.be/MSV-lzGszlA",
                 "learning_only": True,
                 "label": "Učenje gibanja lopatic brez dodatnega bremena",
                 "description": (
@@ -183,6 +187,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "supported_split_squat",
                 "label": "Izpadni počep na mestu z oporo",
+                "demo_url": "https://youtu.be/MYg8xEdmTGk",
                 "description": "Opora je namenjena ravnotežju. Ohraniti je treba stabilno stopalo in koleno, vodoravno in smeri gibanja pravokotno usmerjeno medenico ter nadzorovan naklon trupa; pri vrnitvi izkoristi ekstenzijo kolka brez hiperekstenzije ledvene hrbtenice.",
                 "exercise_id": "supported_split_squat",
             },
