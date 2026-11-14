@@ -685,13 +685,41 @@ def generate_program(
                         )
                         method_id = method["id"] if method else None
             if report_status is not None and report_status not in {
-                "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed"
+                "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled"
             }:
                 raise ProgramValidationError(f"Neveljaven status uporabnikovega poročila za {pattern}.")
             if report_status in {"uncertain", "not_assessed"} and decision != "UNASSESSABLE":
                 raise ProgramValidationError(
                     f"Vzorec {pattern} je označen kot nejasen ali neocenjen, zato ne sme biti označen kot READY."
                 )
+            if report_status == "comfortable" and decision == "READY":
+                raise ProgramValidationError(
+                    f"Vzorec {pattern} je samoocenjen kot udoben, vendar še nima potrjenega učenja motoričnega nadzora; uporabi LEARN."
+                )
+            if report_status == "movement_controlled":
+                required_control = {
+                    "squat": {"tempo", "balance", "knee_hip_foot_control", "lumbopelvic_control", "tolerated_rom"},
+                    "hinge": {"tempo", "hip_hinge_coordination", "spine_control", "balance", "tolerated_rom"},
+                    "horizontal_push": {"tempo", "shoulder_elbow_wrist_control", "trunk_control", "stable_support", "tolerated_rom"},
+                    "horizontal_pull": {"tempo", "scapular_arm_control", "trunk_control", "stable_base", "tolerated_rom"},
+                    "vertical_push": {"tempo", "overhead_control", "trunk_control", "balance", "tolerated_rom"},
+                    "lunge": {"tempo", "balance", "pelvis_hip_knee_foot_control", "trunk_control", "tolerated_rom"},
+                }[pattern]
+                control = user_report.get("movement_control")
+                criteria = control.get("criteria") if isinstance(control, dict) else None
+                if (
+                    decision != "READY"
+                    or record.get("training_phase") != "capacity_development"
+                    or not isinstance(control, dict)
+                    or control.get("confirmed_by_user") is not True
+                    or control.get("repeatable") is not True
+                    or not isinstance(criteria, dict)
+                    or set(criteria) != required_control
+                    or any(criteria.get(key) is not True for key in required_control)
+                ):
+                    raise ProgramValidationError(
+                        f"Vzorec {pattern} ne more preiti v razvoj moči brez ponovljive potrditve vseh kriterijev motoričnega nadzora."
+                    )
             if report_status == "symptoms_reported":
                 allowed_regressions = SYMPTOM_REGRESSION_VARIANTS.get(pattern, ())
                 if decision == "REGRESS" and target_id not in allowed_regressions:
