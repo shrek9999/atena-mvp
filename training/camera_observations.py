@@ -105,20 +105,21 @@ def validate_camera_observations(observations: Any, protocol: Any) -> tuple[dict
         }
     if not isinstance(protocol, dict):
         raise CameraObservationError("Manjka protokol kamerne analize.")
-    if (protocol.get("version") not in {"six-pattern-camera-flow-v1", "six-pattern-camera-flow-v3"} or
+    if (protocol.get("version") not in {"six-pattern-camera-flow-v1", "six-pattern-camera-flow-v3", "six-pattern-camera-flow-v4"} or
             not isinstance(protocol.get("dowel_three_contact_user_confirmed"), bool) or
             protocol.get("push_up_support_height") not in {"floor", "low_support", "chair", "table", "other"} or
             protocol.get("video_stored") is not False or protocol.get("video_uploaded") is not False):
         raise CameraObservationError("Protokol zasebnosti kamere ni veljaven.")
-    if protocol["version"] == "six-pattern-camera-flow-v3":
-        if (protocol.get("views") != 8 or protocol.get("repetitions") != 2 or
+    if protocol["version"] in {"six-pattern-camera-flow-v3", "six-pattern-camera-flow-v4"}:
+        expected_views = 9 if protocol["version"] == "six-pattern-camera-flow-v4" else 8
+        if (protocol.get("views") != expected_views or protocol.get("repetitions") != 2 or
                 protocol.get("tempo") != "3-1-1" or
                 protocol.get("lunge_repetitions_total") != 2 or
                 protocol.get("lunge_one_per_side") is not True):
-            raise CameraObservationError("Protokol šestih testov ne ustreza dogovorjenemu zaporedju osmih pogledov.")
+            raise CameraObservationError("Protokol šestih testov ne ustreza dogovorjenemu zaporedju pogledov.")
         clean_protocol = {
-            "version": "six-pattern-camera-flow-v3",
-            "views": 8,
+            "version": protocol["version"],
+            "views": expected_views,
             "repetitions": 2,
             "tempo": "3-1-1",
             "lunge_repetitions_total": 2,
