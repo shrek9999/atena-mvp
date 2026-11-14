@@ -689,7 +689,7 @@ def test_all_unmastered_patterns_can_form_a_learning_only_program(monkeypatch):
     }
     program = generate_program(
         {
-            "goal": "functional",
+            "goal": "strength_hypertrophy",
             "experience": "beginner",
             "equipment": ["bodyweight", "household_support", "chair", "wall"],
             "sessions_per_week": 2,
