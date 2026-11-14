@@ -97,7 +97,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
     "horizontal_pull": {
         "label": "Horizontalni poteg – veslanje",
         "task_id": "bent_over_row",
-        "task": "Veslanje v predklonu z drogom, dvema ročkama, dvema kettlebelli ali lahko palico; pri predklonu ohrani nadzorovan položaj trupa in zabeleži pripomoček ter breme.",
+        "task": "Najprej nadzor gibanja lopatic in rok pri horizontalnem potegu brez bremena; obremenjeno veslanje v predklonu šele po potrjenem nadzoru predklona in koordinacije potega.",
         "exercise_ids": [
             "band_row", "trx_row", "ring_row", "one_arm_row",
             "kettlebell_one_arm_row", "dumbbell_bent_over_row", "barbell_bent_over_row",
@@ -144,11 +144,17 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
     "vertical_push": {
         "label": "Vertikalni potisk – potisk nad glavo",
         "task_id": "overhead_press",
-        "task": "Potisk z zelo lahkim in zabeleženim pripomočkom v razpoložljivi nadzorovani amplitudi.",
+        "task": "Najprej nadzorovan dvig rok nad glavo brez bremena; zunanji upor se uvede šele po potrjenem nadzoru poti rok, trupa in tolerirane amplitude.",
         "exercise_ids": [
             "band_overhead_press", "overhead_press", "plate_overhead_press", "barbell_overhead_press", "pike_push_up",
         ],
         "learning_methods": [
+            {
+                "id": "unloaded_overhead_reach",
+                "label": "Dvig rok nad glavo brez bremena",
+                "description": "Vadi počasen dvig in spust rok brez zunanjega bremena. Ohrani nadzor trupa in reber ter se ustavi v amplitudi, ki jo lahko ponoviš brez kompenzacije.",
+                "exercise_id": None,
+            },
             {
                 "id": "light_implement_press",
                 "label": "Potisk z zelo lahkim pripomočkom",
