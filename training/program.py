@@ -589,6 +589,7 @@ def generate_program(
     if not isinstance(camera_coordination_observed, bool):
         raise ProgramValidationError("camera_coordination_observed mora biti true ali false.")
     p = validate_profile(profile)
+    available_equipment = set(p["equipment"]) | {"bodyweight"}
     planning_goal = p["goal"]
     if p["goal"] == "strength_hypertrophy" and p["experience"] == "advanced":
         if p["training_emphasis"] in {"strength", "hypertrophy"}:
