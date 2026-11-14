@@ -10,7 +10,8 @@ from typing import Any
 PATTERNS = {"squat", "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge", "coordination"}
 SCALAR_KEYS = {
     "knee_flexion_proxy_deg", "heel_lift_visible", "heel_contact_check", "bilateral_lower_limb_visibility",
-    "hip_angle_proxy_deg", "torso_to_head_hip_alignment_error_proxy", "trunk_tilt_proxy_deg",
+    "hip_angle_proxy_deg", "hip_angle_excursion_proxy_deg", "torso_to_head_hip_alignment_error_proxy", "trunk_tilt_proxy_deg",
+    "scapular_control", "shoulder_elevation", "rib_trunk_control",
     "dowel_three_contact_check", "posterior_chain_range",
     "support_height", "elbow_bottom_proxy_deg", "elbow_top_proxy_deg",
     "shoulder_translation_between_phases_proxy", "scapular_pattern",
