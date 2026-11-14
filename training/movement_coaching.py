@@ -30,6 +30,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "learning_methods": [
             {
                 "id": "supported_squat_assistance",
+                "learning_only": True,
                 "label": "Počep z oporo rok",
                 "demo_url": "https://youtu.be/vGu9T3FFjmc",
                 "description": "Za razbremenitev in ravnotežje uporabi TRX, varno pritrjeno elastiko, fiksiran drog v racku približno v višini prsnega koša ali stabilno nepremično oporo. Z rokami si pomagaj toliko, da lahko noge še vedno nadzorovano izvajajo gib.",
@@ -37,12 +38,14 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             },
             {
                 "id": "reaching_counterbalance",
+                "learning_only": True,
                 "label": "Reaching squat s protiutežjo",
                 "description": "Izteg rok oziroma lahek kolut pred telesom uporabi kot protiutež za lažje učenje ravnotežja in organizacije počepa.",
                 "exercise_id": "reaching_squat",
             },
             {
                 "id": "target_squat",
+                "learning_only": True,
                 "label": "Počep do stabilne tarče",
                 "description": "Višino tarče prilagodi tako, da posameznik lahko ponovi nadzorovan spust in vstajanje.",
                 "exercise_id": "chair_sit_to_stand",
@@ -60,6 +63,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "learning_methods": [
             {
                 "id": "dowel_four_point",
+                "learning_only": True,
                 "label": "Predklon s palico – tri stične in ena kontrolna točka",
                 "demo_url": "https://youtu.be/8KhEVCDOkRk",
                 "description": (
@@ -73,6 +77,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             },
             {
                 "id": "wall_hip_hinge",
+                "learning_only": True,
                 "label": "Predklon ob steni",
                 "description": "Uči pomik bokov nazaj in nadzorovan predklon z nevtralnim položajem hrbtenice. Pri nelagodju v hrbtu zmanjša amplitudo in obremenitev; začni ob steni, ohrani nadzor trupa in ne sili v globino.",
                 "exercise_id": "wall_hip_hinge",
@@ -90,6 +95,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "learning_methods": [
             {
                 "id": "incline_push_up",
+                "learning_only": True,
                 "label": "Skleca na povišani opori",
                 "demo_url": "https://youtu.be/fAMAAO21OC0",
                 "description": "Višino stabilne opore izberi tako, da je celotna ponovitev nadzorovana.",
@@ -186,6 +192,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "learning_methods": [
             {
                 "id": "supported_split_squat",
+                "learning_only": True,
                 "label": "Izpadni počep na mestu z oporo",
                 "demo_url": "https://youtu.be/MYg8xEdmTGk",
                 "description": "Opora je namenjena ravnotežju. Ohraniti je treba stabilno stopalo in koleno, vodoravno in smeri gibanja pravokotno usmerjeno medenico ter nadzorovan naklon trupa; pri vrnitvi izkoristi ekstenzijo kolka brez hiperekstenzije ledvene hrbtenice.",
@@ -193,6 +200,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             },
             {
                 "id": "static_split_squat",
+                "learning_only": True,
                 "label": "Statični izpadni počep",
                 "description": "Najprej utrdi položaj stopal in nadzor spuščanja, nato izberi dinamično različico.",
                 "exercise_id": "split_squat",
