@@ -175,7 +175,7 @@ def test_program_route_rejects_ready_decision_when_user_report_is_unassessed(cli
     from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
 
     decisions = {
-        pattern: build_movement_decision(pattern, "READY", user_report={"status": "comfortable"})
+        pattern: build_movement_decision(pattern, "LEARN", user_report={"status": "comfortable"})
         for pattern in PATTERN_DEFINITIONS
     }
     decisions["squat"]["user_report"] = {"status": "not_assessed"}
@@ -218,9 +218,9 @@ def test_program_route_passes_structured_six_pattern_decisions(monkeypatch, clie
     monkeypatch.setattr(coach_routes, "generate_program", fake_generate_program)
     decisions = {
         pattern: build_movement_decision(
-            pattern, "READY",
+            pattern, "LEARN",
             user_report={"status": "comfortable"},
-            decision_reason="Osnovno gibanje je po samooceni udobno in nadzorovano.",
+            decision_reason="Samoocena je udobna; najprej preveri motorični nadzor.",
         )
         for pattern in ("squat", "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge")
     }
@@ -240,7 +240,7 @@ def test_program_route_passes_structured_six_pattern_decisions(monkeypatch, clie
     assert response.status_code == 200
     body = response.get_json()
     assert set(called["movement_decisions"]) == set(decisions)
-    assert called["movement_decisions"]["squat"]["decision"] == "READY"
+    assert called["movement_decisions"]["squat"]["decision"] == "LEARN"
     assert body["movement_assessment_applied"] is True
     assert body["movement_decisions_stored"] is False
     assert body["movement_adaptation"]["source"] == "structured_six_pattern_decisions"
