@@ -703,6 +703,7 @@ def test_all_unmastered_patterns_can_form_a_learning_only_program(monkeypatch):
     )
 
     assert len(program["sessions"]) == 2
+    seen_learning_patterns = set()
     for session in program["sessions"]:
         assert not any(
             exercise["pattern"] in PATTERN_DEFINITIONS
@@ -713,3 +714,5 @@ def test_all_unmastered_patterns_can_form_a_learning_only_program(monkeypatch):
         assert session["learning_tasks"]
         assert all(task["exercise_id"] is None for task in session["learning_tasks"])
         assert all(task["decision"] == "LEARN" for task in session["learning_tasks"])
+        seen_learning_patterns.update(task["movement_pattern"] for task in session["learning_tasks"])
+    assert seen_learning_patterns == set(PATTERN_DEFINITIONS)
