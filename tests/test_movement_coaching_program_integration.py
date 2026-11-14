@@ -101,6 +101,30 @@ def test_ready_decision_starts_conservatively_without_automatic_progression():
     )
 
 
+def test_horizontal_pull_and_overhead_learning_stay_unloaded_until_control_is_verified():
+    pull = build_movement_decision(
+        "horizontal_pull", "LEARN",
+        selected_learning_method="scapular_coordination",
+        user_report={"status": "comfortable"},
+        decision_reason="Najprej vadi gibanje lopatic brez bremena.",
+    )
+    overhead = build_movement_decision(
+        "vertical_push", "LEARN",
+        selected_learning_method="unloaded_overhead_reach",
+        user_report={"status": "comfortable"},
+        decision_reason="Najprej vadi pot rok nad glavo brez bremena.",
+    )
+    plan = generate_program(BASE, movement_decisions={
+        "horizontal_pull": pull, "vertical_push": overhead,
+    })
+    assert _pattern_exercises(plan, "horizontal_pull") == []
+    assert _pattern_exercises(plan, "vertical_push") == []
+    tasks = [task for session in plan["sessions"] for task in session["learning_tasks"]]
+    method_ids = {task["method_id"] for task in tasks}
+    assert "scapular_coordination" in method_ids
+    assert "unloaded_overhead_reach" in method_ids
+
+
 def test_unassessable_omits_pattern_until_assessment_is_available():
     unassessable = build_movement_decision(
         "squat", "UNASSESSABLE",
