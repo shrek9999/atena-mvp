@@ -2800,8 +2800,8 @@ def coach_program():
         "hinge": {"tempo", "hip_hinge_coordination", "spine_control", "balance", "tolerated_rom"},
         "horizontal_push": {"tempo", "shoulder_elbow_wrist_control", "trunk_control", "stable_support", "tolerated_rom"},
         "horizontal_pull": {"tempo", "scapular_arm_control", "trunk_control", "stable_base", "tolerated_rom"},
-        "vertical_push": {"tempo", "overhead_control", "trunk_control", "balance", "tolerated_rom"},
-        "lunge": {"tempo", "balance", "pelvis_hip_knee_foot_control", "trunk_control", "tolerated_rom"},
+        "vertical_push": {"tempo", "overhead_control", "trunk_control", "scapular_control", "tolerated_rom"},
+        "lunge": {"tempo", "balance", "pelvis_hip_knee_foot_control", "hip_extension", "trunk_control", "tolerated_rom"},
     }
     invalid_report_patterns = []
     for pattern, record in movement_decisions.items():
