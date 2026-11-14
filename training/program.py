@@ -783,6 +783,7 @@ def generate_program(
                 "decision": decision,
                 "selected_learning_method": method_id,
                 "resolved_exercise_id": target_id,
+                "learning_only": bool(method and method.get("learning_only") is True),
                 **({"omission_reason": omission_reason} if omission_reason else {}),
             }
     reduce_load = bool(response and (
@@ -1724,7 +1725,7 @@ def generate_program(
                 }
                 for pattern_key, record in movement_decisions_by_pattern.items()
                 if record["decision"] in {"LEARN", "REGRESS"}
-                and any(item["pattern"] == pattern_key for item in selected)
+                and (record.get("learning_only") is True or any(item["pattern"] == pattern_key for item in selected))
             ],
             "exercises": selected,
         })
