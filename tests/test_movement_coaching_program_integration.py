@@ -267,8 +267,14 @@ def test_kettlebell_only_hinge_row_uses_the_kettlebell_catalogue_variant():
     }
     hinge = build_movement_decision(
         "hinge", "READY",
-        user_report={"status": "comfortable"},
-        decision_reason="Predklon je bil samoocenjen kot običajno nadzorovan.",
+        user_report={"status": "movement_controlled", "movement_control": {
+            "confirmed_by_user": True, "repeatable": True,
+            "criteria": {
+                "tempo": True, "balance": True, "hip_hinge_coordination": True,
+                "spine_control": True, "tolerated_rom": True,
+            },
+        }},
+        decision_reason="Predklon je po učenju ponovljivo obvladan.",
     )
     row = build_movement_decision(
         "horizontal_pull", "LEARN",
