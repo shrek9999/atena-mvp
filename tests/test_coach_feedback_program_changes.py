@@ -33,8 +33,8 @@ def test_less_experienced_strength_and_hypertrophy_share_reps_and_effort_reserve
     assert hypertrophy_squat["prescription"]["reps"] == "8–12"
     assert strength_squat["prescription"]["rir"] == hypertrophy_squat["prescription"]["rir"] == 3
     assert strength_squat["prescription"]["rest_seconds"] == hypertrophy_squat["prescription"]["rest_seconds"]
-    assert strength_squat["prescription"]["tempo"] == "3–1–1–0"
-    assert hypertrophy_squat["prescription"]["tempo"] == "3–1–1–0"
+    assert strength_squat["prescription"]["tempo"] == "3–1–2–0"
+    assert hypertrophy_squat["prescription"]["tempo"] == "3–1–2–0"
 
 
 def test_endurance_is_a_distinct_conditioning_program_not_a_strength_template():

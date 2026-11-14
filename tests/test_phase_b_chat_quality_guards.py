@@ -1,5 +1,6 @@
 import json
 
+import pytest
 from flask import Flask
 
 import coach_routes
@@ -96,6 +97,34 @@ def test_server_guardrail_stops_painful_exercise_before_substitution():
     assert "ne nadomeščaj" in reply
     assert "Kje natančno se pojavi bolečina" in reply
     assert "Goblet počep" not in reply
+
+
+def test_localized_symptom_answers_initial_intake_without_granting_clearance():
+    messages = [
+        {"role": "model", "content": "Ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"},
+        {"role": "user", "content": "Bolečina v kolenu pri počepu."},
+    ]
+    reply = coach_routes._coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "Kolikšna je bolečina od 0 do 10?" in reply
+    assert "ali imaš trenutno kakršne koli bolečine" not in reply.casefold()
+    assert not coach_routes._has_safety_clearance(messages)
+
+
+def test_localized_symptom_still_blocks_individual_program_after_focused_intake():
+    messages = [
+        {"role": "model", "content": "Ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"},
+        {"role": "user", "content": "Bolečina v kolenu pri počepu."},
+        {"role": "model", "content": "Kolikšna je bolečina od 0 do 10?"},
+        {"role": "user", "content": "2/10, poznana bolečina, ne stopnjuje se."},
+        {"role": "user", "content": "Pripravi mi individualni program za moč."},
+    ]
+    reply = coach_routes._coaching_guardrail_reply(messages)
+    assert reply is not None
+    assert "individualnega programa" in reply
+    assert "Ali imaš poleg te bolečine še kakšno drugo poškodbo" in reply
+    assert "ali imaš trenutno kakršne koli bolečine" not in reply.casefold()
+    assert not coach_routes._has_safety_clearance(messages)
 
 
 def test_server_guardrail_asks_about_balance_before_suggesting_modification():
@@ -345,6 +374,108 @@ def test_bodyweight_only_program_discloses_missing_loaded_pull_pattern():
     assert note is not None
     assert "ne vsebuje obremenjenega vlečnega vzorca" in note
     assert "ni enakovreden obremenjenemu RDL" in note
+
+
+@pytest.mark.parametrize(
+    "goal",
+    [
+        "Želim pridobiti mišične mase.",
+        "Rad bi izboljšal splošno telesno pripravljenost.",
+    ],
+)
+def test_slovene_fitness_goal_variants_trigger_single_safety_question(goal):
+    messages = _user_messages(goal)
+    answer = "Kolikokrat na teden želiš trenirati? Kakšno opremo imaš na voljo?"
+    cleaned = coach_routes._sanitize_onboarding_questions(answer, messages)
+    assert cleaned.count("?") == 1
+    assert "akutno ostro bolečino" in cleaned
+
+
+def test_rdls_substitution_is_not_described_as_equivalent_to_deadlift():
+    messages = _user_messages("Kaj lahko delam namesto mrtvega dviga?")
+    answer = "RDL je enakovreden mrtvemu dvigu."
+    cleaned = coach_routes._sanitize_deadlift_substitution_claims(answer, messages)
+    assert "soroden vzorec kolčnega zgiba" in cleaned
+    assert "ni biomehansko enak" in cleaned
+
+
+def test_rdls_followup_acknowledges_preserved_training_intent_without_repeating_full_explanation():
+    messages = [
+        {"role": "user", "content": "Danes nimam dostopa do olimpijske palice. V programu imam mrtvi dvig. S čim ga lahko zamenjam?"},
+        {"role": "model", "content": "RDL je sorodna možnost. Kakšen je bil prvotni odmerek mrtvega dviga (serije in ponovitve) in katere teže ročk imaš na voljo?"},
+        {"role": "user", "content": "Želim ohraniti vzorec kolčnega iztega in približno enak namen treninga."},
+    ]
+    answer = (
+        "Z ročkami je lahko primerna alternativa predklon z nevtralno hrbtenico (RDL). "
+        "Kakšen je bil prvotni odmerek mrtvega dviga?"
+    )
+    cleaned = coach_routes._sanitize_unverified_exercise_parameters(answer, messages)
+    assert cleaned.startswith("Razumem. RDL ohranja soroden kolčni zgib")
+    assert "ni biomehansko enak" not in cleaned
+    assert "prvotni odmerek (serije × ponovitve)" in cleaned
+    assert "teže ročk" in cleaned
+    assert cleaned.count("?") == 1
+
+
+def test_progression_does_not_repeat_recovery_question_after_user_does_not_answer():
+    profile = (
+        "V programu je cilj 8–10 ponovitev; v dveh zaporednih primerljivih treningih "
+        "sem izvedel vse serije po 10 ponovitev z RIR 3 in stabilno tehniko."
+    )
+    messages = [
+        {"role": "user", "content": profile},
+        {"role": "user", "content": "Vse serije sem opravil. Na koncu vsake serije bi lahko naredil še približno tri ponovitve."},
+        {"role": "model", "content": "Dve primerljivi uspešni izvedbi sta dober znak, vendar pred povečanjem obremenitve preveriva še regeneracijo. Kako si se počutil naslednji dan po zadnjem treningu – običajno spočit ali nenavadno utrujen?"},
+        {"role": "user", "content": "Tehnika je bila dobra in trening ni bil pretežek."},
+    ]
+    answer = (
+        "Dobro, to potrjuje stabilno tehniko in primeren občutek napora. "
+        "Pred povečanjem bremena preveriva še regeneracijo: ali si bil naslednji "
+        "dan običajno spočit, brez nenavadne utrujenosti ali bolečin?"
+    )
+    cleaned = coach_routes._sanitize_unverified_exercise_parameters(answer, messages)
+    assert "Dobra tehnika in primeren občutek napora" in cleaned
+    assert "obremenitve še ne povečuj" in cleaned
+    assert "ohrani enako dozo" in cleaned
+    assert cleaned.count("?") == 0
+
+
+def test_progression_does_not_invent_load_or_sets_before_recovery_check():
+    profile = (
+        "V programu je cilj 8–10 ponovitev; v dveh zaporednih primerljivih treningih "
+        "sem izvedel vse serije po 10 ponovitev z RIR 3 in stabilno tehniko."
+    )
+    messages = _user_messages(
+        profile,
+        "Vse serije sem opravil. Na koncu vsake serije bi lahko naredil še približno tri ponovitve.",
+        "Tehnika je bila dobra in trening ni bil pretežek.",
+    )
+    answer = (
+        "Odlično. Naslednjič povečaj obremenitev za 1–2 kg na ročko ali 2,5 kg na palico "
+        "in naredi 3 serije po 10 ponovitev."
+    )
+    cleaned = coach_routes._sanitize_unverified_exercise_parameters(answer, messages)
+    assert "regeneracijo" in cleaned.lower()
+    assert "naslednji dan" in cleaned.lower()
+    assert "1–2 kg" not in cleaned
+    assert "2,5 kg" not in cleaned
+    assert "3 serije" not in cleaned
+
+
+def test_progression_with_recovery_still_requires_known_exercise_and_dose():
+    profile = (
+        "V programu je cilj 8–10 ponovitev; v dveh zaporednih primerljivih treningih "
+        "sem izvedel vse serije po 10 ponovitev z RIR 3 in stabilno tehniko."
+    )
+    messages = _user_messages(
+        profile,
+        "Tehnika je bila dobra, trening ni bil pretežek in naslednji dan sem bil normalno spočit.",
+    )
+    answer = "Povečaj obremenitev za 2,5 kg in naredi 3 serije."
+    cleaned = coach_routes._sanitize_unverified_exercise_parameters(answer, messages)
+    assert "ne bom ugibal kilogramov" in cleaned
+    assert "Katera vaja je v programu" in cleaned
+    assert "2,5 kg" not in cleaned
 
 
 def test_slovene_coaching_term_normalizer_corrects_known_errors():
@@ -630,3 +761,102 @@ def test_system_prompt_distinguishes_general_fitness_conditioning_and_functional
     assert "conditioning focuses primarily on aerobic/anaerobic work capacity" in prompt
     assert "functional fitness develops useful physical capacities across strength, conditioning, power, balance and coordination" in prompt
     assert "These goals may overlap but are not interchangeable" in prompt
+
+
+def test_system_prompt_distinguishes_foot_assisted_vertical_pull_from_inverted_row():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert 'Zgib z oporo stopal (navpični trup)' in prompt
+    assert 'Never call this exercise "avstralski zgib", "inverted row"' in prompt
+    assert "torso stays mostly upright" in prompt
+
+
+def test_system_prompt_uses_informal_slovene_address_and_progression_questions():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "use informal singular address (ti)" in prompt
+    assert "do not switch to formal vi/vas" in prompt
+    assert "do not switch to unrelated questions about equipment or session time" in prompt
+
+
+def test_system_prompt_requires_feet_forward_of_bar_for_assisted_vertical_pull():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "slightly forward of the bar's vertical line" in prompt
+    assert "not directly underneath it" in prompt
+
+
+def test_system_prompt_forbids_inventing_training_history_or_user_facts():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "Never invent or silently infer a user's training start date" in prompt
+    assert "do not invent a compromise explanation" in prompt
+    assert "Never start an individualized programme until the user's experience" in prompt
+    assert "Never select exercises that require equipment the user has not confirmed" in prompt
+
+
+def test_raw_html_markup_from_model_is_removed_but_plain_text_remains():
+    answer = "Program vad<strong>beni</strong> je pripravljen. <br>Ohrani nadzor."
+    cleaned = coach_routes._sanitize_model_markup(answer)
+    assert "<strong>" not in cleaned
+    assert "</strong>" not in cleaned
+    assert "<br>" not in cleaned
+    assert "Program vad" in cleaned
+    assert "Ohrani nadzor." in cleaned
+
+
+def test_chat_removes_unverified_claim_about_user_starting_training_this_year():
+    messages = [{
+        "role": "user",
+        "content": "Ta teden sem opravil samo enega od dveh načrtovanih treningov.",
+    }]
+    answer = (
+        "To je povsem v redu. Glede na to, da si letos začel z enim treningom, "
+        "me zanima, kako zahteven je bil."
+    )
+    cleaned = coach_routes._sanitize_unverified_training_history_claims(answer, messages)
+    assert "letos začel" not in cleaned
+    assert "To je povsem v redu." in cleaned
+
+
+def test_chat_preserves_training_timeline_when_user_explicitly_provided_it():
+    messages = [{
+        "role": "user",
+        "content": "Letos sem začel redno trenirati.",
+    }]
+    answer = "Glede na to, da si letos začel trenirati, bova napredovala postopno."
+    assert coach_routes._sanitize_unverified_training_history_claims(answer, messages) == answer
+
+
+def test_slovene_normalizer_fixes_recurring_live_benchmark_typographic_errors():
+    answer = "Poz dravljen! To je izrek gibanja."
+    cleaned = coach_routes._normalize_slovene_coaching_terms(answer)
+    assert cleaned.startswith("Pozdravljen!")
+    assert "izvedbo gibanja" in cleaned
+
+def test_public_onboarding_exposes_only_three_canonical_goal_tracks():
+    sl = coach_routes._onboarding_quick_replies("Kaj želiš predvsem razvijati?")
+    en = coach_routes._onboarding_quick_replies(
+        "What is your main goal?", response_language="en"
+    )
+    assert sl == [
+        "Moč + mišična masa",
+        "Funkcionalna pripravljenost",
+        "Zmanjšanje maščobne mase",
+    ]
+    assert en == ["Strength + muscle mass", "Functional fitness", "Fat loss"]
+
+
+def test_public_onboarding_uses_two_experience_groups():
+    sl = coach_routes._onboarding_quick_replies(
+        "Kakšne so tvoje izkušnje z vadbo?"
+    )
+    en = coach_routes._onboarding_quick_replies(
+        "What is your training experience?", response_language="en"
+    )
+    assert sl == ["Začetnik/-ca ali malo izkušenj", "Redno treniram"]
+    assert en == ["Beginner / limited experience", "I train regularly"]
+
+
+def test_system_prompt_maps_regular_training_to_intermediate_not_automatically_advanced():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "Public onboarding uses two experience groups" in prompt
+    assert "Map regular training to intermediate by default" in prompt
+    assert "Never infer advanced ability" in prompt
+

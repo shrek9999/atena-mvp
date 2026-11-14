@@ -140,3 +140,14 @@ Progress only after the person completes all prescribed sets at the top of the r
 No-equipment means no dedicated gym equipment; it does not authorize unsafe furniture-based pulling. Do not prescribe table rows or improvised anchors unless a safe, suitable support is explicitly confirmed. If no safe horizontal pull is available, report that limitation honestly and ask whether a band or pull-up bar is available. Mat-based trunk/back exercises are legitimate complementary options when present in the verified catalogue, but do not claim they fully replace loaded pulling.
 
 Do not repeat generic cues under every exercise. Use 2–4 exercise-specific cues and put shared instructions once. Use short sessions intelligently: 4–5 purposeful exercises may be enough; do not add filler to meet a quota. Two weekly full-body sessions may repeat foundational patterns while varying the exercise or emphasis where useful.
+
+
+## Hinge substitutions: conventional deadlift and RDL
+
+The conventional deadlift and Romanian deadlift (RDL) share the broad hip-hinge movement pattern and can both train hip extension and the posterior chain, but they are not biomechanically identical.
+
+- A conventional deadlift starts from the floor and generally uses more knee flexion during the initial lift.
+- An RDL starts from standing, uses a smaller knee bend and emphasizes controlled hip flexion with the load kept close to the legs.
+- Their range of motion, loading profile and distribution of muscular demands differ.
+
+An RDL can preserve a related hinge/posterior-chain training intent when a barbell is unavailable, but do not describe it as completely mimicking a conventional deadlift or assume that the same load, repetitions or stimulus transfer directly.

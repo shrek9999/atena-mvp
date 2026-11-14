@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - qa/visible-goal-matrix-functional-beginner-safety
+      - feature/six-pattern-learning-engine
   pull_request:
     branches:
       - pilot/website-ai-coach
@@ -11,8 +12,10 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: atena-cloudflare-preview-smoke-${{ github.event_name }}
-  cancel-in-progress: true
+  # Push and pull_request can both target the same pilot backend. Serialize them
+  # so synthetic profile/session persistence checks do not race during DDL.
+  group: atena-cloudflare-preview-smoke
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -20,8 +23,11 @@ permissions:
 jobs:
   preview-to-render:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
+      - name: Wait for Render staging deployment to finish
+        run: sleep 150
+
       - name: Wake and check the Render backend
         run: |
           python - <<'PY'
@@ -82,9 +88,20 @@ jobs:
               print("GitHub Actions secret AI_TRAINER_PREVIEW_TOKEN is missing or too short.")
               sys.exit(1)
 
-          origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
+          origin = "https://feature-atena-observed-movem.atena-ai-trener.pages.dev"
           url = origin + "/api/plan"
+          patterns = ["squat", "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge"]
           payload = {
+              "movement_assessment_consent": True,
+              "movement_decisions": {
+                  pattern: {
+                      "movement_pattern": pattern,
+                      "decision": "LEARN",
+                      "training_phase": "movement_learning",
+                      "user_report": {"status": "comfortable"}
+                  }
+                  for pattern in patterns
+              },
               "profile": {
                   "goal": "moč in mišična masa",
                   "experience": "začetnik",
@@ -144,7 +161,7 @@ jobs:
           import urllib.error
           import urllib.request
 
-          origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
+          origin = "https://feature-atena-observed-movem.atena-ai-trener.pages.dev"
           checks = {
               "/api/plan": "content-type, x-atena-preview-token",
               "/api/chat": "content-type, x-atena-preview-token, x-profile-id, x-profile-token",
@@ -193,7 +210,7 @@ jobs:
           token = os.environ.get("PREVIEW_TOKEN", "").strip()
           if len(token) < 20:
               raise SystemExit("GitHub Actions secret AI_TRAINER_PREVIEW_TOKEN is missing or too short.")
-          origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
+          origin = "https://feature-atena-observed-movem.atena-ai-trener.pages.dev"
           request = urllib.request.Request(
               origin + "/api/chat",
               data=json.dumps({
@@ -237,7 +254,7 @@ jobs:
           import time
           import urllib.request
 
-          origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
+          origin = "https://feature-atena-observed-movem.atena-ai-trener.pages.dev"
           request = urllib.request.Request(
               origin + "/api/profile/status",
               headers={
@@ -273,7 +290,7 @@ jobs:
           import urllib.error
           import urllib.request
 
-          origin = "https://pilot-atena-profile-history.atena-ai-trener.pages.dev"
+          origin = "https://feature-atena-observed-movem.atena-ai-trener.pages.dev"
           preview_token = os.environ.get("PREVIEW_TOKEN", "").strip()
           if len(preview_token) < 20:
               raise SystemExit("Preview token is missing or too short.")
@@ -328,7 +345,7 @@ jobs:
                   },
                   "privacy_notice_acknowledged": True,
                   "privacy_notice_version": notice_version,
-                  "health_data_consent": False
+                  "health_data_consent": True
               }, expected=(201,))
               profile = created.get("profile") or {}
               profile_id = profile.get("profile_id")
@@ -354,11 +371,37 @@ jobs:
               if not any(item.get("session_id") == session_id for item in sessions):
                   raise RuntimeError("Saved training session could not be read back.")
 
+              # Synthetic self-report only: exercise the new six-pattern gate end to end.
+              movement_patterns = {
+                  pattern: {"status": "comfortable"}
+                  for pattern in (
+                      "squat", "hinge", "horizontal_push",
+                      "horizontal_pull", "vertical_push", "lunge"
+                  )
+              }
+              _, assessment = call(
+                  f"/api/profile/{profile_id}/movement-assessment",
+                  "PUT",
+                  {"movement_assessment_consent": True, "movement_patterns": movement_patterns},
+                  profile_token,
+              )
+              if assessment.get("assessment_stored") is not True:
+                  raise RuntimeError("Six-pattern movement assessment was not stored.")
+
+              _, generated = call(
+                  f"/api/profile/{profile_id}/program",
+                  "POST",
+                  {"no_current_pain_or_restrictions": True},
+                  profile_token,
+              )
+              if generated.get("movement_assessment_applied") is not True or generated.get("program_stored") is not True:
+                  raise RuntimeError("Profile programme was not generated from the saved six-pattern assessment.")
+
               call(f"/api/profile/{profile_id}", "DELETE", profile_token=profile_token, expected=(200,))
               deleted = True
               call(f"/api/profile/{profile_id}", "GET", profile_token=profile_token, expected=(404,))
               print("Supabase profile persistence: PASS (synthetic profile created, authenticated session saved/read, profile deleted, access revoked).")
-              print("Test record contained no health data; health_data_consent=false; no user profile was retained.")
+              print("Synthetic consented movement self-report and programme generation passed; profile deleted; no user profile was retained.")
           finally:
               if profile_id and profile_token and not deleted:
                   try:

@@ -118,7 +118,20 @@ def test_advanced_accessories_remain_opt_in_and_goal_specific():
         if item.get("single_joint") and item.get("pattern") == "accessory"
     }
     assert not (without_ids & single_joint)
-    assert with_ids.issuperset(without_ids)
+    # Accessory work replaces a repeated optional pattern in one session;
+    # the core compound patterns and weekly vertical-pull exposure remain.
+    core_ids = {
+        item["exercise_id"]
+        for session in without["sessions"]
+        for item in session["exercises"]
+        if item["joint_type"] == "multi_joint"
+        and item["pattern"] in {"squat", "hinge", "horizontal_push", "horizontal_pull"}
+    }
+    assert with_ids.intersection(core_ids) == core_ids
+    assert any(item["joint_type"] == "single_joint"
+               for session in with_accessories["sessions"] for item in session["exercises"])
+    assert any(item["pattern"] == "vertical_pull"
+               for session in with_accessories["sessions"] for item in session["exercises"])
 
 
 def test_non_advanced_profiles_cannot_enable_single_joint_accessories():

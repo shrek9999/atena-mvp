@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "pilot/website-ai-coach"
+      - "feature/six-pattern-learning-engine"
   pull_request:
     branches:
       - "pilot/website-ai-coach"

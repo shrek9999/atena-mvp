@@ -141,6 +141,19 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     assert blocked.status_code == 409
     assert blocked.get_json()["blocked"] is True
 
+    assessment = client.put(
+        f"/coach/profile/{profile_id}/movement-assessment",
+        headers=headers,
+        json={
+            "movement_assessment_consent": True,
+            "movement_patterns": {
+                pattern: {"status": "comfortable"}
+                for pattern in __import__("training.movement_coaching", fromlist=["PATTERN_DEFINITIONS"]).PATTERN_DEFINITIONS
+            },
+        },
+    )
+    assert assessment.status_code == 200
+
     allowed = client.post(
         f"/coach/profile/{profile_id}/program",
         headers=headers,
@@ -198,3 +211,83 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     conn.close()
     assert remaining_profiles == 0
     assert remaining_sessions == 0
+
+
+
+def test_session_discomfort_details_are_validated_and_saved(monkeypatch, tmp_path):
+    client, _database = _app(monkeypatch, tmp_path)
+    pilot_headers = {"X-Pilot-Token": "pilot-lifecycle-test-secret"}
+    created = client.post(
+        "/coach/profile",
+        headers=pilot_headers,
+        json={
+            "privacy_notice_acknowledged": True,
+            "privacy_notice_version": "lifecycle-v1",
+            "health_data_consent": True,
+            "profile": {
+                "goal": "strength_hypertrophy",
+                "experience": "intermediate",
+                "equipment": ["barbell", "rack", "dumbbell", "bench", "bodyweight"],
+                "sessions_per_week": 2,
+                "session_minutes": 60,
+                "available_days": ["monday", "thursday"],
+            },
+        },
+    )
+    assert created.status_code == 201
+    profile_id = created.get_json()["profile"]["profile_id"]
+    headers = {"X-Profile-Token": created.get_json()["profile_access_token"]}
+    exercise_id = load_catalogue()[0]["id"]
+    payload = {
+        "session_date": "2026-11-03",
+        "duration_minutes": 45,
+        "difficulty": "moderate",
+        "recovery": "normal",
+        "completed": True,
+        "discomfort_reported": True,
+        "discomfort_details": {
+            "exercise_id": exercise_id,
+            "pain_during": 3,
+            "worsened": False,
+            "tolerated": True,
+            "acute_warning_signs": [],
+            "modifications_applied": ["reduced_load", "slow_tempo", "range_within_tolerance"],
+        },
+        "exercises": [{
+            "exercise_id": exercise_id,
+            "planned_sets": 2,
+            "execution_quality": "controlled",
+            "set_results": [{"reps": 8, "rir": 4}],
+        }],
+        "conditioning": [],
+    }
+    logged = client.post(
+        f"/coach/profile/{profile_id}/sessions",
+        headers=headers,
+        json=payload,
+    )
+    assert logged.status_code == 201
+    saved = logged.get_json()["session"]["session"]["discomfort_details"]
+    assert saved == payload["discomfort_details"]
+
+    missing_range_confirmation = dict(payload)
+    missing_range_confirmation["session_date"] = "2026-11-04"
+    missing_range_confirmation["discomfort_details"] = dict(payload["discomfort_details"])
+    missing_range_confirmation["discomfort_details"]["modifications_applied"] = [
+        "reduced_load", "slow_tempo",
+    ]
+    rejected_range = client.post(
+        f"/coach/profile/{profile_id}/sessions",
+        headers=headers,
+        json=missing_range_confirmation,
+    )
+    assert rejected_range.status_code == 400
+
+    invalid = dict(payload)
+    invalid["discomfort_reported"] = False
+    rejected = client.post(
+        f"/coach/profile/{profile_id}/sessions",
+        headers=headers,
+        json=invalid,
+    )
+    assert rejected.status_code == 400

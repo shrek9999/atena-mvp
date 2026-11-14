@@ -1139,9 +1139,7 @@
       "chin_up",
       "Zgib z dodatno obremenitvijo"
     ],
-    "alternatives": [
-      "Veslanje z lastno težo"
-    ],
+    "alternatives": [],
     "warnings": [
       "Prilagodi obseg in pomoč trenutni sposobnosti."
     ],
@@ -1708,11 +1706,11 @@
       "Breme naj lebdi zaradi iztega kolkov."
     ],
     "common_errors": [
-      "Počep namesto predklona z ravnim hrbtom.",
+      "Počep namesto predklona z nevtralno hrbtenico.",
       "Pretiran izteg v ledvenem delu."
     ],
     "regressions": [
-      "Učenje predklona z ravnim hrbtom s palico",
+      "Učenje predklona z nevtralno hrbtenico s palico",
       "Mrtvi dvig s kettlebellom"
     ],
     "progressions": [
@@ -1722,7 +1720,7 @@
       "Met medicinke ob tla"
     ],
     "warnings": [
-      "Najprej obvladaj predklon z ravnim hrbtom in mrtvi dvig."
+      "Najprej obvladaj predklon z nevtralno hrbtenico in mrtvi dvig."
     ],
     "single_joint": false,
     "equipment_any": [],
@@ -1794,7 +1792,7 @@
     ],
     "single_joint": false,
     "equipment_any": [],
-    "training_role": "accessory",
+    "training_role": "main",
     "loading_potential": "high",
     "time_based": false,
     "movement_family": "knee_dominant",
@@ -2029,7 +2027,7 @@
       "trunk"
     ],
     "cues": [
-      "Kolena rahlo pokrči in izvedi predklon z ravnim hrbtom.",
+      "Kolena rahlo pokrči in izvedi predklon z nevtralno hrbtenico.",
       "Trup ohrani stabilen, ročki naj visita pod rameni.",
       "Komolca vodi nazaj, nato ročki nadzorovano spusti."
     ],
@@ -2168,7 +2166,7 @@
       "Prehiter dvig brez predhodne napetosti trupa."
     ],
     "regressions": [
-      "Predklon z ravnim hrbtom z lastno težo"
+      "Predklon z nevtralno hrbtenico z lastno težo"
     ],
     "progressions": [
       "Romunski mrtvi dvig"
@@ -2182,7 +2180,7 @@
     ],
     "single_joint": false,
     "unilateral": false,
-    "training_role": "accessory",
+    "training_role": "main",
     "loading_potential": "high",
     "time_based": false,
     "movement_family": "hip_hinge",
@@ -2200,7 +2198,7 @@
   },
   {
     "id": "bodyweight_hip_hinge",
-    "name": "Predklon z ravnim hrbtom (lastna teža)",
+    "name": "Predklon z nevtralno hrbtenico (lastna teža)",
     "name_en": "Bodyweight hip hinge",
     "pattern": "hinge",
     "joint_type": "multi_joint",
@@ -2233,7 +2231,7 @@
       "Izguba nevtralnega položaja hrbtenice pri spuščanju."
     ],
     "regressions": [
-      "Predklon ob steni z ravnim hrbtom"
+      "Predklon z nevtralno hrbtenico ob steni"
     ],
     "progressions": [
       "Mrtvi dvig z ročkama",
@@ -2269,7 +2267,7 @@
   },
   {
     "id": "supported_single_leg_rdl",
-    "name": "Podprti enonožni predklon z ravnim hrbtom",
+    "name": "Podprti enonožni predklon z nevtralno hrbtenico",
     "name_en": "Supported single-leg hip hinge",
     "pattern": "hinge",
     "joint_type": "multi_joint",
@@ -2533,7 +2531,7 @@
       "dumbbell"
     ],
     "loading_potential": "high",
-    "training_role": "accessory",
+    "training_role": "main",
     "time_based": false,
     "target_regions": [
       "forearm"
@@ -2994,7 +2992,7 @@
       "Dvig ramen proti ušesom."
     ],
     "regressions": [
-      "inverted_row_table"
+      "band_row"
     ],
     "progressions": [
       "Bolj vodoraven položaj telesa",
@@ -3063,7 +3061,7 @@
     ],
     "regressions": [
       "trx_row",
-      "inverted_row_table"
+      "band_row"
     ],
     "progressions": [
       "Veslanje z nogami na povišani podlagi"
@@ -3289,8 +3287,8 @@
   },
   {
     "id": "foot_assisted_pull_up",
-    "name": "Zgib z oporo stopal",
-    "name_en": "Foot-assisted pull-up",
+    "name": "Zgib z oporo stopal (navpični trup)",
+    "name_en": "Vertical foot-assisted pull-up",
     "pattern": "vertical_pull",
     "joint_type": "multi_joint",
     "goals": [
@@ -3299,8 +3297,8 @@
       "general_fitness"
     ],
     "equipment": [
-      "pull_up_bar",
-      "chair"
+      "barbell",
+      "rack"
     ],
     "level": "beginner",
     "primary_muscles": [
@@ -3312,22 +3310,32 @@
       "trunk"
     ],
     "cues": [
-      "Stopalo uporabi za toliko pomoči, da ohraniš nadzor.",
-      "Spuščaj se počasi."
+      "Nastavi drog v stojalu približno v višino prsnega koša in preveri, da je varno pritrjen.",
+      "Primi drog z nadprijemom. Spusti boke pod drog, pokrči kolke in kolena ter postavi stopala na tla nekoliko pred telesom, kot pri sedečem položaju.",
+      "Začni z iztegnjenimi komolci in čim bolj navpičnim trupom; ne nagibaj se nazaj v veslanje.",
+      "Potegni se navzgor z delom rok in hrbtnih mišic, stopala pa naj pomagajo toliko, da ohraniš nadzorovan celoten obseg giba.",
+      "Spuščaj se počasi do iztegnjenih komolcev, pri tem ohrani navpičen položaj trupa."
     ],
     "common_errors": [
-      "Prevelik odriv z nogami.",
+      "Trup se nagne nazaj in gibanje postane podobno veslanju.",
+      "Stopala so postavljena tako daleč naprej, da se spremeni vzorec v horizontalni priteg.",
+      "Prevelik odriv z nogami ali sunkovit začetek.",
+      "Skrajšan spodnji položaj brez iztegnjenih komolcev.",
       "Nenadzorovan spust."
     ],
     "regressions": [
-      "band_assisted_pull_up"
+      "Več pomoči stopal in/ali višji drog, ki omogoča lažji navpični položaj"
     ],
     "progressions": [
-      "Zgib z manj pomoči stopal"
+      "Manj pomoči stopal ob enaki navpični drži",
+      "band_assisted_pull_up",
+      "pull_up"
     ],
     "alternatives": [],
     "warnings": [
-      "Stol mora biti stabilen in postavljen tako, da ne ovira sestopa."
+      "Uporabljaj samo drog, ki je varno in stabilno pritrjen v stojalu.",
+      "Stopala naj bodo na nedrseči podlagi; pomoč nog naj bo postopna in nadzorovana.",
+      "Če se trup nagiba nazaj, prilagodi postavitev stopal in višino droga, da ohraniš navpični priteg."
     ],
     "single_joint": false,
     "equipment_any": [],
@@ -5046,7 +5054,7 @@
       "kettlebell"
     ],
     "loading_potential": "moderate",
-    "training_role": "mobility",
+    "training_role": "main",
     "time_based": false,
     "movement_family": "knee_dominant",
     "loading_mode": "external_load",
@@ -5107,14 +5115,14 @@
       "dumbbell"
     ],
     "loading_potential": "moderate",
-    "training_role": "mobility",
+    "training_role": "accessory",
     "time_based": false,
     "target_regions": [
       "ankle"
     ],
     "movement_family": "accessory",
     "loading_mode": "mixed",
-    "mobility_strength": false,
+    "mobility_strength": true,
     "functional_components": [],
     "movement_pattern": "accessory",
     "training_purposes": [
@@ -5166,14 +5174,14 @@
       "bodyweight"
     ],
     "loading_potential": "moderate",
-    "training_role": "mobility",
+    "training_role": "accessory",
     "time_based": false,
     "target_regions": [
       "ankle"
     ],
     "movement_family": "accessory",
     "loading_mode": "bodyweight_or_fixed_environment",
-    "mobility_strength": false,
+    "mobility_strength": true,
     "functional_components": [],
     "movement_pattern": "accessory",
     "training_purposes": [
@@ -5551,8 +5559,7 @@
     ],
     "regressions": [
       "trx_row",
-      "ring_row",
-      "inverted_row_table"
+      "ring_row"
     ],
     "progressions": [
       "Veslanje z večjo obremenitvijo ali premorom"
@@ -7818,8 +7825,8 @@
     "training_purposes": [
       "functional_fitness",
       "general_fitness",
-      "power",
-      "coordination"
+      "coordination",
+      "skill"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -8065,14 +8072,12 @@
       "Daljši bočni korak z nadzorovanim zaviranjem",
       "Počasno bočno prestopanje v obe smeri"
     ],
-    "alternatives": [
-      "lateral_shuffle"
-    ],
+    "alternatives": [],
     "warnings": [
       "Izvajaj na ravni, nedrseči podlagi. Če izgubiš ravnotežje, skrajšaj korak ali se vrni na prenos teže ob opori."
     ],
     "single_joint": false,
-    "training_role": "power",
+    "training_role": "accessory",
     "loading_potential": "low",
     "time_based": true,
     "endurance_type": "muscular",
@@ -8092,8 +8097,8 @@
     "training_purposes": [
       "functional_fitness",
       "general_fitness",
-      "power",
-      "coordination"
+      "coordination",
+      "skill"
     ],
     "stability_role": "incidental",
     "stability_focus": [
@@ -8173,7 +8178,7 @@
   },
   {
     "id": "wall_hip_hinge",
-    "name": "Predklon z ravnim hrbtom ob steni",
+    "name": "Predklon z nevtralno hrbtenico ob steni",
     "name_en": "Wall-supported hip hinge",
     "pattern": "hinge",
     "joint_type": "multi_joint",
@@ -8209,7 +8214,7 @@
       "Manjša razdalja od stene"
     ],
     "progressions": [
-      "Predklon z ravnim hrbtom (lastna teža)",
+      "Predklon z nevtralno hrbtenico (lastna teža)",
       "Romunski mrtvi dvig"
     ],
     "alternatives": [],
@@ -8304,6 +8309,222 @@
       "stability"
     ],
     "stability_role": "supporting",
+    "stability_focus": [
+      "trunk_control"
+    ]
+  },
+  {
+    "id": "kettlebell_lateral_deadlift",
+    "name": "Mrtvi dvig s kettlebellom bočno",
+    "name_en": "Lateral kettlebell deadlift",
+    "pattern": "hinge",
+    "joint_type": "multi_joint",
+    "goals": [
+      "strength",
+      "hypertrophy",
+      "general_fitness",
+      "functional"
+    ],
+    "equipment": [
+      "kettlebell"
+    ],
+    "equipment_any": [],
+    "level": "beginner",
+    "primary_muscles": [
+      "gluteus_maximus",
+      "hamstrings"
+    ],
+    "secondary_muscles": [
+      "quadriceps",
+      "spinal_erectors",
+      "trunk",
+      "forearms"
+    ],
+    "cues": [
+      "Kettlebell postavi ob stopalo v položaj, ki omogoča varen in dosegljiv prijem.",
+      "Pred dvigom ustvari napetost trupa in ohrani posameznikovo nevtralno krivino hrbtenice.",
+      "Breme dvigni z iztegom kolkov in kolen; gib izvedi nadzorovano."
+    ],
+    "common_errors": [
+      "Doseganje kettlebella z izgubo nadzora nad položajem hrbtenice.",
+      "Sukanje trupa ali nenadzorovan odmik bremena."
+    ],
+    "regressions": [
+      "bodyweight_hip_hinge",
+      "Mrtvi dvig s kettlebellom z dvignjenega položaja"
+    ],
+    "progressions": [
+      "deadlift",
+      "romanian_deadlift"
+    ],
+    "alternatives": [
+      "dumbbell_deadlift"
+    ],
+    "warnings": [
+      "Začni z lahkim bremenom in preveri, ali je položaj kettlebella ter prijem primeren za posameznika.",
+      "Če izvedba zahteva rotacijo ali stranski nagib trupa, ki ga ni mogoče nadzorovati, izberi drugo različico."
+    ],
+    "single_joint": false,
+    "training_role": "main",
+    "loading_potential": "moderate",
+    "time_based": false,
+    "movement_family": "hip_hinge",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": [],
+    "movement_pattern": "hinge",
+    "training_purposes": [
+      "strength",
+      "hypertrophy",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
+  },
+  {
+    "id": "plate_overhead_press",
+    "name": "Potisk nad glavo s kolutom",
+    "name_en": "Weight plate overhead press",
+    "pattern": "vertical_push",
+    "joint_type": "multi_joint",
+    "goals": [
+      "strength",
+      "hypertrophy",
+      "general_fitness",
+      "functional"
+    ],
+    "equipment": [
+      "weight_plate"
+    ],
+    "equipment_any": [],
+    "level": "beginner",
+    "primary_muscles": [
+      "deltoids"
+    ],
+    "secondary_muscles": [
+      "triceps",
+      "trunk",
+      "trapezius"
+    ],
+    "cues": [
+      "Kolut primi varno z obema rokama in začni v stabilnem položaju pred zgornjim delom trupa.",
+      "Potisk izvedi v razpoložljivi neboleči amplitudi, brez pretiranega iztega ledvenega dela.",
+      "Kolut nadzorovano vrni v začetni položaj."
+    ],
+    "common_errors": [
+      "Izrazit usločen položaj ledvenega dela.",
+      "Izguba nadzora nad kolutom ali nenadzorovan spust."
+    ],
+    "regressions": [
+      "band_overhead_press"
+    ],
+    "progressions": [
+      "barbell_overhead_press"
+    ],
+    "alternatives": [
+      "dumbbell_overhead_press"
+    ],
+    "warnings": [
+      "Uporabi lahek kolut, ki ga lahko varno primeš in nadzoruješ skozi celotno amplitudo.",
+      "Ne izvajaj skozi bolečino ali občutek nestabilnosti v rami."
+    ],
+    "single_joint": false,
+    "training_role": "main",
+    "loading_potential": "low",
+    "time_based": false,
+    "movement_family": "upper_push",
+    "loading_mode": "external_load",
+    "mobility_strength": false,
+    "functional_components": [],
+    "movement_pattern": "push",
+    "training_purposes": [
+      "strength",
+      "hypertrophy",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
+    "stability_focus": [
+      "trunk_control"
+    ]
+  },
+  {
+    "id": "supported_squat",
+    "name": "Počep z oporo rok",
+    "name_en": "Supported squat with hand support",
+    "pattern": "squat",
+    "joint_type": "multi_joint",
+    "goals": [
+      "hypertrophy",
+      "strength",
+      "general_fitness",
+      "functional"
+    ],
+    "equipment": [],
+    "level": "beginner",
+    "primary_muscles": [
+      "quadriceps",
+      "gluteus_maximus"
+    ],
+    "secondary_muscles": [
+      "adductors",
+      "trunk"
+    ],
+    "cues": [
+      "Izberi eno potrjeno oporo in pred vsako serijo preveri stabilnost; uporabljaj samo stabilne opore: TRX, varno pritrjeno elastiko, stabilen fiksni drog v višini prsnega koša ali nepremično oporo.",
+      "TRX ali elastika naj pomagata pri ravnotežju in razbremenitvi; pri elastiki preveri namensko sidrišče in stanje materiala.",
+      "Pri drogu uporabi samo stabilen rack; drog mora biti fiksiran in približno v višini prsnega koša.",
+      "Opora naj pomaga pri ravnotežju in razbremenitvi; ne vleci se z rokami navzgor.",
+      "Spuščaj se samo v amplitudo, ki jo lahko nadzoruješ brez stopnjevanja simptomov.",
+      "Ohrani stopala stabilna in kolena usmerjaj v smeri stopal."
+    ],
+    "common_errors": [
+      "Vlečenje telesa navzgor z rokami namesto nadzorovane izvedbe nog.",
+      "Uporaba premične ali nestabilne opore.",
+      "Siljenje v globino ali ponovitve kljub stopnjevanju bolečine."
+    ],
+    "regressions": [
+      "Vstajanje s stola (počep do stola)",
+      "Manjša amplituda ob stabilni opori"
+    ],
+    "progressions": [
+      "Počep z lastno težo (air squat)"
+    ],
+    "alternatives": [
+      "Vstajanje s stola (počep do stola)"
+    ],
+    "warnings": [
+      "Uporabi samo oporo, ki je stabilna in varno pritrjena. Elastika zahteva namensko sidrišče; drog mora biti zavarovan v racku.",
+      "Če se bolečina stopnjuje, postane ostra, spremeni gibanje ali se pojavi akutna oteklina oziroma spazem, test prekini.",
+      "Oporna različica ni dovoljenje za gib skozi akutno ali stopnjujočo se bolečino."
+    ],
+    "single_joint": false,
+    "equipment_any": [
+      "household_support",
+      "suspension_trainer",
+      "resistance_band",
+      "rack"
+    ],
+    "loading_potential": "low",
+    "training_role": "main",
+    "time_based": false,
+    "movement_family": "knee_dominant",
+    "loading_mode": "bodyweight_or_fixed_environment",
+    "mobility_strength": false,
+    "functional_components": [
+      "strength"
+    ],
+    "movement_pattern": "squat",
+    "training_purposes": [
+      "hypertrophy",
+      "strength",
+      "general_fitness",
+      "functional_fitness"
+    ],
+    "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
     ]
