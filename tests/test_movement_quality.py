@@ -73,3 +73,11 @@ def test_horizontal_pull_is_a_bent_over_row_with_a_stable_torso_angle():
     assert "veslanje v predklonu" in rubric["task"].lower()
     assert "kot predklona" in rubric["criteria"]["trunk_control"].lower()
     assert "vertikalni" not in rubric["task"].lower()
+
+
+def test_squat_pelvic_control_explicitly_limits_uncontrolled_butt_wink():
+    description = MOVEMENT_RUBRICS["squat"]["criteria"]["pelvic_control"].lower()
+    assert "butt-wink" in description
+    assert "brez nenadzorovanega" in description
+    assert "amplitudi" in description
+    assert "globino omeji" in description
