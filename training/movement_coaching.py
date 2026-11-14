@@ -105,6 +105,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "learning_methods": [
             {
                 "id": "scapular_coordination",
+                "learning_only": True,
                 "label": "Učenje gibanja lopatic brez dodatnega bremena",
                 "description": (
                     "Najprej v pokončnem položaju in nato v predklonu vadi nadzorovano "
@@ -151,6 +152,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "learning_methods": [
             {
                 "id": "unloaded_overhead_reach",
+                "learning_only": True,
                 "label": "Dvig rok nad glavo brez bremena",
                 "description": "Vadi počasen dvig in spust rok brez zunanjega bremena. Ohrani nadzor trupa in reber ter se ustavi v amplitudi, ki jo lahko ponoviš brez kompenzacije.",
                 "exercise_id": None,
