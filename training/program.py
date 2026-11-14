@@ -1223,6 +1223,7 @@ def generate_program(
                         "method": method["label"],
                         "description": method["description"],
                         "exercise_id": None,
+                        "demo_url": method.get("demo_url"),
                         "demonstration_videos": _learning_task_videos(pattern, method["id"], None),
                         "decision": structured_decision["decision"],
                         "sets": 1,
