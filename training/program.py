@@ -192,9 +192,7 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # Functional fitness is built from fundamental movement patterns and
         # locomotion, not generic balance/coordination add-ons.
         patterns = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
-        # Vertical pull is a required supplementary strength pattern, not a camera-assessment task.
-        if session_index == 0:
-            patterns.append("vertical_pull")
+        # Vertical pull is a supplementary strength pattern, not a camera-assessment task.
         # Keep all six assessed patterns represented across the week while
         # preserving locomotion and conditioning as distinct functional work.
         # Day 1: horizontal push + vertical pull + unilateral knee pattern.
