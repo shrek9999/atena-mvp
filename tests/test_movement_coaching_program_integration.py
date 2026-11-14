@@ -320,7 +320,7 @@ def test_needs_support_without_compatible_equipment_omits_only_that_pattern():
 def test_kettlebell_only_hinge_row_uses_the_kettlebell_catalogue_variant():
     profile = {
         **BASE,
-        "experience": "beginner",
+        "experience": "intermediate",
         "equipment": ["kettlebell", "bodyweight", "chair", "wall", "household_support"],
     }
     hinge = build_movement_decision(
