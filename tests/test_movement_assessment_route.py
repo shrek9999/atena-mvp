@@ -326,3 +326,5 @@ def test_program_route_passes_structured_six_pattern_decisions(monkeypatch, clie
     assert body["movement_assessment_applied"] is True
     assert body["movement_decisions_stored"] is False
     assert body["movement_adaptation"]["source"] == "structured_six_pattern_decisions"
+
+# CI verification snapshot: movement-control readiness gate.
