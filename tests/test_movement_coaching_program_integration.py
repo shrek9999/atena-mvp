@@ -317,7 +317,7 @@ def test_needs_support_without_compatible_equipment_omits_only_that_pattern():
     )
 
 
-def test_kettlebell_only_hinge_row_uses_the_kettlebell_catalogue_variant():
+def test_kettlebell_only_ready_row_does_not_override_conservative_loading_gate():
     profile = {
         **BASE,
         "experience": "intermediate",
@@ -351,6 +351,10 @@ def test_kettlebell_only_hinge_row_uses_the_kettlebell_catalogue_variant():
     row["training_phase"] = "capacity_development"
     plan = generate_program(profile, movement_decisions={"hinge": hinge, "horizontal_pull": row})
     rows = _pattern_exercises(plan, "horizontal_pull")
-    assert rows
-    assert all(item["exercise_id"] == "kettlebell_one_arm_row" for item in rows)
+    assert rows == []
+    assert any(
+        event["pattern"] == "horizontal_pull"
+        and event["action"] == "omitted_no_conservative_starting_variant"
+        for event in plan["movement_adaptation"]["events"]
+    )
 
