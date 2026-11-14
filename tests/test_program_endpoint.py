@@ -16,7 +16,7 @@ def _six_pattern_decisions():
     from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
     return {
         pattern: build_movement_decision(
-            pattern, "READY",
+            pattern, "LEARN",
             user_report={"status": "comfortable"},
             decision_reason="Osnovno gibanje je po samooceni udobno in nadzorovano.",
         )
