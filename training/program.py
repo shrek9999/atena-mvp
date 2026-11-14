@@ -195,13 +195,15 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # Vertical pull is a required supplementary strength pattern, not a camera-assessment task.
         if session_index == 0:
             patterns.append("vertical_pull")
-        # Rotate unilateral knee-dominant work and locomotion across sessions.
-        patterns.append("lunge" if session_index % 2 == 0 else "locomotion")
-        # Rotate conditioning into the later session rather than stacking it
-        # on top of all six strength patterns in one workout. This preserves
-        # vertical pulling across the week and keeps each session <= 6 exercises.
-        if session_minutes > 30 and session_index > 0:
-            patterns.append("conditioning")
+        # Keep all six assessed patterns represented across the week:
+        # vertical pull supplements the first session; vertical push is trained
+        # in the second. Conditioning is added only when session time permits.
+        if session_index == 0:
+            patterns.extend(["vertical_pull", "lunge"])
+        else:
+            patterns.append("vertical_push")
+            if session_minutes > 30:
+                patterns.append("conditioning")
         if include_stability:
             patterns.insert(0, "trunk_stability")
         # Experience is not a landing-readiness screen: no default jumps.
