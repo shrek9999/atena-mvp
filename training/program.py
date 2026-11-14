@@ -692,6 +692,10 @@ def generate_program(
                 raise ProgramValidationError(
                     f"Vzorec {pattern} je označen kot nejasen ali neocenjen, zato ne sme biti označen kot READY."
                 )
+            if decision == "READY" and report_status != "movement_controlled":
+                raise ProgramValidationError(
+                    f"Vzorec {pattern} ne more biti READY samo na podlagi udobne samoocene ali manjkajočega poročila; potreben je preverjen seznam motoričnega nadzora."
+                )
             if report_status == "comfortable" and decision == "READY":
                 raise ProgramValidationError(
                     f"Vzorec {pattern} je samoocenjen kot udoben, vendar še nima potrjenega učenja motoričnega nadzora; uporabi LEARN."
