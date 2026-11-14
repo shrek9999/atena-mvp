@@ -40,6 +40,7 @@ def test_learn_decision_selects_reaching_squat_and_adds_learning_task():
     assert tasks
     assert all(task["method_id"] == "reaching_counterbalance" for task in tasks)
     assert all(task["exercise_id"] is None for task in tasks)
+    assert all(task["demo_url"] == "https://youtu.be/vGu9T3FFjmc" for task in tasks)
     assert all(task["tempo"] == "3-1-1" for task in tasks)
 
 
