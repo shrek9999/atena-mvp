@@ -644,8 +644,20 @@ def generate_program(
                 and report_status != "symptoms_reported"
                 and method is None
             ):
+                preferred_learning_methods = {
+                    "squat": "supported_squat_assistance" if report_status == "needs_support" else "reaching_counterbalance",
+                    "hinge": "wall_hip_hinge" if report_status == "needs_support" else "dowel_four_point",
+                    "horizontal_push": "incline_push_up",
+                    "horizontal_pull": "scapular_coordination",
+                    "vertical_push": "unloaded_overhead_reach",
+                    "lunge": "supported_split_squat",
+                }
+                preferred_id = preferred_learning_methods.get(pattern)
                 method = next(
-                    (item for item in method_options if item.get("learning_only") is True),
+                    (
+                        item for item in method_options
+                        if item["id"] == preferred_id and item.get("learning_only") is True
+                    ),
                     None,
                 )
                 method_id = method["id"] if method else None
