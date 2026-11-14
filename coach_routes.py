@@ -3775,6 +3775,7 @@ def save_six_pattern_movement_assessment(profile_id):
                 ):
                     user_report["status"] = "movement_controlled"
                     decision = "READY"
+                    reason = "Po učenju je uporabnik izrecno potrdil vse kriterije vzorca in ponovljivost najmanj dveh zaporednih ponovitev. Vzorec lahko preide v razvoj zmogljivosti; obremenitev se še vedno določa postopno."
             if "acute_warning_signs" in value:
                 warning_flags = value["acute_warning_signs"]
                 if (
