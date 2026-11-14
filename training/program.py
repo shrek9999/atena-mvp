@@ -656,8 +656,22 @@ def generate_program(
             ]
             available_ids = {item["id"] for item in available_options}
             selected_id = record.get("selected_exercise_id")
-            method_exercise_id = method.get("exercise_id") if method else None
-            target_id = selected_id or method_exercise_id
+            # LEARN is a separate motor-learning phase, never a catalogue work set.
+            # A teaching method may reference a supported demo exercise, but that
+            # reference must not leak into the strength/conditioning prescription.
+            if decision == "LEARN" and selected_id is not None:
+                raise ProgramValidationError(
+                    f"Učna faza {pattern} ne sme vsebovati predpisane delovne vaje."
+                )
+            if decision == "LEARN" and (method is None or method.get("learning_only") is not True):
+                raise ProgramValidationError(
+                    f"Za vzorec {pattern} mora biti izbrana izrecna neobremenjena učna metoda."
+                )
+            method_exercise_id = (
+                method.get("exercise_id")
+                if method and method.get("learning_only") is not True else None
+            )
+            target_id = None if decision == "LEARN" else (selected_id or method_exercise_id)
             if target_id and target_id not in available_ids:
                 raise ProgramValidationError(
                     f"Vaja {target_id} za {pattern} ni združljiva z opremo ali izkušnjami v profilu."
@@ -675,6 +689,10 @@ def generate_program(
                 if method is not None and method.get("learning_only") is True:
                     # A no-load coordination task is intentionally not replaced by a loaded catalogue exercise.
                     pass
+                elif decision == "LEARN":
+                    raise ProgramValidationError(
+                        f"Vzorec {pattern} mora ostati v neobremenjeni učni fazi do potrditve vseh kriterijev."
+                    )
                 elif not available_options:
                     # Omit only this pattern when no verified learning variation is available.
                     decision = "UNASSESSABLE"
