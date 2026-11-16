@@ -1670,6 +1670,15 @@ def generate_program(
             for muscle in candidate["primary_muscles"]:
                 exposure[muscle] += prescription["sets"]
 
+        # Pattern-learning tasks are performed at the start of the session as part
+        # of the warm-up, not as a separate practice block after the warm-up.
+        learning_warmup_minutes = sum(task["estimated_minutes"] for task in learning_tasks_for_session)
+        warm_up_minutes += learning_warmup_minutes
+        warm_up_range = (
+            f"{warm_up_minutes} min" if learning_warmup_minutes
+            else ("5–7 min" if p["session_minutes"] <= 30 else "5–10 min")
+        )
+
         # The session duration is an approximate envelope, not a rigid work/rest split.
         planning_budget = p["session_minutes"]
         # Preserve the main compound patterns; trim optional work first when needed.
@@ -1753,9 +1762,7 @@ def generate_program(
                 for muscle in removed["primary_muscles"]:
                     exposure[muscle] -= removed["prescription"]["sets"]
 
-        estimated = _estimated_minutes(selected, warm_up_minutes) + sum(
-            task["estimated_minutes"] for task in learning_tasks_for_session
-        )
+        estimated = _estimated_minutes(selected, warm_up_minutes)
         if estimated > p["session_minutes"]:
             raise ProgramValidationError(
                 f"Z razpoložljivim časom {p['session_minutes']} min ni mogoče sestaviti uravnoteženega treninga. Povečaj čas ali zmanjša zahtevnost cilja."
@@ -1777,7 +1784,7 @@ def generate_program(
             ),
             "session_phase": "movement_learning" if not selected and learning_tasks_for_session else "mixed_or_capacity",
             "warm_up_minutes": warm_up_minutes,
-            "warm_up_range": "5–7 min" if p["session_minutes"] <= 30 else "5–10 min",
+            "warm_up_range": warm_up_range,
             **({"mobility_block": mobility_block} if mobility_block else {}),
             **({"camera_coordination_block": camera_coordination_block} if camera_coordination_block else {}),
             "exercise_count": len(selected),

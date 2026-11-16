@@ -1,6 +1,6 @@
 """Programme integration for structured six-pattern movement decisions."""
 from training.movement_coaching import build_movement_decision
-from training.program import PATTERN_LABELS, ProgramValidationError, generate_program
+from training.program import PATTERN_LABELS, ProgramValidationError, _estimated_minutes, generate_program
 
 
 BASE = {
@@ -42,6 +42,27 @@ def test_learn_decision_selects_reaching_squat_and_adds_learning_task():
     assert all(task["exercise_id"] is None for task in tasks)
     assert all(task["demo_url"] == "https://youtu.be/vGu9T3FFjmc" for task in tasks)
     assert all(task["tempo"] == "3-1-1" for task in tasks)
+
+
+def test_movement_learning_tasks_are_counted_inside_warmup_once():
+    decision = build_movement_decision(
+        "squat", "LEARN",
+        selected_learning_method="supported_squat_assistance",
+        decision_reason="Najprej utrdi počep z oporo.",
+    )
+    plan = generate_program(BASE, movement_decisions={"squat": decision})
+    for session in plan["sessions"]:
+        tasks = [
+            task for task in session["learning_tasks"]
+            if task["movement_pattern"] == "squat"
+        ]
+        assert tasks
+        assert session["warm_up_minutes"] == 9
+        assert session["warm_up_range"] == "9 min"
+        assert session["estimated_minutes"] == _estimated_minutes(
+            session["exercises"], session["warm_up_minutes"]
+        )
+        assert session["estimated_minutes"] <= session["available_minutes"]
 
 
 def test_dowel_hinge_learning_task_uses_a_catalogue_supported_low_skill_variant():
