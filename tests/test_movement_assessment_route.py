@@ -369,3 +369,125 @@ def test_program_route_rejects_squat_capacity_phase_without_lumbopelvic_control(
     )
     assert response.status_code == 400
     assert response.get_json()["invalid_report_patterns"] == ["squat"]
+
+
+def _movement_control_for(pattern, *, all_true=True, confirmed=True, repeatable=True):
+    criteria = {
+        "squat": {"tempo", "balance", "knee_hip_foot_control", "lumbopelvic_control", "tolerated_rom"},
+        "hinge": {"tempo", "hip_hinge_coordination", "spine_control", "balance", "tolerated_rom"},
+        "horizontal_push": {"tempo", "shoulder_elbow_wrist_control", "trunk_control", "stable_support", "tolerated_rom"},
+        "horizontal_pull": {"tempo", "scapular_arm_control", "trunk_control", "stable_base", "tolerated_rom"},
+        "vertical_push": {"tempo", "overhead_control", "trunk_control", "scapular_control", "tolerated_rom"},
+        "lunge": {"tempo", "balance", "pelvis_hip_knee_foot_control", "hip_extension", "trunk_control", "tolerated_rom"},
+    }[pattern]
+    return {
+        "confirmed_by_user": confirmed,
+        "repeatable": repeatable,
+        "criteria": {key: all_true for key in criteria},
+    }
+
+
+def test_saved_six_pattern_assessment_unlocks_only_explicitly_confirmed_pattern(monkeypatch, client):
+    import coach_routes
+    from training.movement_coaching import PATTERN_DEFINITIONS
+
+    captured = {}
+    monkeypatch.setattr(coach_routes, "_profile_token", lambda: "profile-token")
+    monkeypatch.setattr(
+        coach_routes, "store_get_profile",
+        lambda profile_id, token: {"health_data_consent": True},
+    )
+
+    def save_assessment(profile_id, token, record):
+        captured["record"] = record
+        return {"updated_at": "2026-11-14T17:00:00Z"}
+
+    monkeypatch.setattr(coach_routes, "store_save_movement_assessment", save_assessment)
+    patterns = {
+        pattern: {"status": "uncertain"}
+        for pattern in PATTERN_DEFINITIONS
+    }
+    patterns["squat"] = {
+        "status": "comfortable",
+        "movement_control": _movement_control_for("squat"),
+    }
+
+    response = client.put(
+        "/coach/profile/test-profile/movement-assessment",
+        headers={"X-Profile-Token": "profile-token"},
+        json={"movement_assessment_consent": True, "movement_patterns": patterns},
+    )
+
+    assert response.status_code == 200
+    decisions = response.get_json()["movement_decisions"]
+    assert decisions["squat"]["decision"] == "READY"
+    assert decisions["squat"]["user_report"]["status"] == "movement_controlled"
+    assert decisions["squat"]["training_phase"] == "capacity_development"
+    assert decisions["hinge"]["decision"] == "UNASSESSABLE"
+    assert captured["record"]["decisions"]["squat"]["user_report"]["movement_control"]["repeatable"] is True
+
+
+def test_saved_six_pattern_assessment_keeps_incomplete_control_in_learning(monkeypatch, client):
+    import coach_routes
+    from training.movement_coaching import PATTERN_DEFINITIONS
+
+    monkeypatch.setattr(coach_routes, "_profile_token", lambda: "profile-token")
+    monkeypatch.setattr(
+        coach_routes, "store_get_profile",
+        lambda profile_id, token: {"health_data_consent": True},
+    )
+    monkeypatch.setattr(
+        coach_routes, "store_save_movement_assessment",
+        lambda profile_id, token, record: {"updated_at": "2026-11-14T17:00:00Z"},
+    )
+    patterns = {
+        pattern: {"status": "uncertain"}
+        for pattern in PATTERN_DEFINITIONS
+    }
+    patterns["squat"] = {
+        "status": "comfortable",
+        "movement_control": _movement_control_for("squat", all_true=False),
+    }
+
+    response = client.put(
+        "/coach/profile/test-profile/movement-assessment",
+        headers={"X-Profile-Token": "profile-token"},
+        json={"movement_assessment_consent": True, "movement_patterns": patterns},
+    )
+
+    assert response.status_code == 200
+    squat = response.get_json()["movement_decisions"]["squat"]
+    assert squat["decision"] == "LEARN"
+    assert squat["user_report"]["status"] == "comfortable"
+    assert "training_phase" not in squat
+
+
+def test_saved_six_pattern_assessment_rejects_malformed_control_criteria(monkeypatch, client):
+    import coach_routes
+    from training.movement_coaching import PATTERN_DEFINITIONS
+
+    monkeypatch.setattr(coach_routes, "_profile_token", lambda: "profile-token")
+    monkeypatch.setattr(
+        coach_routes, "store_get_profile",
+        lambda profile_id, token: {"health_data_consent": True},
+    )
+    patterns = {
+        pattern: {"status": "uncertain"}
+        for pattern in PATTERN_DEFINITIONS
+    }
+    patterns["squat"] = {
+        "status": "comfortable",
+        "movement_control": {
+            "confirmed_by_user": True,
+            "repeatable": True,
+            "criteria": {"tempo": True},
+        },
+    }
+
+    response = client.put(
+        "/coach/profile/test-profile/movement-assessment",
+        headers={"X-Profile-Token": "profile-token"},
+        json={"movement_assessment_consent": True, "movement_patterns": patterns},
+    )
+
+    assert response.status_code == 400

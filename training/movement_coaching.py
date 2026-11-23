@@ -30,18 +30,24 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "learning_methods": [
             {
                 "id": "supported_squat_assistance",
+                "learning_only": True,
                 "label": "Počep z oporo rok",
+                "demo_url": "https://youtu.be/vGu9T3FFjmc",
                 "description": "Za razbremenitev in ravnotežje uporabi TRX, varno pritrjeno elastiko, fiksiran drog v racku približno v višini prsnega koša ali stabilno nepremično oporo. Z rokami si pomagaj toliko, da lahko noge še vedno nadzorovano izvajajo gib.",
                 "exercise_id": "supported_squat",
             },
             {
                 "id": "reaching_counterbalance",
+                "learning_only": True,
+                "demo_url": "https://youtu.be/vGu9T3FFjmc",
                 "label": "Reaching squat s protiutežjo",
                 "description": "Izteg rok oziroma lahek kolut pred telesom uporabi kot protiutež za lažje učenje ravnotežja in organizacije počepa.",
                 "exercise_id": "reaching_squat",
             },
             {
                 "id": "target_squat",
+                "learning_only": True,
+                "demo_url": "https://youtu.be/vGu9T3FFjmc",
                 "label": "Počep do stabilne tarče",
                 "description": "Višino tarče prilagodi tako, da posameznik lahko ponovi nadzorovan spust in vstajanje.",
                 "exercise_id": "chair_sit_to_stand",
@@ -59,7 +65,9 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "learning_methods": [
             {
                 "id": "dowel_four_point",
+                "learning_only": True,
                 "label": "Predklon s palico – tri stične in ena kontrolna točka",
+                "demo_url": "https://youtu.be/8KhEVCDOkRk",
                 "description": (
                     "Palica ohranja stik s trtico oziroma križnično-sakralnim predelom, "
                     "torakalnim delom hrbtenice in zadnjim delom glave. Četrta kontrolna "
@@ -71,6 +79,8 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             },
             {
                 "id": "wall_hip_hinge",
+                "learning_only": True,
+                "demo_url": "https://youtu.be/8KhEVCDOkRk",
                 "label": "Predklon ob steni",
                 "description": "Uči pomik bokov nazaj in nadzorovan predklon z nevtralnim položajem hrbtenice. Pri nelagodju v hrbtu zmanjša amplitudo in obremenitev; začni ob steni, ohrani nadzor trupa in ne sili v globino.",
                 "exercise_id": "wall_hip_hinge",
@@ -88,7 +98,9 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "learning_methods": [
             {
                 "id": "incline_push_up",
+                "learning_only": True,
                 "label": "Skleca na povišani opori",
+                "demo_url": "https://youtu.be/fAMAAO21OC0",
                 "description": "Višino stabilne opore izberi tako, da je celotna ponovitev nadzorovana.",
                 "exercise_id": "push_up_incline",
             },
@@ -105,6 +117,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "learning_methods": [
             {
                 "id": "scapular_coordination",
+                "demo_url": "https://youtu.be/MSV-lzGszlA",
                 "learning_only": True,
                 "label": "Učenje gibanja lopatic brez dodatnega bremena",
                 "description": (
@@ -145,7 +158,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
     "vertical_push": {
         "label": "Vertikalni potisk – potisk nad glavo",
         "task_id": "overhead_press",
-        "task": "Najprej nadzorovan dvig rok nad glavo brez bremena; zunanji upor se uvede šele po potrjenem nadzoru poti rok, trupa in tolerirane amplitude.",
+        "task": "Najprej nadzorovan dvig rok nad glavo brez bremena. Roki ostaneta v širini ramen, komolca iztegnjena, rebra nad medenico brez hiperekstenzije prsno-ledvenega prehoda; lopatici se naravno rotirata navzgor brez pretiranega skomiganja ramen. Zunanji upor se uvede šele po potrjenem nadzoru in tolerirani fleksiji rame.",
         "exercise_ids": [
             "band_overhead_press", "overhead_press", "plate_overhead_press", "barbell_overhead_press", "pike_push_up",
         ],
@@ -154,7 +167,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                 "id": "unloaded_overhead_reach",
                 "learning_only": True,
                 "label": "Dvig rok nad glavo brez bremena",
-                "description": "Vadi počasen dvig in spust rok brez zunanjega bremena. Ohrani nadzor trupa in reber ter se ustavi v amplitudi, ki jo lahko ponoviš brez kompenzacije.",
+                "description": "Vadi počasen dvig in spust rok brez bremena. Ohrani rebra nad medenico, komolca iztegnjena in roki v širini ramen. Dovoli naravno rotacijo lopatic navzgor, vendar ne kompenziraj s pretiranim skomiganjem ali hiperekstenzijo prsno-ledvenega dela. Uporabi največjo nadzorovano fleksijo rame.",
                 "exercise_id": None,
             },
             {
@@ -174,7 +187,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
     "lunge": {
         "label": "Izpadni korak",
         "task_id": "controlled_lunge",
-        "task": "Izpadni korak oziroma statični razkorak v nadzorovanem obsegu in z ustrezno oporo.",
+        "task": "Izpadni korak oziroma statični razkorak v nadzorovanem obsegu: stabilna opora stopala in kolena, medenica poravnana v čelni ravnini in obrnjena pravokotno na smer gibanja, ustrezna ekstenzija kolka ter nadzorovan naklon trupa. Preveri obe strani.",
         "exercise_ids": [
             "supported_split_squat", "split_squat", "reverse_lunge",
             "forward_lunge", "walking_lunge", "rear_foot_elevated_split_squat", "atg_split_squat",
@@ -182,12 +195,16 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "learning_methods": [
             {
                 "id": "supported_split_squat",
+                "learning_only": True,
                 "label": "Izpadni počep na mestu z oporo",
-                "description": "Opora je namenjena ravnotežju; posameznik se nanjo ne sme sunkovito vleči navzgor.",
+                "demo_url": "https://youtu.be/MYg8xEdmTGk",
+                "description": "Opora je namenjena ravnotežju. Ohraniti je treba stabilno stopalo in koleno, vodoravno in smeri gibanja pravokotno usmerjeno medenico ter nadzorovan naklon trupa; pri vrnitvi izkoristi ekstenzijo kolka brez hiperekstenzije ledvene hrbtenice.",
                 "exercise_id": "supported_split_squat",
             },
             {
                 "id": "static_split_squat",
+                "learning_only": True,
+                "demo_url": "https://youtu.be/MYg8xEdmTGk",
                 "label": "Statični izpadni počep",
                 "description": "Najprej utrdi položaj stopal in nadzor spuščanja, nato izberi dinamično različico.",
                 "exercise_id": "split_squat",

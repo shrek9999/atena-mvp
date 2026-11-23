@@ -17,6 +17,19 @@ def test_all_six_patterns_and_catalogue_links_are_valid():
     assert result["exercise_links_checked"] >= 30
 
 
+def test_coach_demo_urls_are_attached_to_the_matching_learning_patterns():
+    expected = {
+        "squat": "https://youtu.be/vGu9T3FFjmc",
+        "hinge": "https://youtu.be/8KhEVCDOkRk",
+        "horizontal_push": "https://youtu.be/fAMAAO21OC0",
+        "horizontal_pull": "https://youtu.be/MSV-lzGszlA",
+        "lunge": "https://youtu.be/MYg8xEdmTGk",
+    }
+    for pattern, url in expected.items():
+        coaching = get_pattern_coaching(pattern)
+        assert any(method.get("demo_url") == url for method in coaching["learning_methods"])
+
+
 def test_squat_reaching_squat_is_a_learning_method_not_a_mandatory_first_step():
     squat = get_pattern_coaching("squat")
     method = next(item for item in squat["learning_methods"] if item["id"] == "reaching_counterbalance")

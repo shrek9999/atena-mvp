@@ -2800,8 +2800,8 @@ def coach_program():
         "hinge": {"tempo", "hip_hinge_coordination", "spine_control", "balance", "tolerated_rom"},
         "horizontal_push": {"tempo", "shoulder_elbow_wrist_control", "trunk_control", "stable_support", "tolerated_rom"},
         "horizontal_pull": {"tempo", "scapular_arm_control", "trunk_control", "stable_base", "tolerated_rom"},
-        "vertical_push": {"tempo", "overhead_control", "trunk_control", "balance", "tolerated_rom"},
-        "lunge": {"tempo", "balance", "pelvis_hip_knee_foot_control", "trunk_control", "tolerated_rom"},
+        "vertical_push": {"tempo", "overhead_control", "trunk_control", "scapular_control", "tolerated_rom"},
+        "lunge": {"tempo", "balance", "pelvis_hip_knee_foot_control", "hip_extension", "trunk_control", "tolerated_rom"},
     }
     invalid_report_patterns = []
     for pattern, record in movement_decisions.items():
@@ -3736,11 +3736,46 @@ def save_six_pattern_movement_assessment(profile_id):
             allowed_keys = {"status"}
             if status == "symptoms_reported":
                 allowed_keys |= {"regression_test", "selected_exercise_id", "acute_warning_signs"}
+            elif status == "comfortable":
+                allowed_keys.add("movement_control")
             if set(value) - allowed_keys:
                 return jsonify({"error": f"Vzorec {pattern} vsebuje nepričakovana polja."}), 400
             user_report = {"status": status}
             selected_exercise_id = value.get("selected_exercise_id")
             decision = status_to_decision[status]
+
+            # A comfortable self-report remains LEARN. READY is persisted only
+            # after the user explicitly confirms every pattern-specific control
+            # criterion and repeatability; camera proxies are never accepted here.
+            movement_control = value.get("movement_control")
+            if movement_control is not None:
+                required_control = {
+                    "squat": {"tempo", "balance", "knee_hip_foot_control", "lumbopelvic_control", "tolerated_rom"},
+                    "hinge": {"tempo", "hip_hinge_coordination", "spine_control", "balance", "tolerated_rom"},
+                    "horizontal_push": {"tempo", "shoulder_elbow_wrist_control", "trunk_control", "stable_support", "tolerated_rom"},
+                    "horizontal_pull": {"tempo", "scapular_arm_control", "trunk_control", "stable_base", "tolerated_rom"},
+                    "vertical_push": {"tempo", "overhead_control", "trunk_control", "scapular_control", "tolerated_rom"},
+                    "lunge": {"tempo", "balance", "pelvis_hip_knee_foot_control", "hip_extension", "trunk_control", "tolerated_rom"},
+                }[pattern]
+                if (
+                    not isinstance(movement_control, dict)
+                    or set(movement_control) != {"confirmed_by_user", "repeatable", "criteria"}
+                    or not isinstance(movement_control.get("confirmed_by_user"), bool)
+                    or not isinstance(movement_control.get("repeatable"), bool)
+                    or not isinstance(movement_control.get("criteria"), dict)
+                    or set(movement_control["criteria"]) != required_control
+                    or any(not isinstance(flag, bool) for flag in movement_control["criteria"].values())
+                ):
+                    return jsonify({"error": f"Kontrolni kriteriji za {pattern} nimajo veljavne strukture."}), 400
+                user_report["movement_control"] = movement_control
+                if (
+                    movement_control["confirmed_by_user"] is True
+                    and movement_control["repeatable"] is True
+                    and all(movement_control["criteria"].values())
+                ):
+                    user_report["status"] = "movement_controlled"
+                    decision = "READY"
+                    reason = "Po učenju je uporabnik izrecno potrdil vse kriterije vzorca in ponovljivost najmanj dveh zaporednih ponovitev. Vzorec lahko preide v razvoj zmogljivosti; obremenitev se še vedno določa postopno."
             if "acute_warning_signs" in value:
                 warning_flags = value["acute_warning_signs"]
                 if (
@@ -3809,6 +3844,8 @@ def save_six_pattern_movement_assessment(profile_id):
                 selected_exercise_id=selected_exercise_id,
                 decision_reason=reason,
             )
+            if decision == "READY":
+                decisions[pattern]["training_phase"] = "capacity_development"
         token = _profile_token()
         profile = store_get_profile(profile_id, token)
         if not profile["health_data_consent"]:

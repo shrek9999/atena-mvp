@@ -9,8 +9,9 @@ from typing import Any
 
 PATTERNS = {"squat", "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge", "coordination"}
 SCALAR_KEYS = {
-    "knee_flexion_proxy_deg", "heel_lift_visible", "bilateral_lower_limb_visibility",
-    "hip_angle_proxy_deg", "torso_to_head_hip_alignment_error_proxy", "trunk_tilt_proxy_deg",
+    "knee_flexion_proxy_deg", "heel_lift_visible", "heel_contact_check", "bilateral_lower_limb_visibility",
+    "hip_angle_proxy_deg", "hip_angle_excursion_proxy_deg", "torso_to_head_hip_alignment_error_proxy", "trunk_tilt_proxy_deg",
+    "scapular_control", "shoulder_elevation", "rib_trunk_control",
     "dowel_three_contact_check", "posterior_chain_range",
     "support_height", "elbow_bottom_proxy_deg", "elbow_top_proxy_deg",
     "shoulder_translation_between_phases_proxy", "scapular_pattern",
@@ -21,6 +22,15 @@ SCALAR_KEYS = {
     "pelvis_level_difference_proxy", "stance_width_proxy",
     "cross_body_alternation_observed", "left_to_right_contact_frames",
     "right_to_left_contact_frames", "alternating_transitions_proxy",
+    "knee_position_change_proxy_deg", "repetitions_detected", "range_of_motion_proxy",
+    "left_knee_tracking_proxy", "right_knee_tracking_proxy", "knee_angle_asymmetry_proxy_deg",
+    "hip_vertical_excursion_proxy", "pelvic_control",
+    "observed_camera_side", "visible_side", "side_arm_raise_angle_proxy_deg",
+    "arm_spacing_to_shoulder_width_proxy", "front_elbow_extension_proxy_deg",
+    "shoulder_flexion_excursion_proxy_deg", "hip_extension_excursion_proxy_deg",
+    "frontal_pelvis_level_difference_proxy", "frontal_left_knee_tracking_proxy",
+    "frontal_right_knee_tracking_proxy",
+    "side_trunk_tilt_proxy_deg", "side_elbow_angle_proxy_deg",
 }
 
 
@@ -44,7 +54,7 @@ def validate_camera_observations(observations: Any, protocol: Any) -> tuple[dict
                 not isinstance(total_frames, int) or isinstance(total_frames, bool) or
                 valid_frames < 0 or total_frames < valid_frames or total_frames > 2000):
             raise CameraObservationError("Neveljavno število kamernih sličic.")
-        if record.get("source") != "browser_pose_landmarker" or record.get("analysis_version") != "six-pattern-proxy-v1":
+        if record.get("source") != "browser_pose_landmarker" or record.get("analysis_version") not in {"six-pattern-proxy-v1", "six-pattern-proxy-v2"}:
             raise CameraObservationError("Nepodprt vir ali različica kamerne analize.")
         limitations = record.get("limitations")
         values = record.get("observations")
@@ -93,20 +103,40 @@ def validate_camera_observations(observations: Any, protocol: Any) -> tuple[dict
             "observations": clean_values,
             "limitations": limitations,
             "source": "browser_pose_landmarker",
-            "analysis_version": "six-pattern-proxy-v1",
+            "analysis_version": record["analysis_version"],
         }
     if not isinstance(protocol, dict):
         raise CameraObservationError("Manjka protokol kamerne analize.")
-    if (protocol.get("version") != "six-pattern-camera-flow-v1" or
+    if (protocol.get("version") not in {"six-pattern-camera-flow-v1", "six-pattern-camera-flow-v3", "six-pattern-camera-flow-v4"} or
             not isinstance(protocol.get("dowel_three_contact_user_confirmed"), bool) or
             protocol.get("push_up_support_height") not in {"floor", "low_support", "chair", "table", "other"} or
             protocol.get("video_stored") is not False or protocol.get("video_uploaded") is not False):
         raise CameraObservationError("Protokol zasebnosti kamere ni veljaven.")
-    clean_protocol = {
-        "version": "six-pattern-camera-flow-v1",
-        "dowel_three_contact_user_confirmed": protocol["dowel_three_contact_user_confirmed"],
-        "push_up_support_height": protocol["push_up_support_height"],
-        "video_stored": False,
-        "video_uploaded": False,
-    }
+    if protocol["version"] in {"six-pattern-camera-flow-v3", "six-pattern-camera-flow-v4"}:
+        expected_views = 9 if protocol["version"] == "six-pattern-camera-flow-v4" else 8
+        if (protocol.get("views") != expected_views or protocol.get("repetitions") != 2 or
+                protocol.get("tempo") != "3-1-1" or
+                protocol.get("lunge_repetitions_total") != 2 or
+                protocol.get("lunge_one_per_side") is not True):
+            raise CameraObservationError("Protokol šestih testov ne ustreza dogovorjenemu zaporedju pogledov.")
+        clean_protocol = {
+            "version": protocol["version"],
+            "views": expected_views,
+            "repetitions": 2,
+            "tempo": "3-1-1",
+            "lunge_repetitions_total": 2,
+            "lunge_one_per_side": True,
+            "dowel_three_contact_user_confirmed": protocol["dowel_three_contact_user_confirmed"],
+            "push_up_support_height": protocol["push_up_support_height"],
+            "video_stored": False,
+            "video_uploaded": False,
+        }
+    else:
+        clean_protocol = {
+            "version": "six-pattern-camera-flow-v1",
+            "dowel_three_contact_user_confirmed": protocol["dowel_three_contact_user_confirmed"],
+            "push_up_support_height": protocol["push_up_support_height"],
+            "video_stored": False,
+            "video_uploaded": False,
+        }
     return normalized, clean_protocol

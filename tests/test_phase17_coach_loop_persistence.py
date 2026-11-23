@@ -343,7 +343,15 @@ def test_five_persona_saved_profile_training_feedback_cycle(monkeypatch, tmp_pat
             for item in sessions
         ), persona_name
 
-        first_exercise = sessions[0]["exercises"][0]
+        first_exercise = sessions[0]["exercises"][0] if sessions[0]["exercises"] else None
+        exercise_log = [{
+            "exercise_id": first_exercise["exercise_id"],
+            "planned_sets": 1,
+            "target_reps_min": 1,
+            "target_reps_max": 30,
+            "execution_quality": "controlled",
+            "set_results": [{"reps": 8, "load_kg": 0, "rir": 3}],
+        }] if first_exercise else []
         logged = client.post(
             f"/coach/profile/{profile_id}/sessions",
             headers=headers,
@@ -354,14 +362,7 @@ def test_five_persona_saved_profile_training_feedback_cycle(monkeypatch, tmp_pat
                 "recovery": "good",
                 "completed": True,
                 "program_version_id": first_version,
-                "exercises": [{
-                    "exercise_id": first_exercise["exercise_id"],
-                    "planned_sets": 1,
-                    "target_reps_min": 1,
-                    "target_reps_max": 30,
-                    "execution_quality": "controlled",
-                    "set_results": [{"reps": 8, "load_kg": 0, "rir": 3}],
-                }],
+                "exercises": exercise_log,
                 "discomfort_reported": False,
             },
         )

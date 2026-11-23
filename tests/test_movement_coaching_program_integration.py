@@ -32,14 +32,16 @@ def test_learn_decision_selects_reaching_squat_and_adds_learning_task():
         decision_reason="Najprej utrdi osnovno koordinacijo in ravnotežje.",
     )
     plan = generate_program(BASE, movement_decisions={"squat": decision})
-    squats = _pattern_exercises(plan, "squat")
-    assert squats
-    assert all(item["exercise_id"] == "reaching_squat" for item in squats)
-    assert all(item["prescription"]["sets"] <= 2 for item in squats)
-    assert all(item["prescription"]["rir"] >= 3 for item in squats)
-    tasks = [task for session in plan["sessions"] for task in session["learning_tasks"]]
+    assert _pattern_exercises(plan, "squat") == []
+    tasks = [
+        task for session in plan["sessions"] for task in session["learning_tasks"]
+        if task["movement_pattern"] == "squat"
+    ]
     assert tasks
     assert all(task["method_id"] == "reaching_counterbalance" for task in tasks)
+    assert all(task["exercise_id"] is None for task in tasks)
+    assert all(task["demo_url"] == "https://youtu.be/vGu9T3FFjmc" for task in tasks)
+    assert all(task["tempo"] == "3-1-1" for task in tasks)
 
 
 def test_dowel_hinge_learning_task_uses_a_catalogue_supported_low_skill_variant():
@@ -51,11 +53,14 @@ def test_dowel_hinge_learning_task_uses_a_catalogue_supported_low_skill_variant(
         decision_reason="Utrdi tri stične točke in četrto kontrolo ledvene krivine.",
     )
     plan = generate_program(BASE, movement_decisions={"hinge": decision})
-    hinges = _pattern_exercises(plan, "hinge")
-    assert hinges
-    assert all(item["exercise_id"] == "wall_hip_hinge" for item in hinges)
-    tasks = [task for session in plan["sessions"] for task in session["learning_tasks"]]
-    assert any(task["method_id"] == "dowel_four_point" for task in tasks)
+    assert _pattern_exercises(plan, "hinge") == []
+    tasks = [
+        task for session in plan["sessions"] for task in session["learning_tasks"]
+        if task["movement_pattern"] == "hinge"
+    ]
+    assert tasks
+    assert all(task["method_id"] == "dowel_four_point" for task in tasks)
+    assert all(task["exercise_id"] is None for task in tasks)
 
 
 def test_regress_decision_uses_verified_supported_split_squat():
@@ -67,10 +72,14 @@ def test_regress_decision_uses_verified_supported_split_squat():
         decision_reason="Začasno uporabi oporo za ravnotežje.",
     )
     plan = generate_program(BASE, movement_decisions={"lunge": decision})
-    lunges = _pattern_exercises(plan, "lunge")
-    assert lunges
-    assert all(item["exercise_id"] == "supported_split_squat" for item in lunges)
-    assert all(item["prescription"]["sets"] <= 2 for item in lunges)
+    assert _pattern_exercises(plan, "lunge") == []
+    tasks = [
+        task for session in plan["sessions"] for task in session["learning_tasks"]
+        if task["movement_pattern"] == "lunge"
+    ]
+    assert tasks
+    assert all(task["method_id"] == "supported_split_squat" for task in tasks)
+    assert all(task["exercise_id"] is None for task in tasks)
 
 
 def test_ready_decision_starts_conservatively_without_automatic_progression():
@@ -177,10 +186,14 @@ def test_horizontal_push_never_selects_wall_push_up_even_when_wall_is_available(
         decision_reason="Uporabi stabilno povišano oporo, brez sklece ob steni.",
     )
     plan = generate_program(BASE, movement_decisions={"horizontal_push": decision})
-    pushes = _pattern_exercises(plan, "horizontal_push")
-    assert pushes
-    assert all(item["exercise_id"] != "wall_push_up" for item in pushes)
-    assert all(item["exercise_id"] == "push_up_incline" for item in pushes)
+    assert _pattern_exercises(plan, "horizontal_push") == []
+    tasks = [
+        task for session in plan["sessions"] for task in session["learning_tasks"]
+        if task["movement_pattern"] == "horizontal_push"
+    ]
+    assert tasks
+    assert all(task["method_id"] == "incline_push_up" for task in tasks)
+    assert all(task["exercise_id"] is None for task in tasks)
 
 
 def test_hinge_user_facing_label_uses_neutral_spine_not_flat_back_language():
@@ -218,12 +231,18 @@ def test_loaded_bent_over_row_is_allowed_after_hinge_is_marked_ready():
     )
     hinge["training_phase"] = "capacity_development"
     row = build_movement_decision(
-        "horizontal_pull", "LEARN",
+        "horizontal_pull", "READY",
         equipment=["dumbbell"],
-        selected_learning_method="light_one_arm_hinge_row",
-        selected_exercise_id="one_arm_row",
-        decision_reason="Utrdi koordinacijo lopatice in komolca z lahkim bremenom.",
+        user_report={"status": "movement_controlled", "movement_control": {
+            "confirmed_by_user": True, "repeatable": True,
+            "criteria": {
+                "tempo": True, "scapular_arm_control": True, "trunk_control": True,
+                "stable_base": True, "tolerated_rom": True,
+            },
+        }},
+        decision_reason="Horizontalni poteg je po učenju ponovljivo obvladan.",
     )
+    row["training_phase"] = "capacity_development"
     plan = generate_program(BASE, movement_decisions={"hinge": hinge, "horizontal_pull": row})
     assert _pattern_exercises(plan, "horizontal_pull")
 
@@ -231,13 +250,14 @@ def test_loaded_bent_over_row_is_allowed_after_hinge_is_marked_ready():
 def test_band_row_learning_does_not_require_bent_over_hinge_readiness():
     row = build_movement_decision(
         "horizontal_pull", "LEARN",
-        equipment=["resistance_band"],
-        selected_learning_method="band_row",
-        selected_exercise_id="band_row",
-        decision_reason="Uporabi stabilno pritrjeno elastiko za učenje horizontalnega potega.",
+        user_report={"status": "needs_support"},
+        selected_learning_method="scapular_coordination",
+        decision_reason="Najprej vadi gibanje lopatic brez dodatnega bremena.",
     )
     plan = generate_program(BASE, movement_decisions={"horizontal_pull": row})
-    assert _pattern_exercises(plan, "horizontal_pull")
+    assert _pattern_exercises(plan, "horizontal_pull") == []
+    tasks = [task for session in plan["sessions"] for task in session["learning_tasks"]]
+    assert any(task["method_id"] == "scapular_coordination" for task in tasks)
 
 
 def test_saved_needs_support_self_report_without_method_resolves_to_safe_wall_hinge():
@@ -252,15 +272,14 @@ def test_saved_needs_support_self_report_without_method_resolves_to_safe_wall_hi
         decision_reason="Uporabnik potrebuje lažjo učno različico predklona.",
     )
     plan = generate_program(profile, movement_decisions={"hinge": decision})
-    hinges = _pattern_exercises(plan, "hinge")
-    assert hinges
-    assert all(item["exercise_id"] == "wall_hip_hinge" for item in hinges)
+    assert _pattern_exercises(plan, "hinge") == []
     tasks = [
         task for session in plan["sessions"] for task in session["learning_tasks"]
         if task["movement_pattern"] == "hinge"
     ]
     assert tasks
     assert all(task["method_id"] == "wall_hip_hinge" for task in tasks)
+    assert all(task["exercise_id"] is None for task in tasks)
     assert all(task["method"] == "Predklon ob steni" for task in tasks)
     assert all("pomik bokov nazaj" in task["description"] for task in tasks)
 
@@ -287,22 +306,22 @@ def test_needs_support_without_compatible_equipment_omits_only_that_pattern():
     )
     assert not _pattern_exercises(plan, "horizontal_pull")
     assert not _pattern_exercises(plan, "vertical_push")
-    assert row["decision"] == "LEARN"
-    assert vertical_push["decision"] == "LEARN"
-    assert {"horizontal_pull", "vertical_push"} <= set(plan["weekly_summary"]["unfilled_patterns"])
-    omissions = {
-        event["pattern"]: event
-        for event in plan["movement_adaptation"]["events"]
-        if event["action"] == "omitted_no_equipment_compatible_learning_variant"
+    tasks = [task for session in plan["sessions"] for task in session["learning_tasks"]]
+    assert {task["method_id"] for task in tasks} >= {
+        "scapular_coordination", "unloaded_overhead_reach"
     }
-    assert set(omissions) == {"horizontal_pull", "vertical_push"}
-    assert all("oprema" in event["message"].lower() for event in omissions.values())
+    assert all(task["exercise_id"] is None for task in tasks)
+    assert not any(
+        event["action"] == "omitted_no_equipment_compatible_learning_variant"
+        and event["pattern"] in {"horizontal_pull", "vertical_push"}
+        for event in plan["movement_adaptation"]["events"]
+    )
 
 
-def test_kettlebell_only_hinge_row_uses_the_kettlebell_catalogue_variant():
+def test_kettlebell_only_ready_row_does_not_override_conservative_loading_gate():
     profile = {
         **BASE,
-        "experience": "beginner",
+        "experience": "intermediate",
         "equipment": ["kettlebell", "bodyweight", "chair", "wall", "household_support"],
     }
     hinge = build_movement_decision(
@@ -318,15 +337,25 @@ def test_kettlebell_only_hinge_row_uses_the_kettlebell_catalogue_variant():
     )
     hinge["training_phase"] = "capacity_development"
     row = build_movement_decision(
-        "horizontal_pull", "LEARN",
+        "horizontal_pull", "READY",
         equipment=["kettlebell"],
-        selected_learning_method="light_one_arm_hinge_row",
         selected_exercise_id="kettlebell_one_arm_row",
-        user_report={"status": "needs_support"},
-        decision_reason="Za učenje je izbrana kettlebell različica, ki ustreza opremi.",
+        user_report={"status": "movement_controlled", "movement_control": {
+            "confirmed_by_user": True, "repeatable": True,
+            "criteria": {
+                "tempo": True, "scapular_arm_control": True, "trunk_control": True,
+                "stable_base": True, "tolerated_rom": True,
+            },
+        }},
+        decision_reason="Horizontalni poteg je po učenju ponovljivo obvladan.",
     )
+    row["training_phase"] = "capacity_development"
     plan = generate_program(profile, movement_decisions={"hinge": hinge, "horizontal_pull": row})
     rows = _pattern_exercises(plan, "horizontal_pull")
-    assert rows
-    assert all(item["exercise_id"] == "kettlebell_one_arm_row" for item in rows)
+    assert rows == []
+    assert any(
+        event["pattern"] == "horizontal_pull"
+        and event["action"] == "omitted_no_conservative_starting_variant"
+        for event in plan["movement_adaptation"]["events"]
+    )
 
