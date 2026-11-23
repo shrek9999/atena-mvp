@@ -61,6 +61,8 @@ def test_functional_goal_prioritizes_fundamental_patterns_without_generic_add_on
 
     assert all(session.get("mobility_block", {}).get("exercises") for session in plan["sessions"])
     assert all(session["exercise_count"] <= 6 for session in plan["sessions"])
+    # Vertical pulling is trained, but is not one of the six camera-assessment tasks.
+    assert "vertical_pull" in patterns
 
 
 @pytest.mark.parametrize("experience", LEVELS)
@@ -74,7 +76,8 @@ def test_fat_loss_goal_preserves_strength_and_adds_conditioning_and_nutrition_fr
         "include_accessories": False,
     })
     patterns = {item["pattern"] for session in plan["sessions"] for item in session["exercises"]}
-    assert {"squat", "hinge", "conditioning"}.issubset(patterns)
+    assert {"squat", "hinge", "conditioning", "vertical_pull"}.issubset(patterns)
+    assert all(session["exercise_count"] <= 6 for session in plan["sessions"])
     assert "nutrition" in plan["goal_framework"]["pillars"]
     assert len(plan["nutrition_guidance"]) >= 4
 

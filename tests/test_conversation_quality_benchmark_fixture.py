@@ -12,10 +12,10 @@ FIXTURE = (
 def test_conversation_quality_benchmark_has_unique_multiturn_scenarios():
     benchmark = json.loads(FIXTURE.read_text(encoding="utf-8"))
 
-    assert benchmark["benchmark_id"] == "atena-conversation-quality-v1"
+    assert benchmark["benchmark_id"] == "atena-conversation-quality-v2"
     assert benchmark["language"] == "sl-SI"
     scenarios = benchmark["scenarios"]
-    assert len(scenarios) >= 12
+    assert len(scenarios) == 24
 
     ids = [scenario["id"] for scenario in scenarios]
     assert len(ids) == len(set(ids))
@@ -49,4 +49,4 @@ def test_benchmark_covers_core_coaching_and_safety_cases():
 
 def test_benchmark_does_not_claim_model_execution_or_results():
     benchmark = json.loads(FIXTURE.read_text(encoding="utf-8"))
-    assert "sam po sebi ne dokazuje kakovosti modela" in benchmark["purpose"]
+    assert "API uspeh ni strokovna ocena" in benchmark["purpose"]

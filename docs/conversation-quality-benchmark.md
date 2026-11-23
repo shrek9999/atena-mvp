@@ -19,7 +19,7 @@ Benchmark operacionalizira načela iz uporabnikovih priročnikov, gradiv za uspo
 7. **Komunikacija:** naravna slovenščina, eno ključno vprašanje naenkrat, postopno zbiranje podatkov, brez nepotrebnega vprašalnika ali strokovnega žargona.
 8. **Meje kompetenc:** brez diagnoz ali obljub zdravljenja; upoštevaj navedene omejitve in opozorilne simptome ter po potrebi usmeri k zdravstvenemu strokovnjaku.
 
-Terminološka zahteva: pri opisu vzorca RDL uporabljaj izraz **predklon z ravnim hrbtom**, ne »kolčni pregib« kot privzeto slovensko poimenovanje.
+Terminološka zahteva: pri opisu vzorca RDL uporabljaj izraz **predklon z nevtralno hrbtenico**, ne »kolčni pregib« kot privzeto slovensko poimenovanje.
 
 ## Protokol izvedbe
 
@@ -97,3 +97,30 @@ Za vsak zagon zabeleži:
 - predlagani popravek in povezavo do regresijskega testa.
 
 Po vsaki spremembi prompta ali logike ponovi prizadete scenarije in vse varnostno kritične scenarije. Rezultate primerjaj s prejšnjim commitom; izboljšava ene kategorije ne sme poslabšati druge.
+
+
+
+## Nadzorovan zagon živega benchmarka
+
+Živi benchmark kliče zunanji AI-model. Zato se **ne zažene ob običajnem pushu** in ne porablja nepričakovano modelne kvote.
+
+- V GitHub Actions je na voljo izbira `focused` (14 ciljnih regresijskih scenarijev) ali `full` (vseh 24 scenarijev).
+- Za prvi polni pregled uporabi eno ponovitev: 24 scenarijev in 69 uporabniških obratov. Dve ponovitvi sta namenjeni preverjanju ponovljivosti.
+- Pri push zagonu se benchmark izvede samo, če ima commit sporočilo oznaki `[run-live-benchmark]`; za celoten nabor dodaj še `[full-benchmark]`. Polni zagon uporablja eno ponovitev, ciljni zagon dve.
+- Pred zagonom mora biti Render pilot na veji `feature/six-pattern-learning-engine` že označen kot `Live`. Push zagon počaka 150 sekund, nato preveri dosegljivost in pilotni žeton.
+- Rezultate prenesi kot artefakt `atena-live-conversation-benchmark` in ročno oceni celotne prepise po osmih dimenzijah ter pravilih kritičnih napak.
+
+Opomba: GitHub omogoča ročni `workflow_dispatch` šele, ko je definicija workflowa prisotna na privzeti veji repozitorija. Do takrat je nadzorovan push z zgornjima oznakama alternativni način zagona. API uspeh ni strokovna ocena kakovosti.
+
+
+## Targeted post-review regression run
+
+After the full 24-scenario suite, use the targeted subset to recheck the defects found in manual transcript review:
+
+- **G04** — Slovene muscle-mass intake wording and the one-question safety gate
+- **G10** — progression follow-up question sequencing
+- **G12** — missed sessions, low energy after work and supportive plan adjustment
+- **G17** — conservative progression after a single successful exposure
+- **G19** — conventional deadlift to dumbbell RDL substitution accuracy
+
+Select `targeted` in workflow dispatch, or trigger a push run with `[run-live-benchmark] [targeted-benchmark]`. The targeted commit-marker run performs two independent repetitions. A passing transport run must still be followed by manual scoring against the eight coaching-quality dimensions.

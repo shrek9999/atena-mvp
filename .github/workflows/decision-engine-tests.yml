@@ -1,5 +1,8 @@
 name: ATENA Decision Engine Tests
 on:
+  push:
+    branches:
+      - "feature/six-pattern-learning-engine"
   pull_request:
     paths:
       - "app.py"

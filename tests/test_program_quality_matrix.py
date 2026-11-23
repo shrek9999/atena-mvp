@@ -118,3 +118,44 @@ def test_discomfort_feedback_blocks_automatic_programme_adaptation():
     }
     with pytest.raises(ProgramSafetyBlock):
         generate_program(profile, feedback={"discomfort": "yes", "difficulty": "hard"})
+
+
+
+def test_vertical_pull_never_offers_horizontal_row_as_equivalent_alternative():
+    catalogue = load_catalogue()
+    vertical_pull = [item for item in catalogue if item["pattern"] == "vertical_pull"]
+
+    assert vertical_pull
+    for exercise in vertical_pull:
+        alternatives = " ".join(exercise["alternatives"]).casefold()
+        assert "veslanje" not in alternatives
+        assert "row" not in alternatives
+
+    pull_up = get_exercise("pull_up")
+    assert pull_up is not None
+    assert pull_up["pattern"] == "vertical_pull"
+    assert pull_up["alternatives"] == []
+
+
+@pytest.mark.parametrize("goal", ["strength", "hypertrophy", "fat_loss", "general_fitness", "functional"])
+def test_generic_household_support_never_implies_a_safe_table_row_anchor(goal):
+    profile = {
+        "goal": goal,
+        "experience": "beginner",
+        "sessions_per_week": 2,
+        "session_minutes": 60,
+        "equipment": ["bodyweight", "chair", "wall", "household_support", "towel"],
+    }
+    plan = generate_program(profile)
+
+    for session in plan["sessions"]:
+        for exercise in session["exercises"]:
+            assert exercise["exercise_id"] != "inverted_row_table"
+            references = exercise.get("regressions", []) + exercise.get("alternatives", [])
+            assert "Veslanje pod stabilno mizo" not in references
+
+
+def test_catalogue_does_not_recommend_table_rows_as_a_regression_for_other_rows():
+    catalogue = {item["id"]: item for item in load_catalogue()}
+    for exercise_id in ["trx_row", "ring_row", "barbell_bent_over_row"]:
+        assert "inverted_row_table" not in catalogue[exercise_id]["regressions"]

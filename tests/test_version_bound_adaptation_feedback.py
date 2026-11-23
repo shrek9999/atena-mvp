@@ -144,3 +144,36 @@ def test_feedback_rejects_programme_version_from_another_profile(monkeypatch, tm
     )
     assert response.status_code == 409
     assert response.get_json()["code"] == "adaptation_version_mismatch"
+
+def test_adaptation_feedback_can_only_be_submitted_once(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client)
+    profile_id, token = created["profile"]["profile_id"], created["profile_access_token"]
+    version_id, adaptation_id = "program-v1", "adaptation-12345678"
+    _save_version(profile_id, token, version_id, adaptation_id)
+
+    performed = _log(client, profile_id, token, program_version_id=version_id)
+    assert performed.status_code == 201
+
+    first = _log(
+        client, profile_id, token,
+        adaptation_response={
+            "adaptation_id": adaptation_id,
+            "outcome": "helped",
+            "program_version_id": version_id,
+        },
+        day="2026-11-09",
+    )
+    assert first.status_code == 201
+
+    replay = _log(
+        client, profile_id, token,
+        adaptation_response={
+            "adaptation_id": adaptation_id,
+            "outcome": "no_change",
+            "program_version_id": version_id,
+        },
+        day="2026-11-10",
+    )
+    assert replay.status_code == 409
+    assert replay.get_json()["code"] == "adaptation_feedback_already_submitted"

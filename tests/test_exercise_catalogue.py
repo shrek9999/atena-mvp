@@ -207,9 +207,52 @@ def test_reaching_squat_is_an_accessible_squat_with_supporting_stability_role():
 
 def test_unloaded_hinge_uses_neutral_back_forward_bend_user_facing_name():
     item = get_exercise("bodyweight_hip_hinge")
-    assert item["name"] == "Predklon z ravnim hrbtom (lastna teža)"
+    assert item["name"] == "Predklon z nevtralno hrbtenico (lastna teža)"
     assert any("nevtralnega položaja hrbtenice" in cue for cue in item["cues"])
 
+
+
+def test_hip_hinge_catalogue_names_use_neutral_spine_language_consistently():
+    expected = {
+        "bodyweight_hip_hinge": "Predklon z nevtralno hrbtenico (lastna teža)",
+        "wall_hip_hinge": "Predklon z nevtralno hrbtenico ob steni",
+        "supported_single_leg_rdl": "Podprti enonožni predklon z nevtralno hrbtenico",
+    }
+    for exercise_id, name in expected.items():
+        item = get_exercise(exercise_id)
+        assert item["name"] == name
+        assert "ravnim hrbtom" not in item["name"].lower()
+
+
+def test_catalogue_avoids_flat_back_cues_and_uses_neutral_spine_language():
+    for item in load_catalogue():
+        for field in ("name", "cues", "common_errors", "regressions", "progressions", "warnings"):
+            values = item[field] if isinstance(item[field], list) else [item[field]]
+            assert all("ravnim hrbtom" not in value.lower() for value in values), (item["id"], field)
+
+
+def test_compound_and_single_joint_exercise_roles_match_their_training_function():
+    for exercise_id in (
+        "dumbbell_deadlift", "two_dumbbell_squat",
+        "dumbbell_squat_side", "loaded_deep_squat",
+    ):
+        item = get_exercise(exercise_id)
+        assert item["joint_type"] == "multi_joint"
+        assert item["training_role"] == "main", exercise_id
+    for exercise_id in ("calf_raise_full_rom", "tibialis_raise"):
+        item = get_exercise(exercise_id)
+        assert item["joint_type"] == "single_joint"
+        assert item["training_role"] == "accessory", exercise_id
+
+
+def test_controlled_lateral_step_is_a_slow_coordination_skill_not_a_power_alternative():
+    step = get_exercise("controlled_lateral_step")
+    assert step["training_role"] == "accessory"
+    assert "power" not in step["training_purposes"]
+    assert "skill" in step["training_purposes"]
+    assert step["alternatives"] == []
+    assert any("nadzorovanim korakom" in cue for cue in step["cues"])
+    assert any("bočni prenos teže ob stabilni opori" in item.lower() for item in step["regressions"])
 
 
 def test_knee_flexion_accessories_are_not_misclassified_as_hip_hinge_patterns():
@@ -241,7 +284,7 @@ def test_hip_extension_variants_are_distinct_from_the_predklon_pattern():
 def test_programme_hinge_label_uses_neutral_back_predklon_wording():
     from training.program import PATTERN_LABELS
 
-    assert PATTERN_LABELS["hinge"] == "predklon z ravnim hrbtom"
+    assert PATTERN_LABELS["hinge"] == "predklon z nevtralno hrbtenico"
 
 
 

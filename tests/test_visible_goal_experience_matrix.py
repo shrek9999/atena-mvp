@@ -189,7 +189,7 @@ def test_strength_hypertrophy_main_lift_dose_scales_across_all_three_levels():
     assert [item["reps"] for item in prescriptions] == ["8–12", "8–12", "5–8"]
     assert [item["rir"] for item in prescriptions] == [3, 3, 2]
     assert [item["sets"] for item in prescriptions] == [3, 3, 3]
-    assert [item["tempo"] for item in prescriptions] == ["2–1–1–0", "2–0–X–0", "2–0–X–0"]
+    assert [item["tempo"] for item in prescriptions] == ["3–1–2–0", "3–1–2–0", "3–1–2–0"]
 
 
 def test_functional_main_lift_prescription_distinguishes_intermediate_and_advanced():
@@ -200,7 +200,7 @@ def test_functional_main_lift_prescription_distinguishes_intermediate_and_advanc
 
     assert [item["reps"] for item in prescriptions] == ["8–12", "8–12", "6–10"]
     assert [item["rir"] for item in prescriptions] == [3, 3, 2]
-    assert [item["tempo"] for item in prescriptions] == ["3–1–1–0", "2–0–1–0", "2–0–1–0"]
+    assert [item["tempo"] for item in prescriptions] == ["3–1–2–0", "3–1–2–0", "3–1–2–0"]
 
 
 def test_mobility_work_volume_scales_for_advanced_profiles():

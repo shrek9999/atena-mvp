@@ -152,3 +152,32 @@ def test_bodyweight_program_never_invents_equipment_or_furniture_rows():
             assert set(exercise["equipment"]).issubset({"bodyweight"})
             assert "table" not in exercise["name"].casefold()
             assert "miza" not in exercise["name"].casefold()
+
+
+def test_following_week_progression_promise_is_rewritten_to_comparable_exposures():
+    answer = (
+        "Ker je bil trening uspešen, lahko v naslednjem tednu malenkost povečaš "
+        "obremenitev za približno 2 do 5 %."
+    )
+    cleaned = _sanitize_power_and_progression_claims(answer)
+    assert "v naslednjem tednu" not in cleaned
+    assert "2 do 5 %" not in cleaned
+    assert "vsaj dveh primerljivih treningih" in cleaned
+    assert "najmanjši razpoložljivi korak" in cleaned
+
+
+def test_central_nervous_system_exhaustion_claim_is_rewritten():
+    answer = (
+        "Moč in kondicijo razvijamo brez tega, da bi vsakič izčrpali "
+        "centralni živčni sistem."
+    )
+    cleaned = _sanitize_power_and_progression_claims(answer)
+    assert "centralni živčni sistem" not in cleaned.casefold()
+    assert "povečali nepotrebno utrujenost" in cleaned.casefold()
+
+
+def test_coach_prompt_prescribes_adequate_rest_for_primary_strength_lifts():
+    prompt = SYSTEM_PROMPT.casefold()
+    assert "for primary compound strength exercises" in prompt
+    assert "2–3 minutes of rest" in prompt
+    assert "do not prescribe 60–90 seconds as the default" in prompt

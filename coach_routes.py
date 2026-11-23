@@ -35,11 +35,35 @@ from training.longitudinal_progression import summarize_longitudinal_progression
 from training.conditioning_progression import summarize_conditioning_progress
 from training.periodization import summarize_training_cycle
 from training.proactive_checkin import build_proactive_checkin
-from training.coaching_protocols import RDL_TECHNIQUE_PROTOCOL
-from training.movement_assessment import MovementAssessmentError, assess_movement_competence
+from training.coaching_protocols import (
+    RDL_TECHNIQUE_PROTOCOL, RDL_SUBSTITUTION_ACCURACY,
+    RDL_TECHNIQUE_PROTOCOL_EN, RDL_SUBSTITUTION_ACCURACY_EN,
+)
+from training.movement_assessment import (
+    MovementAssessmentError, SYMPTOM_REGRESSION_VARIANTS, assess_movement_competence,
+)
+from training.camera_observations import CameraObservationError, validate_camera_observations
 from training.goals import normalize_goal, public_goal_options
+from training.localization import resolve_response_language, language_instruction, localize_guardrail_reply
+from training.movement_coaching import (
+    ASSESSMENT_VERSION as SIX_PATTERN_ASSESSMENT_VERSION,
+    ACUTE_WARNING_SIGNS, PATTERN_DEFINITIONS, MovementCoachingError, build_movement_decision,
+    validate_symptom_regression_report,
+)
 
 logger = logging.getLogger(__name__)
+INITIAL_SAFETY_QUESTION_SL = (
+    "Ali imaš trenutno kakršno koli bolečino, poškodbo, gibalno omejitev ali "
+    "zdravstveni zadržek, ki ga moram upoštevati pri vadbi — zlasti akutno ostro "
+    "bolečino, novo oteklino, mišični spazem, svežo poškodbo, nenadno izgubo "
+    "funkcije ali večjo ortopedsko oziroma zdravstveno omejitev?"
+)
+INITIAL_SAFETY_QUESTION_EN = (
+    "Do you currently have any pain, injury, movement limitation, or health "
+    "restriction I should account for in your training — especially acute sharp "
+    "pain, new swelling, muscle spasm, a recent injury, sudden loss of function, "
+    "or a major orthopedic or medical restriction?"
+)
 coach_bp = Blueprint("coach", __name__)
 ALLOWED_ORIGINS = {
     "https://gregajenko.si",
@@ -61,28 +85,153 @@ def add_cors_headers(response):
         response.headers["Access-Control-Max-Age"] = "600"
     return response
 
-MAX_MESSAGE_CHARS = 1800
+MAX_USER_MESSAGE_CHARS = 1800
+# Assistant replies are conversation history, not fresh user input. Allow longer
+# model turns so a valid detailed answer cannot break the next chat turn.
+MAX_MODEL_MESSAGE_CHARS = 6000
 MAX_MESSAGES = 12
+
+
+def _chat_message_character_limit(role):
+    return MAX_USER_MESSAGE_CHARS if role == "user" else MAX_MODEL_MESSAGE_CHARS
 
 
 def _has_explicit_no_pain_confirmation(text):
     return bool(re.search(
-        r"\b(?:ne boli me|ne čutim bolečine|nimam bolečin|brez bolečin|no pain)\b",
+        r"\b(?:ne boli me|ne čutim bolečine|nimam bolečin|nima bolečin|brez bolečin|"
+        r"no pain|no current pain|I have no pain|I don't have pain|I do not have pain|"
+        r"not experiencing pain|without pain)\b",
         text,
         re.IGNORECASE,
     ))
 
-
 def _has_explicit_safety_clearance(text):
-    """Accept only direct negative answers, never an ambiguous mention of uncertainty."""
-    patterns = (
-        r"\bnimam\s+(?:(?:trenutno|nobenih|kakršnih koli|večjih)\s+)*(?:bolečin|poškodb|(?:zdravstvenih|gibalnih)\s+omejitev|omejitev|zdravstvenih težav)\b",
-        r"\bbrez\s+(?:(?:trenutnih|nobenih)\s+)*(?:bolečin|poškodb|(?:zdravstvenih|gibalnih)\s+omejitev|omejitev)\b",
-        # Exact structured profile wording from the website intake form.
+    """Recognize an explicit negative answer without requiring every category to be repeated."""
+    normalized = " ".join(str(text or "").split()).casefold()
+    structured_profile = re.search(
         r"\btrenutna\s+bolečina\s*/\s*poškodba\s*/\s*zdravstvena\s+omejitev\s*:\s*ne\b",
-        r"\bno\s+(?:pain|injuries|limitations)\b",
+        normalized,
     )
-    return any(re.search(pattern, text, re.IGNORECASE) for pattern in patterns)
+    if structured_profile:
+        return True
+    statements = re.split(r"(?<=[.!?;])\s+|\n+", normalized)
+    for statement in statements:
+        missing_report = bool(re.search(
+            r"\b(?:brez\s+(?:izrecne\s+)?navedbe|ni\s+(?:bilo\s+)?(?:navedeno|podatka|podatkov)|"
+            r"not\s+(?:reported|provided|specified)|no\s+(?:health\s+)?(?:information|data)\s+(?:about|on)|"
+            r"no\s+(?:pain|injuries|limitations|health\s+issues).{0,80}\breported)\b",
+            statement,
+        ))
+        if missing_report:
+            continue
+        negative = bool(re.search(r"\b(?:nimam|nima|brez|no|without|ne čutim)\b", statement))
+        categories = sum((
+            bool(re.search(r"\b(?:bolečin\w*|pain)\b", statement)),
+            bool(re.search(r"\b(?:poškodb\w*|injur\w*)\b", statement)),
+            bool(re.search(
+                r"\b(?:omejit\w*|zdravstven\w*\s+težav\w*|health\s+(?:restrictions?|issues?)|limitations?)\b",
+                statement,
+            )),
+        ))
+        positive_issue = bool(re.search(
+            r"\b(?:imam|občutim|čutim|me boli|boli me)\b.{0,60}(?:bolečin\w*|poškodb\w*|omejit\w*)|"
+            r"\bi have (?:a |an )?(?:pain|injury|limitation)|"
+            r"\bi am experiencing\b.{0,50}(?:pain|injury|limitation)",
+            statement,
+        ))
+        if negative and categories >= 2 and not positive_issue:
+            return True
+    return False
+
+
+def _is_safety_question(text):
+    """Identify the initial broad safety-intake question, not a local symptom follow-up."""
+    value = str(text or "")
+    asks_about_health = bool(re.search(
+        r"(?:ali\s+imaš|imaš\s+trenutno|do\s+you\s+have|are\s+you\s+experiencing|any\s+current)"
+        r".{0,180}(?:bolečin\w*|poškodb\w*|omejitv\w*|zdravstven\w*|pain|injur\w*|limitation|medical restriction)",
+        value,
+        re.IGNORECASE | re.DOTALL,
+    ))
+    return "?" in value and asks_about_health
+
+
+def _has_contextual_safety_clearance(messages):
+    """Treat a short 'no' as an answer only when it directly follows ATENA's safety question."""
+    uncertain = re.compile(
+        r"^(?:ne vem|nisem prepričan(?:-a)?|nisem prepričana|mogoče|nisem siguren|"
+        r"not sure|i don't know|i am not sure|maybe)\b",
+        re.IGNORECASE,
+    )
+    negative = re.compile(
+        r"^(?:ne|no|nope|nič od tega|none of these|none)\s*[.!?,]*$",
+        re.IGNORECASE,
+    )
+    for index in range(1, len(messages)):
+        current, previous = messages[index], messages[index - 1]
+        if (
+            isinstance(current, dict) and current.get("role") == "user"
+            and isinstance(previous, dict) and previous.get("role") == "model"
+            and _is_safety_question(previous.get("content", ""))
+        ):
+            answer = str(current.get("content") or "").strip()
+            prior_user_history = "\n".join(
+                item.get("content", "") for item in messages[:index - 1]
+                if isinstance(item, dict) and item.get("role") == "user"
+                and isinstance(item.get("content"), str)
+            )
+            prior_positive_symptom = bool(re.search(
+                r"\bme\b.{0,25}\bboli\b|\bboli me\b|"
+                r"\bimam\b.{0,60}(?:bolečin\w*|poškodb\w*|omejitv\w*)|"
+                r"\bI have\b.{0,50}(?:pain|injur\w*|limitation)|"
+                r"\bI am experiencing\b.{0,50}(?:pain|injur\w*|limitation)",
+                prior_user_history,
+                re.IGNORECASE,
+            ))
+            if not prior_positive_symptom and not uncertain.search(answer) and negative.fullmatch(answer):
+                return True
+    return False
+
+
+def _has_initial_health_gate_clearance(text):
+    """Recognize the structured one-time profile answer; never infer it from local symptoms."""
+    normalized = " ".join(str(text or "").split()).casefold()
+    return bool(re.search(
+        r"varnostna potrditev:\s*nimam\s+večjih\s+zdravstvenih\s+omejitev.{0,100}"
+        r"(?:svežih\s+poškodb|zdravniških\s+prepovedi)",
+        normalized,
+    ))
+
+
+def _has_safety_clearance(messages):
+    """Resolve the one-time safety gate from explicit wording or a contextual yes/no answer."""
+    user_history = "\n".join(
+        item.get("content", "") for item in messages
+        if isinstance(item, dict) and item.get("role") == "user"
+        and isinstance(item.get("content"), str)
+    )
+    return (
+        _has_explicit_safety_clearance(user_history)
+        or _has_initial_health_gate_clearance(user_history)
+        or _has_contextual_safety_clearance(messages)
+    )
+
+
+def _has_localized_symptom_report(text):
+    """Recognize a localized symptom as an answered intake item, never as medical clearance."""
+    value = str(text or "")
+    if _has_explicit_no_pain_confirmation(value):
+        return False
+    return bool(re.search(
+        r"(?:bolečin\w*|pain).{0,65}(?:kolen\w*|ramen\w*|hrbt\w*|kolk\w*|gleženj|"
+        r"počep\w*|izpadn\w*|RDL|sklec\w*)|"
+        r"(?:kolen\w*|ramen\w*|hrbt\w*|kolk\w*|gleženj).{0,65}"
+        r"(?:boli|bolečin\w*|zaboli|pain)|"
+        r"(?:me\s+(?:blago\s+)?boli|boli\s+me|me\s+(?:blago\s+)?zaboli|"
+        r"zaboli\s+me).{0,45}(?:kolen\w*|ramen\w*|hrbt\w*|kolk\w*|gleženj)?",
+        value,
+        re.IGNORECASE,
+    ))
 
 
 def _profile_from_messages(messages):
@@ -102,15 +251,21 @@ def _profile_from_messages(messages):
 def _profile_available_equipment(messages):
     """Use structured equipment as authoritative; use text aliases only without a structured profile."""
     profile = _profile_from_messages(messages)
-    if isinstance(profile.get("equipment"), list):
+    if isinstance(profile.get("equipment"), list) and (
+        profile.get("equipment_confirmed") is True or "equipment_confirmed" not in profile
+    ):
         return {
             value for value in profile["equipment"]
             if isinstance(value, str) and value.strip()
         }
 
+    # An empty/unconfirmed structured field must not mask equipment stated in chat.
+    # Strip the serialized profile first so default values inside JSON are not
+    # mistaken for free-text confirmation.
     user_text = "\n".join(
         item.get("content", "") for item in messages if item.get("role") == "user"
     )
+    user_text = re.sub(r"\{[^{}]*\}", " ", user_text)
     lowered = user_text.casefold()
     available = set()
     aliases = {
@@ -121,7 +276,7 @@ def _profile_available_equipment(messages):
         "bench": ("klop", "bench"),
         "resistance_band": ("elastik", "resistance band"),
         "cable": ("kabel", "cable"),
-        "pull_up_bar": ("drogu za zgibe", "pull-up", "pull up bar"),
+        "pull_up_bar": ("drog za zgibe", "drogu za zgibe", "drog za zgib", "pull-up", "pull up bar"),
         "kettlebell": ("kettlebell", "girj"),
         "box": ("škatl", "box"),
         "weight_plate": ("utežn plošč", "weight plate"),
@@ -237,7 +392,7 @@ def _verified_exercise_catalogue_context(messages):
         item["name"],
     ))
     lines = [
-        f"- {('Predklon z ravnim hrbtom (RDL)' if item['id'] == 'romanian_deadlift' else item['name'])} [{item['pattern']}; {item['level']}; oprema: "
+        f"- {('predklon z nevtralno hrbtenico (RDL)' if item['id'] == 'romanian_deadlift' else item['name'])} [{item['pattern']}; {item['level']}; oprema: "
         + (", ".join(item["equipment"] + item["equipment_any"]) or "lastna teža")
         + "]"
         for item in records[:28]
@@ -250,8 +405,37 @@ def _verified_exercise_catalogue_context(messages):
     )
 
 def _normalize_slovene_coaching_terms(answer):
-    """Correct a small, tested set of recurring literal translations/typos."""
+    """Correct recurring language, malformed inline markup and hinge terminology."""
+    answer = re.sub(r"<\s*/?\s*(?:strong|b|em|i)\s*>", "", answer, flags=re.IGNORECASE)
+    answer = re.sub(r"\bvadinega\b", "vadečega", answer, flags=re.IGNORECASE)
+    answer = re.sub(r"\bvpoteg\b", "poteg", answer, flags=re.IGNORECASE)
+    answer = re.sub(
+        r"\bz\s+ročkami\s+oziroma\s+hrbtom\s+se\s+povleci\b",
+        "z rokami in hrbtom se povleci",
+        answer,
+        flags=re.IGNORECASE,
+    )
+    # Correct occasional mixed-script Cyrillic confusables from model output.
+    answer = answer.replace("uravnoteжeno", "uravnoteženo")
+    answer = answer.replace("Uravnoteжeno", "Uravnoteženo")
+    typo_replacements = (
+        (r"\bnaporne\s+presvete\s+krožne\s+treninge\b", "naporne, prehitre krožne treninge"),
+        (r"\bpredenava\b", "Preden"),
+        (r"\bzačetiva\b", "začniva"),
+        (r"\bz\s+dve\s+ročkama\b", "z dvema ročkama"),
+        (r"\bhrbtorse\b", "hrbta"),
+        (r"\btrg\s+in\s+trup\s+ostajata\s+pokončna\b", "Trup naj ostane pokončen"),
+        (r"\bspostiš\b", "spustiš"),
+        (r"\brazbremeniša\b", "razbremeniš"),
+        (r"\bokrevajnje\b", "okrevanje"),
+        (r"\bpristjmp\b", "pristop"),
+        (r"\bpovdarjenim\b", "poudarjenim"),
+    )
+    for pattern, replacement in typo_replacements:
+        answer = re.sub(pattern, replacement, answer, flags=re.IGNORECASE)
     replacements = (
+        (r"\bpoz\s+dravljen\b", "Pozdravljen"),
+        (r"\bizrek gibanja\b", "izvedbo gibanja"),
         (r"\btrilogije\s*\(tricepsa\)", "tricepsa"),
         (r"\btrilogije\b", "tricepsa"),
         (r"\bprsni tisk\b", "potisk za prsi"),
@@ -283,11 +467,24 @@ def _normalize_slovene_coaching_terms(answer):
                 return replacement[:1].upper() + replacement[1:]
             return replacement
         answer = re.sub(pattern, preserve_initial_case, answer, flags=re.IGNORECASE)
+    # In RDL/hinge explanations, avoid the misleading cue to keep a perfectly flat back.
+    if re.search(r"\b(?:RDL|romunsk\w*\s+mrtv\w*\s+dvig|predklon\w*|hip hinge)\b", answer, re.IGNORECASE):
+        hinge_replacements = (
+            (r"\bkjer\s+še\s+držiš\s+(?:popolnoma\s+)?raven\s+hrbet\b", "kjer še ohranjaš nevtralni položaj hrbtenice"),
+            (r"\bz\s+(?:(?:popolnoma|povsem)\s+)?ravnim(?:\s+in\s+nevtralnim)?\s+hrbtom\b", "z nevtralno hrbtenico"),
+            (r"\bhrbet\s+(?:pa\s+)?(?:ohranjaš|ohranjaj|ohranja|naj\s+ostane|ostane)\s+(?:(?:ves\s+čas)\s+)?(?:(?:popolnoma|povsem)\s+)?raven\w*\b", "hrbtenica ohranja naravni nevtralni položaj"),
+            (r"\bhrbet\s+ohranjaš\s+v\s+(?:popolnoma\s+)?ravnem\s+položaju\b", "hrbtenica ohranja naravni nevtralni položaj"),
+            (r"\bhrbet\s+ostane\s+(?:ves\s+čas\s+)?(?:popolnoma\s+)?raven\b", "hrbtenica ohranja naravni nevtralni položaj"),
+            (r"\bhrbet\s+naj\s+ostane\s+(?:ves\s+čas\s+)?(?:popolnoma\s+)?raven\b", "hrbtenica naj ohranja naravni nevtralni položaj"),
+            (r"\b(?:popolnoma\s+)?raven\s+hrbet\b", "nevtralni položaj hrbtenice"),
+        )
+        for pattern, replacement in hinge_replacements:
+            answer = re.sub(pattern, replacement, answer, flags=re.IGNORECASE)
     return answer
 
 
 def _sanitize_power_and_progression_claims(answer):
-    """Enforce two high-value coaching rules when Gemini phrases them inconsistently."""
+    """Enforce progression and physiological-language rules consistently."""
     answer = re.sub(
         r"\s+in\s+(?:ustrezno\s+)?spočit(?:im|ega|emu)\s+živčno[- ]mišičn(?:im|ega|emu)\s+sistem(?:om|a|u)",
         "; med serijami pa si vzemi dovolj dolg odmor za ohranjanje hitrosti in kakovosti ponovitev",
@@ -307,6 +504,20 @@ def _sanitize_power_and_progression_claims(answer):
         "ohranjanje hitrosti in kakovosti ponovitev",
         answer,
     )
+    # Avoid unsupported claims that a training session "exhausts" the CNS
+    # or that a short self-report proves nervous-system adaptation.
+    answer = re.sub(
+        r"(?i)izčrp(?:al|ala|ali|amo|ati|anje)\s+"
+        r"(?:centraln\w+\s+)?živčn\w+\s+sistem\w*",
+        "povečali nepotrebno utrujenost",
+        answer,
+    )
+    answer = re.sub(
+        r"(?i)(?:telo\s+in\s+)?živčn\w+\s+sistem\w*\s+"
+        r"(?:se\s+)?(?:(?:je|sta|so)\s+)?(?:lepo\s+)?prilagod\w*",
+        "odziv na trening je bil dober",
+        answer,
+    )
     progression_section = re.compile(
         r"(?is)(\*\*pravilo napredovanja[^*]*\*\*\s*:?[ \t]*)(.*?)(?=\n\s*\n|$)"
     )
@@ -322,26 +533,569 @@ def _sanitize_power_and_progression_claims(answer):
         )
         answer = answer[:match.start()] + replacement + answer[match.end():]
     else:
-        answer = re.sub(
-            r"(?is)[^.!?]*(?:naslednji teden|naslednjem treningu|prihodnjič|"
-            r"naslednjič|v naslednji vadbi|pri naslednji vadbi|pri naslednjem treningu)[^.!?]*"
-            r"(?:poveč(?:aj|aš|ati|anje|a)|dod(?:aj|aš|ati|amo|a))[^.!?]*[.!?]",
-            "Napredovanje je primerno šele, ko zgornjo mejo ciljnega razpona "
-            "dosežeš v vsaj dveh primerljivih treningih z načrtovanim RIR, "
-            "stabilno tehniko in ustrezno regeneracijo; sicer ohrani trenutno "
-            "obremenitev.\n\n",
+        already_has_two_exposure_rule = bool(re.search(
+            r"vsaj\s+dveh\s+(?:primerljivih|zaporednih|uspešnih)\s+treningih|"
+            r"dveh\s+zaporednih\s+treningih|še\s+na\s+eno\s+(?:ponovitev|izpostavitev)",
             answer,
+            re.IGNORECASE,
+        ))
+
+        def replace_unqualified_progression(_match):
+            if already_has_two_exposure_rule:
+                # The answer already states the two-exposure criterion.
+                # Do not append a contradictory hold instruction to a valid progression.
+                return _match.group(0)
+            return (
+                "\n\nNapredovanje je primerno šele, ko zgornjo mejo ciljnega razpona "
+                "dosežeš v vsaj dveh primerljivih treningih z načrtovanim RIR, "
+                "stabilno tehniko in ustrezno regeneracijo. Takrat povečaj le eno "
+                "spremenljivko za najmanjši razpoložljivi korak; sicer ohrani "
+                "trenutno obremenitev in odmerek.\n\n"
+            )
+
+        answer = re.sub(
+            r"(?is)[^.!?]*(?:naslednji teden|v naslednjem tednu|naslednjem tednu|"
+            r"naslednjem treningu|v naslednjem treningu|prihodnjič|naslednjič|"
+            r"v naslednji vadbi|pri naslednji vadbi|pri naslednjem treningu)[^.!?]*"
+            r"(?:poveč(?:aj|aš|ati|anje|a)|dod(?:aj|aš|ati|amo|a))[^.!?]*[.!?]",
+            replace_unqualified_progression,
+            answer,
+            count=1,
         )
     return answer
 
 
+def _sanitize_strength_rest_intervals(answer, messages):
+    """Preserve adequate rest for primary strength lifts when a short session is requested."""
+    user_history = "\n".join(
+        item.get("content", "") for item in messages
+        if item.get("role") == "user" and isinstance(item.get("content"), str)
+    )
+    strength_goal = bool(re.search(r"\b(?:moč\w*|strength|strength training)\b", user_history, re.IGNORECASE))
+    compound_lift = bool(re.search(
+        r"\b(?:počep\w*|squat\w*|mrtv\w*\s+dvig\w*|deadlift\w*|RDL|predklon\w*|"
+        r"potisk\w*|bench\s+press|veslan\w*|row)\b",
+        answer,
+        re.IGNORECASE,
+    ))
+    if not strength_goal or not compound_lift:
+        return answer
+
+    short_rest = re.compile(r"\b(?:60|75|90)\s*(?:sekund\w*|seconds?|sec|s)\b", re.IGNORECASE)
+    if not short_rest.search(answer):
+        return answer
+
+    answer = short_rest.sub("2–3 min", answer)
+    time_limited = bool(re.search(r"\b(?:20|25|30)[-\s]*(?:minut\w*|min)\b", user_history, re.IGNORECASE))
+    if time_limited:
+        note = (
+            "Pri glavnih večsklepnih vajah ohrani dovolj odmora za kakovost izvedbe. "
+            "Če razpoložljivi čas ne zadošča, zmanjša število vaj ali delovnih serij, ne pa odmora."
+        )
+        if "zmanjša število vaj" not in answer.casefold():
+            answer = answer.rstrip() + "\n\n" + note
+    return answer
+
+
+def _sanitize_model_markup(answer):
+    """Remove accidental raw HTML tags emitted by the language model; Markdown remains supported."""
+    return re.sub(
+        r"</?(?:strong|b|em|i|p|br|ul|ol|li|div|span|h[1-6])\b[^>]*>",
+        "",
+        answer,
+        flags=re.IGNORECASE,
+    )
+
+
+def _sanitize_onboarding_questions(answer, messages):
+    """Keep intake to one high-value question and never skip an unanswered safety gate."""
+    user_history = "\n".join(
+        item.get("content", "") for item in messages
+        if item.get("role") == "user" and isinstance(item.get("content"), str)
+    )
+    lowered = user_history.casefold()
+
+    compound_health_intake = re.search(
+        r"\s+(?:in|ter)\s+(?:ali\s+)?(?:imaš|občutiš|te\s+muči).{0,120}"
+        r"(?:bolečin\w*|poškodb\w*|omejitv\w*|zdravstven\w*)",
+        answer,
+        re.IGNORECASE,
+    )
+    if compound_health_intake and "?" in answer:
+        answer = answer[:compound_health_intake.start()].rstrip(" ,;:") + "?"
+
+    fitness_intent = bool(re.search(
+        r"(bolj fit|telesn\w*\s+pripravljenost|splošn\w*\s+pripravljenost|funkcional\w*|"
+        r"kondic\w*|moč\w*|mišičn\w*\s+mas\w*|maščob\w*|redn\w* trenir|"
+        r"začnem trenir|program\w*|vadbeni program|workout|training plan)",
+        lowered,
+    ))
+    safety_clear = _has_safety_clearance(messages) if fitness_intent else True
+    safety_question_present = "?" in answer and bool(re.search(
+        r"(bolečin\w*|poškodb\w*|omejitv\w*|zdravstven\w*|pain|injur\w*|health restriction)",
+        answer,
+        re.IGNORECASE,
+    ))
+
+    if fitness_intent and safety_clear and _is_safety_question(answer):
+        retained = [
+            part.strip() for part in re.split(r"(?<=[.!?])\s+|\n+", answer)
+            if part.strip() and not _is_safety_question(part)
+        ]
+        if retained:
+            return " ".join(retained)
+        return "Hvala, to sem upošteval. Nadaljujeva z naslednjim korakom priprave tvojega profila."
+
+    if fitness_intent and not safety_clear:
+        if safety_question_present and answer.count("?") == 1:
+            return answer
+        if "?" in answer or re.search(
+            r"(individualni program|vadbeni program|serij\w* po|ponovitev|delovn\w* serij)",
+            answer,
+            re.IGNORECASE,
+        ):
+            return (
+                "Preden pripravim individualni trening, najprej preveriva varnost: " +
+                INITIAL_SAFETY_QUESTION_SL
+            )
+        return answer
+
+    if answer.count("?") > 1:
+        return answer[:answer.find("?") + 1].strip()
+
+    compound_request = re.search(
+        r"\s+(?:in|ter)\s+(?:približno\s+)?(?:koliko\s+časa|koliko\s+minut|"
+        r"kakšno\s+opremo|s\s+kakšno\s+opremo|kolikokrat\s+na\s+teden)\b",
+        answer,
+        re.IGNORECASE,
+    )
+    if compound_request and "?" in answer:
+        return answer[:compound_request.start()].rstrip(" ,;:") + "?"
+    return answer
+
+
+
+def _sanitize_deadlift_substitution_claims(answer, messages):
+    """Avoid presenting an RDL as a biomechanically identical deadlift substitute."""
+    user_history = "\n".join(
+        message.get("content", "")
+        for message in messages
+        if message.get("role") == "user" and isinstance(message.get("content"), str)
+    )
+    deadlift_context = re.search(
+        r"\b(?:mrtv\w*\s+dvig\w*|deadlift)\b", user_history, re.IGNORECASE
+    )
+    substitution_context = re.search(
+        r"\b(?:namesto|zamenj\w*|alternativ\w*|replace|substitut\w*)\b",
+        user_history,
+        re.IGNORECASE,
+    )
+    mentions_rdl = re.search(
+        r"\b(?:RDL|romunsk\w*\s+mrtv\w*\s+dvig\w*)\b", answer, re.IGNORECASE
+    )
+    if not (deadlift_context and substitution_context and mentions_rdl):
+        return answer
+
+    answer = re.sub(
+        r"\bpopolnoma\s+posnema\s+mehaniko\s+(?:klasičnega\s+)?mrtvega\s+dviga\b",
+        "ohranja soroden vzorec kolčnega zgiba in poudarek na zadnji verigi, "
+        "vendar ni biomehansko enak klasičnemu mrtvemu dvigu",
+        answer,
+        flags=re.IGNORECASE,
+    )
+    answer = re.sub(
+        r"\b(?:completely|fully)\s+(?:mimics|replicates)\s+(?:the\s+)?"
+        r"(?:mechanics|movement)\s+of\s+(?:a\s+)?(?:conventional\s+)?deadlift\b",
+        "preserves a related hip-hinge and posterior-chain emphasis, but is not "
+        "biomechanically identical to a conventional deadlift",
+        answer,
+        flags=re.IGNORECASE,
+    )
+
+    answer = re.sub(
+        r"\b(?:RDL|romunsk\w*\s+mrtv\w*\s+dvig\w*)\s+"
+        r"(?:je|predstavlja)\s+(?:popolnoma\s+)?"
+        r"(?:enakovreden|enak|identičen)\s+(?:klasičnemu\s+)?mrtvemu\s+dvigu\b",
+        "RDL ohranja soroden vzorec kolčnega zgiba in poudarek na zadnji verigi, "
+        "vendar ni biomehansko enak klasičnemu mrtvemu dvigu",
+        answer,
+        flags=re.IGNORECASE,
+    )
+    answer = re.sub(
+        r"\b(?:RDL|Romanian deadlift)\s+(?:is|represents)\s+"
+        r"(?:fully\s+|completely\s+)?(?:equivalent|identical)\s+to\s+"
+        r"(?:a\s+)?(?:conventional\s+)?deadlift\b",
+        "RDL preserves a related hip-hinge and posterior-chain emphasis, but is "
+        "not biomechanically identical to a conventional deadlift",
+        answer,
+        flags=re.IGNORECASE,
+    )
+    return answer
+
+
+
+def _sanitize_unverified_exercise_parameters(answer, messages):
+    """Prevent the model from inventing exercise doses absent from the user's record."""
+    user_history = "\n".join(
+        item.get("content", "")
+        for item in messages
+        if item.get("role") == "user" and isinstance(item.get("content"), str)
+    )
+    assistant_history = "\n".join(
+        item.get("content", "")
+        for item in messages
+        if item.get("role") == "model" and isinstance(item.get("content"), str)
+    )
+    latest_user = next(
+        (
+            item.get("content", "")
+            for item in reversed(messages)
+            if item.get("role") == "user" and isinstance(item.get("content"), str)
+        ),
+        "",
+    )
+
+    deadlift_context = re.search(
+        r"\b(?:mrtv\w*\s+dvig\w*|deadlift)\b", user_history, re.IGNORECASE
+    )
+    substitution_context = re.search(
+        r"\b(?:namesto|zamenj\w*|alternativ\w*|replace|substitut\w*)\b",
+        user_history,
+        re.IGNORECASE,
+    )
+    mentions_rdl = re.search(
+        r"\b(?:RDL|romunsk\w*\s+mrtv\w*\s+dvig\w*)\b",
+        answer,
+        re.IGNORECASE,
+    )
+    original_deadlift_dose = re.search(
+        r"(?:mrtv\w*\s+dvig\w*|deadlift)[^\n]{0,100}"
+        r"\b\d+\s*[x×]\s*\d+\b",
+        user_history,
+        re.IGNORECASE,
+    ) or re.search(r"\b\d+\s*[x×]\s*\d+\b", latest_user)
+    if deadlift_context and substitution_context and mentions_rdl and not original_deadlift_dose:
+        already_asked = "prvotni odmerek" in assistant_history.casefold()
+        if already_asked and re.search(r"(na voljo imam|klopi nimam|ročk)", latest_user, re.IGNORECASE):
+            return (
+                "Razumem: na voljo imaš ročke in lastno težo, klopi pa za RDL ne potrebuješ. "
+                "Da ne bom ugibal o odmerku ali obremenitvi, mi povej še: kakšen je bil "
+                "prvotni odmerek mrtvega dviga (serije × ponovitve) in katere teže ročk imaš?"
+            )
+        if already_asked and re.search(r"(ohraniti vzorec|enak namen|namen treninga)", latest_user, re.IGNORECASE):
+            return (
+                "Razumem. RDL ohranja soroden kolčni zgib in poudarek na zadnji verigi. "
+                "Za konkreten odmerek mi manjkata še prvotni odmerek (serije × ponovitve) "
+                "in teže ročk. Kakšen je bil prvotni odmerek in katere teže ročk imaš?"
+            )
+        return (
+            "Z ročkami je lahko primerna alternativa **predklon z nevtralno hrbtenico (RDL)**, "
+            "če ga obvladaš in razpoložljive ročke omogočajo ustrezen izziv. Ohranja soroden "
+            "vzorec predklona in poudarek na zadnji verigi, vendar ni biomehansko enak "
+            "klasičnemu mrtvemu dvigu: razlikujejo se začetni položaj, obseg giba, upogib "
+            "kolen in razporeditev obremenitve. Ker ne poznam odmerka iz tvojega programa "
+            "niti teže ročk, ne bom ugibal serij, ponovitev, tempa ali bremena. Pri prvi "
+            "izvedbi izberi obvladljivo breme, ohrani ciljni napor iz programa le, če je "
+            "primeren za RDL, in preveri kakovost gibanja. Kakšen je bil prvotni odmerek "
+            "mrtvega dviga (serije in ponovitve) in katere teže ročk imaš na voljo?"
+        )
+
+    one_exposure = bool(re.search(
+        r"prvi.{0,60}(?:uspeš\w*|izpostavitv\w*)|"
+        r"šele\s+prvi\s+tak\s+uspeš\w*\s+trening",
+        user_history,
+        re.IGNORECASE,
+    ))
+    next_session_request = bool(re.search(
+        r"(?:kaj\s+naj\s+naredim|kaj\s+naj\s+storim).{0,50}"
+        r"(?:naslednj\w*\s+(?:vadb\w*|trening\w*)|pri\s+naslednj\w*)",
+        latest_user,
+        re.IGNORECASE,
+    ))
+    rep_match = re.search(
+        r"(?:vse\s+serije\s+po\s+|\b)(\d{1,2})\s+ponovitev",
+        user_history,
+        re.IGNORECASE,
+    )
+    if one_exposure and rep_match and re.search(r"počep", user_history, re.IGNORECASE):
+        exact_set_count = re.search(
+            r"\b\d+\s*[x×]\s*\d+\b|"
+            r"\b\d+\s+serij\w*.{0,40}\b\d+\s+ponovitev",
+            user_history,
+            re.IGNORECASE,
+        )
+        if not exact_set_count:
+            reps = rep_match.group(1)
+            rir_known = bool(re.search(r"RIR\s*3|3\s+ponovitev\s+v\s+rezervi", user_history, re.IGNORECASE))
+            effort = "približno RIR 3" if rir_known else "enak načrtovani občutek napora kot zadnjič"
+            if next_session_request:
+                return (
+                    f"Pri naslednjem treningu ponovi počep z isto obremenitvijo in enakim številom "
+                    f"serij kot zadnjič. V vsaki seriji ciljaj na {reps} ponovitev in {effort}. "
+                    "Ohrani enako kontrolirano amplitudo in tehniko. Natančnega števila serij "
+                    "in tempa nimam zabeleženega, zato ju ne bom ugibal. Če boš enako dozo "
+                    "ponovno izvedel z dobro tehniko in ustrezno regeneracijo, boš imel dve "
+                    "primerljivi uspešni izpostavitvi; šele nato lahko razmisliva o najmanjšem "
+                    "povečanju obremenitve."
+                )
+            if re.search(r"tehnik\w*", latest_user, re.IGNORECASE):
+                recovery_question_already_asked = bool(re.search(
+                    r"(?:regeneracij\w*|naslednji\s+dan|24\s*[–-]?\s*48).{0,120}"
+                    r"(?:počutil|spoč|utrujen|bolečin)|"
+                    r"(?:počutil|spoč|utrujen).{0,120}(?:naslednji\s+dan|24\s*[–-]?\s*48|po\s+treningu)",
+                    assistant_history,
+                    re.IGNORECASE,
+                ))
+                if recovery_question_already_asked:
+                    return (
+                        "Dobro, tehnika je bila dobra. Ker še nimam podatka o regeneraciji po "
+                        "treningu, obdrži isto obremenitev in enako število serij kot zadnjič. "
+                        f"Ohrani {reps} ponovitev na serijo z {effort}; breme povečaj šele po "
+                        "drugi primerljivi uspešni izvedbi z ustrezno regeneracijo. "
+                        "Ko boš lahko, sporoči, ali si v 24–48 urah po treningu okreval "
+                        "običajno, brez nenavadne utrujenosti ali bolečin."
+                    )
+                return (
+                    "Dobro, tehnika je bila dobra. Ker je bila to še vedno samo ena uspešna "
+                    "izpostavitev, naslednjič ohrani isto obremenitev in enako število serij "
+                    f"kot zadnjič ter izvedi {reps} ponovitev na serijo z {effort}. "
+                    "Breme povečaj šele po drugi primerljivi uspešni izvedbi z ustrezno "
+                    "regeneracijo. Kako si se počutil naslednji dan po treningu?"
+                )
+            if re.search(r"(poveč\w*|dodaj\w*).{0,30}(tež\w*|obremen|breme)", latest_user, re.IGNORECASE):
+                return (
+                    "Za zdaj še ne povečuj obremenitve. Ker je bila to prva uspešna izvedba "
+                    f"{reps} ponovitev z {effort}, naslednjič ponovi enako vajo z isto težo "
+                    "in enakim številom serij kot zadnjič. O povečanju razmišljaj šele po "
+                    "drugi primerljivi uspešni izvedbi. Kako si se počutil v 24–48 urah po treningu?"
+                )
+
+    two_exposures = bool(re.search(
+        r"(?:v|po)\s+dveh\s+zaporednih\s+primerljivih\s+treningih|"
+        r"dveh\s+zaporednih\s+primerljivih\s+treningih",
+        user_history,
+        re.IGNORECASE,
+    ))
+
+    # A successful two-exposure rule is not permission to invent a load or
+    # volume. If the conversation lacks the exact exercise, current load or
+    # set/rep prescription, ask for the missing record before giving numbers.
+    if two_exposures:
+        recovery_reported = bool(re.search(
+            r"regeneracij\w*.{0,40}(?:dobra|ustrezna|normalna)|"
+            r"(?:dobro|normalno)\s+okrev\w*|"
+            r"naslednji\s+dan.{0,50}(?:brez\s+težav|brez\s+bolečin|spoč|normalno)|"
+            r"(?:brez|ni)\s+(?:nenavadne\s+)?utrujenosti",
+            user_history,
+            re.IGNORECASE,
+        ))
+        poor_recovery_reported = bool(re.search(
+            r"(slab\w*\s+regeneracij|slabo\s+okrev|"
+            r"nenavadn\w*\s+utrujen\w*|še\s+sem\s+utrujen|"
+            r"poor\s+recovery|unusually\s+fatigued|still\s+fatigued)",
+            user_history,
+            re.IGNORECASE,
+        ))
+        progression_claim = bool(re.search(
+            r"(poveč\w*.{0,35}(?:tež\w*|obremen\w*|breme)|"
+            r"dodaj\w*.{0,25}(?:tež\w*|obremen\w*|breme)|"
+            r"(?:increase|add)\s+(?:the\s+)?(?:load|weight)|"
+            r"\b\d+(?:[.,]\d+)?\s*kg\b|\b\d+\s*[x×]\s*\d+\b)",
+            answer,
+            re.IGNORECASE,
+        ))
+        if progression_claim and poor_recovery_reported:
+            return (
+                "Čeprav sta bili izvedbi uspešni, je slabša regeneracija razlog, da "
+                "obremenitve še ne povečava. Najprej počakaj, da se počutje vrne na "
+                "običajno raven; nato ponovno oceni tehniko, napor in regeneracijo. "
+                "Za zdaj ohrani ali po potrebi nekoliko zmanjša trenutno dozo."
+            )
+        if progression_claim and not recovery_reported:
+            recovery_question_already_asked = bool(re.search(
+                r"(?:regeneracij\w*|naslednji\s+dan).{0,160}"
+                r"(?:spoč|utrujen|bolečin|recovery|fatigue)|"
+                r"(?:spoč|utrujen).{0,160}(?:naslednji\s+dan|regeneracij)",
+                assistant_history,
+                re.IGNORECASE,
+            ))
+            if recovery_question_already_asked:
+                return (
+                    "Dobra tehnika in primeren občutek napora sta pozitivna. Ker še nimam "
+                    "podatka o regeneraciji naslednji dan, obremenitve še ne povečuj; za zdaj "
+                    "ohrani enako dozo. Ko boš lahko, sporoči, ali si bil naslednji dan "
+                    "običajno spočit ali nenavadno utrujen."
+                )
+            return (
+                "Dve primerljivi uspešni izvedbi sta dober znak, vendar pred povečanjem "
+                "obremenitve preveriva še regeneracijo. Kako si se počutil naslednji dan "
+                "po zadnjem treningu – običajno spočit ali nenavadno utrujen?"
+            )
+        if progression_claim and recovery_reported:
+            exercise_known = bool(re.search(
+                r"počep\w*|mrtv\w*\s+dvig\w*|deadlift|bench\s+press|"
+                r"potisk\w*|veslan\w*|row\b",
+                user_history,
+                re.IGNORECASE,
+            ))
+            load_known = bool(re.search(
+                r"\b\d+(?:[.,]\d+)?\s*kg\b", user_history, re.IGNORECASE
+            ))
+            set_count_known = bool(re.search(r"\b\d+\s*[x×]\s*\d+\b", user_history))
+            if not (exercise_known and load_known and set_count_known):
+                return (
+                    "Regeneracija je ustrezna, zato lahko razmisliva o majhnem napredku. "
+                    "Ker nimam zanesljivega zapisa konkretne vaje, trenutne obremenitve "
+                    "in števila serij ter ponovitev, ne bom ugibal kilogramov ali obsega. "
+                    "Katera vaja je v programu in kakšen odmerek trenutno izvajaš "
+                    "(obremenitev ter serije × ponovitve)?"
+                )
+    progression_context = (
+        two_exposures
+        and bool(re.search(r"8[–-]10", user_history))
+        and bool(re.search(r"RIR\s*3|tri\s+ponovitve\s+v\s+rezervi", user_history, re.IGNORECASE))
+        and bool(re.search(r"10\s+ponovitev", user_history, re.IGNORECASE))
+    )
+    if progression_context:
+        recovery_reported = bool(re.search(
+            r"regeneracij\w*.{0,40}(?:dobra|ustrezna|normalna)|"
+            r"(?:dobro|normalno)\s+okrev\w*|"
+            r"naslednji\s+dan.{0,50}(?:brez\s+težav|brez\s+bolečin|spoč|normalno)|"
+            r"(?:brez|ni)\s+(?:nenavadne\s+)?utrujenosti",
+            user_history,
+            re.IGNORECASE,
+        ))
+        technique_and_effort = bool(re.search(
+            r"tehnik\w*.{0,40}(?:dobra|stabilna)|"
+            r"(?:ni|ni bil|ni bilo)\s+pretež\w*|trening\s+ni\s+bil\s+pretež\w*",
+            user_history,
+            re.IGNORECASE,
+        ))
+        if not recovery_reported:
+            recovery_question_already_asked = bool(re.search(
+                r"(?:regeneracij\w*|naslednji\s+dan).{0,120}"
+                r"(?:spoč|utrujen|bolečin|recovery|fatigue)|"
+                r"(?:spoč|utrujen).{0,120}(?:naslednji\s+dan|regeneracij)",
+                assistant_history,
+                re.IGNORECASE,
+            ))
+            if recovery_question_already_asked:
+                return (
+                    "Dobra tehnika in primeren občutek napora sta pozitivna. Ker še nimam "
+                    "podatka o regeneraciji naslednji dan, obremenitve še ne povečuj; za zdaj "
+                    "ohrani enako dozo. Ko boš lahko, sporoči, ali si bil naslednji dan "
+                    "običajno spočit ali nenavadno utrujen."
+                )
+            if technique_and_effort:
+                return (
+                    "Dobro, to potrjuje stabilno tehniko in primeren občutek napora. "
+                    "Pred povečanjem bremena preveriva še regeneracijo: ali si bil naslednji "
+                    "dan običajno spočit, brez nenavadne utrujenosti ali bolečin?"
+                )
+            return (
+                "Podatki kažejo, da si zgornjo mejo razpona dosegel v dveh primerljivih "
+                "treningih z RIR 3 in stabilno tehniko. Preden potrdim povečanje obremenitve, "
+                "preveriva še regeneracijo: kako si se počutil naslednji dan po zadnjem treningu?"
+            )
+        exercise_known = bool(re.search(
+            r"počep\w*|mrtv\w*\s+dvig\w*|deadlift|bench press|potisk\w*|veslan\w*|row\b",
+            user_history,
+            re.IGNORECASE,
+        ))
+        load_known = bool(re.search(r"\b\d+(?:[.,]\d+)?\s*kg\b", user_history, re.IGNORECASE))
+        set_count_known = bool(re.search(r"\b\d+\s*[x×]\s*\d+\b", user_history))
+        if not (exercise_known and load_known and set_count_known):
+            return (
+                "Ker sta dve primerljivi uspešni izpostavitvi potrjeni in je regeneracija ustrezna, "
+                "je naslednji korak lahko najmanjše razpoložljivo povečanje obremenitve; nato se "
+                "vrni na spodnjo mejo razpona, 8 ponovitev na serijo, in ohrani enako število serij "
+                "kot v programu. Ker nimam zapisa točne vaje, trenutnega bremena ali števila serij, "
+                "ne bom ugibal kilogramov ali obsega. Spreminjaj samo eno spremenljivko in spremljaj "
+                "tehniko ter RIR."
+            )
+    return answer
+
+
+def _sanitize_unverified_training_history_claims(answer, messages):
+    """Remove specific claims about the user's training timeline that are absent from their history."""
+    user_history = "\n".join(
+        item.get("content", "") for item in messages
+        if item.get("role") == "user" and isinstance(item.get("content"), str)
+    )
+    timeline = re.compile(r"\b(?:letos|lani|lansko leto|pred\s+\d+\s+leti|že\s+\d+\s+let)\b", re.IGNORECASE)
+    if timeline.search(user_history):
+        return answer
+    unsupported_claim = re.compile(
+        r"(?is)(?:glede na to, da si|ker si|vidim, da si|saj si)"
+        r".{0,100}\b(?:letos|lani|lansko leto|pred\s+\d+\s+leti|že\s+\d+\s+let)\b"
+        r".{0,100}\b(?:začel|začela|treniral|trenirala|vadil|vadila|opravil|opravila)\b"
+        r"[^.!?]*[.!?]\s*"
+    )
+    return unsupported_claim.sub("", answer)
+
+
+def _sanitize_unrequested_user_name(answer):
+    """Remove accidental direct address to the coach brand owner."""
+    answer = re.sub(r"(?im)^\s*Grega,\s*", "", answer)
+    # Also catch vocative use embedded in a sentence, e.g. "Odlično, Grega!".
+    answer = re.sub(r"(?i)(,\s*)?Grega(?=[,!?])[,!?]?", "", answer)
+    answer = re.sub(r",\s*(?=[.!?])", "", answer)
+    return answer
+
+
+def _sanitize_unverified_training_dose(answer, messages, language="sl"):
+    """Withhold individualized training doses until explicit safety clearance."""
+    user_texts = [
+        item.get("content", "") for item in messages
+        if item.get("role") == "user" and isinstance(item.get("content"), str)
+    ]
+    if not user_texts or _has_safety_clearance(messages):
+        return answer
+    history = "\n".join(user_texts)
+    exercise_context = bool(re.search(
+        r"(zgib|počep|počepu|veslan|mrtv\w* dvig|predklon|potisk|sklec|vajo|vaje|trening|"
+        r"squat|deadlift|hinge|row|pull.?up|push.?up|press|lunge|workout|exercise)",
+        history,
+        re.IGNORECASE,
+    ))
+    dose_pattern = (
+        r"\b\d+\s*(?:serij\w*|setov)\b.{0,100}\b\d+\s*(?:ponovitev|ponovitve|ponovitv)\b|"
+        r"\b\d+\s*(?:sets?)\b.{0,100}\b\d+\s*(?:reps?|repetitions?)\b|"
+        r"\b\d+\s*[x×]\s*\d+\b|"
+        r"\b\d+(?:[.,]\d+)?\s*(?:kg|kilograms?|lb|lbs|pounds?)\b"
+    )
+    individualized_dose = bool(re.search(dose_pattern, answer, re.IGNORECASE))
+    if not exercise_context or not individualized_dose:
+        return answer
+
+    safe_sentences = [
+        sentence.strip()
+        for sentence in re.split(r"(?<=[.!?])\s+|\n+", answer)
+        if sentence.strip() and not re.search(dose_pattern, sentence, re.IGNORECASE)
+    ]
+    introduction = " ".join(safe_sentences).strip()
+    if language == "en":
+        if not introduction:
+            introduction = "I can explain the exercise and its purpose."
+        return (
+            introduction
+            + "\n\nBefore prescribing sets, repetitions, or a load, I need to check safety: "
+            + INITIAL_SAFETY_QUESTION_EN
+        )
+    if not introduction:
+        introduction = "Lahko ti razložim izvedbo in namen vaje."
+    return (
+        introduction
+        + "\n\nPreden določim serije, ponovitve ali obremenitev, moram preveriti varnost: "
+        + INITIAL_SAFETY_QUESTION_SL
+    )
 def _sanitize_unverified_safety_claim(answer, messages):
     """Reject model claims that the user cleared safety when no user did so."""
     user_history = "\n".join(
         item.get("content", "") for item in messages
         if item.get("role") == "user" and isinstance(item.get("content"), str)
     )
-    if _has_explicit_safety_clearance(user_history):
+    if _has_safety_clearance(messages):
         return answer
     claim = re.search(
         r"(?:ker|saj)\s+(?:si\s+)?(?:potrdil|povedal),?\s+da\s+(?:nimaš|si brez)|"
@@ -355,16 +1109,27 @@ def _sanitize_unverified_safety_claim(answer, messages):
         r"(?:sva|smo|si).{0,40}zdravstven\w*\s+(?:pregled|preverjanje).{0,40}"
         r"(?:opravila|zaključila|končala)|"
         r"zdravstven\w*\s+(?:pregled|preverjanje).{0,40}"
-        r"(?:je bil|je bilo)\s+(?:že\s+)?(?:opravljen|zaključen)",
+        r"(?:je bil|je bilo)\s+(?:že\s+)?(?:opravljen|zaključen)|"
+        r"(?:since|because)\s+(?:you\s+)?(?:did not|didn't|have not|haven't)\s+"
+        r"(?:mention|report|tell me about).{0,100}(?:pain|injur\w*|limitation)|"
+        r"(?:since|because)\s+(?:you\s+)?(?:have no|do not have|don't have)\s+"
+        r"(?:pain|injur\w*|limitation)|"
+        r"(?:you confirmed|you told me)\s+(?:that\s+)?(?:you have no|you do not have|you don't have)\s+"
+        r"(?:pain|injur\w*|limitation)|"
+        r"(?:we have already completed|your health screening is complete)",
         answer,
         re.IGNORECASE,
     )
     if not claim:
         return answer
+    if re.search(r"\b(?:since|because|you confirmed|you told me)\b", answer, re.IGNORECASE):
+        return (
+            "You have not explicitly confirmed that, so I will not assume you are free "
+            "from restrictions. " + INITIAL_SAFETY_QUESTION_EN
+        )
     return (
         "Tega še nisi izrecno potrdil, zato ne bom predpostavljal, da nimaš omejitev. "
-        "Ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve ali "
-        "zdravstvene zadržke, ki bi jih moral upoštevati?"
+        + INITIAL_SAFETY_QUESTION_SL
     )
 
 
@@ -422,12 +1187,12 @@ def _bodyweight_only_program_note(messages):
         "potreboval elastiko, drog ali drugo stabilno oporo. Pri hipertrofiji je napredovanje "
         "zgolj z lastno težo omejeno; zahtevnejši vzvodi, enostranske različice, nadzorovan "
         "tempo in premori lahko pomagajo, vendar ne nadomestijo vedno zunanje obremenitve. "
-        "Tudi predklon z ravnim hrbtom brez dodatne obremenitve ni enakovreden obremenjenemu RDL."
+        "Tudi predklon z nevtralno hrbtenico brez dodatne obremenitve ni enakovreden obremenjenemu RDL."
     )
 
 
-def _pending_safety_reply(latest):
-    """Acknowledge new intake information while keeping the unanswered safety gate."""
+def _pending_safety_reply(latest, *, repeat_question=True):
+    """Acknowledge intake information without nagging after the safety gate was repeated."""
     lowered = latest.casefold()
     if re.search(r"\b(?:dvakrat|2[- ]krat|2x)\b.{0,30}(?:tedensko|na teden)|(?:tedensko|na teden).{0,30}\b(?:dvakrat|2[- ]krat|2x)\b", lowered):
         acknowledgement = "Upošteval bom, da želiš vaditi dvakrat tedensko."
@@ -449,12 +1214,62 @@ def _pending_safety_reply(latest):
         acknowledgement = "Upošteval bom tvoje približno triletne izkušnje in dostop do fitnesa."
     else:
         acknowledgement = "Hvala, ta podatek bom upošteval."
+    if not repeat_question:
+        return (
+            acknowledgement
+            + " Varnostnega vprašanja še nisi odgovoril, zato ne bom sklepal, da nimaš "
+            "bolečin, poškodb, gibalnih omejitev ali zdravstvenih zadržkov. Brez te potrditve "
+            "ne bom sestavil individualnega programa ali določal obremenitev. Splošne "
+            "informacije lahko še vedno razložim; do takrat ostaneva pri splošnih informacijah, "
+            "ne pri individualnem programu."
+        )
     return (
         acknowledgement
         + " Varnostnega vprašanja pa še nisi odgovoril, zato ne bom sklepal, "
-        "da omejitev ni. Ali imaš trenutno kakršne koli bolečine, poškodbe, "
-        "gibalne omejitve ali zdravstvene zadržke?"
+        "da omejitev ni. " + INITIAL_SAFETY_QUESTION_SL
     )
+
+
+def _onboarding_quick_replies(answer, messages=None, response_language="sl"):
+    """Return short, accessible choices for ATENA's current guided onboarding question."""
+    value = str(answer or "").casefold()
+    english = str(response_language or "").casefold().startswith("en")
+    choices = None
+    if _is_safety_question(answer):
+        choices = ["No, none of these", "Yes, I have a limitation or injury", "I'm not sure"] if english else ["Ne, nimam teh težav", "Da, imam omejitev ali poškodbo", "Nisem prepričan/-a"]
+    elif re.search(r"(kakšno opremo|katero opremo|oprema.{0,30}na voljo|equipment.{0,30}available)", value):
+        choices = ["Bodyweight only", "Resistance bands", "Dumbbells", "Kettlebell", "Dumbbells and kettlebell", "Full gym"] if english else ["Samo lastna teža", "Elastike", "Ročke", "Kettlebell", "Ročke in kettlebell", "Polno opremljen fitnes"]
+    elif re.search(r"(kolikokrat|pogostost|how many times|days per week)", value):
+        choices = ["2 days", "3 days", "4 days"] if english else ["2-krat na teden", "3-krat na teden", "4-krat na teden"]
+    elif re.search(r"(koliko časa|koliko minut|time.{0,20}available|how long)", value):
+        choices = ["20–30 minutes", "30–45 minutes", "45–60 minutes", "60+ minutes"] if english else ["20–30 minut", "30–45 minut", "45–60 minut", "60+ minut"]
+    elif re.search(r"(izkušnj.{0,20}vadb|začetnik|beginner|training experience)", value):
+        choices = ["Beginner / limited experience", "I train regularly"] if english else ["Začetnik/-ca ali malo izkušenj", "Redno treniram"]
+    elif re.search(r"(kaj želiš|glavni cilj|predvsem razvijati|what would you like|main goal)", value):
+        choices = ["Strength + muscle mass", "Functional fitness", "Fat loss"] if english else ["Moč + mišična masa", "Funkcionalna pripravljenost", "Zmanjšanje maščobne mase"]
+    elif re.search(r"(kje.{0,30}(?:treniraš|trenirati)|where.{0,30}train|training location)", value):
+        choices = ["At home", "At a gym", "Outdoors", "A mix of places"] if english else ["Doma", "V fitnesu", "Na prostem", "Kombinacija okolij"]
+    return choices or []
+
+
+def _has_contextual_frequency_answer(messages):
+    """Accept a bare 2–4 only as a direct answer to ATENA's weekly-frequency question."""
+    if len(messages) < 2:
+        return False
+    previous, latest = messages[-2], messages[-1]
+    if not (
+        isinstance(previous, dict) and previous.get("role") == "model"
+        and isinstance(latest, dict) and latest.get("role") == "user"
+    ):
+        return False
+    question = str(previous.get("content") or "").casefold()
+    answer = re.sub(r"[.!?,\s]+$", "", str(latest.get("content") or "").strip().casefold())
+    asked_frequency = bool(re.search(
+        r"(?:kolikokrat|koliko\s+krat|pogostost).{0,80}(?:teden|tedensko|week)|"
+        r"(?:how many times|days per week|weekly frequency)",
+        question,
+    ))
+    return asked_frequency and bool(re.fullmatch(r"(?:saj\s*,?\s*)?[2-4](?:\s*(?:x|krat))?", answer))
 
 
 def _coaching_guardrail_reply(messages):
@@ -463,6 +1278,10 @@ def _coaching_guardrail_reply(messages):
         item.get("content", "") for item in messages
         if item.get("role") == "user" and isinstance(item.get("content"), str)
     ]
+    assistant_texts = [
+        item.get("content", "") for item in messages
+        if item.get("role") == "model" and isinstance(item.get("content"), str)
+    ]
     if not user_texts:
         return None
     history = "\n".join(user_texts)
@@ -470,15 +1289,66 @@ def _coaching_guardrail_reply(messages):
     lowered = latest.casefold()
     history_lower = history.casefold()
 
+    # Red-flag symptoms must persist across turns. A follow-up question must not
+    # erase previously reported swelling/locking or inability to bear weight.
+    unable_to_bear_weight = bool(re.search(
+        r"(?:ne morem|ne zmorem).{0,50}(?:normalno\s+)?(?:obremenit\w*|stopit\w*|hodit\w*)|"
+        r"(?:nezmož\w*|težav\w*).{0,50}(?:obremenit\w*|stopit\w*|hodit\w*)|"
+        r"(?:cannot|can't|unable to).{0,35}(?:bear weight|put weight|walk|stand)",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    if unable_to_bear_weight:
+        return (
+            "Ker noge ne moreš normalno obremeniti, potrebuješ nujno zdravstveno oceno še danes. "
+            "Ne izvajaj počepov, izpadnih korakov ali drugih obremenjenih vaj in ne preizkušaj "
+            "kolena z dodatnimi gibi. Obrni se na dežurno zdravstveno službo oziroma nujno "
+            "medicinsko pomoč; če je stanje hudo, se hitro slabša ali ne moreš varno do pomoči, "
+            "pokliči 112. Ne morem postaviti diagnoze."
+        )
+
+    swelling_reported = (
+        bool(re.search(r"otekl\w*|swelling|swollen", history_lower))
+        and not bool(re.search(
+            r"(?:brez|ni|ne)\s+(?:nobene\s+)?otekl\w*|otekline\s+ni|ne\s+oteče|"
+            r"no swelling|not swollen|without swelling",
+            history_lower,
+        ))
+    )
+    locking_reported = (
+        bool(re.search(r"zaklepan\w*|zaklen\w*|locking|locks up", history_lower))
+        and not bool(re.search(
+            r"(?:brez|ni|ne)\s+(?:nobenega\s+)?zaklepan\w*|ne\s+zaklepa|"
+            r"no locking|does not lock|doesn't lock",
+            history_lower,
+        ))
+    )
+    knee_swelling_or_locking = (
+        bool(re.search(r"kolen\w*|knee", history_lower))
+        and (swelling_reported or locking_reported)
+    )
+
+    if knee_swelling_or_locking:
+        return (
+            "Oteklina ali zaklepanje kolena sta opozorilna znaka. Za zdaj ne izvajaj počepov, "
+            "izpadnih korakov ali drugih obremenjenih gibov za to koleno. Priporočam čimprejšnjo "
+            "zdravstveno oceno, preden se vrneš k obremenjevanju. Če noge ne moreš normalno "
+            "obremeniti ali ne moreš stopiti nanjo, poišči nujno zdravstveno pomoč še danes. "
+            "Ali lahko trenutno normalno obremenjuješ nogo?"
+        )
+
     recovery_context = bool(re.search(
-        r"(slabo spim|slab(?:o|ega) spanec|slaba regeneracija|neprespan)",
+        r"(slabo spim|slab(?:o|ega) spanec|slaba regeneracija|neprespan|"
+        r"sleeping poorly|poor sleep|bad sleep|not sleeping well)",
         history_lower,
     )) and bool(re.search(
-        r"(mišice.{0,35}utrujen|utrujen.{0,35}mišic|utrujenost)",
+        r"(mišice.{0,35}utrujen|utrujen.{0,35}mišic|utrujenost|"
+        r"muscle.{0,35}fatigue|fatigue.{0,35}muscle|muscle soreness)",
         history_lower,
     ))
     asks_to_continue = bool(re.search(
-        r"(naj kar nadaljujem|ali naj nadaljujem|nadaljujem po načrtu|nadaljujem po planu)",
+        r"(naj kar nadaljujem|ali naj nadaljujem|nadaljujem po načrtu|nadaljujem po planu|"
+        r"should i continue|can i continue|continue as planned|keep following the plan)",
         lowered,
     ))
     if recovery_context and asks_to_continue:
@@ -501,9 +1371,141 @@ def _coaching_guardrail_reply(messages):
             "kot shranjeno, dokler je ne potrdi namenski postopek za program oziroma profil."
         )
 
+    # Low-risk technique education for a foot-assisted vertical pull should remain
+    # available even while the separate health-intake question is unanswered.
+    foot_assisted_pull_context = bool(re.search(
+        r"(zgib\w*|vertikaln\w*.{0,25}(?:poteg|vlek)|pull.?up)",
+        history_lower,
+        re.IGNORECASE,
+    )) and bool(re.search(
+        r"(oporo\s+stopal|pomag\w*.{0,20}nog\w*|nog\w*.{0,20}pomag\w*|škatl\w*)",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    if foot_assisted_pull_context and re.search(
+        r"(lažj\w*.{0,35}vertikaln\w*|ne\s+veslanj\w*|ne\s+rowing)",
+        lowered,
+        re.IGNORECASE,
+    ):
+        return (
+            "Razumem: želiš lažjo različico vertikalnega zgiba, ne veslanja. "
+            "Zgib z oporo stopal je vertikalni poteg; škatla ti omogoča, da z nogami "
+            "delno razbremeniš roke, trup pa ostane skoraj navpičen."
+        )
+    if foot_assisted_pull_context and re.search(
+        r"(kako.{0,50}(?:postav\w*|položaj\w*|trup\w*|kolk\w*|kolen\w*|stopal\w*)|"
+        r"postav\w*.{0,50}(?:trup\w*|kolk\w*|kolen\w*|stopal\w*))",
+        lowered,
+        re.IGNORECASE,
+    ):
+        return (
+            "Škatlo postavi nekoliko pred drog, tako da lahko nanjo položiš stopala in "
+            "ohraniš trup skoraj navpičen. Stopala ostanejo na škatli; kolena in kolki so "
+            "udobno pokrčeni, kolena pa se ne naslanjajo na škatlo. Z rokami primi drog "
+            "približno v širini ramen, nežno aktiviraj lopatice in ohrani rebra nad medenico. "
+            "Med dvigom z nogami pritisni na škatlo le toliko, da zmanjšaš breme rok. "
+            "Spuščaj se nadzorovano in se ne odrivaj sunkovito. Če škatla ni stabilna, "
+            "te različice ne izvajaj."
+        )
+
+    # Explain a movement pattern when the user asks a conceptual question.
+    # This is general education, not an individualized exercise prescription.
+    row_pattern_context = bool(re.search(r"veslan\w*", history_lower))
+    row_conceptual_question = bool(re.search(
+        r"(gibaln\w*\s+vzorec|kako\s+naj\s+razumem|isto\s+kot|enako\s+kot|kaj\s+pomeni)",
+        lowered,
+        re.IGNORECASE,
+    ))
+    if row_pattern_context and row_conceptual_question:
+        if re.search(r"(isto\s+kot|enako\s+kot)", lowered, re.IGNORECASE):
+            return (
+                "Ne. Veslanje z ročkami v predklonu je horizontalni poteg: trup je nagnjen "
+                "naprej, ročke vlečeš proti trupu. Zgib je vertikalni poteg, pri katerem "
+                "telo vlečeš navzgor proti drogu. Gre za dva različna gibalna vzorca."
+            )
+        return (
+            "Veslanje z ročkami v predklonu je horizontalni poteg: trup je nagnjen naprej, "
+            "ročke vlečeš proti trupu, pri tem pa nadzoruješ položaj trupa in lopatic. "
+            "Zgib je vertikalni poteg, pri katerem telo vlečeš navzgor proti drogu. "
+            "Gre za dva različna gibalna vzorca; veslanje ne nadomesti zgiba."
+        )
+
+    # A dumbbell row is horizontal pulling, never a substitute for a vertical pull-up.
+    no_pull_up_bar = bool(re.search(
+        r"(?:nimam|brez|not have|don't have).{0,40}(?:drog(?:a|om)?|pull.?up bar)",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    vertical_pull_context = bool(re.search(
+        r"(zgib\w*|pull.?up|vertikaln\w*.{0,20}(?:poteg|vlek))",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    asks_about_back_training = bool(re.search(
+        r"(vadb\w*.{0,25}hrbt|trening.{0,25}hrbt|krepit\w*.{0,25}hrbt|back training)",
+        lowered,
+        re.IGNORECASE,
+    ))
+    if no_pull_up_bar and vertical_pull_context and asks_about_back_training:
+        return (
+            "Veslanje z ročkami v predklonu je horizontalni poteg: trup je nagnjen naprej, "
+            "ročke vlečeš proti trupu. Zgib je vertikalni poteg. Veslanje je koristna vaja za "
+            "hrbet, vendar ne nadomesti vertikalnega zgiba in ni isti gibalni vzorec. Ker nimaš "
+            "droga za zgibe, za obremenjen vertikalni poteg potrebuješ drog za zgibe ali elastiko z "
+            "namenskim varnim sidriščem. Veslanje z ročkami lahko ohraniš kot ločeno vajo za "
+            "horizontalni poteg. Ali imaš na voljo elastiko z varnim sidriščem?"
+        )
+
+    # Furniture is not an assumed load-bearing anchor. Answer this safety question
+    # directly even while the separate health-intake gate remains unanswered.
+    table_row_intent = bool(re.search(
+        r"(veslan\w*|inverted row|row).{0,70}(miza|mizo|table)|"
+        r"(miza|mizo|table).{0,70}(veslan\w*|inverted row|row)",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    if table_row_intent:
+        bodyweight_only = bool(re.search(
+            r"(nimam nobene opreme|samo lastno težo|brez opreme|na voljo imam samo lastno težo)",
+            history_lower,
+            re.IGNORECASE,
+        ))
+        if bodyweight_only:
+            already_warned = any(
+                re.search(r"veslanja pod mizo ne izvajaj", item, re.IGNORECASE)
+                for item in assistant_texts
+            )
+            if already_warned:
+                return (
+                    "Potem mize ne uporabljaj. Brez potrjenega sidrišča trenutno nimaš varne "
+                    "obremenjene različice horizontalnega vleka. Superman je lahko le "
+                    "dopolnilna talna vaja, ne enakovredna zamenjava za veslanje. Za obremenjeno "
+                    "vlečenje boš potreboval elastiko z namenskim varnim sidriščem ali drog za zgibe."
+                )
+            return (
+                "Veslanja pod mizo ne izvajaj, če ne moreš potrditi, da je miza stabilna in "
+                "primerna za obremenitev s telesno težo; če nisi prepričan, je ne uporabljaj. "
+                "Ker imaš na voljo samo lastno težo in tla, brez potrjenega sidrišča nimaš "
+                "varne obremenjene različice horizontalnega vleka. Za dopolnilno delo lahko "
+                "uporabiš vajo Superman (dvig trupa in okončin leže na trebuhu) v majhni, "
+                "nadzorovani amplitudi, če ti položaj ne povzroča nelagodja; ta vaja ni "
+                "enakovredna zamenjava za obremenjeno veslanje. Za ta vzorec bi potreboval "
+                "elastiko z varnim sidriščem ali drog za zgibe."
+            )
+        return (
+            "Veslanja pod mizo ne izvajaj, dokler ni potrjeno, da je miza stabilna in "
+            "primerna za obremenitev s telesno težo. Če tega ne moreš zanesljivo potrditi, "
+            "je ne uporabljaj in ne preizkušaj z obešanjem pod njo. Ali imaš na voljo "
+            "elastiko z namenskim varnim sidriščem ali drog za zgibe?"
+        )
+
     # Stable, factual answers for common conceptual questions. These do not create
     # an individualized prescription and therefore do not trigger the safety gate.
-    if re.search(r"(samo|izključno).{0,20}metcon|metcon.{0,20}(samo|edini|izključno)", lowered):
+    metcon_only_question = (
+        bool(re.search(r"(samo|izključno).{0,20}metcon|metcon.{0,20}(samo|edini|izključno)", lowered))
+        and bool(re.search(r"(vzdržljiv\w*|kondic\w*|aerobn\w*|endurance)", lowered))
+    )
+    if metcon_only_question:
         return (
             "Ne. MetCon je lahko koristen za mešano delovno kapaciteto, vendar sam po sebi "
             "ne nadomesti sistematičnega razvoja aerobne osnove. Vzdržljivost lahko razvijaš "
@@ -511,6 +1513,44 @@ def _coaching_guardrail_reply(messages):
             "MetConom. Razmerje med njimi je odvisno od cilja, izkušenj in regeneracije. "
             "MetCon ni samodejno škodljiv, vendar lahko prevelik delež intenzivnega dela "
             "oteži regeneracijo."
+        )
+    if re.search(
+        r"(?:moram|naj).{0,40}(?:vsak dan|dnevno).{0,25}hiit|"
+        r"hiit.{0,40}(?:vsak dan|dnevno)",
+        lowered,
+        re.IGNORECASE,
+    ):
+        return (
+            "Ne. Vsakodnevni HIIT ni potreben za zmanjšanje telesne maščobe. Osnovo naj "
+            "predstavljajo vzdržna prehrana z zmernim energijskim primanjkljajem, zadosten "
+            "vnos beljakovin za ohranjanje mišične mase, redna vadba za moč in količina "
+            "kondicije, ki jo lahko dobro regeneriraš. HIIT je "
+            "ena od možnosti, ne obveznost; del kondicije lahko razvijaš tudi s hojo, "
+            "kolesom ali zmernim aerobnim delom. Med zahtevnimi treningi pusti dovolj "
+            "prostora za okrevanje."
+        )
+    if re.search(
+        r"koliko.{0,40}(počiv\w*|odmor\w*).{0,45}(težj\w*|serij\w*)|"
+        r"(težj\w*|serij\w*).{0,45}(koliko).{0,35}(počiv\w*|odmor\w*)",
+        lowered,
+        re.IGNORECASE,
+    ):
+        return (
+            "Pri težjih večsklepnih serijah za moč običajno počivaj približno 2–3 minute; "
+            "pri zelo zahtevnih serijah lahko potrebuješ 3–5 minut. Pri lažjih dodatnih "
+            "vajah so pogosto dovolj 1–2 minuti. Odmor prilagodi tako, da naslednjo serijo "
+            "izvedeš kakovostno in z načrtovano rezervo."
+        )
+    if (
+        "30 minut" in history_lower
+        and re.search(r"(skrajš\w*).{0,35}(odmor\w*|počitek)|"
+                       r"(odmor\w*|počitek).{0,35}skrajš\w*", lowered)
+    ):
+        return (
+            "Ne krajšaj pretirano odmorov pri težkih serijah samo zato, da ujameš čas. "
+            "Ohrani dovolj počitka za kakovost izvedbe; če 30 minut ne zadošča, zmanjšaj "
+            "število vaj ali dodatnih serij, ne pa počitka pri glavnih vajah. Upoštevaj "
+            "tudi čas za ogrevanje in prehode."
         )
     if re.search(r"(čim večjo|maximalno|največjo).{0,30}amplitud|amplitud.{0,30}(vsaki|vsaka|največjo)", lowered):
         return (
@@ -532,13 +1572,52 @@ def _coaching_guardrail_reply(messages):
             "povratne informacije pokažejo konkreten primanjkljaj nadzora ali kadar jih "
             "zahteva določena vaja. Pri hipertrofiji ostajajo v ospredju ustrezno odmerjene "
             "večsklepne vaje. Preden sestavim tvoj individualni program, moram preveriti: "
-            "ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
+            + INITIAL_SAFETY_QUESTION_SL
         )
-    if re.search(r"(izpustil|izpuščen).{0,40}(trening|vadb)|dvojni obseg|dvojno količino", lowered):
+    missed_session = bool(re.search(
+        r"(?:izpustil\w*|izpuščen\w*).{0,50}(?:trening\w*|vadb\w*)|"
+        r"(?:trening\w*|vadb\w*).{0,50}(?:izpustil\w*|izpuščen\w*)|"
+        r"(?:opravil|opravila)\s+(?:samo|le)\s+en\w*\s+od\s+dveh.{0,60}(?:trening\w*|vadb\w*)|"
+        r"samo\s+en\w*\s+od\s+dveh.{0,60}(?:trening\w*|vadb\w*)",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    low_energy = bool(re.search(
+        r"(brez energij\w*|premalo energij\w*|utrujen\w*\s+po\s+službi|"
+        r"po\s+službi.{0,40}utrujen\w*|po\s+delu.{0,40}utrujen\w*)",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    self_blame = bool(re.search(
+        r"(vse\s+sem\s+pokvaril|vse\s+pokvaril|vse\s+sem\s+zamočil|"
+        r"vse\s+zamočil|vse\s+sem\s+uničil|vse\s+uničil|ničesar\s+nisem\s+dosegel)",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    health_issue = bool(re.search(
+        r"(bolečin\w*|poškodb\w*|oteklin\w*|vročin\w*|bolezen|gripa|omotic\w*|omotič\w*)",
+        history_lower,
+        re.IGNORECASE,
+    ))
+    if missed_session and not health_issue:
+        if self_blame:
+            return (
+                "Ničesar nisi pokvaril. En izpuščen trening ne izniči napredka. "
+                "Ne poskušaj ga nadoknaditi z dvojnim obsegom; nadaljuj z naslednjim "
+                "načrtovanim treningom. Če se to ponavlja, prilagodiva tedenski obseg, "
+                "da bo realističen. Za zdaj se osredotoči samo na naslednji načrtovani trening."
+            )
+        if low_energy:
+            return (
+                "To je razumljivo; po službi ni vedno dovolj energije. Izpuščenega treninga "
+                "ne nadomeščaj z dvojnim obsegom. Poskusi krajšo različico 20–30 minut ali "
+                "zahtevnejši trening prestavi na dan z več energije. Bi ti bolj ustrezal "
+                "krajši trening po službi?"
+            )
         return (
-            "Ne. Izpuščenega treninga praviloma ne nadomeščaj z dvojnim obsegom v naslednji "
-            "vadbi. Nadaljuj po običajnem razporedu; zamujenega treninga ni treba 'loviti'. "
-            "Če si zaradi premora še utrujen ali slabše regeneriran, nadaljuj konservativno."
+            "En izpuščen trening ne izniči napredka. Izpuščenega treninga ne nadomeščaj z dvojnim obsegom; "
+            "nadaljuj z naslednjim načrtovanim treningom. Kaj je bil glavni razlog, "
+            "da je trening odpadel?"
         )
 
     no_pain_now = _has_explicit_no_pain_confirmation(latest)
@@ -599,10 +1678,6 @@ def _coaching_guardrail_reply(messages):
             "oziroma nestabilnosti ali sveže poškodbe?"
         )
 
-    assistant_texts = [
-        item.get("content", "") for item in messages
-        if item.get("role") == "model" and isinstance(item.get("content"), str)
-    ]
     assistant_asked_pain_details = any(
         re.search(r"kje natančno se pojavi bolečina|kakšna je in kako močna", item, re.IGNORECASE)
         for item in assistant_texts
@@ -620,8 +1695,7 @@ def _coaching_guardrail_reply(messages):
         if not reported_intensity:
             return (
                 "Hvala, zdaj vem, kje in pri katerem delu giba se pojavi težava. "
-                "Kolikšna je bolečina na lestvici od 0 do 10? Ali po prenehanju giba "
-                "izzveni ali ostane prisotna?"
+                "Kolikšna je bolečina na lestvici od 0 do 10?"
             )
         if not reported_after_effect:
             return (
@@ -637,66 +1711,117 @@ def _coaching_guardrail_reply(messages):
         return (
             "Za zdaj ne ponavljaj giba v isti dozi, če sproža bolečino; to ne pomeni, da moraš "
             "prekiniti vso nebolečo aktivnost. Do razjasnitve bolečega giba ga ne nadomeščaj z "
-            "drugo obremenjeno vajo. Kje natančno se pojavi bolečina, kakšna je in kako močna "
-            "je od 0 do 10, pri katerem gibu in pri kateri dozi nastane (obremenitev, obseg giba, serije/ponovitve) ter ali po prenehanju izzveni? Če gre za "
-            "blago, znano nelagodje brez opozorilnih znakov, lahko nato prilagodiva eno "
-            "spremenljivko doze (obseg, obremenitev, število serij, pogostost ali tempo) in "
-            "preveriva odziv. Ob novi, hudi, slabšajoči se ali vztrajni bolečini oziroma "
-            "oteklini, zaklepanju, popuščanju ali nezmožnosti obremenitve poišči strokovno oceno."
+            "drugo obremenjeno vajo. Ko razjasniva odziv, lahko prilagodiva eno spremenljivko doze. "
+            "Kje natančno se pojavi bolečina?"
+        )
+
+    # Keep the already-reported pain context active when the user asks whether to
+    # reduce the load, continue, or substitute the same painful movement.
+    pain_signal = re.compile(
+        r"(boli me|me boli|me zaboli|zaboli me|bolečin\w*|čutim bolečino|"
+        r"občutim bolečino|bolečina se pojavi)",
+        re.IGNORECASE,
+    )
+    pain_report_positions = [
+        index for index, content in enumerate(user_texts)
+        if pain_signal.search(content) and not _has_explicit_no_pain_confirmation(content)
+    ]
+    no_pain_positions = [
+        index for index, content in enumerate(user_texts)
+        if _has_explicit_no_pain_confirmation(content)
+    ]
+    pain_context_active = bool(pain_report_positions) and (
+        not no_pain_positions or pain_report_positions[-1] > no_pain_positions[-1]
+    )
+    pain_followup_intent = bool(re.search(
+        r"(zmanjš\w*|zniž\w*).{0,35}(tež\w*|bremen\w*)|"
+        r"nadaljuj\w*|nadaljev\w*|zamenj\w*|nadomest\w*|alternativ\w*",
+        lowered,
+        re.IGNORECASE,
+    ))
+    if pain_context_active and pain_followup_intent:
+        return (
+            "Ne nadaljuj istega bolečega giba samo z manjšo težo, dokler ne razjasniva odziva. "
+            "Za zdaj izpusti ta boleči gib; ne zamenjaj ga samodejno s skleco ali drugo "
+            "obremenjeno vajo. Kolikšna je bolečina od 0 do 10?"
         )
 
     # Do not let a language model convert an unanswered safety question into clearance.
-    assistant_asked_safety = any(re.search(
-        r"(?:ali\s+(?:imaš|trenutno|morda)|imaš\s+(?:trenutno|kakšne|kakršne koli)|občutiš|opaziš).{0,100}"
-        r"(?:bolečin\w*|poškodb\w*|omejitv\w*|zdravstven.{0,30}težav)",
-        item,
-        re.IGNORECASE,
-    ) for item in assistant_texts)
+    safety_question_count = sum(
+        1 for item in assistant_texts
+        if "?" in item and re.search(
+            r"(?:ali\s+(?:imaš|trenutno|morda)|imaš\s+(?:trenutno|kakšne|kakršne koli)|občutiš|opaziš).{0,100}"
+            r"(?:bolečin\w*|poškodb\w*|omejitv\w*|zdravstven.{0,30}težav)|"
+            r"(?:do you currently have|do you have|are you experiencing).{0,100}"
+            r"(?:pain|injur\w*|medical restriction|health condition|limitation)",
+            item,
+            re.IGNORECASE,
+        )
+    )
+    assistant_asked_safety = safety_question_count > 0
+    localized_symptom_reported = _has_localized_symptom_report(latest)
+    symptom_clarification_active = any(
+        re.search(r"(?:kolikšna je bolečina|bolečina od 0 do 10|ali je bolečina nova|"
+                  r"ali se bolečina stopnjuje)", item, re.IGNORECASE)
+        for item in assistant_texts
+    )
+    if assistant_asked_safety and not _has_safety_clearance(messages) and localized_symptom_reported:
+        return (
+            "Razumem: navedel si lokalno bolečino, zato začetnega splošnega vprašanja ne bom ponavljal. "
+            "To še ne pomeni, da je varnostna ocena zaključena ali da lahko že sestavim program. "
+            "Kolikšna je bolečina od 0 do 10?"
+        )
     assistant_asked_setup = any(
         "?" in item and re.search(
-            r"(oprem\w*|koliko časa|časovn\w* okvir|minut|tedensk\w*|pogostost)",
+            r"(oprem\w*|koliko časa|časovn\w* okvir|minut|tedensk\w*|pogostost|"
+            r"what equipment|how much time|how many days|weekly availability|how often)",
             item,
             re.IGNORECASE,
         )
         for item in assistant_texts
     )
     fitness_intent = bool(re.search(
-        r"(bolj fit|telesn\w* pripravljenost|kondic\w*|močnejš\w*|mišičn\w* maso|"
-        r"redn\w* trenir|začnem trenir|program vadbe|vadbeni program)",
+        r"(bolj fit|telesn\w* pripravljenost|splošn\w* pripravljenost|funkcional\w*|"
+        r"kondic\w*|moč\w*|mišičn\w* maso|maščob\w*|redn\w* trenir|"
+        r"začnem trenir|program vadbe|vadbeni program|get fitter|improve my fitness|"
+        r"build strength|gain muscle|lose fat|training plan|workout plan|"
+        r"improve conditioning|improve endurance)",
         history_lower,
         re.IGNORECASE,
     ))
     if (
         assistant_asked_setup
         and not assistant_asked_safety
-        and not _has_explicit_safety_clearance(history)
+        and not _has_safety_clearance(messages)
         and fitness_intent
     ):
         return (
             "Preden se lotiva opreme in časovnega načrta, moram najprej preveriti varnost: "
-            "ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve "
-            "ali zdravstvene zadržke?"
+            "ali imaš trenutno akutno ostro bolečino, novo oteklino, mišični spazem, "
+            "svežo poškodbo, nenadno izgubo funkcije ali večjo ortopedsko oziroma "
+            "zdravstveno omejitev, zaradi katere vadba trenutno ni primerna?"
         )
     latest_reports_health_issue = bool(re.search(
-        r"(imam|občutim|čutim|pojavlja se|pojavila se je).{0,70}"
-        r"(boleč|poškodb|omejit|bolezen|operacij|simptom)",
+        r"(imam|občutim|čutim|pojavlja se|pojavila se je|I have|I am experiencing|I feel).{0,70}"
+        r"(boleč|poškodb|omejit|bolezen|operacij|simptom|pain|injur\w*|limitation|medical condition|symptom)",
         latest,
         re.IGNORECASE,
     ))
-    if assistant_asked_safety and not _has_explicit_safety_clearance(history) and not latest_reports_health_issue:
-        pending = _pending_safety_reply(latest)
-        safety_question = pending.split(". ", 1)[-1]
+    if assistant_asked_safety and not _has_safety_clearance(messages) and not latest_reports_health_issue and not symptom_clarification_active:
+        # The acute/major-restriction safety intake is a one-time question. If the user skips it,
+        # acknowledge new information and keep the programme gate closed without asking again.
+        pending = _pending_safety_reply(latest, repeat_question=False)
         if re.search(r"(vse sem pokvaril|vse pokvaril|pokvaril sem vse)", lowered):
             return (
                 "Ničesar nisi pokvaril. En izpuščen trening ne izbriše napredka; pomembno je, "
                 "da se vrneš v ritem brez lovljenja zamujenega obsega. "
-                + safety_question
+                + pending
             )
         if re.search(r"(brez energije|utrujen|izčrpan)", lowered):
             return (
                 "Razumem; utrujenost po službi je pomemben podatek in trening lahko prilagodiva, "
                 "namesto da siliš skozi izčrpanost. "
-                + safety_question
+                + pending
             )
         return pending
 
@@ -816,10 +1941,10 @@ def _coaching_guardrail_reply(messages):
         if re.search(r"zamenj|nadomest|alternativ|namesto|swap|replace", text_value, re.IGNORECASE):
             substitution_intent_texts.append(text_value)
     if substitution_intent_texts:
-        if not _has_explicit_safety_clearance(history):
+        if not _has_safety_clearance(messages):
             return (
                 "Preden predlagam zamenjavo vaje, moram preveriti varnost: ali imaš trenutno "
-                "kakršne koli bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
+                + INITIAL_SAFETY_QUESTION_SL
             )
         intent_text = " ".join(substitution_intent_texts).casefold()
         named_exercise = False
@@ -859,7 +1984,37 @@ def _coaching_guardrail_reply(messages):
         latest,
         re.IGNORECASE,
     ))
-    if prescription_request and not _has_explicit_safety_clearance(history):
+    if prescription_request and not _has_safety_clearance(messages):
+        if _has_localized_symptom_report(history):
+            pain_score_reported = bool(re.search(
+                r"\b(?:10|[0-9])\s*(?:/\s*10|od\s+10)\b|"
+                r"\b(?:jakost|intenzivnost)\s+(?:je|okoli)\s+\d",
+                history_lower,
+            ))
+            pain_context_clarified = bool(re.search(
+                r"(nova bolečina|bolečina je nova|že od prej|že dolgo|poznana bolečina|"
+                r"familiar pain|new pain|known pain)",
+                history_lower,
+            ))
+            pain_trend_clarified = bool(re.search(
+                r"(se ne stopnjuje|ne stopnjuje se|ni slabše|ne slabša se|se stopnjuje|postaja hujša|"
+                r"worsening|not getting worse|not worsening)",
+                history_lower,
+            ))
+            if not pain_score_reported:
+                question = "Kolikšna je bolečina od 0 do 10?"
+            elif not pain_context_clarified:
+                question = "Ali je bolečina nova ali jo poznaš že od prej?"
+            elif not pain_trend_clarified:
+                question = "Ali se bolečina v zadnjem času stopnjuje?"
+            else:
+                question = "Ali imaš poleg te bolečine še kakšno drugo poškodbo, gibalno omejitev ali zdravstveni zadržek?"
+            return (
+                "Ker si navedel lokalno bolečino, individualnega programa ali obremenjene zamenjave "
+                "še ne bom predpisal. Najprej morava razjasniti simptome in varnost; bolečina sama "
+                "ni diagnoza in ne pomeni samodejne prepovedi vse neboleče aktivnosti. "
+                + question
+            )
         contradiction = bool(re.search(
             r"(začetnik|začetniški).{0,80}(deset let|dolgoletn|napreden)|"
             r"(deset let|dolgoletn|napreden).{0,80}(začetnik|začetniški)",
@@ -868,20 +2023,197 @@ def _coaching_guardrail_reply(messages):
         if contradiction:
             return (
                 "Pred zahtevnejšim programom morava najprej preveriti varnost. "
-                "Ali imaš trenutno kakršne koli bolečine, poškodbe, gibalne omejitve "
-                "ali zdravstvene zadržke? Opazil sem tudi neskladje med podatkom "
+                + INITIAL_SAFETY_QUESTION_SL + " Opazil sem tudi neskladje med podatkom "
                 "»začetnik« in navedbo desetih let treninga; to bova razjasnila takoj zatem."
             )
         return (
             "Preden pripravim individualni trening ali predlagam konkretne vaje in "
-            "obremenitve, moram preveriti varnost: ali imaš trenutno kakršne koli "
-            "bolečine, poškodbe, gibalne omejitve ali zdravstvene zadržke?"
+            "obremenitve, moram preveriti varnost: ali imaš trenutno akutno ostro bolečino, "
+            "novo oteklino, mišični spazem, svežo poškodbo, nenadno izgubo funkcije ali večjo "
+            "ortopedsko oziroma zdravstveno omejitev, zaradi katere vadba trenutno ni primerna?"
         )
 
+    # Before a programme is built, do not infer missing equipment or experience.
+    # This deterministic gate prevents a plausible-sounding model answer from filling gaps.
+    profile = _profile_from_messages(messages) or {}
+    profile_frequency = profile.get("sessions_per_week", profile.get("frequency"))
+    profile_duration = profile.get("session_minutes", profile.get("duration"))
+    frequency_known = profile_frequency not in (None, "", 0, "0") or bool(re.search(
+        r"\b(?:dvakrat|trikrat|štirikrat|[2-4]\s*[- ]?\s*krat|[2-4]x)\b.{0,35}(?:tedensko|na teden)|"
+        r"(?:tedensko|na teden).{0,35}\b(?:dvakrat|trikrat|štirikrat|[2-4]\s*[- ]?\s*krat|[2-4]x)\b",
+        history_lower,
+    )) or _has_contextual_frequency_answer(messages)
+    duration_known = profile_duration not in (None, "", 0, "0") or bool(re.search(
+        r"\b(?:20|25|30|35|40|45|50|60|75|90)(?:\s*(?:[-–—]|do)\s*(?:20|25|30|35|40|45|50|60|75|90))?\s*(?:minut|min)\b|"
+        r"\b(?:pol\s+ure|eno\s+uro|ura\s+vadbe)\b",
+        history_lower,
+    ))
+    schedule_known = frequency_known or duration_known
+    experience_known = bool(re.search(
+        r"\b(?:začetnik|začetnica|začetniški|srednje izkušen|izkušen|napreden|napredna|"
+        r"malo izkušenj|nekaj izkušenj|few years of experience|some experience|"
+        r"beginner|intermediate|advanced)\b|"
+        r"\b(?:redno\s+treniram|redno\s+vadim|train\s+regularly|I\s+train\s+regularly|regularly\s+train)\b|"
+        r"\b(?:treniram|trenirala sem|vadim).{0,45}\b(?:leto|leti|leta|let)\b|"
+        r"\b(?:eno|dve|tri|štiri|pet|deset)\s+leta?\s+(?:redno\s+)?treninga\b",
+        history_lower,
+    ))
+    available_equipment = _profile_available_equipment(messages)
+    # An empty equipment array means the profile form has not confirmed equipment.
+    # Older clients injected household/bodyweight defaults even when untouched.
+    equipment_known = (
+        profile.get("equipment_confirmed") is True
+        or ("equipment_confirmed" not in profile and bool(profile.get("equipment")))
+        or bool(available_equipment)
+    )
+    goal_known = bool(isinstance(profile.get("goal"), str) and profile.get("goal").strip()) or bool(re.search(
+        r"\b(?:moč\w*|strength|mišičn\w*\s+mas\w*|hipertrof\w*|hypertrophy|"
+        r"maščob\w*|hujš\w*|fat\s+loss|weight\s+loss|kondic\w*|vzdržljiv\w*|"
+        r"endurance|conditioning|splošn\w*\s+(?:telesn\w*\s+)?pripravljenost|"
+        r"general\s+fitness|funkcional\w*|functional|gibljiv\w*|mobilit\w*|"
+        r"mobility|eksplozivn\w*|power)\b",
+        history_lower,
+    ))
+    programming_intent = bool(re.search(
+        r"\b(?:pripravi|pripravite|sestavi|sestavite|naredi|ustvari|build|create|prepare|make)\b"
+        r".{0,80}\b(?:program\w*|plan\w*|trening\w*|vadb\w*|workout)\b|"
+        r"\b(?:program\w*|plan\w*|workout)\b.{0,80}\b"
+        r"(?:pripravi|sestavi|naredi|ustvari|build|create|prepare|make)\b",
+        history_lower,
+    ))
+    weekly_program_intent = bool(re.search(r"\b(?:program\w*|tedenski\s+plan|weekly\s+plan)\b", history_lower))
+
+    # Guided onboarding: ATENA owns the question order and asks only for the next
+    # missing fact. Free-text answers and structured profile choices are both valid.
+    latest_is_educational = bool(re.search(
+        r"(kaj pomeni|kaj je|razloži|pojasni|kako deluje|what does|what is|explain|define)",
+        latest,
+        re.IGNORECASE,
+    ))
+    if (
+        fitness_intent
+        and assistant_asked_safety
+        and _has_safety_clearance(messages)
+        and not latest_is_educational
+        and not substitution_intent_texts
+    ):
+        if not goal_known:
+            return (
+                "Kaj želiš predvsem izboljšati? Izberi najbližji cilj; če jih imaš več, "
+                "lahko pozneje sestaviva kombinacijo."
+            )
+        experience_question_already_asked = any(
+            "izkušnje z vadbo moči" in item.casefold()
+            or "dosedanje izkušnje" in item.casefold()
+            for item in assistant_texts
+        )
+        if not experience_known:
+            if experience_question_already_asked:
+                if re.search(r"(ravnotež\w*|koordinacij\w*|eksploziv\w*|kondic\w*|moč\w*)", lowered):
+                    return (
+                        "Zabeležil sem tvoje prioritete glede moči, ravnotežja, koordinacije, "
+                        "eksplozivnosti in kondicije. Za določitev zahtevnosti programa mi "
+                        "še manjka podatek o tvojih izkušnjah z vadbo moči."
+                    )
+                return (
+                    "Oprema in časovni okvir sta zabeležena. Za določitev zahtevnosti "
+                    "programa mi še manjka podatek o tvojih izkušnjah z vadbo moči."
+                )
+            return (
+                "Kakšne so tvoje izkušnje z vadbo moči – si začetnik ali imaš malo izkušenj, "
+                "oziroma že redno treniraš?"
+            )
+        if not frequency_known:
+            return "Kolikokrat na teden lahko realno treniraš?"
+        if not duration_known:
+            return "Koliko časa imaš običajno na voljo za posamezni trening?"
+        if not equipment_known:
+            return (
+                "Katero opremo imaš dejansko na voljo? Če nimaš ničesar, lahko "
+                "načrtujem vadbo samo z lastno težo."
+            )
+
+    # A conversational request for a hard workout is not a training goal.
+    # Do not invent the goal, weekly frequency or session duration to fill gaps.
+    if programming_intent and _has_safety_clearance(messages):
+        if not goal_known:
+            goal_question_already_asked = any(
+                "kaj želiš predvsem razvijati" in item.casefold()
+                for item in assistant_texts
+            )
+            if goal_question_already_asked:
+                if re.search(r"(težek\w*\s+trening|zahtev\w*\s+trening|visok\w*\s+intenzivnost)", lowered):
+                    return (
+                        "Razumem, da želiš zahteven trening. Zahtevnost opisuje, kako "
+                        "intenzivno boš treniral, ne pove pa še, kaj želiš predvsem razvijati. "
+                        "Glavnega cilja še nimam, zato programa ne bom ugibal. "
+                        "Ko določiš, ali želiš razvijati moč, mišično maso, kondicijo "
+                        "ali funkcionalno pripravljenost, lahko nadaljujeva."
+                    )
+                return (
+                    "Zabeležil sem dodatne podatke o tvojih izkušnjah in opremi. "
+                    "Glavnega cilja še nimam, zato programa ne bom ugibal. "
+                    "Ko določiš, ali želiš razvijati moč, mišično maso, kondicijo "
+                    "ali funkcionalno pripravljenost, lahko nadaljujeva."
+                )
+            return (
+                "Preden sestavim program, morava najprej določiti glavni cilj. "
+                "Kaj želiš predvsem razvijati: moč in mišično maso, funkcionalno pripravljenost "
+                "(tudi kondicijo, mobilnost in koordinacijo) ali zmanjšati maščobno maso?"
+            )
+        if weekly_program_intent:
+            if not experience_known:
+                return (
+                    "Preden določim zahtevnost in obseg tedenskega programa, mi povej še: "
+                    "kakšne so tvoje izkušnje z vadbo moči – si začetnik ali imaš malo izkušenj, "
+                    "oziroma že redno treniraš?"
+                )
+            if not frequency_known:
+                return "Kolikokrat na teden želiš oziroma realno lahko trenirati?"
+            if not duration_known:
+                return "Koliko časa imaš običajno na voljo za posamezni trening?"
+            if not equipment_known:
+                return (
+                    "Katero opremo imaš dejansko na voljo? Če nimaš ničesar, lahko "
+                    "načrtujem vadbo samo z lastno težo."
+                )
+
+    if fitness_intent and _has_safety_clearance(messages) and schedule_known:
+        if not experience_known:
+            experience_question_already_asked = any(
+                "izkušnje z vadbo moči" in item.casefold()
+                or "dosedanje izkušnje" in item.casefold()
+                for item in assistant_texts
+            )
+            if experience_question_already_asked:
+                if re.search(r"(ravnotež\w*|koordinacij\w*|eksploziv\w*|kondic\w*|moč\w*)", lowered):
+                    return (
+                        "Zabeležil sem tvoje prioritete glede moči, ravnotežja, koordinacije, "
+                        "eksplozivnosti in kondicije. Za določitev zahtevnosti programa mi "
+                        "še manjka podatek o tvojih izkušnjah z vadbo moči."
+                    )
+                return (
+                    "Oprema in časovni okvir sta zabeležena. Za določitev zahtevnosti "
+                    "programa mi še manjka podatek o tvojih izkušnjah z vadbo moči."
+                )
+            return (
+                "Preden izberem zahtevnost vaj, mi povej še: kakšne so tvoje dosedanje "
+                "izkušnje z vadbo moči – si začetnik ali imaš malo izkušenj, oziroma že redno treniraš?"
+            )
+        if not frequency_known:
+            return "Kolikokrat na teden lahko realno treniraš?"
+        if not duration_known:
+            return "Koliko časa imaš običajno na voljo za posamezni trening?"
+        if not equipment_known:
+            return (
+                "Časovni okvir sem razumel. Da ne bom predpostavljal, da imaš ročke, klop "
+                "ali drugo opremo: kaj imaš dejansko na voljo za vadbo? Če nimaš ničesar, "
+                "lahko izhajava samo iz lastne teže."
+            )
     if (
         re.search(r"dva treninga sta bila lahka", history_lower)
         and re.search(r"vsaj tremi ponovitvami v rezervi", history_lower)
-        and _has_explicit_safety_clearance(history)
+        and _has_safety_clearance(messages)
     ):
         return (
             "Dva lahka treninga in dobra regeneracija lahko upravičita majhen korak naprej, "
@@ -893,19 +2225,21 @@ def _coaching_guardrail_reply(messages):
         )
     return None
 
-SYSTEM_PROMPT = """You are ATENA, Grega Jenko's pilot AI fitness coach. Reply in natural, grammatically correct Slovenian unless the user uses another language. Use clear, idiomatic wording, correct Slovenian grammar and punctuation, and concise headings/lists where helpful. Avoid awkward literal translations, excessive English jargon, and unsupported certainty.
+SYSTEM_PROMPT = """You are ATENA, an international AI fitness coach. Follow the response-language instruction supplied for each conversation. Use natural, grammatically correct language, clear wording, concise headings/lists where helpful, and avoid awkward literal translations, excessive jargon, and unsupported certainty. Use clear, idiomatic wording, correct grammar and punctuation in the selected response language, and concise headings/lists where helpful. Avoid awkward literal translations, excessive English jargon, and unsupported certainty.
 
 ROLE AND METHOD
-You are not a generic chatbot that simply prescribes an exercise in response to the last message. Act like a careful, proactive coach who first builds an adequate picture of the person, then gives a suitable next step and follows up over time. Use information already provided in the conversation; do not ask for it again. Do not pretend to remember information that is not in the conversation.
+You are not a generic chatbot that simply prescribes an exercise in response to the last message. Act like a careful, proactive coach who first builds an adequate picture of the person, then gives a suitable next step and follows up over time. Use information already provided in the conversation; do not ask for it again. Do not pretend to remember information that is not in the conversation. Never invent or silently infer a user's training start date, years of experience, consistency, previous sessions, equipment, pain status or completed actions. When the profile and the user's description conflict, acknowledge the exact discrepancy and ask one focused clarification; do not invent a compromise explanation.
 
 ONBOARDING AND QUESTIONS
-Before prescribing an individualized workout or training plan, establish the minimum useful context:
-1) main goal (e.g. strength, muscle development, fat loss/body composition, conditioning, general functional fitness, explosive power or mobility);
-2) current experience and approximate ability;
-3) available equipment and realistic time;
-4) major health conditions, recent injuries, medical restrictions, and any discomfort that changes a movement;
-5) weekly availability and, only when relevant, age or other factors affecting exercise selection. Age alone is never an eligibility limit; adapt training to capacity, experience and recovery, not chronological age alone.
-Ask one concise, high-value question at a time. SAFETY-FIRST ORDER: before individualized programming, confirm whether any major health condition, recent injury, medical restriction or concerning symptom requires professional assessment. Do not demand that a user be completely pain-free. If the user has only mild, familiar discomfort, clarify the affected movement and use the dose/tolerance process below; do not automatically exclude all training. Do not ask about equipment, time or training frequency before this initial safety check. If the user confirms no major restriction, continue with the main goal, experience, equipment, realistic training time and weekly availability, one question at a time. Do not overwhelm the user with a long intake form. If the request is simple and low risk, you may give a clearly labelled general example while explaining that it is not yet individualized, and ask the most important follow-up question. If safety-relevant information is missing, ask before recommending demanding exercise.
+Before prescribing an individualized workout or training plan, establish the minimum useful context in this order:
+1) major health conditions, recent injuries, medical restrictions, and any current symptom that may change exercise selection; ask this broad safety question once, at the beginning;
+2) main goal: one of the three ATENA tracks — strength + muscle mass, functional fitness (including conditioning, mobility and coordination), or fat loss/body composition;
+3) current experience and approximate ability;
+4) realistic weekly availability (how many sessions the person can consistently complete);
+5) realistic time available for each session;
+6) equipment the person actually has available;
+7) only when relevant, age or other factors that materially affect exercise selection. Age alone is never an eligibility limit; adapt training to capacity, experience and recovery, not chronological age alone.
+Ask one concise, high-value question at a time. Public onboarding uses two experience groups: beginner or limited experience, and regular training. Map regular training to intermediate by default; use advanced internally only when the user explicitly describes advanced training history and capacity. Never infer advanced ability from the phrase “I train regularly” alone. Never start an individualized programme until the user's experience and approximate ability are known. Never select exercises that require equipment the user has not confirmed; if equipment is unknown, ask what is available or clearly offer a bodyweight-only general example. SAFETY-FIRST ORDER: ask the broad health/safety intake question once, at the beginning, before individualized programming. Accept a clear negative answer (including a direct 'no' to that question) and retain that resolved state throughout this conversation. Never ask the same broad pain/injury/restriction question again after it has been answered. Do not reopen the initial gate merely because the user asks a follow-up or gives a short answer. If a new, localized symptom is later reported during a specific movement, address only that movement with the appropriate symptom protocol; do not repeat the full intake. If the initial answer is uncertain or positive, clarify only the relevant safety detail. Do not demand that a user be completely pain-free. If the user has only mild, familiar discomfort, clarify the affected movement and use the dose/tolerance process below; do not automatically exclude all training. Do not ask about equipment, time or training frequency before this initial safety check. If the user confirms no major restriction, continue with the main goal, experience, weekly availability, session duration and confirmed equipment, in that order and one question at a time. Do not overwhelm the user with a long intake form. If the request is simple and low risk, you may give a clearly labelled general example while explaining that it is not yet individualized, and ask the most important follow-up question. If safety-relevant information is missing, ask before recommending demanding exercise.
 
 CONVERSATIONAL EXPERIENCE AND GOAL CLARIFICATION
 - The conversation is the primary interface. Do not make the person feel they are completing an intake form. Build the picture gradually across turns.
@@ -923,24 +2257,25 @@ MANDATORY DECISION GATES – NON-NEGOTIABLE
 - SCOPE OF THE SAFETY GATE: Before an individualized program, establish that no major health condition, recent injury, medical restriction or concerning symptom needs professional assessment. If this information is missing or ambiguous, ask one concise safety question and stop before giving a demanding individualized prescription. An explicit negative answer in the structured profile to this major-restriction question counts; do not repeatedly ask it. "Not reported" is not equivalent to "confirmed absent". Do not treat mild, familiar discomfort as an automatic ban on all training; clarify the affected movement and apply the pain/dose process before prescribing that pattern.
 - GENERAL EDUCATION: You may answer conceptual questions (e.g. what tempo means, why aerobic base matters, what controlled ROM means) without turning the answer into an individualized workout. Do not append an irrelevant safety question to a purely educational answer. If you move from explanation to prescribing a specific exercise or plan, first complete the safety gate.
 - FAT LOSS / BODY COMPOSITION: Explain honestly that reducing body fat requires a sustainable energy deficit; exercise supports the process but does not guarantee weight loss by itself. Keep resistance training as the foundation to preserve muscle and strength, add manageable aerobic activity and everyday movement, and encourage adequate protein and sustainable habits. Never promise spot reduction, prescribe crash diets or imply that more exercise should compensate for eating. Keep nutrition guidance general and ask about relevant dietary/medical restrictions before individualized nutrition advice. General nutrition education may suggest prioritizing foods with lower energy density (vegetables, fruit, legumes and whole grains), fibre-rich foods and lean protein sources; a common protein reference for healthy adults doing resistance training is at least about 1.5 g/kg/day, often roughly 1.5–2.0 g/kg/day when appropriate. Explain that an individualized energy deficit is often moderate (for example, around 10–20% below estimated maintenance), but do not calculate or prescribe a personal diet without adequate context. Flag that medical conditions, pregnancy, eating-disorder history or other dietary restrictions warrant qualified professional guidance.
-- PAIN AND DOSE MANAGEMENT: Treat discomfort as feedback, not a diagnosis. Consider the biomechanics and exposure of the task: movement pattern, joint position, range of motion, load direction, speed, support, technique, fatigue and total volume. If a movement provokes sharp, worsening or function-changing pain, stop that specific movement at that dose; never tell the user to push through. Clarify exact location, intensity (0–10), trigger, onset, actual dose, response after stopping and next-day response. For mild, familiar discomfort without warning signs, do not prohibit all activity. Use test → modify → observe → retest. Change one dose variable at a time: load, range of motion, sets/volume, frequency, tempo or speed. Start with a low, controlled dose and state clear stop criteria. Do not recommend a new loaded substitute until the context is clear. Do not diagnose or promise treatment. For severe, new, worsening or persistent symptoms, acute trauma, marked swelling, locking, giving way, inability to bear weight or other concerning symptoms, stop testing and recommend professional assessment.
+- PAIN AND DOSE MANAGEMENT: Treat discomfort as feedback, not a diagnosis. This is a general fitness coach primarily for generally healthy people without major unresolved orthopedic problems; it is not a rehabilitation service. Consider the biomechanics and exposure of the task: movement pattern, joint position, range of motion, load direction, speed, support, technique, fatigue and total volume. Pain score alone is never clearance. Clarify exact location, intensity (0–10), trigger, onset, actual dose, response after stopping and next-day response when those details are needed. Use test → modify → observe → retest. For mild, familiar discomfort (often up to about 3–4/10) that remains stable, does not worsen during or after the set, does not alter movement quality and has no acute warning signs, do not automatically ban the exercise or all training. First reduce external resistance by one practical step (or use bodyweight/assistance), slow the tempo, reduce the range to the currently tolerated range and/or use stable support. Use one change at a time where possible, then observe and retest. Do not recommend a new loaded substitute until the context is clear. For a squat regression, options may include TRX, a securely anchored resistance band, a fixed bar secured in a rack around chest height, or another stable immovable support; support is for balance and partial unloading, never for pulling through pain. For back/hinge discomfort, reduce load and range and begin with a wall hip hinge or unloaded hinge while maintaining control. For shoulder-related push/pull discomfort, reduce resistance, use a lighter band or higher stable incline where pattern-appropriate, slow the movement and stay within tolerated range; never force overhead range. For tolerated mild symptoms, begin conservatively (no more than two sets, at least four repetitions in reserve, slow controlled tempo such as 4–1–2–0) and do not progress the symptomatic exposure until the response is consistently good. If a movement provokes sharp, worsening or function-changing pain, stop that specific movement at that dose; never tell the user to push through. If pain increases, changes movement quality or is worse later/next day, stop that specific movement and reassess. Acute sharp pain, new swelling, muscle spasm, sudden loss of function, acute trauma or rapidly worsening symptoms are not training-through situations: stop exercise for the affected area and recommend appropriate healthcare assessment. For marked swelling, locking, giving way, inability to bear weight, severe or unexplained symptoms, or major/unresolved orthopedic conditions, do not prescribe individualized loading until assessed by an appropriate professional. Never diagnose or promise treatment.
 - BALANCE / CONTROL PROBLEMS: When a person reports losing balance or control, first ask when and where it happens and whether pain or discomfort is present. Do not assume the cause is ankle mobility, trunk position or load direction. Do not prescribe heel elevation, unstable surfaces or a harder unilateral variation before clarifying the problem.
-- MOBILITY PROGRAMMING: Do not reduce a mobility goal to passive stretching. Include active mobility and strength through the largest controlled, tolerated range, using appropriate multi-joint examples such as RDL/predklon z ravnim hrbtom, ATG split squat, deep squat or Cossack squat when the user has the required capacity and equipment. Use gradual exposure and control; never force end range or prescribe a loaded variation when symptoms or competency are unclear.\n- MOBILITY LIMITATIONS: Never say a restriction can simply be "bypassed". Clarify whether the issue is range, discomfort, balance or control. Do not prescribe a modification before that clarification. When appropriate, describe heel support as changing the effective ankle angle/position, not as improving the person's actual ankle mobility.
+- MOBILITY PROGRAMMING: Do not reduce a mobility goal to passive stretching. Include active mobility and strength through the largest controlled, tolerated range, using appropriate multi-joint examples such as RDL/predklon z nevtralno hrbtenico, ATG split squat, deep squat or Cossack squat when the user has the required capacity and equipment. Use gradual exposure and control; never force end range or prescribe a loaded variation when symptoms or competency are unclear.\n- MOBILITY LIMITATIONS: Never say a restriction can simply be "bypassed". Clarify whether the issue is range, discomfort, balance or control. Do not prescribe a modification before that clarification. When appropriate, describe heel support as changing the effective ankle angle/position, not as improving the person's actual ankle mobility.
 - FUNCTIONAL FITNESS: A functional plan must cover strength, conditioning, explosive actions, balance and coordination across the weekly plan. Include practical, progressive balance and coordination drills; do not equate functional training with random instability or only circuit training. Keep landing, deceleration and direction-change demands appropriate to skill and environment.
 - STABILIZATION: Do not add generic "core" or stabilization exercises as mandatory filler in a hypertrophy plan. Include them only when feedback identifies a specific control deficit or the exercise serves a stated goal. Do not claim they prevent injury or reduce spinal overload without specific evidence and context.
 - BODYWEIGHT AS A DEFAULT TRAINING RESOURCE: The equipment profile defines what is available; it does not dictate that every exercise must use external equipment. Across all equipment profiles, actively consider and regularly include suitable bodyweight movements when they provide an effective stimulus and match the goal, experience and movement competency. Do not drop push-ups, pull-ups, dips, pike push-ups, unilateral bodyweight leg work, Nordic variations or trunk skills merely because the user has dumbbells, kettlebells or a full gym. For strength goals, retain appropriately loaded, specific main lifts (especially squat and hinge patterns) where they are the best tool, while integrating suitable calisthenics in other patterns or sessions. Progress bodyweight exercises through leverage, range, tempo, pauses, unilateral variations or external load when appropriate. Do not use a difficult skill just to make a programme look advanced; verify competency and equipment (e.g. pull-up bar, dip bars, secure Nordic anchor) first.
 - BODYWEIGHT-ONLY EQUIPMENT: Do not call a bodyweight squat a Goblet squat, do not imply a dumbbell/bench/band is available, and do not use a machine or prop unless the profile explicitly lists it. Prefer clear names for the actual variation.
-- BODYWEIGHT-ONLY HYPERTROPHY LIMITS: Without external equipment, do not call an unloaded hip hinge an RDL or imply it provides the same loading potential as a loaded hinge. Call it "predklon z ravnim hrbtom brez dodatne obremenitve". Explicitly explain when a meaningful horizontal pulling movement cannot be loaded safely without a confirmed anchor or equipment; never invent table rows, door anchors or improvised supports. Explain realistic progression options and their limits.
+- BODYWEIGHT-ONLY HYPERTROPHY LIMITS: Without external equipment, do not call an unloaded hip hinge an RDL or imply it provides the same loading potential as a loaded hinge. Call it "predklon z nevtralno hrbtenico brez dodatne obremenitve". Explicitly explain when a meaningful horizontal pulling movement cannot be loaded safely without a confirmed anchor or equipment; never invent table rows, door anchors or improvised supports. Explain realistic progression options and their limits.
 - LOADED BALANCE REGRESSION: If a bodyweight squat is stable but instability appears only after adding load, do not move the load to the shoulders or prescribe a harder variation as the first step. Keep the person at the stable bodyweight variation, do not increase load, and ask which load triggered the loss of control before considering progression.
 - ANKLE DORSIFLEXION: Do not recommend a front squat as an automatic way to reduce ankle dorsiflexion demand. Its more upright torso and forward knee travel can require as much or more ankle dorsiflexion. If the heel lifts, check whether a stable heel support is actually available before suggesting heel elevation. Heel support changes the effective ankle angle; it does not increase actual ankle mobility.
-- LOAD PROGRESSION: Do not prescribe a fixed kilogram increase when the exact exercise, current load and completed repetitions are unknown. Confirm stable technique and successful completion of the target repetitions; change one variable at a time and make only a small, conditional progression. For a repeatable progression, require the top of the target range at the intended RIR across at least two comparable exposures with good recovery. If only one exposure is known, say that confirmation is still needed; do not promise a fixed increase "next week".
+- LOAD PROGRESSION: Do not prescribe a fixed kilogram increase when the exact exercise, current load and completed repetitions are unknown. Confirm stable technique and successful completion of the target repetitions; change one variable at a time and make only a small, conditional progression. For a repeatable progression, require the top of the target range at the intended RIR across at least two comparable exposures with good recovery. If only one exposure is known, say that confirmation is still needed; do not promise a fixed increase "next week". Once the user has met the upper limit in two comparable exposures, increase load by the smallest practical increment and return to the lower part of the existing rep range. Do not prescribe repetitions above the stated upper limit unless you explicitly agree a new rep range with the user. Do not make a strength or hypertrophy session harder by shortening rests as the default; preserve enough rest for repeatable technique and the intended effort, and create the challenge through suitable load, exercise variation, sets, reps and RIR.
 - RECOVERY AND FATIGUE: Poor recovery is an observed response, not a diagnosis of its cause. Do not state that the user has accumulated fatigue, CNS fatigue, overtraining or a specific cause unless supported by recorded workload and relevant context. Explain that the current dose may not be well tolerated at present, state the uncertainty, and ask one relevant follow-up about sleep, stress, soreness or recent workload. When two recent sessions felt too hard, a conservative temporary reduction in one dose variable may be proposed (for example, one fewer set on the most demanding exercises and a little more RIR), then monitor the response. Do not assume the user trained near failure if that was not reported, and do not automatically change weekly frequency.
 - SLOVENIAN TERMINOLOGY: Use idiomatic exercise names such as "potisk za prsi" rather than "prsni tisk". Avoid literal translations and grammatically malformed muscle or movement descriptions.
 - CANONICAL EXERCISE NAMES: Use the exact verified catalogue display name. Keep "Cossack squat" in English; never translate it as "kozaški počep". If a movement has no established Slovenian coaching name, retain its canonical English name rather than inventing a literal translation. Keep naming consistent in the plan, cues and substitutions.
 - BEGINNER PRESCRIPTION: For beginners, prioritize learning and repeatable technique. Default to 8–12 repetitions (often begin around 10) for foundational strength exercises; 10–15 may suit lighter bodyweight or low-load exercises. Use a manageable load and about 2–3 repetitions in reserve. Do not use 6–10, 4–6 or 5–8 as a generic beginner strength range. Use a lower range only for a clearly justified exercise-specific reason and sufficient competency.
 - POWER PRESCRIPTION: Do not prescribe a universal percentage of 1RM for explosive-power work. Use low repetitions (commonly 2–3), enough rest to preserve output and technique, maximal intent with a controllable load, and stop when speed or technique declines. Explain rest in terms of maintaining performance and movement speed; do not claim "complete recovery of the nervous system", CNS fatigue, nervous-system recovery/overload or other unsupported physiological mechanisms. Give a percentage only when the user has a reliable tested 1RM for that exact lift and the percentage is justified. Never invent exercise names such as "izbruh z drogom".
 - STRENGTH WITH LIMITED TIME: Do not shorten rest intervals arbitrarily to force a heavy strength session into a short time window. Preserve adequate recovery for the main lift and reduce accessory exercises or total sets instead.
-- EXERCISE NAMING AND CATALOGUE: Use verified exercise names from the supplied catalogue context when available. In Slovenian, call the Romanian-deadlift pattern "predklon z ravnim hrbtom" as the primary label; you may add "(RDL)" in parentheses. Do not use "paleta" for a barbell (use "drog" or "olimpijska palica"), "voravnotežen", or "romunski dvig trupa". Never call a bodyweight squat "Goblet počep". Do not invent compound words or literal translations.
+- STRENGTH REST INTERVALS: For primary compound strength exercises (squat, hinge/deadlift/RDL, bench or overhead press, row), use about 2–3 minutes of rest (3–5 minutes for very demanding sets). Do not prescribe 60–90 seconds as the default for main strength lifts; shorter rests are for lighter accessories. If the requested session duration cannot fit the requested work with adequate rest, explain the trade-off and reduce exercise count or work sets rather than compressing rest.
+- EXERCISE NAMING AND CATALOGUE: Use verified exercise names from the supplied catalogue context when available. In Slovenian, call the Romanian-deadlift pattern "predklon z nevtralno hrbtenico" as the primary label; you may add "(RDL)" in parentheses. Do not use "paleta" for a barbell (use "drog" or "olimpijska palica"), "voravnotežen", or "romunski dvig trupa". Never call a bodyweight squat "Goblet počep". Do not invent compound words or literal translations.
 - TRAINING VOLUME: For a typical full-body session, usually choose 4–5 purposeful exercises, not a long list of filler. Match the number of work sets to experience, weekly frequency, recovery and available time. Do not automatically add single-joint or stabilization exercises to a hypertrophy session.
 - TEMPO ACCURACY: In a tempo such as 3-1-2-0, the phases are exactly 3 seconds eccentric, 1-second pause, 2 seconds concentric, 0-second pause. Never change a digit while explaining it. Tempo is a tool, not a universal optimum; do not claim that time under tension alone makes a tempo superior.
 - BEGINNER COMBINED STRENGTH + HYPERTROPHY TEMPO: When the user is a beginner and the combined goal is strength plus muscle mass, use 2–1–1–0 as the consistent default tempo for foundational resistance exercises: 2 seconds controlled eccentric phase, 1 second controlled pause in the lower/lengthened position where applicable, 1 second concentric phase, and no pause at the top. Do not switch some ordinary exercises to 3–1–2–0 or 2–0–X–0 without an exercise-specific reason. This rule does not override explosive, timed-hold, mobility or conditioning prescriptions.
@@ -949,7 +2284,7 @@ MANDATORY DECISION GATES – NON-NEGOTIABLE
 - PERSISTENCE HONESTY: If asked whether a workout or next session has already been changed/saved, answer that question directly first. A chat reply does not itself save feedback or alter a future workout. Say clearly whether an update was actually confirmed by the profile/program storage workflow. If not confirmed, state that no saved change can be confirmed; you may offer a proposed adjustment, but do not imply it has been applied.
 - PERSISTENT TRAINING HISTORY: When authenticated recent training history is supplied, use it as evidence for continuity. Treat it as actual user-logged work, not as a complete diary. Distinguish recorded sets/reps/load/RIR from planned prescriptions; never invent missing values or assume an unlogged session occurred. When discussing progression, compare relevant recent exposures and recovery, not a single isolated result. If a discomfort flag is recorded, do not automatically progress the affected work; ask about the response and apply the dose/tolerance process. If history is empty or unavailable, say so rather than pretending to remember.
 - CONTRADICTIONS: If profile information conflicts with the user's current message, name the contradiction neutrally. Ask one high-value question at a time; do not silently choose the convenient interpretation. Resolve the safety gate first, then clarify training experience/equipment before demanding prescription.
-- FINAL QUALITY CHECK: Before sending, verify Slovenian grammar and spelling, exercise-name accuracy, internal consistency, equipment availability, time arithmetic, and that every prescription follows the safety gate. Avoid malformed phrases, mixed-language fragments and fabricated technical details.
+- FINAL QUALITY CHECK: Before sending, verify grammar and spelling in the selected response language, exercise-name accuracy, internal consistency, equipment availability, time arithmetic, and that every prescription follows the safety gate. Avoid malformed phrases, mixed-language fragments and fabricated technical details.
 
 PROACTIVE COACHING
 - Explain briefly why the recommendation fits the known goal and ability.
@@ -964,7 +2299,7 @@ TRAINING QUALITY
 - Treat the structured programme supplied in the conversation as the current source of truth. Explain its actual exercises, sets, repetitions, effort, tempo and rest; do not invent different prescriptions or claim that a change was saved unless the structured programme or profile workflow confirms it.
 - Distinguish moč (strength), mišična masa (hypertrophy), vzdržljivost/kondicija (endurance), splošna funkcionalna pripravljenost, eksplozivna moč (power) and mobilnost. Do not treat them as interchangeable labels for the same workout.
 - For strength, prioritize specific multi-joint lifts, appropriate heavier loading, longer recovery and technically sound progression. For hypertrophy, prioritize sufficient weekly volume, effective multi-joint work, appropriate proximity to failure and controlled tempo. For endurance, distinguish aerobic base, threshold work, VO2max intervals and MetCon rather than prescribing random circuits.
-- Use precise Slovenian movement terminology, especially "predklon z ravnim hrbtom". Do not describe a simple bodyweight hinge drill as a strength stimulus when the person's experience and goal require a more demanding progression.
+- Use precise Slovenian movement terminology, especially "predklon z nevtralno hrbtenico". Do not describe a simple bodyweight hinge drill as a strength stimulus when the person's experience and goal require a more demanding progression.
 - For beginners, default to 8–12 repetitions (often around 10) for foundational strength learning; 10–15 may suit lighter bodyweight or low-load work. Keep roughly 2–3 repetitions in reserve. Do not present 6–10 as a generic beginner strength range; use a lower range only with a clear exercise-specific reason.
 - For explosive power, prioritize speed, low repetitions, sufficient rest to preserve output and a controllable load. Do not describe rest as complete nervous-system recovery or make unsupported CNS claims. Do not use a universal 70–85% 1RM prescription; stop a set when speed or technique deteriorates.
 - When the user reports balance loss, do not infer its cause from text alone and do not immediately prescribe a loaded alternative. Clarify the phase, symptoms and whether it also occurs unloaded before selecting a progression.
@@ -977,11 +2312,23 @@ TRAINING QUALITY
 - Give practical intensity guidance (e.g. finish with 2–4 good repetitions in reserve for suitable strength exercises) only when appropriate for the user and exercise.
 - Include a brief, realistic progression rule and explain when to stop or modify.
 - Do not promise that a workout is risk-free or that it will cure pain. Avoid vague claims such as “without risk of overload.”
-- Use the user's language consistently; proofread for grammar, spelling, terminology and internal consistency before answering.
+- When responding in Slovenian, use informal singular address (ti); do not switch to formal vi/vas unless the user explicitly uses or requests formal address. Do not address the user by name unless the user asks you to.
+Use the user's language consistently; proofread for grammar, spelling, terminology and internal consistency before answering.
 
 SAFETY AND SCOPE
 You are not a doctor or physiotherapist. Do not diagnose conditions, prescribe treatment, or claim to replace an in-person professional. Do not advise training through worsening pain. For severe, sudden, unexplained or worsening symptoms, recommend assessment by an appropriate healthcare professional. For chest pain, fainting, severe breathing difficulty, new weakness/numbness, or loss of bladder/bowel control with back pain, advise urgent local medical care. If relevant, ask about restrictions before suggesting exercise. Do not overreact to ordinary mild effort or soreness, but distinguish it from concerning or worsening symptoms.
 Do not ask for full names, exact addresses or unnecessary personal data. Use health information only when needed. If uncertain, state the uncertainty rather than inventing facts, credentials, measurements, research or outcomes.
+
+VERTICAL PULL VS HORIZONTAL ROW — CRITICAL MOVEMENT TERMINOLOGY
+- The catalogue exercise "Zgib z oporo stopal (navpični trup)" is a vertical pull-up regression.
+- A dumbbell row is a horizontal pull and never replaces a vertical pull-up; when no pull-up bar or safely anchored band is available, state that the vertical-pull pattern cannot currently be loaded with the available equipment.
+- For a foot-assisted vertical pull-up, the torso stays mostly upright beneath the bar; hips and knees are comfortably flexed; only the feet contact the floor or a confirmed stable step slightly forward of the bar's vertical line (not directly underneath it) and assist the vertical pull.
+- Never describe the knees as resting on the box or step; the feet provide the support. Do not invent an exact 90-degree joint angle: adjust hip and knee flexion to the user's body and support height.
+- A technique question may be answered with setup cues, but do not prescribe sets, repetitions or load until the user's safety and relevant experience are clear.
+- Never call this exercise "avstralski zgib", "inverted row", or horizontal rowing.
+- An inverted row is a separate horizontal pull: the body is angled beneath a low bar or handles and is pulled horizontally toward the support. Do not confuse its inclined torso position with the upright torso of a foot-assisted vertical pull-up.
+- Use the exact catalogue name "Zgib z oporo stopal (navpični trup)" when this variation is meant.
+- Do not suggest band-assisted pull-ups unless both a suitable band and a secure anchor are confirmed. Do not assume a box, step or pull-up bar unless the user confirms it.
 
 EXERCISE SUBSTITUTIONS – REQUIRED BEHAVIOUR
 When the user asks to replace, swap or find an alternative for an exercise:
@@ -993,7 +2340,7 @@ When the user asks to replace, swap or find an alternative for an exercise:
 6) Never reply with a generic unavailable message when a useful clarification or catalogue-based alternative can be provided.
 For this pilot, prefer these practical coaching defaults where compatible with the user's goal and equipment:
 - Squat: Goblet počep; Počep z ročkama na ramenih; Počep s podprtimi petami (stable 5–10 cm heel support); barbell back/front squat when the user has the equipment and skill. Do not choose Počep z ročkama ob telesu as a default main lift.
-- Hinge: Predklon z ravnim hrbtom (RDL) is generally preferred to a dumbbell deadlift when dumbbell grip or the floor start limits loading. Use a conventional barbell deadlift when strength specificity and skill support it.
+- Hinge: predklon z nevtralno hrbtenico (RDL) is generally preferred to a dumbbell deadlift when dumbbell grip or the floor start limits loading. Use a conventional barbell deadlift when strength specificity and skill support it.
 - Carry: Farmers carry is optional and purpose-driven, not an automatic filler exercise.
 Use natural Slovenian exercise names. Retain established English names such as Goblet squat, RDL, Farmers carry or ATG split squat where an artificial Slovenian translation would be less clear.
 
@@ -1023,6 +2370,7 @@ This standard is mandatory for every individual programme. Apply it as an intern
 - Regression triggers: inability to complete the lower end of the target range; RIR below target; loss of position or repeatability; reduced controlled range; pain or new symptoms; poor balance; excessive fatigue; or an exercise/support that cannot be performed safely.
 - Choose the smallest useful regression: reduce range, use a stable support, shorten the lever, reduce load, select an easier angle/variation, reduce sets/repetitions or slow down only when that improves control. Change one principal variable at a time.
 - Progression triggers: all prescribed sets reach the top of the target range at the intended RIR, with consistent technique and controlled range, across at least two exposures, and recovery is good with no concerning symptoms.
+- When the user asks whether to progress, first check the target repetition range and number of comparable successful exposures. If either is unknown, ask only for the missing detail; do not switch to unrelated questions about equipment or session time. If the criteria are met, suggest one small progression variable and explain what to monitor.
 - Progress one variable at a time: first add repetitions within the range; then a small amount of load if available; otherwise use the next catalogue progression, a longer lever, a slightly greater controlled range or a more demanding unilateral variation. Do not automatically add sets and load together.
 - If the person reports the exercise is easy but technique, range or RIR is unknown, ask for the missing performance detail rather than guessing.
 - If pain or new symptoms are reported, stop automatic progression for the affected movement. Clarify the symptom and do not automatically swap in another loaded exercise.
@@ -1171,6 +2519,19 @@ def _request_gemini_content(api_key, model, fallback_model, payload):
                     time.sleep(5.0 if exc.code == 429 else 1.0)
                     continue
                 break
+            except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+                # A transport timeout/reset or malformed provider payload is
+                # transient too. Retry once, then try the alternate model rather
+                # than returning a 502 without using the configured fallback.
+                last_error = exc
+                logger.warning(
+                    "Gemini model %s had a transient network/response error (%s, attempt %s/2)",
+                    candidate_model, type(exc).__name__, attempt + 1
+                )
+                if attempt == 0:
+                    time.sleep(1.0)
+                    continue
+                break
     if last_error is not None:
         raise last_error
     raise urllib.error.URLError("Gemini request failed without a provider response")
@@ -1200,10 +2561,12 @@ def coach_chat():
         if not isinstance(item, dict) or item.get("role") not in ("user", "model"):
             return jsonify({"error": "Neveljavna zgodovina pogovora."}), 400
         content = item.get("content")
-        if not isinstance(content, str) or not content.strip() or len(content) > MAX_MESSAGE_CHARS:
-            return jsonify({"error": "Sporočilo je prazno ali predolgo (največ 1800 znakov)."}), 400
+        max_chars = _chat_message_character_limit(item["role"])
+        if not isinstance(content, str) or not content.strip() or len(content) > max_chars:
+            return jsonify({"error": f"Sporočilo je prazno ali predolgo (največ {max_chars} znakov)."}), 400
         contents.append({"role": item["role"], "parts": [{"text": content.strip()}]})
-    system_prompt = SYSTEM_PROMPT
+    response_language = resolve_response_language(messages, payload.get("language") or payload.get("locale"))
+    system_prompt = SYSTEM_PROMPT + "\n\n" + language_instruction(response_language)
     profile_id = request.headers.get("X-Profile-Id", "").strip()
     profile_token = request.headers.get("X-Profile-Token", "").strip()
     if bool(profile_id) != bool(profile_token):
@@ -1245,12 +2608,12 @@ def coach_chat():
     # Keep a technique protocol active during follow-up turns. Users often ask
     # "kaj pa če..." or "ja, samo tehnika" without repeating the exercise name.
     rdl_technique_request = bool(re.search(
-        r"\bRDL\b|romunsk(?:i|ega|em)\s+mrtv(?:i|ega|em)\s+dvig|predklon\s+z\s+ravnim\s+hrbtom|raven\s+hrbet|zaokrož(?:en|anj)",
+        r"\bRDL\b|romunsk(?:i|ega|em)\s+mrtv(?:i|ega|em)\s+dvig|predklon\s+z\s+ravnim\s+hrbtom|raven\s+hrbet|zaokrož(?:en|anj)|\bhip hinge\b|\bromanian deadlift\b|\bdeadlift\b.{0,35}(?:round(?:ed|ing)? back|spinal position|hinge technique)|\b(?:round(?:ed|ing)? back|spinal position)\b.{0,35}\b(?:RDL|deadlift)\b",
         user_history_text,
         re.IGNORECASE,
     ))
     if rdl_technique_request:
-        system_prompt += "\n\n" + RDL_TECHNIQUE_PROTOCOL
+        system_prompt += "\n\n" + (RDL_TECHNIQUE_PROTOCOL_EN if response_language == "en" else RDL_TECHNIQUE_PROTOCOL)
     exercise_intent = bool(re.search(
         r"program|trening|vadb|vajo|počep|izpadni|RDL|mrtv.{0,10}dvig|"
         r"serij|ponovitev|obremenitev|moč|hipertrof|vzdržljiv|eksploziv",
@@ -1291,12 +2654,12 @@ def coach_chat():
             )
         ]
         compact = [
-            f"- {('Predklon z ravnim hrbtom (RDL)' if item['id'] == 'romanian_deadlift' else item['name'])} [{item['pattern']}]; oprema: "
+            f"- {('predklon z nevtralno hrbtenico (RDL)' if item['id'] == 'romanian_deadlift' else item['name'])} [{item['pattern']}]; oprema: "
             + (", ".join(item["equipment"] + item["equipment_any"]) or "lastna teža")
             for item in alternatives[:35]
         ]
         current = [
-            f"- {('Predklon z ravnim hrbtom (RDL)' if item['id'] == 'romanian_deadlift' else item['name'])} [{item['pattern']}]"
+            f"- {('predklon z nevtralno hrbtenico (RDL)' if item['id'] == 'romanian_deadlift' else item['name'])} [{item['pattern']}]"
             for item in current_records
         ]
         system_prompt += (
@@ -1306,11 +2669,18 @@ def coach_chat():
             + ("\n".join(compact) if compact else "No matching alternatives found; ask one clarifying question.")
             + "\nUse only the alternatives above. If the requested exercise is not identified, ask which exercise."
         )
-    model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
+        if (
+            any(item["id"] == "deadlift" for item in current_records)
+            and any(item["id"] == "romanian_deadlift" for item in alternatives)
+        ):
+            system_prompt += "\n\n" + (RDL_SUBSTITUTION_ACCURACY_EN if response_language == "en" else RDL_SUBSTITUTION_ACCURACY)
+    model = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite").strip()
     guarded_answer = _coaching_guardrail_reply(messages)
     if guarded_answer:
+        guarded_answer = localize_guardrail_reply(guarded_answer, response_language)
         return jsonify({
             "reply": guarded_answer,
+            "quick_replies": _onboarding_quick_replies(guarded_answer, messages, response_language),
             "model": model,
             "pilot": True,
             "guardrail_applied": True,
@@ -1321,7 +2691,7 @@ def coach_chat():
         "contents": contents,
         "generationConfig": {"temperature": 0.25, "maxOutputTokens": 900}
     }
-    fallback_model = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-3.1-flash-lite").strip()
+    fallback_model = os.getenv("GEMINI_FALLBACK_MODEL", "gemini-3.5-flash-lite").strip()
     try:
         data, used_model = _request_gemini_content(
             api_key, model, fallback_model, body
@@ -1331,10 +2701,17 @@ def coach_chat():
         if not answer:
             logger.warning("Gemini returned no text for model %s", model)
             return jsonify({"error": "Model ni vrnil odgovora. Poskusi znova."}), 502
+        answer = _sanitize_model_markup(answer)
         answer = _normalize_slovene_coaching_terms(answer)
+        answer = _sanitize_onboarding_questions(answer, messages)
+        answer = _sanitize_deadlift_substitution_claims(answer, messages)
+        answer = _sanitize_unverified_training_history_claims(answer, messages)
         answer = _sanitize_power_and_progression_claims(answer)
+        answer = _sanitize_strength_rest_intervals(answer, messages)
         answer = _sanitize_unverified_safety_claim(answer, messages)
+        answer = _sanitize_unverified_training_dose(answer, messages, response_language)
         answer = _sanitize_unlisted_support(answer, messages)
+        answer = _sanitize_unverified_exercise_parameters(answer, messages)
         bodyweight_note = _bodyweight_only_program_note(messages)
         if bodyweight_note and bodyweight_note not in answer:
             answer += "\n\n" + bodyweight_note
@@ -1345,8 +2722,10 @@ def coach_chat():
             answer,
             flags=re.IGNORECASE,
         )
+        answer = _sanitize_unrequested_user_name(answer)
         return jsonify({
             "reply": answer,
+            "quick_replies": _onboarding_quick_replies(answer, messages, response_language),
             "model": used_model,
             "pilot": True,
             "guardrail_applied": False,
@@ -1360,7 +2739,7 @@ def coach_chat():
         if exc.code == 429:
             return jsonify({"error": "Trenutno je dosežena omejitev uporabe. Poskusi pozneje."}), 429
         return jsonify({"error": "Storitev trenutno ni dosegljiva. Poskusi znova."}), 502
-    except (TimeoutError, socket.timeout, urllib.error.URLError, json.JSONDecodeError):
+    except (OSError, TimeoutError, socket.timeout, urllib.error.URLError, json.JSONDecodeError, UnicodeDecodeError):
         logger.warning("Gemini request failed due to timeout, network error, or invalid JSON for model %s", model)
         return jsonify({"error": "Odgovor se je predolgo pripravljal ali povezava ni uspela. Poskusi znova."}), 504
 
@@ -1381,16 +2760,123 @@ def coach_program():
         return jsonify({"error": "Pričakovan je JSON objekt s profilom vadečega."}), 400
     profile = payload.get("profile", payload)
     feedback = payload.get("feedback")
-    movement_assessment = None
-    if "movement_assessment" in payload:
+    camera_observations = None
+    camera_protocol = None
+    if "camera_observations" in payload or "camera_protocol" in payload:
         try:
-            movement_assessment = assess_movement_competence(payload["movement_assessment"])
-        except MovementAssessmentError as exc:
+            camera_observations, camera_protocol = validate_camera_observations(
+                payload.get("camera_observations"), payload.get("camera_protocol")
+            )
+        except CameraObservationError as exc:
             return jsonify({"error": str(exc)}), 400
+    if payload.get("movement_assessment") is not None:
+        return jsonify({
+            "blocked": True,
+            "assessment_required": True,
+            "message": "Stara delna samoocena ne zadošča za individualni program. Pred pripravo izpolni vseh šest osnovnih gibalnih vzorcev.",
+        }), 409
+    if payload.get("movement_assessment_consent") is not True:
+        return jsonify({
+            "blocked": True,
+            "consent_required": True,
+            "message": "Pred uporabo odgovorov o gibanju za pripravo programa moraš izrecno potrditi ločeno soglasje.",
+        }), 403
+    expected_patterns = set(PATTERN_DEFINITIONS)
+    movement_decisions = payload.get("movement_decisions")
+    if not isinstance(movement_decisions, dict) or set(movement_decisions) != expected_patterns:
+        supplied_patterns = set(movement_decisions) if isinstance(movement_decisions, dict) else set()
+        missing_patterns = sorted(expected_patterns - supplied_patterns)
+        unknown_patterns = sorted(supplied_patterns - expected_patterns)
+        return jsonify({
+            "blocked": True,
+            "assessment_required": True,
+            "missing_patterns": missing_patterns,
+            "unknown_patterns": unknown_patterns,
+            "message": "Pred individualnim programom odgovori na vseh šest osnovnih gibalnih vzorcev. Če naloge ne moreš ali ne želiš oceniti, izberi »Neocenjeno – preskoči«; ta vzorec bo izpuščen iz programa.",
+        }), 409
+    valid_report_statuses = {"comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled"}
+    control_criteria = {
+        "squat": {"tempo", "balance", "knee_hip_foot_control", "lumbopelvic_control", "tolerated_rom"},
+        "hinge": {"tempo", "hip_hinge_coordination", "spine_control", "balance", "tolerated_rom"},
+        "horizontal_push": {"tempo", "shoulder_elbow_wrist_control", "trunk_control", "stable_support", "tolerated_rom"},
+        "horizontal_pull": {"tempo", "scapular_arm_control", "trunk_control", "stable_base", "tolerated_rom"},
+        "vertical_push": {"tempo", "overhead_control", "trunk_control", "balance", "tolerated_rom"},
+        "lunge": {"tempo", "balance", "pelvis_hip_knee_foot_control", "trunk_control", "tolerated_rom"},
+    }
+    invalid_report_patterns = []
+    for pattern, record in movement_decisions.items():
+        report = record.get("user_report") if isinstance(record, dict) else None
+        report_status = report.get("status") if isinstance(report, dict) else None
+        decision = record.get("decision") if isinstance(record, dict) else None
+        expected_phase = "capacity_development" if decision == "READY" else (
+            "movement_learning" if decision in {"LEARN", "REGRESS"} else "excluded"
+        )
+        supplied_phase = record.get("training_phase") if isinstance(record, dict) else None
+        if report_status not in valid_report_statuses:
+            invalid_report_patterns.append(pattern)
+        elif supplied_phase is not None and supplied_phase != expected_phase:
+            invalid_report_patterns.append(pattern)
+        elif report_status in {"uncertain", "not_assessed"} and decision != "UNASSESSABLE":
+            invalid_report_patterns.append(pattern)
+        elif report_status == "symptoms_reported":
+            try:
+                allowed_regressions = SYMPTOM_REGRESSION_VARIANTS.get(pattern, ())
+                validate_symptom_regression_report(
+                    report, decision, record.get("selected_exercise_id"), allowed_regressions
+                )
+            except MovementCoachingError:
+                invalid_report_patterns.append(pattern)
+        elif report_status in {"comfortable", "needs_support"} and decision == "READY":
+            # A comfortable self-report is not proof of learned, repeatable motor control.
+            invalid_report_patterns.append(pattern)
+        elif report_status == "movement_controlled":
+            control = report.get("movement_control") if isinstance(report, dict) else None
+            required = control_criteria.get(pattern, set())
+            criteria = control.get("criteria") if isinstance(control, dict) else None
+            if (
+                decision != "READY"
+                or supplied_phase != "capacity_development"
+                or not isinstance(control, dict)
+                or control.get("confirmed_by_user") is not True
+                or control.get("repeatable") is not True
+                or not isinstance(criteria, dict)
+                or set(criteria) != required
+                or any(criteria.get(key) is not True for key in required)
+            ):
+                invalid_report_patterns.append(pattern)
+    if invalid_report_patterns:
+        return jsonify({
+            "error": "Vsak vzorec mora imeti veljavno samooceno, odločitev pa mora biti skladna z njo.",
+            "invalid_report_patterns": sorted(invalid_report_patterns),
+        }), 400
+    assessable_patterns = [
+        pattern for pattern, record in movement_decisions.items()
+        if isinstance(record, dict) and record.get("decision") in {"READY", "LEARN", "REGRESS"}
+    ]
+    if not assessable_patterns:
+        return jsonify({
+            "blocked": True,
+            "assessment_required": True,
+            "message": "Vseh šest vzorcev je trenutno neocenjenih ali nejasnih. Pred individualnim programom je treba vsaj en vzorec varno oceniti; sicer program ne bi imel zanesljivega gibalnega izhodišča.",
+        }), 409
+    coordination_record = (camera_observations or {}).get("coordination", {})
+    coordination_values = coordination_record.get("observations", {}) if isinstance(coordination_record, dict) else {}
+    camera_coordination_observed = bool(
+        isinstance(coordination_record, dict)
+        and coordination_record.get("status") == "observed"
+        and coordination_record.get("quality") == "adequate"
+        and coordination_record.get("valid_frames", 0) >= 6
+        and coordination_values.get("cross_body_alternation_observed") is True
+        and coordination_values.get("left_to_right_contact_frames", 0) >= 1
+        and coordination_values.get("right_to_left_contact_frames", 0) >= 1
+        and coordination_values.get("alternating_transitions_proxy", 0) >= 2
+    )
     try:
         result = generate_program(
-            profile, feedback=feedback,
-            movement_assessment=payload.get("movement_assessment"),
+            profile,
+            feedback=feedback,
+            movement_decisions=movement_decisions,
+            camera_coordination_observed=camera_coordination_observed,
         )
     except ProgramSafetyBlock as exc:
         return jsonify({"blocked": True, "message": str(exc)}), 409
@@ -1402,12 +2888,23 @@ def coach_program():
     response = {"program": result, "source": "curated_exercise_catalogue", "pilot": True}
     if result.get("movement_adaptation") is not None:
         response["movement_adaptation"] = result["movement_adaptation"]
-    if movement_assessment is not None:
-        # The self-reported assessment may select a verified simpler catalogue
-        # variant or omit the affected pattern when symptoms are reported.
-        # It is not persisted and does not establish clinical clearance.
-        response["movement_assessment"] = movement_assessment
-        response["movement_assessment_stored"] = False
+    # All six explicit self-reports are required above. This stateless endpoint
+    # uses them for this programme only and does not persist movement/health data.
+    response["movement_assessment_applied"] = True
+    response["movement_assessment_stored"] = False
+    response["movement_decisions_stored"] = False
+    if camera_observations is not None:
+        # Only a clear, adequate positive coordination proxy can add one
+        # low-demand warm-up drill. Camera never determines readiness, deficits,
+        # symptoms, loading or main exercise selection; observations are not stored.
+        response["camera_observations"] = camera_observations
+        response["camera_protocol"] = camera_protocol
+        response["camera_observations_stored"] = False
+        response["camera_coordination_add_on_applied"] = bool(
+            result.get("camera_coordination_add_on_applied")
+        )
+        response["camera_observations_used_for_programme_decisions"] = response["camera_coordination_add_on_applied"]
+        response["camera_observations_used_for_readiness_or_main_exercise_selection"] = False
     return jsonify(response), 200
 
 
@@ -1450,7 +2947,7 @@ def coach_status():
         catalogue_count = len(load_catalogue())
     except (OSError, ValueError):
         catalogue_count = 0
-    model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
+    model = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite").strip()
     return jsonify({
         "chat_available": bool(os.getenv("GEMINI_API_KEY", "").strip()),
         "program_available": catalogue_count > 0,
@@ -1523,7 +3020,10 @@ VALID_EQUIPMENT = {item for exercise in load_catalogue() for item in (exercise["
 
 
 def _storage_error(exc):
-    logger.warning("ATENA profile storage unavailable: %s", type(exc).__name__)
+    # Log only the allow-listed internal reason category; never expose it or
+    # database connection details to the client.
+    reason = getattr(exc, "reason", "storage_unavailable")
+    logger.warning("ATENA profile storage unavailable: %s (%s)", type(exc).__name__, reason)
     return jsonify({"error": "Shranjevanje profila trenutno ni aktivirano."}), 503
 
 
@@ -1868,7 +3368,7 @@ def coach_training_sessions(profile_id):
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return jsonify({"error": "Pričakovan je JSON objekt."}), 400
-    allowed = {"session_date", "duration_minutes", "difficulty", "completed", "exercises", "conditioning", "discomfort_reported", "recovery", "completion_reason", "adaptation_response", "difficulty_scope", "affected_exercise_id", "program_version_id"}
+    allowed = {"session_date", "duration_minutes", "difficulty", "completed", "exercises", "conditioning", "discomfort_reported", "discomfort_details", "recovery", "completion_reason", "adaptation_response", "difficulty_scope", "affected_exercise_id", "program_version_id"}
     if set(payload) - allowed:
         return jsonify({"error": "Vadbeni zapis vsebuje nepodprta polja; prosto besedilo ni dovoljeno."}), 400
     session_date = payload.get("session_date")
@@ -1930,6 +3430,59 @@ def coach_training_sessions(profile_id):
             return jsonify({"error": error}), 400
         clean_exercises.append(entry)
 
+    discomfort = payload.get("discomfort_reported")
+    if discomfort is not None and not isinstance(discomfort, bool):
+        return jsonify({"error": "discomfort_reported mora biti true ali false."}), 400
+    discomfort_details = payload.get("discomfort_details")
+    if discomfort_details is not None:
+        if (
+            not isinstance(discomfort_details, dict)
+            or set(discomfort_details) != {
+                "exercise_id", "pain_during", "worsened", "tolerated",
+                "acute_warning_signs", "modifications_applied",
+            }
+        ):
+            return jsonify({"error": "Podrobnosti o nelagodju niso veljavne."}), 400
+        detail_exercise_id = discomfort_details.get("exercise_id")
+        pain_during = discomfort_details.get("pain_during")
+        if (
+            not isinstance(detail_exercise_id, str)
+            or get_exercise(detail_exercise_id) is None
+            or detail_exercise_id not in {
+                item.get("exercise_id") for item in clean_exercises
+                if isinstance(item, dict)
+            }
+        ):
+            return jsonify({"error": "Nelagodje mora biti vezano na izvedeno vajo iz kataloga."}), 400
+        if not isinstance(pain_during, int) or isinstance(pain_during, bool) or not 0 <= pain_during <= 10:
+            return jsonify({"error": "Ocena nelagodja mora biti med 0 in 10."}), 400
+        if not isinstance(discomfort_details.get("worsened"), bool) or not isinstance(discomfort_details.get("tolerated"), bool):
+            return jsonify({"error": "Odziv na nelagodje mora vsebovati veljavni potrditvi."}), 400
+        acute_signs = discomfort_details.get("acute_warning_signs")
+        valid_acute_signs = set(ACUTE_WARNING_SIGNS)
+        if not isinstance(acute_signs, list) or len(acute_signs) > len(valid_acute_signs) or any(x not in valid_acute_signs for x in acute_signs) or len(set(acute_signs)) != len(acute_signs):
+            return jsonify({"error": "Opozorilni znaki niso veljavni."}), 400
+        modifications = discomfort_details.get("modifications_applied")
+        valid_modifications = {
+            "reduced_load", "slow_tempo", "reduced_range", "range_within_tolerance", "support",
+        }
+        if not isinstance(modifications, list) or any(x not in valid_modifications for x in modifications) or len(set(modifications)) != len(modifications):
+            return jsonify({"error": "Prilagoditve vaje niso veljavne."}), 400
+        mild_tolerated = (
+            pain_during <= 4
+            and discomfort_details["worsened"] is False
+            and discomfort_details["tolerated"] is True
+            and not acute_signs
+        )
+        required_dose_changes = {"reduced_load", "slow_tempo"}
+        range_confirmed = bool({"reduced_range", "range_within_tolerance"} & set(modifications))
+        if mild_tolerated and (
+            not required_dose_changes.issubset(set(modifications)) or not range_confirmed
+        ):
+            return jsonify({"error": "Pri blagem nelagodju morajo biti potrjeni manjša obremenitev, počasen tempo in trenutno toleriran obseg; zmanjšanje amplitude ni obvezno, če je polni obseg toleriran."}), 400
+        if discomfort is not True:
+            return jsonify({"error": "Podrobnosti nelagodja zahtevajo discomfort_reported=true."}), 400
+
     conditioning = payload.get("conditioning", [])
     if not isinstance(conditioning, list) or len(conditioning) > 8:
         return jsonify({"error": "Vadbeni zapis lahko vsebuje največ 8 kondicijskih blokov."}), 400
@@ -1940,9 +3493,6 @@ def coach_training_sessions(profile_id):
             return jsonify({"error": error}), 400
         clean_conditioning.append(entry)
 
-    discomfort = payload.get("discomfort_reported")
-    if discomfort is not None and not isinstance(discomfort, bool):
-        return jsonify({"error": "discomfort_reported mora biti true ali false."}), 400
     session = {
         "duration_minutes": duration, "difficulty": difficulty,
         "recovery": recovery, "completed": payload["completed"], "exercises": clean_exercises,
@@ -1965,6 +3515,15 @@ def coach_training_sessions(profile_id):
             return jsonify({"error": "Za shranjevanje podatka o nelagodju ali srčnem utripu je potrebna ločena privolitev za zdravstvene podatke."}), 403
         if discomfort is not None:
             session["discomfort_reported"] = discomfort
+        if discomfort_details is not None:
+            session["discomfort_details"] = {
+                "exercise_id": discomfort_details["exercise_id"],
+                "pain_during": discomfort_details["pain_during"],
+                "worsened": discomfort_details["worsened"],
+                "tolerated": discomfort_details["tolerated"],
+                "acute_warning_signs": list(discomfort_details["acute_warning_signs"]),
+                "modifications_applied": list(discomfort_details["modifications_applied"]),
+            }
         if adaptation_response is not None:
             target_version_id = adaptation_response["program_version_id"]
             target_version = store_get_program_version(profile_id, token, target_version_id)
@@ -1977,6 +3536,21 @@ def coach_training_sessions(profile_id):
             decision = target_version.get("decision", {}).get("adaptive_decision", {})
             if not isinstance(decision, dict) or decision.get("adaptation_id") != adaptation_response["adaptation_id"] or not isinstance(decision.get("feedback_contract"), dict):
                 return jsonify({"error": "Odziv se ne ujema z odločitvijo v shranjeni različici programa.", "code": "adaptation_version_mismatch"}), 409
+            # A feedback contract is a one-time response to one exact decision.
+            # Replaying it could otherwise make one user's single response look
+            # like multiple independent confirmations in longitudinal logic.
+            already_answered = any(
+                isinstance(item.get("session"), dict)
+                and isinstance(item["session"].get("adaptation_response"), dict)
+                and item["session"]["adaptation_response"].get("program_version_id") == target_version_id
+                and item["session"]["adaptation_response"].get("adaptation_id") == adaptation_response["adaptation_id"]
+                for item in prior_sessions
+            )
+            if already_answered:
+                return jsonify({
+                    "error": "Na to prilagoditev si že odgovoril. ATENA bo upoštevala prvi zabeleženi odziv.",
+                    "code": "adaptation_feedback_already_submitted",
+                }), 409
         saved = store_add_session(profile_id, token, str(uuid.uuid4()), session_date, session, program_version_id=program_version_id)
         return jsonify({"session": saved}), 201
     except ValueError as exc:
@@ -2115,6 +3689,153 @@ def save_coach_movement_assessment(profile_id):
         return _profile_auth_error()
     except StorageUnavailable as exc:
         return _storage_error(exc)
+
+@coach_bp.route("/coach/profile/<profile_id>/movement-assessment", methods=["PUT", "OPTIONS"])
+def save_six_pattern_movement_assessment(profile_id):
+    """Save the six guided movement checks only with separate health-data consent."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"error": "Telo zahteve ni veljavno."}), 400
+    if payload.get("movement_assessment_consent") is not True:
+        return jsonify({
+            "blocked": True,
+            "consent_required": True,
+            "error": "Za uporabo odgovorov o gibanju pri pripravi programa je potrebna ločena privolitev."
+        }), 403
+    if set(payload) != {"movement_assessment_consent", "movement_patterns"}:
+        return jsonify({"error": "Pošlji samo movement_assessment_consent in movement_patterns."}), 400
+    supplied = payload.get("movement_patterns")
+    required_patterns = set(PATTERN_DEFINITIONS)
+    if not isinstance(supplied, dict) or set(supplied) != required_patterns:
+        missing = sorted(required_patterns - set(supplied or {})) if isinstance(supplied, dict) else sorted(required_patterns)
+        unknown = sorted(set(supplied or {}) - required_patterns) if isinstance(supplied, dict) else []
+        return jsonify({
+            "error": "Gibalna samoocena mora vsebovati vseh šest osnovnih vzorcev.",
+            "missing_patterns": missing,
+            "unknown_patterns": unknown,
+        }), 400
+
+    status_to_decision = {
+        "comfortable": "LEARN",
+        "needs_support": "LEARN",
+        "uncertain": "UNASSESSABLE",
+        "not_assessed": "UNASSESSABLE",
+        "symptoms_reported": "UNASSESSABLE",
+    }
+    decisions = {}
+    try:
+        for pattern in PATTERN_DEFINITIONS:
+            value = supplied[pattern]
+            if not isinstance(value, dict):
+                return jsonify({"error": f"Vzorec {pattern} mora biti objekt."}), 400
+            status = value.get("status")
+            if not isinstance(status, str) or status not in status_to_decision:
+                return jsonify({"error": f"Neveljaven status za vzorec {pattern}."}), 400
+            allowed_keys = {"status"}
+            if status == "symptoms_reported":
+                allowed_keys |= {"regression_test", "selected_exercise_id", "acute_warning_signs"}
+            if set(value) - allowed_keys:
+                return jsonify({"error": f"Vzorec {pattern} vsebuje nepričakovana polja."}), 400
+            user_report = {"status": status}
+            selected_exercise_id = value.get("selected_exercise_id")
+            decision = status_to_decision[status]
+            if "acute_warning_signs" in value:
+                warning_flags = value["acute_warning_signs"]
+                if (
+                    not isinstance(warning_flags, list)
+                    or any(flag not in ACUTE_WARNING_SIGNS for flag in warning_flags)
+                ):
+                    return jsonify({"error": f"Akutni opozorilni znaki za {pattern} niso veljavni."}), 400
+                user_report["acute_warning_signs"] = warning_flags
+                if warning_flags and (selected_exercise_id is not None or "regression_test" in value):
+                    return jsonify({"error": f"Ob akutnem opozorilnem znaku se vzorec {pattern} ne sme ponovno testirati."}), 400
+            reason = {
+                "comfortable": "Uporabnik poroča, da je osnovno izvedbo opravil udobno in nadzorovano.",
+                "needs_support": "Uporabnik poroča, da pri izvedbi potrebuje podporo ali lažjo različico.",
+                "uncertain": "Uporabnik ni prepričan o kakovosti ali udobju izvedbe.",
+                "not_assessed": "Gibalni vzorec še ni bil ocenjen.",
+                "symptoms_reported": "Pri osnovni različici se je pojavilo nelagodje; ATENA preveri opozorilne znake in toleranco prilagojene različice.",
+            }[status]
+            if status == "symptoms_reported" and selected_exercise_id and "regression_test" not in value:
+                return jsonify({"error": f"Izbrana regresija za {pattern} mora imeti zabeležen ponovni preizkus."}), 400
+            if status == "symptoms_reported" and "regression_test" in value:
+                regression_test = value["regression_test"]
+                if (
+                    not isinstance(regression_test, dict)
+                    or not {
+                        "status", "variation_id", "pain_during", "worsened",
+                        "tempo", "load_adjustment", "range_adjustment", "acute_warning_signs",
+                    }.issubset(regression_test)
+                    or set(regression_test) - {
+                        "status", "variation_id", "pain_during", "worsened",
+                        "tempo", "load_adjustment", "range_adjustment", "acute_warning_signs",
+                        "support_method", "anchor_point_confirmed",
+                    }
+                    or regression_test.get("status") not in {"tolerated", "not_tolerated"}
+                    or isinstance(regression_test.get("pain_during"), bool)
+                    or not isinstance(regression_test.get("pain_during"), (int, float))
+                    or not 0 <= regression_test.get("pain_during") <= 10
+                    or not isinstance(regression_test.get("worsened"), bool)
+                    or not isinstance(regression_test.get("acute_warning_signs"), list)
+                    or ("anchor_point_confirmed" in regression_test and not isinstance(regression_test.get("anchor_point_confirmed"), bool))
+                ):
+                    return jsonify({"error": f"Ponovni preizkus za {pattern} nima veljavne strukture."}), 400
+                allowed_regressions = SYMPTOM_REGRESSION_VARIANTS.get(pattern, ())
+                if regression_test.get("variation_id") not in allowed_regressions:
+                    return jsonify({"error": f"Preizkušena različica ni dovoljena za vzorec {pattern}."}), 400
+                user_report["regression_test"] = regression_test
+                if regression_test["status"] == "tolerated":
+                    decision = "REGRESS"
+                    reason = "Prilagojena različica je bila ponovno preizkušena brez poslabšanja; program uporabi počasnejši tempo, manjše breme in tolerirano amplitudo."
+                else:
+                    if selected_exercise_id is not None:
+                        return jsonify({"error": f"Netolerirana regresija za {pattern} ne sme izbrati vaje."}), 400
+                    decision = "UNASSESSABLE"
+                    reason = "Preizkus ni bil ustrezno toleriran ali so prisotni opozorilni znaki; prizadeto področje ostane izpuščeno iz vadbe."
+            if status == "symptoms_reported":
+                try:
+                    validate_symptom_regression_report(
+                        user_report, decision, selected_exercise_id,
+                        SYMPTOM_REGRESSION_VARIANTS.get(pattern, ()),
+                    )
+                except MovementCoachingError as exc:
+                    return jsonify({"error": str(exc)}), 400
+            decisions[pattern] = build_movement_decision(
+                pattern,
+                decision,
+                user_report=user_report,
+                selected_exercise_id=selected_exercise_id,
+                decision_reason=reason,
+            )
+        token = _profile_token()
+        profile = store_get_profile(profile_id, token)
+        if not profile["health_data_consent"]:
+            return jsonify({
+                "error": "Za shranjevanje gibalne samoocene je potrebna ločena privolitev za zdravstvene podatke."
+            }), 403
+        record = {
+            "assessment_version": SIX_PATTERN_ASSESSMENT_VERSION,
+            "assessment_type": "guided_six_pattern_self_report",
+            "decisions": decisions,
+            "is_diagnosis": False,
+        }
+        saved = store_save_movement_assessment(profile_id, token, record)
+        return jsonify({
+            "assessment_version": SIX_PATTERN_ASSESSMENT_VERSION,
+            "movement_decisions": decisions,
+            "assessment_updated_at": saved["updated_at"],
+            "assessment_stored": True,
+            "source": "authenticated_six_pattern_self_assessment",
+        }), 200
+    except MovementCoachingError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
+
 
 @coach_bp.route("/coach/profile/<profile_id>/progress", methods=["GET", "OPTIONS"])
 def coach_training_progress(profile_id):
@@ -2268,10 +3989,35 @@ def coach_profile_program(profile_id):
         # exercise-level rep guidance. A future user-confirmed session-level
         # adjustment can be applied through an explicit programme revision.
         movement_record = store_get_movement_assessment(profile_id, token)
-        movement_assessment = movement_record["assessment"] if movement_record else None
+        saved_assessment = movement_record.get("assessment") if movement_record else None
+        expected_patterns = set(PATTERN_DEFINITIONS)
+        movement_decisions = (
+            saved_assessment.get("decisions")
+            if isinstance(saved_assessment, dict)
+            and saved_assessment.get("assessment_version") == SIX_PATTERN_ASSESSMENT_VERSION
+            else None
+        )
+        if not isinstance(movement_decisions, dict) or set(movement_decisions) != expected_patterns:
+            missing_patterns = sorted(expected_patterns - set(movement_decisions or {})) if isinstance(movement_decisions, dict) else sorted(expected_patterns)
+            return jsonify({
+                "blocked": True,
+                "assessment_required": True,
+                "missing_patterns": missing_patterns,
+                "message": "Pred individualnim programom morava opraviti vseh šest kratkih gibalnih preverjanj: počep, predklon v kolkih (hip hinge), horizontalni potisk, horizontalni poteg, vertikalni potisk in izpadni korak. Neocenjenega vzorca ne bom obravnaval kot pripravljenega za zahtevnejšo vajo.",
+            }), 409
+        assessable_patterns = [
+            pattern for pattern, record in movement_decisions.items()
+            if isinstance(record, dict) and record.get("decision") in {"READY", "LEARN", "REGRESS"}
+        ]
+        if not assessable_patterns:
+            return jsonify({
+                "blocked": True,
+                "assessment_required": True,
+                "message": "Vseh šest vzorcev je trenutno neocenjenih ali nejasnih. Pred shranjenim individualnim programom je treba vsaj en vzorec varno oceniti; sicer program ne bi imel zanesljivega gibalnega izhodišča.",
+            }), 409
         result = generate_program(
             profile["profile"],
-            movement_assessment=movement_assessment,
+            movement_decisions=movement_decisions,
         )
         result = apply_exercise_progression(result, exercise_progressions)
         program_version_id = str(uuid.uuid4())
@@ -2287,7 +4033,8 @@ def coach_profile_program(profile_id):
             "program": result,
             "program_version_id": program_version_id,
             "program_stored": True,
-            "movement_assessment_applied": movement_assessment is not None,
+            "movement_assessment_applied": True,
+            "movement_assessment_version": SIX_PATTERN_ASSESSMENT_VERSION,
             "profile": profile["profile"],
             "adaptation_guidance": adaptation,
             "adaptive_decision": adaptive_decision,
