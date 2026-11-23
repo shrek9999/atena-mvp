@@ -326,3 +326,46 @@ def test_program_route_passes_structured_six_pattern_decisions(monkeypatch, clie
     assert body["movement_assessment_applied"] is True
     assert body["movement_decisions_stored"] is False
     assert body["movement_adaptation"]["source"] == "structured_six_pattern_decisions"
+
+
+def test_program_route_rejects_squat_capacity_phase_without_lumbopelvic_control(client):
+    from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
+
+    decisions = {
+        pattern: build_movement_decision(pattern, "LEARN", user_report={"status": "comfortable"})
+        for pattern in PATTERN_DEFINITIONS
+    }
+    decisions["squat"] = build_movement_decision(
+        "squat", "READY", user_report={
+            "status": "movement_controlled",
+            "movement_control": {
+                "confirmed_by_user": True,
+                "repeatable": True,
+                "criteria": {
+                    "tempo": True,
+                    "balance": True,
+                    "knee_hip_foot_control": True,
+                    "lumbopelvic_control": False,
+                    "tolerated_rom": True,
+                },
+            },
+        },
+    )
+    decisions["squat"]["training_phase"] = "capacity_development"
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-token"},
+        json={
+            "movement_assessment_consent": True,
+            "profile": {
+                "goal": "hypertrophy",
+                "experience": "beginner",
+                "equipment": ["bodyweight"],
+                "sessions_per_week": 2,
+                "session_minutes": 45,
+            },
+            "movement_decisions": decisions,
+        },
+    )
+    assert response.status_code == 400
+    assert response.get_json()["invalid_report_patterns"] == ["squat"]

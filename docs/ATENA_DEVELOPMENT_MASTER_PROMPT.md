@@ -11,6 +11,10 @@ Core philosophy:
 - Najprej kvaliteta gibanja, nato kvantiteta.
 - Najprej gibalna kompetentnost, nato zmogljivost.
 - Choose controlled, repeatable range appropriate to the person.
+- **No capacity-development prescription before pattern-specific motor control is demonstrated and repeatable.** A comfortable self-report alone is not READY.
+- For squat, READY requires controlled tempo, balance, knee–hip–foot alignment/control, lumbopelvic control without uncontrolled posterior pelvic tuck (butt-wink) in the selected range, and a tolerated repeatable range. If control is lost, reduce range/support/load and teach the pattern first.
+- Apply equivalent pattern-specific criteria before READY: hinge coordination and neutral-spine control; push shoulder/elbow/wrist and trunk control; row scapular/arm and trunk control with a stable base; overhead control and trunk/balance; lunge balance, pelvis/hip/knee/foot and trunk control.
+- Movement learning is a distinct phase: coordination, tempo, balance, stability and usable range are trained and retested before strength, hypertrophy or muscular-endurance loading is assigned to that pattern.
 - Tempo and usable amplitude matter, not only load.
 - Regressions/progressions are context-dependent options, not a rigid linear ladder.
 - Separate observed movement from user-reported symptoms. Never diagnose from camera or questionnaire.
