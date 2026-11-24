@@ -537,7 +537,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         prescription.update({"work_seconds": 12, "time_label": "koordinacijskega intervala"})
     if goal == "fat_loss" and pattern == "locomotion":
         duration_by_level = (
-            {"beginner": 900, "intermediate": 1200, "advanced": 1500}
+            {"beginner": 900, "intermediate": 1200, "advanced": 1380}
             if session_minutes <= 30
             else {"beginner": 1200, "intermediate": 1500, "advanced": 1800}
         )
