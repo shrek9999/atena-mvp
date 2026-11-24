@@ -1654,8 +1654,9 @@ def generate_program(
                     "coaching_note": "Ciljno pripravljalno delo za nadzor trupa, vključeno na podlagi tvoje povratne informacije. Izvedi po splošnem ogrevanju in pred glavnimi vajami."
                 } if pattern == "trunk_stability" and include_stability else {}),
             })
-            for muscle in candidate["primary_muscles"]:
-                exposure[muscle] += prescription["sets"]
+            if exercise_category in {"compound", "accessory"}:
+                for muscle in candidate["primary_muscles"]:
+                    exposure[muscle] += prescription["sets"]
 
         if deferred_learning_patterns:
             deferred_labels = [
@@ -1698,8 +1699,9 @@ def generate_program(
                 removed = selected.pop(removable)
                 missing_patterns.add(removed["pattern"])
                 used_counts[removed["exercise_id"]] -= 1
-                for muscle in removed["primary_muscles"]:
-                    exposure[muscle] -= removed["prescription"]["sets"]
+                if removed["exercise_category"] in {"compound", "accessory"}:
+                    for muscle in removed["primary_muscles"]:
+                        exposure[muscle] -= removed["prescription"]["sets"]
                 continue
 
             # If the time budget is still exceeded, reduce a main compound lift
@@ -1764,8 +1766,9 @@ def generate_program(
                 removed = selected.pop(removal_index)
                 missing_patterns.add(removed["pattern"])
                 used_counts[removed["exercise_id"]] -= 1
-                for muscle in removed["primary_muscles"]:
-                    exposure[muscle] -= removed["prescription"]["sets"]
+                if removed["exercise_category"] in {"compound", "accessory"}:
+                    for muscle in removed["primary_muscles"]:
+                        exposure[muscle] -= removed["prescription"]["sets"]
 
         estimated = _estimated_minutes(selected, warm_up_minutes)
         if estimated > p["session_minutes"]:
@@ -1850,7 +1853,7 @@ def generate_program(
             "exercise_scaling": "Izberi zahtevnost in breme, ki omogočata ponovljive ponovitve z ustrezno rezervo. Učne različice so začasna pomoč, ne nadomestilo za glavni trening.",
             "equipment_policy": "ATENA uporablja samo opremo, navedeno v profilu; gospodinjske opore predpostavlja le, če so izrecno potrjene.",
             "endurance_policy": "Vzdržljivost razvijaj z intervali/MetConom ali aerobno aktivnostjo glede na cilj, opremo in regeneracijo.",
-            "mobility_policy": "Pri funkcionalnem cilju razvijaj mobilnost predvsem z obremenjenimi večsklepnimi vajami skozi največjo trenutno obvladano amplitudo (npr. RDL, obremenjeni globoki počep, ATG/lateralni izpadni počep). Mobilnostni drili so kratka, ciljna priprava v ogrevanju; ne smejo nadomestiti delovnih serij.",
+            "mobility_policy": "Mobilnost razvijaj predvsem z aktivno močjo skozi obvladano amplitudo; mobilnostni drili so kratka ciljna priprava, ne nadomestilo za glavni del treninga.",
             "functional_policy": "Vsak trening: obremenjena večsklepna vadba skozi polno obvladano amplitudo + MetCon ali intervali. Mobilnostni drili so kratka priprava v ogrevanju.",
             "fat_loss_policy": "Hujšanje: vadba z obremenitvijo + kondicija (MetCon, intervali ali hoja v klanec) + vzdržen energijski primanjkljaj in dovolj beljakovin.",
             "experience_adaptation": (
