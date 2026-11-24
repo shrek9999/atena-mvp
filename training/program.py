@@ -276,11 +276,9 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
     if goal == "power":
         patterns += ["jump", "hinge_power"]
     if include_accessories and session_index == 1:
-        # In a short advanced hypertrophy session, direct accessory work replaces
-        # a repeated vertical-pull slot; horizontal pulling remains in the plan.
-        if "vertical_pull" in patterns:
-            patterns[patterns.index("vertical_pull")] = "accessory"
-        elif len(patterns) < 6:
+        # Add direct accessory work only when it fits; retain the vertical-pull
+        # exposure rather than replacing a foundational movement pattern.
+        if len(patterns) < 6:
             patterns.append("accessory")
     return patterns
 
