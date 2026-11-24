@@ -2000,7 +2000,11 @@ def generate_program(
                 if p["experience"] == "beginner" else
                 "Vadeči z nekaj izkušnjami: ohrani večsklepno osnovo, postopno povečuj breme in volumen; večinoma 6–12 ponovitev."
                 if p["experience"] == "intermediate" else
-                "Napredni: moč lahko uporablja 5x5; 5/3/1 samo v ločenem večtedenskem ciklu s potrjenim trening maksimumom. Hipertrofija uporablja 6–20 ponovitev in po potrebi izolacijske vaje."
+                "Napredni – strength: glavne vaje lahko uporabljaš v 5x5, mrtvi dvig praviloma v nižjem volumnu; 5/3/1 samo v ločenem večtedenskem ciklu s potrjenim trening maksimumom."
+                if planning_goal == "strength" else
+                "Napredni – hipertrofija: večsklepne vaje praviloma 6–12 ponovitev, dodatne in izolacijske vaje 10–20; volumen prilagodi regeneraciji."
+                if planning_goal == "hypertrophy" else
+                "Napredni – uravnoteženo: kombiniraj težje večsklepne serije in zmerne hipertrofijske razpone; specializacijo izberi šele, ko je cilj jasen."
             ),
             "tempo": "Tempo je odvisen od vaje: nadzoruj ekscentrično fazo, koncentrični del izvedi odločno in brez kompenzacij. Pri intervalih ohrani ponovljiv ritem.",
             "range_of_motion": "Pri obremenjenih vajah uporabi največjo trenutno obvladano in tolerirano amplitudo; postopno jo razvijaj brez kompenzacij.",
