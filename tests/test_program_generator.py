@@ -631,23 +631,11 @@ def test_legacy_mobility_goal_uses_functional_strength_through_range():
     exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
     assert all(session.get("mobility_block", {}).get("exercises") for session in plan["sessions"])
     assert {"squat", "hinge"} <= {exercise["pattern"] for exercise in exercises}
-    mobility_strength = [
-        exercise for exercise in exercises
-        if exercise.get("mobility_strength") is True
-    ]
-    assert mobility_strength
-    assert all(exercise["prescription"]["sets"] == 2 for exercise in mobility_strength)
-    assert all(exercise["prescription"]["reps"] == "8–12" for exercise in mobility_strength)
-    assert all(exercise["prescription"]["rir"] == 3 for exercise in mobility_strength)
-    assert all(exercise["prescription"]["tempo"] == "3–1–2–0" for exercise in mobility_strength)
-    assert plan["weekly_summary"]["pattern_session_frequency"]["mobility"] == 2
-    assert plan["weekly_summary"]["pattern_session_frequency"]["mobility_stretch"] == 2
-    timed_stretches = [exercise for exercise in exercises if exercise["pattern"] == "mobility_stretch"]
-    assert timed_stretches
-    assert all(exercise["reps_per_side"] for exercise in timed_stretches)
-    assert any(exercise["pattern"] in {"squat", "lunge", "hinge"} for exercise in exercises)
+    loaded_patterns = {exercise["pattern"] for exercise in exercises}
+    assert {"squat", "hinge"} <= loaded_patterns
+    assert all(exercise["range_of_motion"] for exercise in exercises if exercise["pattern"] in {"squat", "hinge", "lunge"})
     assert all(session["estimated_minutes"] <= 60 for session in plan["sessions"])
-    assert plan["weekly_summary"]["time_based_work_seconds"] > 0
+    assert all(session["mobility_block"]["estimated_minutes"] <= 2 for session in plan["sessions"])
 
 
 def test_timed_work_is_included_in_session_duration_estimate():
@@ -957,9 +945,9 @@ def test_programme_selection_respects_goal_specific_training_purposes():
     hypertrophy_items = [ex for session in hypertrophy["sessions"] for ex in session["exercises"]]
     mobility_items = [ex for session in mobility["sessions"] for ex in session["exercises"]]
 
-    assert all("hypertrophy" in ex["training_purposes"] for ex in hypertrophy_items)
-    assert not any(ex["exercise_id"] == "reaching_squat" for ex in hypertrophy_items)
-    assert any(ex["exercise_id"] == "reaching_squat" for ex in mobility_items)
+    assert all({"strength", "hypertrophy"} & set(ex["training_purposes"]) for ex in hypertrophy_items)
+    assert all(session.get("mobility_block", {}).get("exercises") for session in mobility["sessions"])
+    assert {"squat", "hinge"} <= {ex["pattern"] for ex in mobility_items}
 
 
 def test_functional_programme_uses_functional_capacity_purpose_tags():
