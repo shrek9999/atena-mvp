@@ -1098,6 +1098,7 @@ def generate_program(
         selected = []
         learning_tasks_for_session = []
         deferred_learning_patterns = []
+        ready_loaded_patterns = []
         # A short, focused learning task may accompany the workout; it must not
         # turn the whole session into a long sequence of unloaded drills.
         learning_task_limit = 1 if p["session_minutes"] <= 60 else 2
@@ -1434,15 +1435,10 @@ def generate_program(
                 if prescription.get("rir_range") is not None:
                     prescription["rir_range"] = "3–4"
                 movement_note = (
-                    "Vzorec je ponovljivo nadzorovan. Začni z lahko do zmerno obremenitvijo, "
-                    "ki omogoča vsaj 3–4 ponovitve v rezervi; obremenitev povečuj šele po "
-                    "dobro toleriranih izpostavitvah. READY ni dovoljenje za težke serije."
+                    "Začni z lahko do zmerno obremenitvijo (RIR 3–4); povečaj jo šele "
+                    "po dveh dobro toleriranih izpostavitvah. READY ni dovoljenje za težke serije."
                 )
-                movement_adaptation_events.append({
-                    "pattern": pattern,
-                    "action": "ready_for_light_loaded_start",
-                    "message": movement_note,
-                })
+                ready_loaded_patterns.append(pattern)
             if symptom_tolerated:
                 # Mild, stable discomfort is not an automatic exclusion. Keep the
                 # exact tested variant, reduce resistance, slow the tempo and
@@ -1675,6 +1671,19 @@ def generate_program(
             if exercise_category in {"compound", "accessory"}:
                 for muscle in candidate["primary_muscles"]:
                     exposure[muscle] += prescription["sets"]
+
+        if ready_loaded_patterns:
+            ready_labels = [PATTERN_LABELS.get(value, value) for value in ready_loaded_patterns]
+            movement_adaptation_events.append({
+                "pattern": ready_loaded_patterns[0],
+                "patterns": ready_loaded_patterns,
+                "action": "ready_for_light_loaded_start",
+                "message": (
+                    "Ponovljivo nadzorovani vzorci: " + ", ".join(ready_labels)
+                    + ". Začni z lahko do zmerno obremenitvijo (RIR 3–4); breme povečuj "
+                    "šele po dveh dobro toleriranih izpostavitvah."
+                ),
+            })
 
         if deferred_learning_patterns:
             deferred_labels = [
