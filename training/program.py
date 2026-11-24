@@ -1546,7 +1546,7 @@ def generate_program(
                 0 if item.get("training_role") == "main" or planning_goal not in {"hypertrophy", "strength_hypertrophy"} else 1,
                 used_counts[item["id"]],
                 abs(level_rank[item["level"]] - target_level),
-                {"high": 0, "moderate": 1, "low": 2}[effective_loading(item)] if planning_goal in {"hypertrophy", "strength", "functional", "fat_loss"} else 0,
+                {"high": 0, "moderate": 1, "low": 2}[effective_loading(item)] if planning_goal in {"hypertrophy", "strength", "strength_hypertrophy", "functional", "fat_loss"} else 0,
                 item["id"],
             ))
             effective_pattern = candidate["pattern"]
