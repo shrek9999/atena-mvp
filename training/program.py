@@ -66,6 +66,8 @@ PATTERN_LABELS = {
 GOAL_PRIMARY_PURPOSE = {
     "strength": "strength",
     "hypertrophy": "hypertrophy",
+    "strength_hypertrophy": "strength",
+    "fat_loss": "strength",
     "general_fitness": "general_fitness",
     "functional": "functional_fitness",
     "power": "power",
