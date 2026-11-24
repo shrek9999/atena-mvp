@@ -139,6 +139,7 @@ def validate_profile(profile: object) -> dict:
     goal = profile.get("goal")
     if goal not in SUPPORTED_GOALS:
         raise ProgramValidationError(f"Cilj mora biti eden od: {', '.join(sorted(SUPPORTED_GOALS))}.")
+    canonical_goal = normalize_goal(goal)
     level = profile.get("experience")
     if level not in SUPPORTED_LEVELS:
         raise ProgramValidationError("Izkušnje morajo biti beginner, intermediate ali advanced.")
@@ -162,15 +163,19 @@ def validate_profile(profile: object) -> dict:
     training_emphasis = profile.get("training_emphasis", "balanced")
     if training_emphasis not in {"balanced", "strength", "hypertrophy"}:
         raise ProgramValidationError("training_emphasis mora biti balanced, strength ali hypertrophy.")
-    # Specialisation is available only to advanced users whose primary goal is
-    # the combined strength-and-muscle-mass track.
-    if level != "advanced" or goal != "strength_hypertrophy":
+    # Strength and hypertrophy are one public goal for less-experienced users.
+    # Advanced users can specialize; legacy explicit goal IDs remain a compatible
+    # signal when no newer training_emphasis field was supplied.
+    if level != "advanced" or canonical_goal != "strength_hypertrophy":
         training_emphasis = "balanced"
+    elif "training_emphasis" not in profile and goal in {"strength", "hypertrophy"}:
+        training_emphasis = goal
     pistol_squat_capable = profile.get("pistol_squat_capable", False)
     if not isinstance(pistol_squat_capable, bool):
         raise ProgramValidationError("pistol_squat_capable mora biti true ali false.")
     return {
         **profile,
+        "goal": canonical_goal,
         "pistol_squat_capable": pistol_squat_capable,
         "sessions_per_week": sessions,
         "session_minutes": duration,
