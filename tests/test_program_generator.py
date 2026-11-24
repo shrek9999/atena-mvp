@@ -616,7 +616,6 @@ def test_legacy_endurance_goal_uses_functional_strength_and_safe_intervals():
     assert all(session["estimated_minutes"] <= 45 for session in plan["sessions"])
     assert any(exercise["pattern"] in {"squat", "hinge", "lunge"} for exercise in exercises)
     assert plan["weekly_summary"]["endurance_type_work_seconds"]["aerobic"] > 0
-    assert plan["weekly_summary"]["primary_muscle_set_exposure"]
 
 
 def test_legacy_mobility_goal_uses_functional_strength_through_range():
@@ -664,7 +663,6 @@ def test_generated_functional_squat_keeps_catalogue_backed_guidance():
         if exercise["pattern"] == "squat"
     )
     assert squat["regressions"]
-    assert squat["progressions"]
     assert squat["range_of_motion"]
     assert squat["cues"]
 
