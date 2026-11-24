@@ -1916,6 +1916,22 @@ def generate_program(
                 volume_adjustments.append(reducible["name"])
                 continue
 
+            # Very short fat-loss sessions may need a single-set floor to
+            # retain the resistance patterns plus a brief aerobic dose.
+            if planning_goal == "fat_loss" and p["session_minutes"] <= 30:
+                short_session_reducible = next(
+                    (item for item in selected
+                     if item["pattern"] in {"squat", "hinge", "hip_extension", "horizontal_push", "horizontal_pull", "lunge", "vertical_push"}
+                     and item["prescription"]["sets"] > 1),
+                    None,
+                )
+                if short_session_reducible is not None:
+                    short_session_reducible["prescription"]["sets"] -= 1
+                    for muscle in short_session_reducible["primary_muscles"]:
+                        exposure[muscle] -= 1
+                    volume_adjustments.append(short_session_reducible["name"])
+                    continue
+
             # Only as a last resort trim non-core additions; keep trunk control work.
             final_priority = ("vertical_push", "vertical_pull", "lunge", "anti_rotation")
             final_index = next(
@@ -1970,7 +1986,7 @@ def generate_program(
         estimated = _estimated_minutes(selected, warm_up_minutes)
         if estimated > p["session_minutes"]:
             raise ProgramValidationError(
-                f"Z razpoložljivim časom {p['session_minutes']} min ni mogoče sestaviti uravnoteženega treninga. Povečaj čas ali zmanjša zahtevnost cilja."
+                f"Trening {session_index + 1} za cilj {planning_goal} je ocenjen na {estimated} min, na voljo pa je {p['session_minutes']} min. Skrajšaj vadbo ali izberi daljši termin."
             )
         if (len(selected) < 3 and not learning_tasks_for_session
                 and not (planning_goal == "fat_loss" and p["sessions_per_week"] >= 3 and session_index >= 2)):
