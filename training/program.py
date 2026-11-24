@@ -264,7 +264,9 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         patterns.insert(0, "trunk_stability")
     if goal == "power":
         patterns += ["jump", "hinge_power"]
-    if include_accessories and session_index == 1 and len(patterns) < 6:
+    if include_accessories and goal == "hypertrophy" and session_index == 1:
+        # Optional isolation volume is reserved for advanced hypertrophy.
+        # The time-budget pass removes it before foundational compound work.
         patterns += ["accessory"]
     return patterns
 
@@ -517,24 +519,18 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
     elif pattern == "coordination":
         prescription.update({"work_seconds": 12, "time_label": "koordinacijskega intervala"})
     if goal == "fat_loss" and pattern == "locomotion":
-        prescription.update({"work_seconds": 480, "time_label": "kratka aerobna aktivnost", "effort_target": "Lahkoten do zmeren pogovorni tempo; izvedba naj ostane sproščena in ponovljiva."})
+        work_seconds = {"beginner": 1200, "intermediate": 1500, "advanced": 1800}[level]
+        prescription.update({"work_seconds": work_seconds, "time_label": "daljše aerobne aktivnosti", "effort_target": "Zmeren pogovorni tempo; primerna je tudi hitra hoja v klanec. Končaj z občutkom, da bi lahko nadaljeval še nekaj minut."})
     elif goal == "fat_loss" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
-        work_seconds = 60 if kind == "aerobic" else (18 if kind == "anaerobic" else 25)
-        prescription.update({"work_seconds": work_seconds, "time_label": "kratek kondicijski interval", "effort_target": "Nadzorovana intenzivnost; ne izvajaj maksimalno in ne žrtvuj tehnike."})
+        work_seconds = 60 if kind == "aerobic" else (20 if kind == "anaerobic" else 30)
+        prescription.update({"work_seconds": work_seconds, "time_label": "kondicijskega intervala", "effort_target": "Zmeren do višji, vendar ponovljiv napor; ne izvajaj maksimalno in ne žrtvuj tehnike."})
     elif goal == "functional" and pattern == "conditioning":
-        kind = exercise.get("endurance_type")
-        work_seconds = (
-            {"beginner": 30, "intermediate": 40, "advanced": 45}[level]
-            if kind == "aerobic" else
-            {"beginner": 10, "intermediate": 12, "advanced": 15}[level]
-            if kind == "anaerobic" else
-            {"beginner": 20, "intermediate": 25, "advanced": 30}[level]
-        )
+        work_seconds = {"beginner": 20, "intermediate": 30, "advanced": 40}[level]
         prescription.update({
             "work_seconds": work_seconds,
-            "time_label": "nadzorovanega kondicijskega intervala",
-            "effort_target": "Zmeren, ponovljiv napor; zaključi interval, preden se poslabšata tehnika ali nadzor dihanja.",
+            "time_label": "MetCon/intervala",
+            "effort_target": "Ponovljiv zmeren do višji napor (približno RPE 6–8); ohrani tehniko in enakomerno kakovost intervalov. Ne delaj do odpovedi.",
         })
     elif goal == "endurance" and pattern == "locomotion":
         prescription.update({"work_seconds": 1200, "time_label": "neprekinjene aerobne aktivnosti", "effort_target": "Zmeren pogovorni tempo; lahko govoriš v stavkih, vendar čutiš pospešeno dihanje."})
@@ -1020,8 +1016,8 @@ def generate_program(
     for session_index in range(p["sessions_per_week"]):
         patterns = _session_patterns(
             session_index, p["sessions_per_week"], planning_goal,
-            p["include_accessories"] and p["session_minutes"] >= 75 and not include_stability, include_stability,
-            p["experience"], p["session_minutes"]
+            p["include_accessories"] and planning_goal == "hypertrophy" and p["session_minutes"] >= 45 and not include_stability,
+            include_stability, p["experience"], p["session_minutes"]
         )
         warm_up_minutes = 5 if p["session_minutes"] <= 30 else (7 if p["session_minutes"] <= 60 else 10)
         camera_coordination_block = None
@@ -1044,92 +1040,44 @@ def generate_program(
             }
         mobility_block = None
         if p["goal"] == "functional" and by_pattern.get("mobility") and "mobility" not in p["excluded_patterns"]:
-            # Functional preparation must represent all declared pillars, not
-            # mobility alone. Keep balance/coordination as short skill practice
-            # inside the warm-up, not as extra loaded work.
-            mobility_candidates = sorted(by_pattern["mobility"], key=lambda item: item["id"])
-            start = (session_index * 2) % len(mobility_candidates)
-            selected_mobility = [
-                mobility_candidates[(start + offset) % len(mobility_candidates)]
-                for offset in range(min(2 if p["session_minutes"] > 30 else 1, len(mobility_candidates)))
-            ]
+            # One short, active preparation drill at most. The main mobility
+            # stimulus comes from resistance exercises performed through a
+            # progressively larger, controlled range of motion.
             level_rank = {"beginner": 0, "intermediate": 1, "advanced": 2}
             target_level = level_rank[p["experience"]]
-            preferred_skill_pattern = "balance" if session_index % 2 == 0 else "coordination"
-            skill_pattern_order = [preferred_skill_pattern, "coordination" if preferred_skill_pattern == "balance" else "balance"]
-            selected_skill = None
-            selected_skill_pattern = None
-            for skill_pattern in skill_pattern_order:
-                if skill_pattern in p["excluded_patterns"]:
-                    continue
-                compatible = [
-                    item for item in by_pattern.get(skill_pattern, [])
-                    if level_rank.get(item["level"], 0) <= target_level
-                ]
-                if compatible:
-                    compatible.sort(key=lambda item: (0 if skill_pattern != "coordination" or item["id"] == "controlled_lateral_step" else 1, target_level - level_rank.get(item["level"], 0), item["id"]))
-                    selected_skill = compatible[0]
-                    selected_skill_pattern = skill_pattern
-                    break
-            prep_exercises = [
-                {
-                    "exercise_id": item["id"],
-                    "name": item["name"],
-                    "component": "mobilnost",
-                    "sets": 1,
-                    "reps": 6 if item.get("unilateral") else 8,
-                    "reps_per_side": bool(item.get("unilateral") or item.get("reps_per_side")),
-                    "tempo": "počasi in nadzorovano",
-                    "equipment": item["equipment"],
-                    "cues": item["cues"],
-                    "warnings": item["warnings"],
-                }
-                for item in selected_mobility
+            mobility_candidates = [
+                item for item in by_pattern["mobility"]
+                if level_rank.get(item["level"], 0) <= target_level
+                and item.get("training_role") == "mobility"
+                and item["id"] not in p["excluded_exercise_ids"]
             ]
-            if selected_skill is not None:
-                is_balance = selected_skill_pattern == "balance"
-                work_seconds = None if is_balance else (10 if p["experience"] == "beginner" else 15)
-                prep_exercises.append({
-                    "exercise_id": selected_skill["id"],
-                    "name": selected_skill["name"],
-                    "component": "ravnotežje" if is_balance else "koordinacija",
-                    "sets": 1,
-                    "reps": 5 if is_balance else f"{work_seconds} s",
-                    "work_seconds": work_seconds,
-                    "reps_per_side": is_balance,
-                    "tempo": "počasi in nadzorovano",
-                    "equipment": selected_skill["equipment"],
-                    "cues": selected_skill["cues"],
-                    "warnings": selected_skill["warnings"],
-                })
-            selected_stability = next(
-                (
-                    item for item in by_pattern.get("trunk_stability", [])
-                    if item["id"] == "dead_bug"
-                ),
-                None,
-            ) if not include_stability else None
-            if selected_stability is not None:
-                prep_exercises.append({
-                    "exercise_id": selected_stability["id"],
-                    "name": selected_stability["name"],
-                    "component": "stabilnost",
-                    "sets": 1,
-                    "reps": 6,
-                    "reps_per_side": True,
-                    "tempo": "počasi in nadzorovano",
-                    "equipment": selected_stability["equipment"],
-                    "cues": selected_stability["cues"],
-                    "warnings": selected_stability["warnings"],
-                })
-            mobility_block = {
-                "purpose": "Gibalna priprava: aktivna mobilnost, nadzor trupa ter kratka vaja ravnotežja ali koordinacije pred glavnimi vzorci.",
-                "estimated_minutes": 2 + int(selected_skill is not None) + int(selected_stability is not None),
-                "amplitude_rule": "Gib izvedi skozi največjo trenutno nadzorovano in tolerirano amplitudo; brez sunkov, izgube ravnotežja ali siljenja.",
-                "exercises": prep_exercises,
-            }
+            if mobility_candidates:
+                preferred_id = "ankle_knee_to_wall" if session_index % 2 == 0 else "shoulder_car"
+                selected_mobility = next(
+                    (item for item in mobility_candidates if item["id"] == preferred_id),
+                    mobility_candidates[0],
+                )
+                mobility_block = {
+                    "purpose": "Kratka, ciljna aktivna priprava; mobilnost razvijaj predvsem z obremenjenimi vajami skozi polno obvladano amplitudo v glavnem delu.",
+                    "estimated_minutes": 1,
+                    "amplitude_rule": "Gib izvedi aktivno in nadzorovano, brez sunkov ali siljenja.",
+                    "exercises": [{
+                        "exercise_id": selected_mobility["id"],
+                        "name": selected_mobility["name"],
+                        "component": "mobilnost",
+                        "sets": 1,
+                        "reps": 6,
+                        "tempo": "počasi in nadzorovano",
+                        "equipment": selected_mobility["equipment"],
+                        "cues": selected_mobility["cues"],
+                        "warnings": selected_mobility["warnings"],
+                    }],
+                }
         selected = []
         learning_tasks_for_session = []
+        # A short, focused learning task may accompany the workout; it must not
+        # turn the whole session into a long sequence of unloaded drills.
+        learning_task_limit = 1 if p["session_minutes"] <= 60 else 2
         seen_patterns = set()
         for pattern in patterns:
             if pattern in seen_patterns and planning_goal != "mobility":
@@ -1237,6 +1185,13 @@ def generate_program(
                     None,
                 )
                 if target_id is None and method is not None and method.get("learning_only") is True:
+                    if len(learning_tasks_for_session) >= learning_task_limit:
+                        movement_adaptation_events.append({
+                            "pattern": pattern,
+                            "action": "learning_task_deferred_to_later_session",
+                            "message": "Vzorec ostane brez obremenjene vaje; učno nalogo ATENA razporedi v naslednjo vadbeno izpostavitev, da ogrevanje ne postane glavni del treninga.",
+                        })
+                        continue
                     learning_tasks_for_session.append({
                         "movement_pattern": pattern,
                         "task_id": PATTERN_DEFINITIONS[pattern]["task_id"],
@@ -1283,23 +1238,10 @@ def generate_program(
                     return "moderate"
                 return potential
 
-            # A comfortable bodyweight/pattern self-check is not evidence of
-            # tolerance for a high-load variation. Start with a verified
-            # low/moderate-loading option; load progression is earned from
-            # exercise-specific training history, not inferred from READY.
-            if structured_decision and structured_decision["decision"] == "READY":
-                conservative_candidates = [
-                    item for item in candidates if effective_loading(item) != "high"
-                ]
-                if not conservative_candidates:
-                    missing_patterns.add(pattern)
-                    movement_adaptation_events.append({
-                        "pattern": pattern,
-                        "action": "omitted_no_conservative_starting_variant",
-                        "message": "Osnovni vzorec je bil v samooceni udoben, vendar katalog z razpoložljivo opremo ne ponuja preverjene konservativne začetne različice. ATENA ne bo ugibala o toleranci na veliko breme.",
-                    })
-                    continue
-                candidates = conservative_candidates
+            # READY confirms repeatable control of the assessed pattern, not
+            # tolerance for heavy loading. Keep suitable externally loaded
+            # catalogue options available, then prescribe a light first exposure
+            # with a clear reserve rather than filtering out every high-potential lift.
 
             def selection_priority(item: dict) -> int:
                 if movement_status == "needs_support":
@@ -1313,6 +1255,12 @@ def generate_program(
                         return -30
                     if item["id"] in {"l_sit", "tuck_sit", "hollow_body_hold"}:
                         return 30
+                if planning_goal == "functional" and pattern == "hinge" and item["id"] == "romanian_deadlift" and ({"dumbbell", "barbell", "kettlebell"} & available_equipment):
+                    return -15
+                if planning_goal == "functional" and pattern == "squat" and item["id"] == "loaded_deep_squat" and ({"dumbbell", "kettlebell"} & available_equipment):
+                    return -15
+                if planning_goal == "functional" and pattern == "lunge" and item["id"] in {"atg_split_squat", "lateral_lunge", "patrick_step"}:
+                    return -10
                 if planning_goal == "mobility" and pattern == "hinge":
                     if item["id"] == "romanian_deadlift" and ({"dumbbell", "barbell", "kettlebell"} & available_equipment):
                         return -15
@@ -1461,10 +1409,20 @@ def generate_program(
                     "message": movement_note,
                 })
             elif structured_decision and structured_decision["decision"] == "READY":
+                prescription["sets"] = min(2, prescription.get("sets", 2))
+                if prescription.get("rir") is not None:
+                    prescription["rir"] = max(3, prescription["rir"])
+                if prescription.get("rir_range") is not None:
+                    prescription["rir_range"] = "3–4"
+                movement_note = (
+                    "Vzorec je ponovljivo nadzorovan. Začni z lahko do zmerno obremenitvijo, "
+                    "ki omogoča vsaj 3–4 ponovitve v rezervi; obremenitev povečuj šele po "
+                    "dobro toleriranih izpostavitvah. READY ni dovoljenje za težke serije."
+                )
                 movement_adaptation_events.append({
                     "pattern": pattern,
-                    "action": "ready_for_conservative_starting_variation",
-                    "message": "Samoocena potrjuje udobje pri osnovnem gibalnem vzorcu, ne pa tolerance na veliko breme. Program zato začne s konservativno različico; večje obremenitve zahtevajo ločeno, ponovljivo izvedbo in zabeleženo povratno informacijo.",
+                    "action": "ready_for_light_loaded_start",
+                    "message": movement_note,
                 })
             if symptom_tolerated:
                 # Mild, stable discomfort is not an automatic exclusion. Keep the
