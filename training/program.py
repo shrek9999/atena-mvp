@@ -189,25 +189,15 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # add a short aerobic/conditioning session rather than more lifting volume.
         return ["locomotion", "lunge", "conditioning"]
     if goal == "functional":
-        # Functional fitness is built from fundamental movement patterns and
-        # locomotion, not generic balance/coordination add-ons.
-        patterns = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
-        # Vertical pull is a supplementary strength pattern, not a camera-assessment task.
-        # Keep all six assessed patterns represented across the week while
-        # preserving locomotion and conditioning as distinct functional work.
-        # Day 1: horizontal push + vertical pull + unilateral knee pattern.
-        # Day 2: retain squat/hinge/horizontal pull, rotate push to vertical,
-        # then add locomotion and controlled conditioning when time permits.
+        # Every session combines four resistance patterns with a distinct
+        # conditioning slot. Learning one pattern must not turn the whole
+        # session into a movement-drill circuit.
         if session_index == 0:
-            patterns.extend(["vertical_pull", "lunge"])
+            patterns = ["squat", "hinge", "horizontal_push", "horizontal_pull", "conditioning"]
         else:
-            patterns.remove("horizontal_push")
-            patterns.extend(["vertical_push", "locomotion"])
-            if session_minutes > 30:
-                patterns.append("conditioning")
+            patterns = ["lunge", "hinge", "horizontal_pull", "vertical_push", "conditioning"]
         if include_stability:
             patterns.insert(0, "trunk_stability")
-        # Experience is not a landing-readiness screen: no default jumps.
         return patterns
     if goal == "endurance":
         # Keep a minimum viable session even when no loaded carry equipment exists.
@@ -272,8 +262,13 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         patterns.insert(0, "trunk_stability")
     if goal == "power":
         patterns += ["jump", "hinge_power"]
-    if include_accessories and session_index == 1 and len(patterns) < 6:
-        patterns += ["accessory"]
+    if include_accessories and session_index == 1:
+        # In a short advanced hypertrophy session, direct accessory work replaces
+        # a repeated vertical-pull slot; horizontal pulling remains in the plan.
+        if "vertical_pull" in patterns:
+            patterns[patterns.index("vertical_pull")] = "accessory"
+        elif len(patterns) < 6:
+            patterns.append("accessory")
     return patterns
 
 
@@ -307,13 +302,17 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         else:
             reps, rir, rest = "20–30 s", None, 60
     elif goal == "functional" and pattern == "conditioning":
-        # Light, repeatable MetCon supports the strength base; it is not an
-        # all-out finisher or a test of maximal capacity. Timed work is stored
-        # as work_seconds (not a textual reps value) for duration calculations.
-        sets = {"beginner": 2, "intermediate": 3, "advanced": 4}[level]
+        # Interval conditioning is a real training component, not a token finisher.
+        # Keep the effort repeatable and stop before technique or breathing control degrades.
+        sets = {"beginner": 4, "intermediate": 6, "advanced": 8}[level]
         reps, rir = "1", None
         kind = exercise.get("endurance_type")
-        rest = 60 if kind == "anaerobic" else 45
+        rest = 45 if kind == "aerobic" else 30
+    elif goal == "functional" and pattern == "locomotion":
+        # When no suitable machine or movement-ready MetCon option exists,
+        # brisk walking intervals provide a scalable conditioning alternative.
+        sets = {"beginner": 4, "intermediate": 6, "advanced": 8}[level]
+        reps, rir, rest = "30–45 s", None, 30
     elif goal == "endurance" and pattern == "locomotion":
         sets, reps, rir, rest = 1, "20–30 min", None, 0
     elif goal == "endurance" and pattern == "conditioning":
@@ -408,8 +407,10 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
                 sets, reps, rir, rest = 3, "8–12", 3, 90
         rir_range = "2–3"
     elif goal == "strength":
-        if pattern in {"squat", "hinge"}:
-            sets, reps, rir, rest = (4, "3–6", 2, 210) if level == "advanced" else (3, "5–8", 2, 180)
+        if pattern == "squat":
+            sets, reps, rir, rest = (5, "5", 2, 180) if level == "advanced" else (3, "5–8", 2, 180)
+        elif pattern == "hinge":
+            sets, reps, rir, rest = (3, "3–5", 2, 210) if level == "advanced" else (3, "5–8", 2, 180)
         elif is_stability:
             sets, reps, rir, rest = 2, "10–15", 3, 60
         elif pattern in {"carry", "hip_extension"}:
@@ -428,7 +429,9 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         else:
             sets, reps, rir, rest = 2, "10–15", 2, 75
     elif goal in {"hypertrophy", "fat_loss"}:
-        if pattern in {"squat", "hinge"}:
+        if goal == "hypertrophy" and pattern == "accessory":
+            sets, reps, rir, rest = (3, "10–20", 2, 60) if level == "advanced" else (2, "12–15", 2, 60)
+        elif pattern in {"squat", "hinge"}:
             sets, reps, rir, rest = 3, "6–10", (2 if level != "beginner" else 3), 120 if level == "advanced" else 90
         elif pattern == "lunge" or unilateral:
             sets, reps, rir, rest = 2, "8–10", (2 if level != "beginner" else 3), 90
@@ -507,16 +510,23 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
     elif goal == "functional" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
         work_seconds = (
-            {"beginner": 30, "intermediate": 40, "advanced": 45}[level]
+            {"beginner": 35, "intermediate": 45, "advanced": 50}[level]
             if kind == "aerobic" else
-            {"beginner": 10, "intermediate": 12, "advanced": 15}[level]
+            {"beginner": 15, "intermediate": 20, "advanced": 25}[level]
             if kind == "anaerobic" else
-            {"beginner": 20, "intermediate": 25, "advanced": 30}[level]
+            {"beginner": 25, "intermediate": 30, "advanced": 35}[level]
         )
         prescription.update({
             "work_seconds": work_seconds,
-            "time_label": "nadzorovanega kondicijskega intervala",
-            "effort_target": "Zmeren, ponovljiv napor; zaključi interval, preden se poslabšata tehnika ali nadzor dihanja.",
+            "time_label": "intervala",
+            "effort_target": "Zmeren do zahtevnejši, vendar ponovljiv napor; končaj interval, preden se poslabšata tehnika ali nadzor dihanja.",
+        })
+    elif goal == "functional" and pattern == "locomotion":
+        work_seconds = {"beginner": 30, "intermediate": 40, "advanced": 45}[level]
+        prescription.update({
+            "work_seconds": work_seconds,
+            "time_label": "intervala živahne hoje",
+            "effort_target": "Hodi živahno, po možnosti v blag klanec; med intervali se umiri. Ohrani tempo, pri katerem ne izgubiš nadzora.",
         })
     elif goal == "endurance" and pattern == "locomotion":
         prescription.update({"work_seconds": 1200, "time_label": "neprekinjene aerobne aktivnosti", "effort_target": "Zmeren pogovorni tempo; lahko govoriš v stavkih, vendar čutiš pospešeno dihanje."})
@@ -1000,11 +1010,30 @@ def generate_program(
     missing_patterns: set[str] = set()
 
     for session_index in range(p["sessions_per_week"]):
+        learning_task_limit = 1 if planning_goal in {"functional", "fat_loss"} else 2
         patterns = _session_patterns(
             session_index, p["sessions_per_week"], planning_goal,
-            p["include_accessories"] and p["session_minutes"] >= 75 and not include_stability, include_stability,
-            p["experience"], p["session_minutes"]
+            p["include_accessories"] and (planning_goal == "hypertrophy" or p["session_minutes"] >= 75) and not include_stability,
+            include_stability, p["experience"], p["session_minutes"]
         )
+        if planning_goal in {"functional", "fat_loss"}:
+            ready_patterns = {
+                pattern for pattern, decision in movement_decisions_by_pattern.items()
+                if decision.get("decision") == "READY"
+            }
+            cardio_equipment = {"bicycle", "rowing_machine", "ski_erg", "air_bike", "sled"} & available_equipment
+            bodyweight_metcon_ready = {"squat", "hinge", "horizontal_push"}.issubset(ready_patterns)
+            if "conditioning" in patterns and not cardio_equipment and not bodyweight_metcon_ready:
+                patterns = ["locomotion" if item == "conditioning" else item for item in patterns]
+            symptom_reports = any(
+                isinstance(item.get("user_report"), dict)
+                and item["user_report"].get("status") == "symptoms_reported"
+                for item in movement_decisions_by_pattern.values()
+            )
+            if movement_decisions_by_pattern and len(ready_patterns) < 3 and not symptom_reports:
+                for fallback_pattern in ("hip_extension", "carry"):
+                    if fallback_pattern not in patterns and fallback_pattern not in p["excluded_patterns"]:
+                        patterns.append(fallback_pattern)
         warm_up_minutes = 5 if p["session_minutes"] <= 30 else (7 if p["session_minutes"] <= 60 else 10)
         camera_coordination_block = None
         if camera_coordination_exercise is not None:
@@ -1031,14 +1060,11 @@ def generate_program(
             # inside the warm-up, not as extra loaded work.
             mobility_candidates = sorted(by_pattern["mobility"], key=lambda item: item["id"])
             start = (session_index * 2) % len(mobility_candidates)
-            selected_mobility = [
-                mobility_candidates[(start + offset) % len(mobility_candidates)]
-                for offset in range(min(2 if p["session_minutes"] > 30 else 1, len(mobility_candidates)))
-            ]
+            selected_mobility = [mobility_candidates[start]]
             level_rank = {"beginner": 0, "intermediate": 1, "advanced": 2}
             target_level = level_rank[p["experience"]]
             preferred_skill_pattern = "balance" if session_index % 2 == 0 else "coordination"
-            skill_pattern_order = [preferred_skill_pattern, "coordination" if preferred_skill_pattern == "balance" else "balance"]
+            skill_pattern_order = []
             selected_skill = None
             selected_skill_pattern = None
             for skill_pattern in skill_pattern_order:
@@ -1084,13 +1110,7 @@ def generate_program(
                     "cues": selected_skill["cues"],
                     "warnings": selected_skill["warnings"],
                 })
-            selected_stability = next(
-                (
-                    item for item in by_pattern.get("trunk_stability", [])
-                    if item["id"] == "dead_bug"
-                ),
-                None,
-            ) if not include_stability else None
+            selected_stability = None
             if selected_stability is not None:
                 prep_exercises.append({
                     "exercise_id": selected_stability["id"],
@@ -1105,8 +1125,8 @@ def generate_program(
                     "warnings": selected_stability["warnings"],
                 })
             mobility_block = {
-                "purpose": "Gibalna priprava: aktivna mobilnost, nadzor trupa ter kratka vaja ravnotežja ali koordinacije pred glavnimi vzorci.",
-                "estimated_minutes": 2 + int(selected_skill is not None) + int(selected_stability is not None),
+                "purpose": "Kratka, ciljno izbrana aktivna priprava pred glavnimi vajami.",
+                "estimated_minutes": 1,
                 "amplitude_rule": "Gib izvedi skozi največjo trenutno nadzorovano in tolerirano amplitudo; brez sunkov, izgube ravnotežja ali siljenja.",
                 "exercises": prep_exercises,
             }
@@ -1177,8 +1197,25 @@ def generate_program(
                 # ATENA's coaching standard excludes wall push-ups; use floor or
                 # stable elevated support variations only.
                 candidates = [item for item in candidates if item["id"] != "wall_push_up"]
-            if planning_goal in {"endurance", "fat_loss"} and pattern == "locomotion":
+            if planning_goal in {"endurance", "fat_loss", "functional"} and pattern == "locomotion":
                 candidates = [item for item in candidates if item.get("endurance_type") == "aerobic"]
+            if planning_goal in {"functional", "fat_loss"} and pattern == "conditioning" and movement_decisions_by_pattern:
+                conditioning_demands = {
+                    "burpee": {"squat", "hinge", "horizontal_push"},
+                    "mountain_climber": {"hinge", "horizontal_push"},
+                    "bear_crawl": {"hinge", "horizontal_push"},
+                    "shuttle_run": {"squat", "lunge"},
+                    "step_up_intervals": {"squat", "lunge"},
+                    "jump_rope": {"squat", "lunge"},
+                    "box_jump_intervals": {"squat", "lunge"},
+                }
+                candidates = [
+                    item for item in candidates
+                    if all(
+                        movement_decisions_by_pattern.get(required, {}).get("decision") == "READY"
+                        for required in conditioning_demands.get(item["id"], set())
+                    )
+                ]
             if pattern == "horizontal_pull":
                 # Generic household_support is not proof that a table is stable or safe.
                 # Until the user can explicitly confirm a suitable fixed anchor, never
@@ -1219,8 +1256,9 @@ def generate_program(
                     None,
                 )
                 if target_id is None and method is not None and method.get("learning_only") is True:
-                    learning_tasks_for_session.append({
-                        "movement_pattern": pattern,
+                    if len(learning_tasks_for_session) < learning_task_limit:
+                        learning_tasks_for_session.append({
+                            "movement_pattern": pattern,
                         "task_id": PATTERN_DEFINITIONS[pattern]["task_id"],
                         "method_id": method["id"],
                         "method": method["label"],
@@ -1233,13 +1271,16 @@ def generate_program(
                         "reps": "2–3 kontrolirane ponovitve",
                         "tempo": "3-1-1",
                         "rest_seconds": 30,
-                        "estimated_minutes": 2,
-                    })
+                            "estimated_minutes": 2,
+                        })
                     movement_adaptation_events.append({
                         "pattern": pattern,
                         "tasks": affected_tasks,
                         "action": "unloaded_learning_task_only",
-                        "message": "ATENA najprej vodi učenje koordinacije brez zunanjega bremena. Obremenjena vaja se uvede šele po ponovljivi potrditvi motoričnega nadzora.",
+                        "message": (
+                            f"Vzorec {PATTERN_LABELS.get(pattern, pattern)} ostane brez zunanje obremenitve; "
+                            "najprej ponovi kratko učno nalogo in preveri kriterije nadzora."
+                        ),
                     })
                     continue
                 target = next((item for item in reference_catalogue if item["id"] == target_id), None)
@@ -1295,6 +1336,14 @@ def generate_program(
                         return -30
                     if item["id"] in {"l_sit", "tuck_sit", "hollow_body_hold"}:
                         return 30
+                if planning_goal == "functional" and pattern in {"squat", "hinge", "lunge"}:
+                    if item.get("mobility_strength") and item.get("loading_potential") in {"moderate", "high"}:
+                        return -15
+                if planning_goal == "functional" and pattern == "locomotion":
+                    if item["id"] == "brisk_walking":
+                        return -10
+                    if item["id"] == "running_easy" and p["experience"] == "advanced":
+                        return -5
                 if planning_goal == "mobility" and pattern == "hinge":
                     if item["id"] == "romanian_deadlift" and ({"dumbbell", "barbell", "kettlebell"} & available_equipment):
                         return -15
