@@ -143,7 +143,7 @@ def test_intermediate_bodyweight_strength_uses_cossack_squat_and_single_leg_hing
     hinge = next(x for x in chosen if x["pattern"] == "hinge")
 
     assert squat["exercise_id"] == "cossack_squat"
-    assert hinge["exercise_id"] == "single_leg_rdl"
+    assert hinge["exercise_id"] == "supported_single_leg_rdl"
 
 
 def test_advanced_bodyweight_strength_uses_cossack_until_pistol_skill_is_confirmed():
@@ -165,9 +165,9 @@ def test_advanced_bodyweight_strength_uses_cossack_until_pistol_skill_is_confirm
     assert assessed_squat["reps_per_side"] is True
 
 
-def test_strength_and_hypertrophy_select_different_primary_press_variants():
-    strength = generate_program(profile("strength", "intermediate"))
-    hypertrophy = generate_program(profile("hypertrophy", "intermediate"))
+def test_advanced_strength_and_hypertrophy_specializations_select_different_primary_press_variants():
+    strength = generate_program(profile("strength", "advanced"))
+    hypertrophy = generate_program(profile("hypertrophy", "advanced"))
     strength_press = next(x for x in exercises(strength) if x["pattern"] == "horizontal_push")
     hypertrophy_press = next(x for x in exercises(hypertrophy) if x["pattern"] == "horizontal_push")
 
@@ -175,9 +175,9 @@ def test_strength_and_hypertrophy_select_different_primary_press_variants():
     assert hypertrophy_press["exercise_id"] == "dumbbell_bench_press"
 
 
-def test_strength_and_hypertrophy_select_different_hinge_variants():
-    strength = generate_program(profile("strength", "intermediate"))
-    hypertrophy = generate_program(profile("hypertrophy", "intermediate"))
+def test_advanced_strength_and_hypertrophy_specializations_select_different_hinge_variants():
+    strength = generate_program(profile("strength", "advanced"))
+    hypertrophy = generate_program(profile("hypertrophy", "advanced"))
     strength_hinge = next(x for x in exercises(strength) if x["pattern"] == "hinge")
     hypertrophy_hinge = next(x for x in exercises(hypertrophy) if x["pattern"] == "hinge")
 
@@ -185,9 +185,9 @@ def test_strength_and_hypertrophy_select_different_hinge_variants():
     assert hypertrophy_hinge["exercise_id"] == "romanian_deadlift"
 
 
-def test_strength_and_hypertrophy_select_different_horizontal_pull_variants():
-    strength = generate_program(profile("strength", "intermediate"))
-    hypertrophy = generate_program(profile("hypertrophy", "intermediate"))
+def test_advanced_strength_and_hypertrophy_specializations_select_different_horizontal_pull_variants():
+    strength = generate_program(profile("strength", "advanced"))
+    hypertrophy = generate_program(profile("hypertrophy", "advanced"))
     strength_pull = next(x for x in exercises(strength) if x["pattern"] == "horizontal_pull")
     hypertrophy_pull = next(x for x in exercises(hypertrophy) if x["pattern"] == "horizontal_pull")
 
@@ -199,9 +199,9 @@ def test_beginner_bodyweight_strength_uses_supported_single_leg_hinge_and_disclo
     plan = generate_program(
         profile("strength", "beginner", equipment=["bodyweight"])
     )
-    hinge = next(x for x in exercises(plan) if x["pattern"] == "hinge")
-
-    assert hinge["exercise_id"] == "supported_single_leg_rdl"
+    loaded_hinge = [x for x in exercises(plan) if x["pattern"] == "hinge"]
+    assert not loaded_hinge
+    assert any(x["pattern"] == "hip_extension" for x in exercises(plan))
     assert any("Brez zunanjih bremen" in note for note in plan["limitations"])
 
 
