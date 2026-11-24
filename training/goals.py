@@ -17,7 +17,7 @@ CANONICAL_GOALS = {
         "id": "functional",
         "label": "Funkcionalnost",
         "description": "Celostna zmogljivost: obremenjena večsklepna vadba, razvoj moči skozi čim večjo obvladano amplitudo (mobilnost predvsem skozi full-ROM vaje z bremenom) ter kondicija z MetConom ali intervali. Mobilnostni drili, ravnotežje in koordinacija so kratka ciljna priprava, ne glavni del treninga.",
-        "pillars": ["strength", "mobility", "coordination", "balance", "cardiorespiratory_conditioning", "functional_fitness"],
+        "pillars": ["strength", "mobility", "cardiorespiratory_conditioning", "functional_fitness"],
         "advanced_specialization": [],
     },
     "fat_loss": {
