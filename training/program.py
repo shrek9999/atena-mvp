@@ -1050,9 +1050,20 @@ def generate_program(
                 for item in movement_decisions_by_pattern.values()
             )
             if movement_decisions_by_pattern and len(ready_patterns) < 3 and not symptom_reports:
+                fallback_added = False
                 for fallback_pattern in ("hip_extension", "carry"):
                     if fallback_pattern not in patterns and fallback_pattern not in p["excluded_patterns"]:
                         patterns.append(fallback_pattern)
+                        fallback_added = True
+                if fallback_added and not any(
+                    event.get("action") == "fallback_loaded_patterns_added"
+                    for event in movement_adaptation_events
+                ):
+                    movement_adaptation_events.append({
+                        "pattern": "program_baseline",
+                        "action": "fallback_loaded_patterns_added",
+                        "message": "Ker manj kot trije osnovni vzorci še imajo potrjeno pripravljenost, ATENA začasno uporabi druge primerne obremenjene vaje in kondicijski del. Nepotrjenih vzorcev ne obremeni; po ponovnem preverjanju jih lahko postopno vključi.",
+                    })
         warm_up_minutes = 5 if p["session_minutes"] <= 30 else (7 if p["session_minutes"] <= 60 else 10)
         camera_coordination_block = None
         if camera_coordination_exercise is not None:
