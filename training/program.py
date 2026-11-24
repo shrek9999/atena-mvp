@@ -1093,7 +1093,7 @@ def generate_program(
             }
             cardio_equipment = {"bicycle", "rowing_machine", "ski_erg", "air_bike", "sled"} & available_equipment
             bodyweight_metcon_ready = {"squat", "hinge", "horizontal_push"}.issubset(ready_patterns)
-            if "conditioning" in patterns and not cardio_equipment and not bodyweight_metcon_ready:
+            if movement_decisions_by_pattern and "conditioning" in patterns and not cardio_equipment and not bodyweight_metcon_ready:
                 patterns = ["locomotion" if item == "conditioning" else item for item in patterns]
             symptom_reports = any(
                 isinstance(item.get("user_report"), dict)
