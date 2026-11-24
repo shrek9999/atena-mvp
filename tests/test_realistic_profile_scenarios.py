@@ -3,6 +3,7 @@ import pytest
 
 from training.catalogue import get_exercise
 from training.program import generate_program
+from training.goals import normalize_goal
 
 
 PROFILES = [
@@ -28,7 +29,7 @@ PROFILES = [
 def test_realistic_onboarding_profile_generates_safe_catalogue_backed_plan(scenario, profile):
     plan = generate_program(profile)
     assert len(plan["sessions"]) == profile["sessions_per_week"], scenario
-    assert plan["goal"] == profile["goal"]
+    assert plan["goal"] == normalize_goal(profile["goal"])
     assert plan["experience"] == profile["experience"]
     for session in plan["sessions"]:
         assert session["estimated_minutes"] <= profile["session_minutes"], scenario
