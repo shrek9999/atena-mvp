@@ -810,7 +810,7 @@ def test_fat_loss_goal_keeps_resistance_training_as_the_foundation():
         assert {"squat", "hinge", "horizontal_push", "horizontal_pull"}.issubset(patterns)
         assert "conditioning" in patterns
         assert "locomotion" not in patterns
-    assert "ohranitev mišične mase" in two_day["methodology"]["fat_loss_policy"]
+    assert "ohranjanje mišične mase" in two_day["methodology"]["fat_loss_policy"]
     assert two_day["weekly_summary"]["primary_muscle_set_exposure"]
     
 def test_fat_loss_explains_calorie_deficit_and_protein_as_required_nutrition_pillars():
