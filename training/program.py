@@ -1027,13 +1027,13 @@ def generate_program(
     missing_patterns: set[str] = set()
 
     for session_index in range(p["sessions_per_week"]):
-        learning_task_limit = 1 if planning_goal in {"functional", "fat_loss"} else 2
+        learning_task_limit = 1
         patterns = _session_patterns(
             session_index, p["sessions_per_week"], planning_goal,
             p["include_accessories"] and (planning_goal == "hypertrophy" or p["session_minutes"] >= 75) and not include_stability,
             include_stability, p["experience"], p["session_minutes"]
         )
-        if planning_goal in {"functional", "fat_loss"}:
+        if p["goal"] in {"functional", "fat_loss", "strength_hypertrophy"}:
             ready_patterns = {
                 pattern for pattern, decision in movement_decisions_by_pattern.items()
                 if decision.get("decision") == "READY"
