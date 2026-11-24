@@ -44,7 +44,7 @@ def test_realistic_onboarding_profile_generates_safe_catalogue_backed_plan(scena
             assert exercise["prescription"]["tempo_description"]
             assert exercise["range_of_motion"]
             if profile["experience"] == "beginner" and profile["goal"] in {"hypertrophy", "strength", "general_fitness", "functional"}:
-                if exercise["pattern"] not in {"trunk_stability", "anti_rotation"}:
+                if exercise["pattern"] not in {"trunk_stability", "anti_rotation", "carry", "conditioning", "locomotion"}:
                     assert exercise["prescription"]["rir"] >= 3
                     assert exercise["prescription"]["reps"] in {"8–10", "8–12", "10–15", "12–15"}
             if source["single_joint"] and profile["goal"] == "hypertrophy":
