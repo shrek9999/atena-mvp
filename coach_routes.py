@@ -3059,7 +3059,8 @@ def _validate_profile(value):
     pistol_squat_capable = value.get("pistol_squat_capable", False)
     if not isinstance(pistol_squat_capable, bool):
         raise ValueError("pistol_squat_capable mora biti true ali false.")
-    training_emphasis = value.get("training_emphasis", "balanced")
+    default_emphasis = goal if experience == "advanced" and goal in {"strength", "hypertrophy"} else "balanced"
+    training_emphasis = value.get("training_emphasis", default_emphasis)
     if training_emphasis not in {"balanced", "strength", "hypertrophy"}:
         raise ValueError("training_emphasis mora biti balanced, strength ali hypertrophy.")
     if training_emphasis != "balanced" and (
