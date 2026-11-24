@@ -537,7 +537,12 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         prescription.update({"work_seconds": 12, "time_label": "koordinacijskega intervala"})
     if goal == "fat_loss" and pattern == "locomotion":
         duration_seconds = {"beginner": 1200, "intermediate": 1500, "advanced": 1800}[level]
-        prescription.update({"work_seconds": duration_seconds, "time_label": "daljše aerobne aktivnosti", "effort_target": "Zmeren pogovorni tempo; primerna je tudi hitra hoja v klanec. Končaj z občutkom, da bi lahko nadaljeval še nekaj minut."})
+        prescription.update({
+            "sets": 1,
+            "work_seconds": duration_seconds,
+            "time_label": "daljše aerobne aktivnosti",
+            "effort_target": "Zmeren pogovorni tempo; primerna je tudi hitra hoja v klanec. Končaj z občutkom, da bi lahko nadaljeval še nekaj minut.",
+        })
     elif goal == "fat_loss" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
         work_seconds = 60 if kind == "aerobic" else (18 if kind == "anaerobic" else 25)
