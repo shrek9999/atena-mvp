@@ -197,9 +197,9 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # conditioning slot. Learning one pattern must not turn the whole
         # session into a movement-drill circuit.
         if session_index == 0:
-            patterns = ["squat", "hinge", "horizontal_push", "hip_extension", "carry", "conditioning"]
+            patterns = ["squat", "hinge", "horizontal_push", "hip_extension", "conditioning"]
         else:
-            patterns = ["lunge", "vertical_push", "horizontal_pull", "hip_extension", "carry", "conditioning"]
+            patterns = ["lunge", "vertical_push", "horizontal_pull", "carry", "conditioning"]
         if include_stability:
             patterns.insert(0, "trunk_stability")
         return patterns
@@ -224,7 +224,10 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # Keep both resistance sessions full-body, but cap the main exercise
         # list at six. Alternate the unilateral knee-dominant pattern and
         # vertical pull; conditioning remains present in both sessions.
-        patterns = base + ["hip_extension", "carry", "conditioning"]
+        if session_index == 0:
+            patterns = ["squat", "hinge", "horizontal_push", "hip_extension", "conditioning"]
+        else:
+            patterns = ["lunge", "vertical_push", "horizontal_pull", "carry", "conditioning"]
         if include_stability:
             patterns.insert(0, "trunk_stability")
         return patterns
