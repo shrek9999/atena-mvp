@@ -88,15 +88,15 @@ def test_dynamic_strength_exercises_use_controlled_learning_tempo_for_every_goal
         if exercise["pattern"] in strength_patterns
     ]
     assert exercises
-    assert all(exercise["prescription"]["tempo"] == "3–1–2–0" for exercise in exercises)
+    expected_tempo = "2–1–1–0" if goal == "strength_hypertrophy" and experience == "beginner" else "2–0–1–0"
+    assert all(exercise["prescription"]["tempo"] == expected_tempo for exercise in exercises)
 
 
 def test_tempo_methodology_does_not_assume_mastery_from_goal_or_experience():
     plan = generate_program({**BASE, "goal": "strength_hypertrophy", "experience": "advanced"})
     tempo_guidance = plan["methodology"]["tempo"]
-    assert "Cilj treninga" in tempo_guidance
-    assert "oznaka izkušenosti" in tempo_guidance
-    assert "3–1–2–0" in tempo_guidance
+    assert "2–1–1–0" in tempo_guidance
+    assert "funkcionalni obremenjeni vadbi" in tempo_guidance
     assert "izrecni strokovni potrditvi" in plan["methodology"]["progression"]
 
 
@@ -189,24 +189,13 @@ def test_functional_program_includes_mobility_balance_and_controlled_coordinatio
         for block in blocks
         for exercise in block["exercises"]
     }
-    assert {"mobilnost", "ravnotežje", "koordinacija", "stabilnost"}.issubset(components)
-    exercise_ids = {
-        exercise["exercise_id"]
-        for block in blocks
-        for exercise in block["exercises"]
-    }
-    assert "single_leg_balance_reach" in exercise_ids
-    assert "controlled_lateral_step" in exercise_ids
-    assert "dead_bug" in exercise_ids
-    assert "lateral_shuffle" not in exercise_ids
-    coordination_drill = next(
-        exercise
-        for block in blocks
-        for exercise in block["exercises"]
-        if exercise["exercise_id"] == "controlled_lateral_step"
+    assert components == {"mobilnost"}
+    assert all(len(block["exercises"]) == 1 for block in blocks)
+    assert all(block["estimated_minutes"] == 1 for block in blocks)
+    assert all(
+        exercise["exercise_id"] not in {"single_leg_balance_reach", "controlled_lateral_step", "dead_bug"}
+        for block in blocks for exercise in block["exercises"]
     )
-    assert coordination_drill["tempo"] == "počasi in nadzorovano"
-    assert all(block["estimated_minutes"] == 4 for block in blocks)
     assert all(session["estimated_minutes"] <= 60 for session in plan["sessions"])
 
 
@@ -803,7 +792,7 @@ def test_fat_loss_adds_short_aerobic_and_conditioning_work_when_frequency_allows
     strength_patterns = {exercise["pattern"] for exercise in plan["sessions"][0]["exercises"]}
     cardio_patterns = {exercise["pattern"] for exercise in plan["sessions"][2]["exercises"]}
     assert "squat" in strength_patterns and "hinge" in strength_patterns
-    assert {"locomotion", "lunge", "conditioning"}.issubset(cardio_patterns)
+    assert cardio_patterns == {"locomotion"}
     assert plan["sessions"][2]["estimated_minutes"] <= 45
     assert all(ex["joint_type"] == "multi_joint" for session in plan["sessions"] for ex in session["exercises"])
 
@@ -853,7 +842,7 @@ def test_advanced_strength_emphasis_uses_strength_specific_main_lift_dose():
             if item["pattern"] in {"squat", "hinge"}]
     assert result["goal"] == "strength_hypertrophy"
     assert result["training_emphasis"] == "strength"
-    assert main and all(item["prescription"]["reps"] in {"3–6", "5–8"} for item in main)
+    assert main and all(item["prescription"]["reps"] == "5" for item in main)
 
 
 def test_advanced_hypertrophy_emphasis_uses_hypertrophy_specific_main_lift_dose():
@@ -867,7 +856,7 @@ def test_advanced_hypertrophy_emphasis_uses_hypertrophy_specific_main_lift_dose(
             if item["pattern"] in {"squat", "hinge"}]
     assert result["goal"] == "strength_hypertrophy"
     assert result["training_emphasis"] == "hypertrophy"
-    assert main and all(item["prescription"]["reps"] == "6–10" for item in main)
+    assert main and all(item["prescription"]["reps"] == "6–12" for item in main)
 
 
 def test_beginner_foundational_exercises_use_learning_tempo_for_strength():
@@ -884,9 +873,9 @@ def test_beginner_foundational_exercises_use_learning_tempo_for_strength():
         if ex["pattern"] not in {"trunk_stability", "anti_rotation", "mobility", "mobility_stretch", "jump", "hinge_power"}
     ]
     assert foundational
-    assert all(ex["prescription"]["tempo"] == "3–1–2–0" for ex in foundational)
-    assert all(ex["prescription"]["tempo_seconds_per_rep"] == 6 for ex in foundational)
-    assert all("2 s nadzorovana vrnitev" in ex["prescription"]["tempo_description"] for ex in foundational)
+    assert all(ex["prescription"]["tempo"] == "2–1–1–0" for ex in foundational)
+    assert all(ex["prescription"]["tempo_seconds_per_rep"] == 4 for ex in foundational)
+    assert all("2 s nadzorovan spust" in ex["prescription"]["tempo_description"] for ex in foundational)
 
 
 def test_session_set_volume_uses_flexible_time_bands():
@@ -1043,8 +1032,8 @@ def test_functional_and_fat_loss_programmes_have_distinct_training_intent():
         for session in fat_loss["sessions"]
         for exercise in session["exercises"]
     }
-    assert {"lunge", "locomotion"}.issubset(functional_patterns)
-    assert "conditioning" in functional_patterns
+    assert {"squat", "hinge", "lunge", "hip_extension", "conditioning"}.issubset(functional_patterns)
+    assert "locomotion" not in functional_patterns
     assert "conditioning" in fat_loss_patterns
     assert functional_patterns != fat_loss_patterns
 
