@@ -498,8 +498,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         "squat", "hinge", "lunge", "horizontal_push", "horizontal_pull",
         "vertical_push", "vertical_pull", "hip_extension",
     }:
-        # Keep the agreed slow learning tempo; fit short sessions by reducing
-        # volume and rest, never by rushing the movement.
+        # Fit short sessions by reducing volume, not by sacrificing movement control.
         prescription["sets"] = min(2, prescription["sets"])
         prescription["rest_seconds"] = min(60, prescription["rest_seconds"])
     if exercise.get("id") == "l_sit":
@@ -1878,7 +1877,7 @@ def generate_program(
             pattern_work_sets[item["pattern"]] += item["prescription"]["sets"]
     canonical_goal = normalize_goal(p["goal"])
     return {
-        "program_version": "3.1.0",
+        "program_version": "3.2.0",
         "camera_coordination_add_on_applied": camera_coordination_exercise is not None,
         "goal_framework": CANONICAL_GOALS[canonical_goal],
         "nutrition_guidance": list(CANONICAL_GOALS[canonical_goal].get("nutrition_guidance", [])),
@@ -1928,7 +1927,9 @@ def generate_program(
                 "Intermediate: uporablja bolj specifične razpone glede na cilj; pri glavnih vajah za moč je običajen razpon 5–8 ponovitev, pri hipertrofiji večinoma 6–12. Advanced: pri glavnih vajah za moč lahko uporablja 3–6 ponovitev, ob večji obremenitvi pa zahteva ustrezno tehniko, regeneracijo in daljše odmore."
             ),
             "tempo": (
-                "Univerzalno načelo ATENE za moč + mišično maso, funkcionalnost in izgubo maščobe: najprej počasna, nadzorovana izvedba skozi največjo trenutno obvladano amplitudo. Privzeti učni tempo pri dinamičnih vajah za moč je 3–1–2–0 (3 s nadzorovan spust, 1 s nadzor v izbranem položaju, 2 s nadzorovana vrnitev). Cilj treninga ali oznaka izkušenosti sama po sebi ne dovoljujeta hitrejše izvedbe. Aerobne, izometrične, mobilnostne in koordinacijske naloge ohranijo tempo, primeren njihovi naravi, vendar vedno brez izgube nadzora."
+                "Pri funkcionalnosti tempo prilagodi nalogi: obremenjene vaje izvajaj skozi obvladano amplitudo s kontroliranim spustom in tekočo vrnitvijo; pri intervalih ohrani ponovljiv ritem. Različni tempi so dobrodošli, če ne poslabšajo nadzora."
+                if planning_goal == "functional" else
+                "Pri moči in hipertrofiji je 3–1–2–0 lahko uporabno izhodišče za nadzor, ni pa univerzalna zahteva. Tempo prilagodi vaji, cilju in sposobnosti ohranjanja tehnike."
             ),
             "range_of_motion": "Pri vsaki vaji uporabi največjo amplitudo, ki jo omogočata gibljivost in nadzor. Amplitudo postopno razvijaj; ne žrtvuj položaja, stabilnosti ali neboleče izvedbe. Pri mobilnosti kombiniraj aktivno gibanje in moč skozi razpoložljivo amplitudo.",
             "progression": ("Pri funkcionalnosti postopno povečuj obremenitev ali nadzorovano amplitudo pri vajah za moč; pri intervalih spreminjaj samo eno spremenljivko (trajanje, število intervalov ali odmor)."
