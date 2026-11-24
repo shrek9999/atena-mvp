@@ -290,17 +290,13 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         else:
             sets, reps, rir, rest = 3, "6–10", None, 45
     elif goal == "fat_loss" and pattern == "locomotion":
-        duration = {"beginner": "6 min", "intermediate": "8 min", "advanced": "10 min"}[level]
+        duration = {"beginner": "10 min", "intermediate": "15 min", "advanced": "20 min"}[level]
         sets, reps, rir, rest = 1, duration, None, 0
     elif goal == "fat_loss" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
-        sets = {"beginner": 2, "intermediate": 3, "advanced": 4}[level]
-        if kind == "aerobic":
-            reps, rir, rest = "1 min", None, 60
-        elif kind == "anaerobic":
-            reps, rir, rest = "15–20 s", None, 60
-        else:
-            reps, rir, rest = "20–30 s", None, 60
+        sets = {"beginner": 4, "intermediate": 6, "advanced": 8}[level]
+        reps, rir = "1", None
+        rest = 45 if kind == "aerobic" else 30
     elif goal == "functional" and pattern == "conditioning":
         # Interval conditioning is a real training component, not a token finisher.
         # Keep the effort repeatable and stop before technique or breathing control degrades.
@@ -508,11 +504,26 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
     elif pattern == "coordination":
         prescription.update({"work_seconds": 12, "time_label": "koordinacijskega intervala"})
     if goal == "fat_loss" and pattern == "locomotion":
-        prescription.update({"work_seconds": 480, "time_label": "kratka aerobna aktivnost", "effort_target": "Lahkoten do zmeren pogovorni tempo; izvedba naj ostane sproščena in ponovljiva."})
+        duration = {"beginner": 600, "intermediate": 900, "advanced": 1200}[level]
+        prescription.update({
+            "work_seconds": duration,
+            "time_label": "hoje, po možnosti navkreber",
+            "effort_target": "Zmeren pogovorni tempo; če hodiš v klanec, izberi naklon, pri katerem ohraniš enakomeren korak in nadzor dihanja.",
+        })
     elif goal == "fat_loss" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
-        work_seconds = 60 if kind == "aerobic" else (18 if kind == "anaerobic" else 25)
-        prescription.update({"work_seconds": work_seconds, "time_label": "kratek kondicijski interval", "effort_target": "Nadzorovana intenzivnost; ne izvajaj maksimalno in ne žrtvuj tehnike."})
+        work_seconds = (
+            {"beginner": 35, "intermediate": 45, "advanced": 50}[level]
+            if kind == "aerobic" else
+            {"beginner": 15, "intermediate": 20, "advanced": 25}[level]
+            if kind == "anaerobic" else
+            {"beginner": 25, "intermediate": 30, "advanced": 35}[level]
+        )
+        prescription.update({
+            "work_seconds": work_seconds,
+            "time_label": "intervala",
+            "effort_target": "Zmerna do zahtevnejša, vendar ponovljiva intenzivnost; ne izvajaj maksimalno in ne žrtvuj tehnike.",
+        })
     elif goal == "functional" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
         work_seconds = (
@@ -1030,7 +1041,10 @@ def generate_program(
             cardio_equipment = {"bicycle", "rowing_machine", "ski_erg", "air_bike", "sled"} & available_equipment
             bodyweight_metcon_ready = {"squat", "hinge", "horizontal_push"}.issubset(ready_patterns)
             if "conditioning" in patterns and not cardio_equipment and not bodyweight_metcon_ready:
-                patterns = ["locomotion" if item == "conditioning" else item for item in patterns]
+                if "locomotion" in patterns:
+                    patterns.remove("conditioning")
+                else:
+                    patterns = ["locomotion" if item == "conditioning" else item for item in patterns]
             symptom_reports = any(
                 isinstance(item.get("user_report"), dict)
                 and item["user_report"].get("status") == "symptoms_reported"
