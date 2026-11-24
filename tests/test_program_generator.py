@@ -245,11 +245,12 @@ def test_functional_program_includes_mobility_balance_and_controlled_coordinatio
     assert all(session["estimated_minutes"] <= 60 for session in plan["sessions"])
 
 
-def test_power_goal_uses_catalogue_power_exercises():
+def test_legacy_power_goal_uses_functional_track_without_unassessed_jumps():
     plan = generate_program({**BASE, "goal": "power"})
     patterns = {ex["pattern"] for s in plan["sessions"] for ex in s["exercises"]}
-    assert "jump" in patterns
-    assert "hinge_power" in patterns
+    assert {"squat", "hinge", "lunge"} <= patterns
+    assert "jump" not in patterns
+    assert any(ex["training_role"] == "conditioning" for s in plan["sessions"] for ex in s["exercises"])
 
 
 def test_three_and_four_day_splits_are_supported():
@@ -600,41 +601,36 @@ def test_hypertrophy_without_weights_uses_scalable_posterior_chain_options():
     assert any(exercise["exercise_id"] == "single_leg_box_squat" for exercise in exercises)
 
 
-def test_endurance_goal_generates_timed_aerobic_and_interval_work():
+def test_legacy_endurance_goal_uses_functional_strength_and_safe_intervals():
     profile = {
         **BASE,
         "goal": "endurance",
         "experience": "beginner",
-        "equipment": ["bodyweight", "chair", "household_support", "household_load"],
+        "equipment": ["bodyweight", "chair", "household_support", "household_load", "rowing_machine"],
         "session_minutes": 45,
     }
     plan = generate_program(profile)
     exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
-    timed = [exercise for exercise in exercises if exercise["prescription"].get("work_seconds")]
-    assert any(exercise["pattern"] == "locomotion" for exercise in timed)
-    assert any(exercise["pattern"] == "conditioning" for exercise in timed)
+    intervals = [exercise for exercise in exercises if exercise["training_role"] == "conditioning"]
+    assert intervals
     assert all(session["estimated_minutes"] <= 45 for session in plan["sessions"])
-    assert all(exercise["prescription"]["rir"] is None for exercise in timed)
+    assert any(exercise["pattern"] in {"squat", "hinge", "lunge"} for exercise in exercises)
     assert plan["weekly_summary"]["endurance_type_work_seconds"]["aerobic"] > 0
-    assert plan["weekly_summary"]["endurance_type_work_seconds"]["anaerobic"] > 0
-    assert plan["weekly_summary"]["primary_muscle_set_exposure"] == {}
+    assert plan["weekly_summary"]["primary_muscle_set_exposure"]
 
 
-def test_mobility_goal_includes_active_mobility_and_loaded_range_options():
+def test_legacy_mobility_goal_uses_functional_strength_through_range():
     profile = {
         **BASE,
         "goal": "mobility",
         "experience": "beginner",
-        "equipment": ["bodyweight", "chair", "wall", "household_support"],
+        "equipment": ["bodyweight", "chair", "wall", "household_support", "dumbbell", "kettlebell"],
         "session_minutes": 60,
     }
     plan = generate_program(profile)
     exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
-    mobility_drills = [exercise for exercise in exercises if exercise["pattern"] == "mobility"]
-    assert len(mobility_drills) >= 4
-    assert len({exercise["exercise_id"] for exercise in mobility_drills}) == len(mobility_drills)
-    assert any(exercise["training_role"] == "mobility" for exercise in exercises)
-    assert any(exercise["exercise_id"] in {"calf_raise_full_rom", "tibialis_raise"} for exercise in exercises)
+    assert all(session.get("mobility_block", {}).get("exercises") for session in plan["sessions"])
+    assert {"squat", "hinge"} <= {exercise["pattern"] for exercise in exercises}
     mobility_strength = [
         exercise for exercise in exercises
         if exercise.get("mobility_strength") is True
@@ -666,20 +662,23 @@ def test_timed_work_is_included_in_session_duration_estimate():
 
 
 
-def test_generated_exercises_include_catalogue_backed_regressions_and_progressions():
+def test_generated_functional_squat_keeps_catalogue_backed_guidance():
     profile = {
         **BASE,
-        "goal": "mobility",
+        "goal": "functional",
         "experience": "beginner",
         "equipment": ["bodyweight", "chair", "wall", "household_support"],
         "session_minutes": 60,
     }
     plan = generate_program(profile)
-    reaching = next(
+    squat = next(
         exercise for session in plan["sessions"] for exercise in session["exercises"]
-        if exercise["exercise_id"] == "reaching_squat"
+        if exercise["pattern"] == "squat"
     )
-    assert "Počep z lastno težo (air squat)" in reaching["progressions"]
+    assert squat["regressions"]
+    assert squat["progressions"]
+    assert squat["range_of_motion"]
+    assert squat["cues"]
 
 
 
@@ -693,23 +692,22 @@ def test_bodyweight_squat_does_not_claim_an_unused_household_support():
     }
     plan = generate_program(profile)
     exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
-    air_squat = next(exercise for exercise in exercises if exercise["exercise_id"] == "air_squat")
-    assert air_squat["equipment"] == ["bodyweight"]
+    squat = next(exercise for exercise in exercises if exercise["pattern"] == "squat")
+    assert set(squat["equipment"]).issubset(set(profile["equipment"]) | {"bodyweight"})
 
 
 
-def test_strength_and_general_fitness_programmes_do_not_insert_carries_automatically():
-    for goal in ("strength", "general_fitness"):
-        profile = {
-            **BASE,
-            "goal": goal,
-            "experience": "intermediate",
-            "equipment": ["bodyweight", "household_load", "household_support"],
-            "session_minutes": 75,
-        }
-        plan = generate_program(profile)
-        exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
-        assert not any(exercise["pattern"] == "carry" for exercise in exercises)
+def test_strength_does_not_insert_carries_but_functional_may_include_them():
+    strength = generate_program({
+        **BASE, "goal": "strength", "experience": "intermediate",
+        "equipment": ["bodyweight", "household_load", "household_support"], "session_minutes": 75,
+    })
+    functional = generate_program({
+        **BASE, "goal": "functional", "experience": "intermediate",
+        "equipment": ["bodyweight", "household_load", "household_support"], "session_minutes": 75,
+    })
+    assert not any(exercise["pattern"] == "carry" for session in strength["sessions"] for exercise in session["exercises"])
+    assert any(exercise["pattern"] == "carry" for session in functional["sessions"] for exercise in session["exercises"])
 
 
 def test_advanced_box_jump_intervals_are_not_the_default_when_other_conditioning_is_available():
@@ -728,12 +726,12 @@ def test_advanced_box_jump_intervals_are_not_the_default_when_other_conditioning
     assert any(exercise["exercise_id"] in {"rower_intervals", "ski_erg_intervals", "air_bike_intervals", "sled_push"} for exercise in conditioning)
 
 
-def test_endurance_conditioning_intervals_use_exercise_specific_work_rest_doses():
+def test_functional_conditioning_intervals_use_equipment_specific_work_rest_doses():
     profile = {
         **BASE,
-        "goal": "endurance",
+        "goal": "functional",
         "experience": "beginner",
-        "equipment": ["bodyweight", "chair", "household_support", "household_load"],
+        "equipment": ["bodyweight", "chair", "household_support", "household_load", "rowing_machine"],
         "session_minutes": 45,
     }
     plan = generate_program(profile)
@@ -742,8 +740,8 @@ def test_endurance_conditioning_intervals_use_exercise_specific_work_rest_doses(
         if exercise["pattern"] == "conditioning"
     ]
     assert intervals
-    assert all(exercise["prescription"]["sets"] == 4 for exercise in intervals)
-    assert all(exercise["prescription"]["rest_seconds"] >= 60 for exercise in intervals)
+    assert all(exercise["prescription"]["sets"] >= 4 for exercise in intervals)
+    assert all(exercise["prescription"]["rest_seconds"] >= 30 for exercise in intervals)
 
 
 
@@ -779,7 +777,7 @@ def test_progression_text_hides_specific_equipment_that_is_not_available():
 
 
 
-def test_power_goal_with_bodyweight_has_explosive_jump_options_without_a_box():
+def test_legacy_power_goal_does_not_prescribe_unassessed_jumps():
     profile = {
         **BASE,
         "goal": "power",
@@ -789,10 +787,8 @@ def test_power_goal_with_bodyweight_has_explosive_jump_options_without_a_box():
     }
     plan = generate_program(profile)
     exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
-    jumps = [exercise for exercise in exercises if exercise["pattern"] == "jump"]
-    assert jumps
-    assert all(exercise["exercise_id"] in {"squat_jump", "standing_broad_jump"} for exercise in jumps)
-    assert all(exercise["prescription"]["rir"] == 4 for exercise in jumps)
+    assert not any(exercise["pattern"] == "jump" for exercise in exercises)
+    assert any(exercise["training_role"] == "conditioning" for exercise in exercises)
 
 
 def test_carry_is_not_a_default_pattern_even_when_load_is_available():
