@@ -1048,6 +1048,7 @@ def generate_program(
         # A focused movement-learning task is allowed per session. When several
         # patterns are unready, distribute them across the week's sessions rather
         # than repeating the first task and silently deferring every other pattern.
+        selected_learning_pattern = None
         learning_candidates = [
             pattern for pattern in PATTERN_DEFINITIONS
             if pattern in movement_decisions_by_pattern
@@ -1195,7 +1196,11 @@ def generate_program(
             }
         selected = []
         learning_tasks_for_session = []
-        deferred_learning_patterns = []
+        deferred_learning_patterns = (
+            learning_candidates[p["sessions_per_week"]:]
+            if session_index == p["sessions_per_week"] - 1 and len(learning_candidates) > p["sessions_per_week"]
+            else []
+        )
         ready_loaded_patterns = []
         # Keep the warm-up focused: teach at most one unready pattern per
         # 45–60 min session, then address the next pattern in a later exposure.
