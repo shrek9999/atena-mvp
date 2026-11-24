@@ -516,6 +516,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         prescription.update({
             "reps": f"{carry_seconds} s",
             "work_seconds": carry_seconds,
+            "rir": 3 if level != "advanced" else 2,
             "time_label": "nošenja",
             "effort_target": "Uporabi breme, ki omogoča stabilno hojo in vsaj 3 ponovitve v rezervi; zaključi interval, preden se spremeni drža ali korak.",
         })
