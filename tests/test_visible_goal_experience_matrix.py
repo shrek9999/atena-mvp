@@ -196,7 +196,7 @@ def test_functional_main_lift_prescription_distinguishes_intermediate_and_advanc
 
     assert [item["reps"] for item in prescriptions] == ["8–10", "8–12", "6–10"]
     assert [item["rir"] for item in prescriptions] == [3, 3, 2]
-    assert [item["tempo"] for item in prescriptions] == ["3–1–2–0", "3–1–2–0", "3–1–2–0"]
+    assert [item["tempo"] for item in prescriptions] == ["2–0–1–0", "2–0–1–0", "2–0–1–0"]
 
 
 def test_functional_goal_keeps_mobility_preparation_short():
