@@ -1827,8 +1827,9 @@ def generate_program(
             "exercise_scaling": "Vsaka vaja ima označen potencial obremenitve, vlogo, zahteve glede opreme in stopnjevanje. Nizko obremenljive učne vaje niso privzeta glavna izbira za hipertrofijo.",
             "equipment_policy": "Brez uteži ne pomeni brez običajnih stabilnih gospodinjskih opor. Stol, kavč, miza, stopnica, brisača ali palica so dovoljeni le, kadar jih profil izrecno vključuje in so varni za uporabo.",
             "endurance_policy": "Vzdržljivost je ločen cilj; aerobne aktivnosti, intervali in mišična vzdržljivost so označeni ločeno.",
-            "mobility_policy": "Mobilnost vključuje aktivne gibalne vaje, kontrolirano gibanje v končnih amplitudah in razvoj moči skozi čim večji nadzorovan in toleriran obseg (npr. predklon z nevtralno hrbtenico/RDL, ATG izpadni počep, Cossack squat in obremenjeni globoki počep), ne samo pasivnega raztezanja.",
-            "fat_loss_policy": "Pri uravnavanju telesne teže združi vadbo moči za ohranitev mišične mase s kratkimi, odmerjenimi kondicijskimi intervali v istem treningu; ob treh ali štirih treningih je lahko dodatna enota pretežno aerobna. MetCon naj bo nadzorovan, ne maksimalen in ne na račun tehnike ali regeneracije. Za zmanjšanje telesne maščobe je potreben vzdržen energijski primanjkljaj; vadba sama ga ne zagotavlja.",
+            "mobility_policy": "Pri funkcionalnem cilju razvijaj mobilnost predvsem z obremenjenimi večsklepnimi vajami skozi največjo trenutno obvladano amplitudo (npr. RDL, obremenjeni globoki počep, ATG/lateralni izpadni počep). Mobilnostni drili so kratka, ciljna priprava v ogrevanju; ne smejo nadomestiti delovnih serij.",
+            "functional_policy": "Vsak funkcionalni trening vsebuje obremenjeno večsklepno vadbo in načrtovan kondicijski dražljaj (MetCon ali intervali). Izbor naj vključuje raznolike vzorce in polno trenutno obvladano amplitudo. Mobilnost, ravnotežje in koordinacija so podporni elementi, ne glavni del vadbe.",
+            "fat_loss_policy": "Pri uravnavanju telesne teže so obvezni trije stebri: vadba z obremenitvijo za ohranjanje mišične mase in moči, kondicijska/vzdržljivostna vadba (MetCon, intervali ali daljša aerobna aktivnost, npr. hoja v klanec) ter vzdržen energijski primanjkljaj z zadostnim vnosom beljakovin. Vadba sama ne zagotavlja energijskega primanjkljaja.",
             "experience_adaptation": (
                 "Vzdržljivost: začetnik gradi predvsem enakomeren aerobni obseg v pogovornem tempu; intervale uvajaj postopno. Naprednejši lahko kombinira daljše aerobne enote, intervale in mišično vzdržljivost, vendar ne vsega maksimalno v isti vadbi."
                 if planning_goal == "endurance" else
@@ -1838,14 +1839,16 @@ def generate_program(
                 if planning_goal == "mobility" else
                 "Začetnik: prednost imajo učenje osnovnih gibalnih vzorcev, nadzorovana amplituda in ponovljiva tehnika. Tudi pri cilju moč začni večinoma z 8–12 ponovitvami in približno 2–3 ponovitvami v rezervi; šele z napredovanjem postopno preidi na nižje razpone in večje obremenitve."
                 if p["experience"] == "beginner" else
-                "Intermediate: uporablja bolj specifične razpone glede na cilj; pri glavnih vajah za moč je običajen razpon 5–8 ponovitev, pri hipertrofiji večinoma 6–12. Advanced: pri glavnih vajah za moč lahko uporablja 3–6 ponovitev, ob večji obremenitvi pa zahteva ustrezno tehniko, regeneracijo in daljše odmore."
+                "Intermediate: pri skupnem cilju moč + mišična masa uporablja predvsem kakovostne večsklepne vaje in zmerne razpone ponovitev. Advanced: pri specializaciji moči so lahko glavne vaje programirane npr. 5x5; periodizacija 5/3/1 zahteva ločen večtedenski cikel in potrjen trening maksimum. Pri hipertrofiji uporabi približno 6–20 ponovitev, z izolacijskimi vajami po potrebi in glede na čas ter volumen."
             ),
             "tempo": (
-                "Univerzalno načelo ATENE za moč + mišično maso, funkcionalnost in izgubo maščobe: najprej počasna, nadzorovana izvedba skozi največjo trenutno obvladano amplitudo. Privzeti učni tempo pri dinamičnih vajah za moč je 3–1–2–0 (3 s nadzorovan spust, 1 s nadzor v izbranem položaju, 2 s nadzorovana vrnitev). Cilj treninga ali oznaka izkušenosti sama po sebi ne dovoljujeta hitrejše izvedbe. Aerobne, izometrične, mobilnostne in koordinacijske naloge ohranijo tempo, primeren njihovi naravi, vendar vedno brez izgube nadzora."
+                "Tempo je odvisen od cilja in vaje: pri manj izkušenih na skupnem cilju moč + mišična masa uporabi praviloma 2–1–1–0; pri funkcionalni obremenjeni vadbi nadzoruj ekscentrično fazo, koncentrični del pa izvedi odločno in brez kompenzacij. Pri kondicijskih intervalih ohrani ponovljiv ritem, ne predpisuj umetno počasnega tempa."
             ),
             "range_of_motion": "Pri vsaki vaji uporabi največjo amplitudo, ki jo omogočata gibljivost in nadzor. Amplitudo postopno razvijaj; ne žrtvuj položaja, stabilnosti ali neboleče izvedbe. Pri mobilnosti kombiniraj aktivno gibanje in moč skozi razpoložljivo amplitudo.",
             "progression": ("Pri aerobni vzdržljivosti postopno povečuj trajanje ali obseg, nato po potrebi intenzivnost; pri intervalih spreminjaj le eno spremenljivko naenkrat. Ohraniti moraš ponovljivo tehniko in regeneracijo."
                 if planning_goal == "endurance" else
+                "Pri funkcionalnosti ohrani progresivno obremenjeno vadbo in postopno razvijaj polno obvladano amplitudo; kondicijski obseg in intenzivnost povečuj postopno, ne oboje hkrati."
+                if planning_goal == "functional" else
                 "Pri hujšanju ohrani ali postopno izboljšuj delovne obremenitve pri vajah za moč, da podpreš ohranitev mišične mase. Kondicijski obseg povečuj postopno; ne kompenziraj prehrane z nenadnim povečanjem treninga."
                 if planning_goal == "fat_loss" else
                 "Pri mobilnosti postopno povečuj nadzorovan obseg, kakovost končnega položaja in sposobnost ustvarjanja sile v njem. Ne sili v globino in ne napreduj skozi bolečino."
