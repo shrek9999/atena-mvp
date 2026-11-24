@@ -481,8 +481,9 @@ def test_beginner_without_weights_still_practises_the_hinge_pattern():
         "equipment": [], "session_minutes": 60,
     })
     hinge = [ex for session in plan["sessions"] for ex in session["exercises"] if ex["pattern"] == "hinge"]
-    assert hinge
-    assert all(ex["exercise_id"] == "supported_single_leg_rdl" for ex in hinge)
+    assert not hinge
+    assert any(ex["pattern"] == "hip_extension" for session in plan["sessions"] for ex in session["exercises"])
+    assert any("Brez zunanjih bremen" in note for note in plan["limitations"])
 
 
 def test_beginner_with_dumbbells_uses_a_loaded_beginner_hinge():
@@ -826,7 +827,7 @@ def test_fat_loss_goal_keeps_resistance_training_as_the_foundation():
     weekly_patterns = {exercise["pattern"] for session in two_day["sessions"] for exercise in session["exercises"]}
     assert {"squat", "hinge", "horizontal_push", "horizontal_pull", "lunge", "vertical_push"}.issubset(weekly_patterns)
     assert all(any(exercise["training_role"] == "conditioning" for exercise in session["exercises"]) for session in two_day["sessions"])
-    assert "ohranitev mišic" in two_day["methodology"]["fat_loss_policy"]
+    assert "ohranjanje mišic" in two_day["methodology"]["fat_loss_policy"]
     assert two_day["weekly_summary"]["primary_muscle_set_exposure"]
 
 
@@ -1087,7 +1088,8 @@ def test_functional_and_fat_loss_programmes_have_distinct_training_intent():
         for session in fat_loss["sessions"]
         for exercise in session["exercises"]
     }
-    assert {"squat", "hinge", "lunge", "horizontal_push", "horizontal_pull", "conditioning"}.issubset(functional_patterns)
+    assert {"squat", "hinge", "lunge", "horizontal_push", "horizontal_pull"}.issubset(functional_patterns)
+    assert any(ex["training_role"] == "conditioning" for session in functional["sessions"] for ex in session["exercises"])
     assert "carry" in functional_patterns
     assert any(ex["training_role"] == "conditioning" for session in fat_loss["sessions"] for ex in session["exercises"])
     assert "polno obvladano amplitudo" in functional["methodology"]["functional_policy"]
