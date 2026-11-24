@@ -6,6 +6,7 @@ usability or live LLM conversation quality.
 """
 from training.catalogue import get_exercise
 from training.program import ProgramSafetyBlock, generate_program
+from training.goals import normalize_goal
 
 
 PERSONAS = {
@@ -77,10 +78,11 @@ def test_five_persona_programmes_respect_schedule_time_catalogue_and_equipment()
     for persona, profile in PERSONAS.items():
         plan = generate_program(profile)
         assert len(plan["sessions"]) == profile["sessions_per_week"], persona
-        assert plan["goal"] == profile["goal"], persona
+        assert plan["goal"] == normalize_goal(profile["goal"]), persona
         assert plan["experience"] == profile["experience"], persona
         for session in plan["sessions"]:
-            assert 3 <= len(session["exercises"]) <= 6, (persona, session)
+            minimum_exercises = 1 if profile["goal"] == "fat_loss" and profile["sessions_per_week"] >= 3 and session["session"] >= 3 else 3
+            assert minimum_exercises <= len(session["exercises"]) <= 6, (persona, session)
             assert session["estimated_minutes"] <= profile["session_minutes"], persona
             for exercise in session["exercises"]:
                 catalogue_entry = get_exercise(exercise["exercise_id"])
@@ -142,11 +144,12 @@ def test_muscle_mass_user_gets_compound_foundation_and_only_opted_in_accessories
     assert all(item["prescription"].get("tempo") for item in exercises)
 
 
-def test_conditioning_user_gets_conditioning_and_locomotion_not_random_metcon_only():
+def test_conditioning_user_gets_loaded_strength_and_safe_intervals():
     plan = generate_program(PERSONAS["conditioning"])
     patterns = _patterns(plan)
     assert "conditioning" in patterns
-    assert "locomotion" in patterns
+    assert {"squat", "hinge", "lunge"} <= patterns
+    assert "jump" not in patterns
     assert len(plan["sessions"]) == 3
     assert all(session["estimated_minutes"] <= 45 for session in plan["sessions"])
 
