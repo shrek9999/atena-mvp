@@ -1839,7 +1839,7 @@ def generate_program(
                 if not selected and learning_tasks_for_session else
                 f"Trening {session_index + 1} – vzdržljivost" if planning_goal == "endurance" else
                 f"Trening {session_index + 1} – mobilnost in gibljivost" if planning_goal == "mobility" else
-                f"Trening {session_index + 1} – funkcionalna pripravljenost" if planning_goal == "functional" else
+                f"Trening {session_index + 1} – funkcionalna moč + kondicija" if planning_goal == "functional" else
                 f"Trening {session_index + 1} – aerobna in kondicijska priprava" if planning_goal == "fat_loss" and session_index >= 2 else
                 f"Trening {session_index + 1} – celotno telo"
             ),
