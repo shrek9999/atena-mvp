@@ -1060,9 +1060,20 @@ def generate_program(
                 for item in movement_decisions_by_pattern.values()
             )
             if movement_decisions_by_pattern and len(ready_patterns) < 3 and not symptom_reports:
+                fallback_added = False
                 for fallback_pattern in ("hip_extension", "carry"):
                     if fallback_pattern not in patterns and fallback_pattern not in p["excluded_patterns"]:
                         patterns.append(fallback_pattern)
+                        fallback_added = True
+                if fallback_added and not any(
+                    event.get("action") == "fallback_loaded_patterns_added"
+                    for event in movement_adaptation_events
+                ):
+                    movement_adaptation_events.append({
+                        "pattern": "program_baseline",
+                        "action": "fallback_loaded_patterns_added",
+                        "message": "Ker manj kot trije osnovni vzorci še nimajo potrjene pripravljenosti, ATENA začasno uporabi druge primerne obremenjene vaje in kondicijski del. Nepotrjenih vzorcev ne obremeni; po ponovnem preverjanju jih lahko postopno vključi.",
+                    })
         warm_up_minutes = 5 if p["session_minutes"] <= 30 else (7 if p["session_minutes"] <= 60 else 10)
         camera_coordination_block = None
         if camera_coordination_exercise is not None:
@@ -1164,7 +1175,7 @@ def generate_program(
         ready_loaded_patterns = []
         # Keep the warm-up focused: teach at most one unready pattern per
         # 45–60 min session, then address the next pattern in a later exposure.
-        learning_task_limit = 1 if p["session_minutes"] <= 60 else 2
+        learning_task_limit = 1
         seen_patterns = set()
         for pattern in patterns:
             if pattern in seen_patterns and planning_goal != "mobility":
@@ -1915,7 +1926,7 @@ def generate_program(
                 if not selected and learning_tasks_for_session else
                 f"Trening {session_index + 1} – vzdržljivost" if planning_goal == "endurance" else
                 f"Trening {session_index + 1} – mobilnost in gibljivost" if planning_goal == "mobility" else
-                f"Trening {session_index + 1} – funkcionalna pripravljenost" if planning_goal == "functional" else
+                f"Trening {session_index + 1} – funkcionalna moč + kondicija" if planning_goal == "functional" else
                 f"Trening {session_index + 1} – aerobna in kondicijska priprava" if planning_goal == "fat_loss" and session_index >= 2 else
                 f"Trening {session_index + 1} – celotno telo"
             ),
@@ -1954,7 +1965,7 @@ def generate_program(
             pattern_work_sets[item["pattern"]] += item["prescription"]["sets"]
     canonical_goal = normalize_goal(p["goal"])
     return {
-        "program_version": "3.1.0",
+        "program_version": "3.2.0",
         "camera_coordination_add_on_applied": camera_coordination_exercise is not None,
         "goal_framework": CANONICAL_GOALS[canonical_goal],
         "nutrition_guidance": list(CANONICAL_GOALS[canonical_goal].get("nutrition_guidance", [])),
