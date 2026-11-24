@@ -197,7 +197,7 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # conditioning slot. Learning one pattern must not turn the whole
         # session into a movement-drill circuit.
         if session_index == 0:
-            patterns = ["squat", "hinge", "horizontal_push", "hip_extension", "conditioning"]
+            patterns = ["squat", "hinge", "horizontal_push", "vertical_pull", "conditioning"]
         else:
             patterns = ["lunge", "vertical_push", "horizontal_pull", "carry", "conditioning"]
         if include_stability:
@@ -227,7 +227,7 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         if session_index == 0:
             patterns = ["squat", "hinge", "horizontal_push", "hip_extension", "conditioning"]
         else:
-            patterns = ["lunge", "vertical_push", "horizontal_pull", "carry", "conditioning"]
+            patterns = ["lunge", "vertical_push", "horizontal_pull", "vertical_pull", "conditioning"]
         if include_stability:
             patterns.insert(0, "trunk_stability")
         return patterns
@@ -1510,6 +1510,18 @@ def generate_program(
             effective_pattern = candidate["pattern"]
             used_counts[candidate["id"]] += 1
             prescription = _prescription(planning_goal, p["experience"], effective_pattern, candidate, p["session_minutes"])
+            if (planning_goal == "fat_loss" and effective_pattern == "locomotion"
+                    and not (p["sessions_per_week"] >= 3 and session_index >= 2)):
+                # When no movement-ready interval option or cardio machine is available,
+                # use a short walking dose alongside resistance work. Longer aerobic
+                # sessions are reserved for additional training days.
+                walk_minutes = 8 if p["session_minutes"] <= 30 else 10 if p["session_minutes"] <= 45 else 12
+                prescription.update({
+                    "reps": f"{walk_minutes} min",
+                    "work_seconds": walk_minutes * 60,
+                    "time_label": "hitre hoje oziroma hoje v klanec",
+                    "effort_target": "Zmeren pogovorni tempo; ohrani enakomeren korak in nadzor dihanja.",
+                })
             movement_note = None
             symptom_report = (
                 structured_decision.get("user_report", {})
@@ -1915,7 +1927,8 @@ def generate_program(
             raise ProgramValidationError(
                 f"Z razpoložljivim časom {p['session_minutes']} min ni mogoče sestaviti uravnoteženega treninga. Povečaj čas ali zmanjša zahtevnost cilja."
             )
-        if len(selected) < 3 and not learning_tasks_for_session:
+        if (len(selected) < 3 and not learning_tasks_for_session
+                and not (planning_goal == "fat_loss" and p["sessions_per_week"] >= 3 and session_index >= 2)):
             raise ProgramValidationError(
                 "Za izbrano opremo in omejitve ni dovolj preverjenih vaj ali učnih nalog. Potrebujem več opreme ali manj izključitev."
             )
@@ -1926,7 +1939,7 @@ def generate_program(
                 if not selected and learning_tasks_for_session else
                 f"Trening {session_index + 1} – vzdržljivost" if planning_goal == "endurance" else
                 f"Trening {session_index + 1} – mobilnost in gibljivost" if planning_goal == "mobility" else
-                f"Trening {session_index + 1} – funkcionalna moč + kondicija" if planning_goal == "functional" else
+                f"Trening {session_index + 1} – funkcionalna pripravljenost: moč + kondicija" if planning_goal == "functional" else
                 f"Trening {session_index + 1} – aerobna in kondicijska priprava" if planning_goal == "fat_loss" and session_index >= 2 else
                 f"Trening {session_index + 1} – celotno telo"
             ),
