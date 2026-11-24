@@ -9,29 +9,29 @@ CANONICAL_GOALS = {
     "strength_hypertrophy": {
         "id": "strength_hypertrophy",
         "label": "Moč + mišična masa",
-        "description": "Razvoj moči in mišične mase z osnovnimi večsklepnimi gibalnimi vzorci.",
+        "description": "Pri manj izkušenih sta moč in mišična masa povezana cilja, zato ju razvijamo skupaj z obremenjenimi večsklepnimi vajami. Napredni lahko izberejo ločen poudarek na moči ali hipertrofiji.",
         "pillars": ["strength", "hypertrophy"],
         "advanced_specialization": ["strength", "hypertrophy"],
     },
     "functional": {
         "id": "functional",
         "label": "Funkcionalnost",
-        "description": "Celostna zmogljivost: moč, mobilnost skozi nadzorovano polno amplitudo, koordinacija, stabilnost in kondicija/MetCon.",
-        "pillars": ["strength", "mobility", "coordination", "balance", "cardiorespiratory_conditioning", "functional_fitness"],
+        "description": "Razvoj uporabne moči z obremenjenimi večsklepnimi vajami skozi veliko obvladano amplitudo; mobilnost razvijamo predvsem z močjo skozi ROM, vzdržljivost pa z intervali, krožno vadbo ali MetCon.",
+        "pillars": ["strength", "mobility", "cardiorespiratory_conditioning", "functional_fitness"],
         "advanced_specialization": [],
     },
     "fat_loss": {
         "id": "fat_loss",
         "label": "Fat loss – zmanjšanje maščobne mase",
-        "description": "Ohranjanje mišične mase z vadbo moči, razvoj vzdržljivosti in podpora vzdržni prehranski strategiji.",
+        "description": "Kombinacija obremenjene vadbe za ohranitev mišične mase, kondicijske vadbe in prehrane z zmernim energijskim primanjkljajem ter zadostnimi beljakovinami.",
         "pillars": ["strength", "hypertrophy", "muscular_endurance", "cardiorespiratory_conditioning", "weight_management", "nutrition"],
         "advanced_specialization": [],
         "nutrition_guidance": [
             "Ustvari zmeren in vzdržen energijski primanjkljaj; izogibaj se agresivnim dietam.",
-            "V vsakem glavnem obroku poskrbi za kakovosten vir beljakovin; količino prilagodi telesni masi, treningu in prehranskim omejitvam.",
-            "Večino prehrane naj sestavljajo hranilno bogata, pretežno minimalno predelana živila, zelenjava, sadje in viri vlaknin.",
-            "Spremljaj trend telesne mase in obseg pasu skozi več tednov, ne posameznih dnevnih nihanj.",
-            "Prehranski načrt prilagodi lakoti, počutju, spanju, regeneraciji in dolgoročni vzdržnosti."
+            "Beljakovine naj bodo visoko na seznamu prioritet; okvirno 1,6–2,2 g/kg ciljne oziroma prilagojene telesne mase na dan, če ni zdravstvenih omejitev.",
+            "Ohrani redno vadbo z zunanjimi bremeni za ohranjanje mišične mase in zmogljivosti.",
+            "Kondicijo dodaj z intervali, MetCon vadbo ali daljšo hojo navkreber; obseg prilagajaj regeneraciji.",
+            "Spremljaj večtedenski trend telesne mase in obseg pasu ter prehrano prilagajaj vzdržno."
         ],
     },
 }
