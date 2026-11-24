@@ -470,12 +470,19 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         tempo, tempo_description, tempo_seconds = "kontrolirano", "Najprej kakovost in nadzor; hitrost ali doseg povečuj šele, ko je izvedba ponovljiva.", 0
     elif is_stability:
         tempo, tempo_description, tempo_seconds = "2–1–2–1", "2 s izteg oziroma odmik · 1 s nadzor · 2 s vrnitev · 1 s ponastavitev.", 6
+    elif goal == "functional" and pattern in {"conditioning", "locomotion"}:
+        tempo, tempo_description, tempo_seconds = "ritmično", "Ohrani ponovljiv ritem intervala; intenzivnost prilagodi cilju in kakovosti izvedbe.", 0
+    elif goal == "functional":
+        tempo, tempo_description, tempo_seconds = (
+            "2–0–1–0",
+            "Nadzorovan spust skozi uporabno amplitudo in aktivna, tekoča vrnitev. Tempo prilagodi vaji; ne sili v počasnost ali hitrost na račun nadzora.",
+            3,
+        )
     else:
-        # Universal motor-learning default across strength, hypertrophy, functional
-        # and fat-loss goals. Training age and goal do not prove movement mastery.
+        # Controlled default for strength and hypertrophy work.
         tempo, tempo_description, tempo_seconds = (
             "3–1–2–0",
-            "3 s nadzorovan spust oziroma ekscentrična faza · 1 s miren nadzor v izbranem položaju · 2 s nadzorovana vrnitev oziroma koncentrična faza · brez sunkov in brez izgube položaja.",
+            "3 s nadzorovan spust · 1 s nadzor v izbranem položaju · 2 s nadzorovana vrnitev · brez sunkov in izgube položaja.",
             6,
         )
     prescription = {
@@ -1258,18 +1265,18 @@ def generate_program(
                     if len(learning_tasks_for_session) < learning_task_limit:
                         learning_tasks_for_session.append({
                             "movement_pattern": pattern,
-                        "task_id": PATTERN_DEFINITIONS[pattern]["task_id"],
-                        "method_id": method["id"],
-                        "method": method["label"],
-                        "description": method["description"],
-                        "exercise_id": None,
-                        "demo_url": method.get("demo_url"),
-                        "demonstration_videos": _learning_task_videos(pattern, method["id"], None),
-                        "decision": structured_decision["decision"],
-                        "sets": 1,
-                        "reps": "2–3 kontrolirane ponovitve",
-                        "tempo": "3-1-1",
-                        "rest_seconds": 30,
+                            "task_id": PATTERN_DEFINITIONS[pattern]["task_id"],
+                            "method_id": method["id"],
+                            "method": method["label"],
+                            "description": method["description"],
+                            "exercise_id": None,
+                            "demo_url": method.get("demo_url"),
+                            "demonstration_videos": _learning_task_videos(pattern, method["id"], None),
+                            "decision": structured_decision["decision"],
+                            "sets": 1,
+                            "reps": "2–3 kontrolirane ponovitve",
+                            "tempo": "3-1-1",
+                            "rest_seconds": 30,
                             "estimated_minutes": 2,
                         })
                     movement_adaptation_events.append({
@@ -1898,14 +1905,22 @@ def generate_program(
             "training_emphasis": p["training_emphasis"],
             "exercise_scaling": "Vsaka vaja ima označen potencial obremenitve, vlogo, zahteve glede opreme in stopnjevanje. Nizko obremenljive učne vaje niso privzeta glavna izbira za hipertrofijo.",
             "equipment_policy": "Brez uteži ne pomeni brez običajnih stabilnih gospodinjskih opor. Stol, kavč, miza, stopnica, brisača ali palica so dovoljeni le, kadar jih profil izrecno vključuje in so varni za uporabo.",
-            "endurance_policy": "Vzdržljivost je ločen cilj; aerobne aktivnosti, intervali in mišična vzdržljivost so označeni ločeno.",
+            "endurance_policy": (
+                "Pri funkcionalnosti je vzdržljivost sestavni del programa: intervali, krožna vadba ali MetCon. Kontinuirana aerobna vadba je dodatna možnost, ne edina oblika kondicije."
+                if planning_goal == "functional" else
+                "Vzdržljivost je pri hujšanju načrtovana skupaj z vadbo za moč; uporabi intervale, MetCon ali daljšo aerobno aktivnost glede na cilj in regeneracijo."
+                if planning_goal == "fat_loss" else
+                "Aerobne aktivnosti, intervali in mišična vzdržljivost so ločene oblike kondicijskega dela."
+            ),
             "mobility_policy": "Mobilnost vključuje aktivne gibalne vaje, kontrolirano gibanje v končnih amplitudah in razvoj moči skozi čim večji nadzorovan in toleriran obseg (npr. predklon z nevtralno hrbtenico/RDL, ATG izpadni počep, Cossack squat in obremenjeni globoki počep), ne samo pasivnega raztezanja.",
             "fat_loss_policy": "Pri uravnavanju telesne teže združi vadbo moči za ohranitev mišične mase s kratkimi, odmerjenimi kondicijskimi intervali v istem treningu; ob treh ali štirih treningih je lahko dodatna enota pretežno aerobna. MetCon naj bo nadzorovan, ne maksimalen in ne na račun tehnike ali regeneracije. Za zmanjšanje telesne maščobe je potreben vzdržen energijski primanjkljaj; vadba sama ga ne zagotavlja.",
             "experience_adaptation": (
+                "Funkcionalnost: tudi začetnik izvaja prilagojene obremenjene večsklepne vaje in odmerjeno intervalno kondicijo. Učna naloga se doda samo za vzorec, ki še ni potrjeno obvladan."
+                if planning_goal == "functional" else
+                "Hujšanje: ohrani kakovostno obremenjeno vadbo za moč in mišično maso; kondicijo ter prehranski primanjkljaj prilagajaj regeneraciji. Ne povečuj vadbe zgolj zaradi porabe kalorij."
+                if planning_goal == "fat_loss" else
                 "Vzdržljivost: začetnik gradi predvsem enakomeren aerobni obseg v pogovornem tempu; intervale uvajaj postopno. Naprednejši lahko kombinira daljše aerobne enote, intervale in mišično vzdržljivost, vendar ne vsega maksimalno v isti vadbi."
                 if planning_goal == "endurance" else
-                "Hujšanje: ohrani kakovostna treninga moči kot osnovo, aerobno delo dodajaj glede na razpoložljiv čas in regeneracijo. Ne povečuj obsega vadbe zgolj zato, da bi porabil čim več kalorij."
-                if planning_goal == "fat_loss" else
                 "Mobilnost: začetnik začne z aktivnimi, podprtimi in kontroliranimi gibi. Napredovanje temelji na kakovosti, postopnem povečevanju neboleče amplitude in sposobnosti ustvarjanja sile v novih položajih; ne na siljenju v končni obseg."
                 if planning_goal == "mobility" else
                 "Začetnik: prednost imajo učenje osnovnih gibalnih vzorcev, nadzorovana amplituda in ponovljiva tehnika. Tudi pri cilju moč začni večinoma z 8–12 ponovitvami in približno 2–3 ponovitvami v rezervi; šele z napredovanjem postopno preidi na nižje razpone in večje obremenitve."
@@ -1916,7 +1931,9 @@ def generate_program(
                 "Univerzalno načelo ATENE za moč + mišično maso, funkcionalnost in izgubo maščobe: najprej počasna, nadzorovana izvedba skozi največjo trenutno obvladano amplitudo. Privzeti učni tempo pri dinamičnih vajah za moč je 3–1–2–0 (3 s nadzorovan spust, 1 s nadzor v izbranem položaju, 2 s nadzorovana vrnitev). Cilj treninga ali oznaka izkušenosti sama po sebi ne dovoljujeta hitrejše izvedbe. Aerobne, izometrične, mobilnostne in koordinacijske naloge ohranijo tempo, primeren njihovi naravi, vendar vedno brez izgube nadzora."
             ),
             "range_of_motion": "Pri vsaki vaji uporabi največjo amplitudo, ki jo omogočata gibljivost in nadzor. Amplitudo postopno razvijaj; ne žrtvuj položaja, stabilnosti ali neboleče izvedbe. Pri mobilnosti kombiniraj aktivno gibanje in moč skozi razpoložljivo amplitudo.",
-            "progression": ("Pri aerobni vzdržljivosti postopno povečuj trajanje ali obseg, nato po potrebi intenzivnost; pri intervalih spreminjaj le eno spremenljivko naenkrat. Ohraniti moraš ponovljivo tehniko in regeneracijo."
+            "progression": ("Pri funkcionalnosti postopno povečuj obremenitev ali nadzorovano amplitudo pri vajah za moč; pri intervalih spreminjaj samo eno spremenljivko (trajanje, število intervalov ali odmor)."
+                if planning_goal == "functional" else
+                "Pri aerobni vzdržljivosti postopno povečuj trajanje ali obseg, nato po potrebi intenzivnost; pri intervalih spreminjaj le eno spremenljivko naenkrat. Ohraniti moraš ponovljivo tehniko in regeneracijo."
                 if planning_goal == "endurance" else
                 "Pri hujšanju ohrani ali postopno izboljšuj delovne obremenitve pri vajah za moč, da podpreš ohranitev mišične mase. Kondicijski obseg povečuj postopno; ne kompenziraj prehrane z nenadnim povečanjem treninga."
                 if planning_goal == "fat_loss" else
