@@ -300,11 +300,11 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         kind = exercise.get("endurance_type")
         sets = (4 if session_minutes <= 30 else 6) if level == "beginner" else (6 if session_minutes <= 30 else 8) if level == "intermediate" else (8 if session_minutes <= 30 else 10)
         if kind == "aerobic":
-            reps, rir, rest = "1 min", None, 60
+            reps, rir, rest = "1 min", None, 30
         elif kind == "anaerobic":
-            reps, rir, rest = "15–20 s", None, 60
+            reps, rir, rest = "15–20 s", None, 40
         else:
-            reps, rir, rest = "20–30 s", None, 60
+            reps, rir, rest = "20–30 s", None, 30
     elif goal == "functional" and pattern == "conditioning":
         # A meaningful, repeatable MetCon/interval block; scale by experience and time.
         sets = (4 if session_minutes <= 30 else 6) if level == "beginner" else (6 if session_minutes <= 30 else 8) if level == "intermediate" else (8 if session_minutes <= 30 else 10)
