@@ -38,3 +38,27 @@ jobs:
         env:
           PYTHONPATH: .
         run: pytest -q
+
+
+  pilot-token-presence:
+    name: Diagnose pilot token configuration without revealing credentials
+    runs-on: ubuntu-latest
+    steps:
+      - name: Distinguish missing Render token from configured token
+        shell: bash
+        run: |
+          status=$(curl --silent --show-error --output /dev/null --write-out "%{http_code}" \
+            --max-time 30 \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --data '{"messages":[]}' \
+            https://atena-ai-coach-pilot.onrender.com/coach/chat)
+          echo "Unauthenticated pilot endpoint returned HTTP ${status}."
+          if [ "$status" = "503" ]; then
+            echo "Diagnosis: Render does not have AI_COACH_TEST_TOKEN configured."
+          elif [ "$status" = "403" ]; then
+            echo "Diagnosis: Render has a token configured; the unauthenticated request was correctly rejected."
+          else
+            echo "Diagnosis: unexpected response; investigate endpoint or service state."
+            exit 1
+          fi
