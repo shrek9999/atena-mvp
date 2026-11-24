@@ -1550,6 +1550,7 @@ def generate_program(
                 # sessions are reserved for additional training days.
                 walk_minutes = 8 if p["session_minutes"] <= 30 else 10 if p["session_minutes"] <= 45 else 12
                 prescription.update({
+                    "sets": 1,
                     "reps": f"{walk_minutes} min",
                     "work_seconds": walk_minutes * 60,
                     "time_label": "hitre hoje oziroma hoje v klanec",
