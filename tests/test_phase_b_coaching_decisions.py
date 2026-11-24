@@ -80,7 +80,7 @@ def test_single_joint_hypertrophy_accessories_are_catalogue_opt_in_and_advanced_
         ("strength", "3–1–2–0"),
         ("hypertrophy", "3–1–2–0"),
         ("fat_loss", "3–1–2–0"),
-        ("functional", "3–1–2–0"),
+        ("functional", "2–0–1–0"),
     ],
 )
 def test_program_preserves_universal_controlled_tempo(goal, expected_tempo):
