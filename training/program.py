@@ -1045,6 +1045,30 @@ def generate_program(
             p["include_accessories"] and (planning_goal == "hypertrophy" or p["session_minutes"] >= 75) and not include_stability,
             include_stability, p["experience"], p["session_minutes"]
         )
+        # A focused movement-learning task is allowed per session. When several
+        # patterns are unready, distribute them across the week's sessions rather
+        # than repeating the first task and silently deferring every other pattern.
+        learning_candidates = [
+            pattern for pattern in PATTERN_DEFINITIONS
+            if pattern in movement_decisions_by_pattern
+            and movement_decisions_by_pattern[pattern].get("decision") in {"LEARN", "REGRESS"}
+            and movement_decisions_by_pattern[pattern].get("learning_only") is True
+        ]
+        if len(learning_candidates) > 1:
+            selected_learning_pattern = (
+                learning_candidates[session_index]
+                if session_index < len(learning_candidates) else None
+            )
+            patterns = [
+                pattern for pattern in patterns
+                if pattern not in learning_candidates or pattern == selected_learning_pattern
+            ]
+            if selected_learning_pattern and selected_learning_pattern not in patterns:
+                patterns.insert(0, selected_learning_pattern)
+        elif len(learning_candidates) == 1:
+            # Repeat the single priority learning task at each weekly exposure.
+            if learning_candidates[0] not in patterns:
+                patterns.insert(0, learning_candidates[0])
         if planning_goal in {"functional", "fat_loss"}:
             ready_patterns = {
                 pattern for pattern, decision in movement_decisions_by_pattern.items()
