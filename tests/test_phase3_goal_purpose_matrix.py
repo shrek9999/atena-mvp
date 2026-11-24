@@ -19,22 +19,15 @@ BASE = {
 }
 
 ALLOWED_PURPOSES = {
-    "strength": {"strength"},
-    "hypertrophy": {"hypertrophy"},
     "strength_hypertrophy": {"strength", "hypertrophy"},
-    "fat_loss": {"strength", "hypertrophy", "general_fitness", "cardiorespiratory_conditioning"},
-    "general_fitness": {
-        "general_fitness", "functional_fitness", "strength",
-        "cardiorespiratory_conditioning", "mobility", "balance", "coordination",
-    },
     "functional": {
         "functional_fitness", "general_fitness", "strength",
-        "cardiorespiratory_conditioning", "mobility", "balance",
-        "coordination", "power",
+        "cardiorespiratory_conditioning", "mobility", "balance", "coordination",
     },
-    "power": {"power", "strength"},
-    "endurance": {"cardiorespiratory_conditioning", "muscular_endurance", "general_fitness"},
-    "mobility": {"mobility", "strength", "general_fitness", "functional_fitness", "balance", "coordination"},
+    "fat_loss": {
+        "strength", "hypertrophy", "general_fitness",
+        "cardiorespiratory_conditioning", "weight_management",
+    },
 }
 
 

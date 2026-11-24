@@ -5,6 +5,7 @@ movement quality or live conversational usability.
 """
 from training.catalogue import get_exercise
 from training.program import generate_program
+from training.goals import normalize_goal
 from training.movement_coaching import build_movement_decision, get_exercise_options
 
 
@@ -61,7 +62,7 @@ def _by_id(plan):
 def test_all_seven_personas_receive_complete_and_equipment_compatible_programmes():
     for persona, profile in PERSONAS.items():
         plan = generate_program(profile)
-        assert plan["goal"] == profile["goal"], persona
+        assert plan["goal"] == normalize_goal(profile["goal"]), persona
         assert plan["experience"] == profile["experience"], persona
         assert len(plan["sessions"]) == profile["sessions_per_week"], persona
         assert plan["sessions"], persona
