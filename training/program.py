@@ -1083,6 +1083,7 @@ def generate_program(
                 }
         selected = []
         learning_tasks_for_session = []
+        deferred_learning_patterns = []
         # A short, focused learning task may accompany the workout; it must not
         # turn the whole session into a long sequence of unloaded drills.
         learning_task_limit = 1 if p["session_minutes"] <= 60 else 2
@@ -1194,11 +1195,7 @@ def generate_program(
                 )
                 if target_id is None and method is not None and method.get("learning_only") is True:
                     if len(learning_tasks_for_session) >= learning_task_limit:
-                        movement_adaptation_events.append({
-                            "pattern": pattern,
-                            "action": "learning_task_deferred_to_later_session",
-                            "message": "Vzorec ostane brez obremenjene vaje; učno nalogo ATENA razporedi v naslednjo vadbeno izpostavitev, da ogrevanje ne postane glavni del treninga.",
-                        })
+                        deferred_learning_patterns.append(pattern)
                         continue
                     learning_tasks_for_session.append({
                         "movement_pattern": pattern,
@@ -1659,6 +1656,21 @@ def generate_program(
             })
             for muscle in candidate["primary_muscles"]:
                 exposure[muscle] += prescription["sets"]
+
+        if deferred_learning_patterns:
+            deferred_labels = [
+                PATTERN_LABELS.get(value, value) for value in deferred_learning_patterns
+            ]
+            movement_adaptation_events.append({
+                "pattern": deferred_learning_patterns[0],
+                "patterns": deferred_learning_patterns,
+                "action": "learning_tasks_deferred_to_later_sessions",
+                "message": (
+                    "Učne naloge za vzorce " + ", ".join(deferred_labels)
+                    + " so razporejene v naslednje vadbene izpostavitve. V tem treningu "
+                    "ostanejo brez obremenjene različice."
+                ),
+            })
 
         # Pattern-learning tasks are performed at the start of the session as part
         # of the warm-up, not as a separate practice block after the warm-up.
