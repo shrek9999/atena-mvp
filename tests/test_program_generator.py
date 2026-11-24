@@ -44,6 +44,22 @@ def test_beginner_receives_lower_effort_and_volume():
                 assert exercise["prescription"]["rir"] >= 3
 
 
+def test_strength_and_hypertrophy_are_one_goal_for_less_experienced_users():
+    for legacy_goal in ("strength", "hypertrophy"):
+        profile = {**BASE, "goal": legacy_goal, "experience": "intermediate"}
+        normalized = validate_profile(profile)
+        assert normalized["goal"] == "strength_hypertrophy"
+        assert normalized["training_emphasis"] == "balanced"
+
+
+def test_advanced_user_can_choose_strength_or_hypertrophy_specialization():
+    base = {**BASE, "goal": "strength_hypertrophy", "experience": "advanced"}
+    assert validate_profile({**base, "training_emphasis": "strength"})["training_emphasis"] == "strength"
+    assert validate_profile({**base, "training_emphasis": "hypertrophy"})["training_emphasis"] == "hypertrophy"
+    legacy = validate_profile({**BASE, "goal": "strength", "experience": "advanced"})
+    assert legacy["training_emphasis"] == "strength"
+
+
 def test_intermediate_strength_program_uses_shared_strength_hypertrophy_rep_ranges():
     profile = {**BASE, "goal": "strength", "experience": "intermediate"}
     plan = generate_program(profile)
@@ -1075,7 +1091,7 @@ def test_functional_and_fat_loss_programmes_have_distinct_training_intent():
     assert "carry" in functional_patterns
     assert "conditioning" in fat_loss_patterns
     assert "polno obvladano amplitudo" in functional["methodology"]["functional_policy"]
-    assert "energijskim primanjkljajem" in fat_loss["methodology"]["fat_loss_policy"]
+    assert "energijski primanjkljaj" in fat_loss["methodology"]["fat_loss_policy"]
     assert fat_loss["nutrition_guidance"]
 
 
