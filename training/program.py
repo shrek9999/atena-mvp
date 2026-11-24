@@ -37,7 +37,7 @@ def _learning_task_videos(pattern: str, method_id: str | None, exercise_id: str 
         ]
     return []
 
-SUPPORTED_GOALS = {"hypertrophy", "strength", "strength_hypertrophy", "fat_loss", "general_fitness", "functional", "power", "endurance", "mobility"}
+SUPPORTED_GOALS = {"hypertrophy", "strength", "strength_hypertrophy", "fat_loss", "weight_management", "general_fitness", "functional", "power", "endurance", "mobility"}
 SUPPORTED_LEVELS = {"beginner", "intermediate", "advanced"}
 SUPPORTED_SESSIONS = {2, 3, 4}
 PATTERN_LABELS = {
@@ -174,7 +174,7 @@ def validate_profile(profile: object) -> dict:
         raise ProgramValidationError("pistol_squat_capable mora biti true ali false.")
     return {
         **profile,
-        "goal": "strength_hypertrophy" if goal in {"strength", "hypertrophy"} else goal,
+        "goal": canonical_goal,
         "pistol_squat_capable": pistol_squat_capable,
         "sessions_per_week": sessions,
         "session_minutes": duration,
@@ -221,10 +221,16 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         return patterns
     base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
     if goal == "fat_loss":
-        # Keep both resistance sessions full-body, but cap the main exercise
-        # list at six. Alternate the unilateral knee-dominant pattern and
-        # vertical pull; conditioning remains present in both sessions.
-        if session_index == 0:
+        # Keep resistance as the foundation and condition in both sessions.
+        # For 30-minute sessions use three resistance patterns plus conditioning;
+        # longer sessions can accommodate an additional loaded pattern.
+        if session_minutes <= 30:
+            patterns = (
+                ["squat", "hinge", "horizontal_push", "conditioning"]
+                if session_index == 0 else
+                ["lunge", "vertical_push", "horizontal_pull", "conditioning"]
+            )
+        elif session_index == 0:
             patterns = ["squat", "hinge", "horizontal_push", "hip_extension", "conditioning"]
         else:
             patterns = ["lunge", "vertical_push", "horizontal_pull", "vertical_pull", "conditioning"]
@@ -241,7 +247,7 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
     # vertical-pull exposure by assigning it to the accessory session and
     # retain the other optional patterns on the remaining days.
     if include_accessories and "vertical_pull" in extras[session_index]:
-        patterns = base + extras[session_index][:1]
+        patterns = base + ["vertical_pull"]
     else:
         patterns = base + (extras[session_index][:1] if include_stability else extras[session_index])
 
