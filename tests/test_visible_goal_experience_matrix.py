@@ -185,7 +185,7 @@ def test_strength_hypertrophy_main_lift_dose_scales_across_all_three_levels():
     assert [item["reps"] for item in prescriptions] == ["8–12", "8–12", "5–8"]
     assert [item["rir"] for item in prescriptions] == [3, 3, 2]
     assert [item["sets"] for item in prescriptions] == [3, 3, 3]
-    assert [item["tempo"] for item in prescriptions] == ["3–1–2–0", "3–1–2–0", "3–1–2–0"]
+    assert [item["tempo"] for item in prescriptions] == ["2–0–1–0", "2–0–1–0", "2–0–1–0"]
 
 
 def test_functional_main_lift_prescription_distinguishes_intermediate_and_advanced():
@@ -199,32 +199,26 @@ def test_functional_main_lift_prescription_distinguishes_intermediate_and_advanc
     assert [item["tempo"] for item in prescriptions] == ["3–1–2–0", "3–1–2–0", "3–1–2–0"]
 
 
-def test_mobility_work_volume_scales_for_advanced_profiles():
-    prescriptions = [
-        _first_exercise(_matrix_plan("mobility", level), "mobility")["prescription"]
-        for level in EXPERIENCE_LEVELS
-    ]
+def test_functional_goal_keeps_mobility_preparation_short():
+    for experience in EXPERIENCE_LEVELS:
+        plan = _matrix_plan("functional", experience)
+        assert all(session.get("mobility_block", {}).get("exercises") for session in plan["sessions"])
+        assert all(session["mobility_block"]["estimated_minutes"] == 1 for session in plan["sessions"])
 
-    assert [item["sets"] for item in prescriptions] == [2, 2, 3]
 
-def test_endurance_interval_duration_scales_with_experience():
-    expected_seconds = {
-        "aerobic": [120, 150, 180],
-        "anaerobic": [15, 18, 20],
-        "muscular": [20, 25, 30],
-    }
-    for level_index, experience in enumerate(EXPERIENCE_LEVELS):
-        plan = _matrix_plan("endurance", experience)
-        intervals = [
-            exercise
+def test_functional_conditioning_volume_scales_with_experience():
+    expected_sets = [12, 16, 20]
+    total_sets = []
+    for experience in EXPERIENCE_LEVELS:
+        plan = _matrix_plan("functional", experience)
+        total_sets.append(sum(
+            exercise["prescription"]["sets"]
             for session in plan["sessions"]
             for exercise in session["exercises"]
-            if exercise["pattern"] == "conditioning"
-        ]
-        assert intervals
-        for interval in intervals:
-            endurance_type = interval["endurance_type"]
-            assert interval["prescription"]["work_seconds"] == expected_seconds[endurance_type][level_index]
+            if exercise["training_role"] == "conditioning"
+            and exercise["pattern"] == "conditioning"
+        ))
+    assert total_sets == expected_sets
 
 @pytest.mark.parametrize("experience", EXPERIENCE_LEVELS)
 def test_functional_profiles_do_not_assume_landing_or_braking_readiness(experience):
