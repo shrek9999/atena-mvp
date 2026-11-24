@@ -9,29 +9,29 @@ CANONICAL_GOALS = {
     "strength_hypertrophy": {
         "id": "strength_hypertrophy",
         "label": "Moč + mišična masa",
-        "description": "Razvoj moči in mišične mase z osnovnimi večsklepnimi gibalnimi vzorci.",
+        "description": "Pri začetnikih in manj izkušenih je moč + mišična masa skupen cilj: osnovni večsklepni gibi, postopna progresija in dovolj kakovostnega volumna. Pri naprednih se lahko cilj specializira v moč ali hipertrofijo.",
         "pillars": ["strength", "hypertrophy"],
         "advanced_specialization": ["strength", "hypertrophy"],
     },
     "functional": {
         "id": "functional",
         "label": "Funkcionalnost",
-        "description": "Celostna zmogljivost: moč, mobilnost skozi nadzorovano polno amplitudo, koordinacija, stabilnost in kondicija/MetCon.",
+        "description": "Celostna zmogljivost: obremenjena večsklepna vadba, razvoj moči skozi čim večjo obvladano amplitudo (mobilnost predvsem skozi full-ROM vaje z bremenom) ter kondicija z MetConom ali intervali. Mobilnostni drili, ravnotežje in koordinacija so kratka ciljna priprava, ne glavni del treninga.",
         "pillars": ["strength", "mobility", "coordination", "balance", "cardiorespiratory_conditioning", "functional_fitness"],
         "advanced_specialization": [],
     },
     "fat_loss": {
         "id": "fat_loss",
         "label": "Fat loss – zmanjšanje maščobne mase",
-        "description": "Ohranjanje mišične mase z vadbo moči, razvoj vzdržljivosti in podpora vzdržni prehranski strategiji.",
+        "description": "Uravnavanje telesne teže temelji na treh stebrih: vadba z obremenitvijo za ohranjanje mišične mase, kondicijska/vzdržljivostna vadba in vzdržen energijski primanjkljaj z zadostnim vnosom beljakovin.",
         "pillars": ["strength", "hypertrophy", "muscular_endurance", "cardiorespiratory_conditioning", "weight_management", "nutrition"],
         "advanced_specialization": [],
         "nutrition_guidance": [
-            "Ustvari zmeren in vzdržen energijski primanjkljaj; izogibaj se agresivnim dietam.",
-            "V vsakem glavnem obroku poskrbi za kakovosten vir beljakovin; količino prilagodi telesni masi, treningu in prehranskim omejitvam.",
+            "Ustvari zmeren in vzdržen energijski primanjkljaj; brez energijskega primanjkljaja dolgoročno zmanjšanje maščobne mase ni pričakovano. Izogibaj se agresivnim dietam.",
+            "Zagotovi dovolj beljakovin za ohranjanje mišične mase; kot splošno izhodišče za zdrave odrasle, ki vadijo, uporabi približno 1,6–2,2 g/kg telesne mase na dan, nato prilagodi posamezniku.",
+            "Vadbo z obremenitvijo ohrani kot obvezno osnovo programa; kondicijo dodaj z MetConom, intervali ali daljšo aerobno aktivnostjo, npr. hitro hojo v klanec.",
             "Večino prehrane naj sestavljajo hranilno bogata, pretežno minimalno predelana živila, zelenjava, sadje in viri vlaknin.",
-            "Spremljaj trend telesne mase in obseg pasu skozi več tednov, ne posameznih dnevnih nihanj.",
-            "Prehranski načrt prilagodi lakoti, počutju, spanju, regeneraciji in dolgoročni vzdržnosti."
+            "Spremljaj večtedenski trend telesne mase in obseg pasu, ne posameznih dnevnih nihanj; prehrano prilagajaj počutju, spanju, regeneraciji in vzdržnosti."
         ],
     },
 }
