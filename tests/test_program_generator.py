@@ -879,6 +879,7 @@ def test_advanced_strength_emphasis_uses_strength_specific_main_lift_dose():
     assert result["goal"] == "strength_hypertrophy"
     assert result["training_emphasis"] == "strength"
     assert main and all(item["prescription"]["reps"] == "5" for item in main)
+    assert "vseh pet serij po pet ponovitev" in result["methodology"]["progression"]
 
 
 def test_advanced_hypertrophy_emphasis_uses_hypertrophy_specific_main_lift_dose():
