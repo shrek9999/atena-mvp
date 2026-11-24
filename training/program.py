@@ -1441,7 +1441,7 @@ def generate_program(
                         return -10
                     if item["id"] == "reaching_squat":
                         return -5
-                if pattern == "squat" and planning_goal in {"hypertrophy", "strength", "functional", "fat_loss"}:
+                if pattern == "squat" and planning_goal in {"hypertrophy", "strength", "strength_hypertrophy", "functional", "fat_loss"}:
                     weighted_squat_equipment = {"barbell", "dumbbell", "kettlebell"}
                     has_weighted_squat = bool(weighted_squat_equipment & available_equipment)
                     if not has_weighted_squat and p["experience"] == "advanced" and p["pistol_squat_capable"] and item["id"] == "pistol_squat":
@@ -1483,7 +1483,9 @@ def generate_program(
                         # Bodyweight work is a deliberate part of mixed-equipment plans,
                         # not something discarded merely because weights are available.
                         return -5 if session_index % 2 == 1 else 0
-                if pattern == "conditioning" and planning_goal == "endurance":
+                if pattern == "conditioning" and planning_goal in {"functional", "fat_loss", "endurance"}:
+                    # Prefer low-skill cyclical conditioning when equipment is available;
+                    # avoid using box-jump intervals as a default conditioning option.
                     if item["id"] == "box_jump_intervals":
                         return 100
                     if item["id"] in {"rower_intervals", "ski_erg_intervals", "air_bike_intervals", "sled_push", "sled_backward_drag"}:
@@ -1496,7 +1498,7 @@ def generate_program(
                         return -25
                     if not has_loaded_hinge and item["id"] == "bodyweight_hip_hinge":
                         return -20
-                if pattern == "horizontal_pull" and planning_goal in {"hypertrophy", "strength", "functional", "fat_loss"}:
+                if pattern == "horizontal_pull" and planning_goal in {"hypertrophy", "strength", "strength_hypertrophy", "functional", "fat_loss"}:
                     if planning_goal == "strength" and p["experience"] != "beginner" and item["id"] == "barbell_bent_over_row" and "barbell" in available_equipment:
                         return -10
                     if planning_goal == "hypertrophy" and session_index % 2 == 0 and item["id"] in {"dumbbell_bent_over_row", "one_arm_row", "kettlebell_one_arm_row"}:
