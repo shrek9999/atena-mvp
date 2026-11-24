@@ -234,7 +234,7 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
     # vertical-pull exposure by assigning it to the accessory session and
     # retain the other optional patterns on the remaining days.
     if include_accessories and "vertical_pull" in extras[session_index]:
-        patterns = base + ["vertical_pull"]
+        patterns = base + extras[session_index][:1]
     else:
         patterns = base + (extras[session_index][:1] if include_stability else extras[session_index])
 
@@ -1055,9 +1055,8 @@ def generate_program(
             }
         mobility_block = None
         if p["goal"] == "functional" and by_pattern.get("mobility") and "mobility" not in p["excluded_patterns"]:
-            # Functional preparation must represent all declared pillars, not
-            # mobility alone. Keep balance/coordination as short skill practice
-            # inside the warm-up, not as extra loaded work.
+            # Keep the warm-up short. Functional mobility is developed mainly
+            # through loaded, controlled full-ROM work in the main session.
             mobility_candidates = sorted(by_pattern["mobility"], key=lambda item: item["id"])
             start = (session_index * 2) % len(mobility_candidates)
             selected_mobility = [mobility_candidates[start]]
@@ -1312,7 +1311,13 @@ def generate_program(
             # exercise-specific training history, not inferred from READY.
             if structured_decision and structured_decision["decision"] == "READY":
                 conservative_candidates = [
-                    item for item in candidates if effective_loading(item) != "high"
+                    item for item in candidates
+                    if effective_loading(item) != "high"
+                    or (
+                        planning_goal == "functional"
+                        and item.get("mobility_strength") is True
+                        and item.get("training_role") == "main"
+                    )
                 ]
                 if not conservative_candidates:
                     missing_patterns.add(pattern)
