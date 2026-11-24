@@ -1376,6 +1376,8 @@ def generate_program(
                 if planning_goal == "functional" and pattern in {"squat", "hinge", "lunge"}:
                     if item.get("mobility_strength") and item.get("loading_potential") in {"moderate", "high"}:
                         return -15
+                if planning_goal == "fat_loss" and pattern == "hinge" and item["id"] == "romanian_deadlift" and ({"dumbbell", "barbell", "kettlebell"} & available_equipment):
+                    return -15
                 if planning_goal == "functional" and pattern == "locomotion":
                     if item["id"] == "brisk_walking":
                         return -10
@@ -1391,7 +1393,7 @@ def generate_program(
                         return -10
                     if item["id"] == "reaching_squat":
                         return -5
-                if pattern == "squat" and planning_goal in {"hypertrophy", "strength"}:
+                if pattern == "squat" and planning_goal in {"hypertrophy", "strength", "functional", "fat_loss"}:
                     weighted_squat_equipment = {"barbell", "dumbbell", "kettlebell"}
                     has_weighted_squat = bool(weighted_squat_equipment & available_equipment)
                     if not has_weighted_squat and p["experience"] == "advanced" and p["pistol_squat_capable"] and item["id"] == "pistol_squat":
@@ -1417,7 +1419,7 @@ def generate_program(
                             # suitable bodyweight push variation into the next session.
                             return -10 if session_index % 2 == 0 else 5
                         return 5
-                    if item["id"] == "dumbbell_bench_press" and planning_goal in {"hypertrophy", "strength_hypertrophy"}:
+                    if item["id"] == "dumbbell_bench_press" and planning_goal in {"hypertrophy", "strength_hypertrophy", "functional", "fat_loss"}:
                         return -10 if session_index % 2 == 0 else 5
                     if item["id"] == "bench_dip":
                         return 10
@@ -1446,7 +1448,7 @@ def generate_program(
                         return -25
                     if not has_loaded_hinge and item["id"] == "bodyweight_hip_hinge":
                         return -20
-                if pattern == "horizontal_pull" and planning_goal in {"hypertrophy", "strength"}:
+                if pattern == "horizontal_pull" and planning_goal in {"hypertrophy", "strength", "functional", "fat_loss"}:
                     if planning_goal == "strength" and p["experience"] != "beginner" and item["id"] == "barbell_bent_over_row" and "barbell" in available_equipment:
                         return -10
                     if planning_goal == "hypertrophy" and session_index % 2 == 0 and item["id"] in {"dumbbell_bent_over_row", "one_arm_row", "kettlebell_one_arm_row"}:
@@ -1487,7 +1489,7 @@ def generate_program(
                 0 if item.get("training_role") == "main" or planning_goal not in {"hypertrophy", "strength_hypertrophy"} else 1,
                 used_counts[item["id"]],
                 abs(level_rank[item["level"]] - target_level),
-                {"high": 0, "moderate": 1, "low": 2}[effective_loading(item)] if planning_goal in {"hypertrophy", "strength"} else 0,
+                {"high": 0, "moderate": 1, "low": 2}[effective_loading(item)] if planning_goal in {"hypertrophy", "strength", "functional", "fat_loss"} else 0,
                 item["id"],
             ))
             effective_pattern = candidate["pattern"]
@@ -1718,9 +1720,18 @@ def generate_program(
                 "primary_muscles": candidate["primary_muscles"],
                 "equipment": selected_equipment,
                 "cues": candidate["cues"],
-                "range_of_motion": candidate.get("range_of_motion") or (
-                    "Uporabi največjo nebolečo amplitudo, ki jo dopuščata tvoja gibljivost in nadzor. "
-                    "Ne krajšaj giba po nepotrebnem; amplitudo povečuj postopno, brez izgube položaja."
+                "range_of_motion": (
+                    "Ohrani naraven korak in stabilno držo; trajanje ali razdaljo povečuj postopno."
+                    if pattern == "carry" else
+                    "Ohrani ponovljiv obseg in ritem, ki omogočata kakovostno izvedbo; intenzivnost prilagodi tehniki."
+                    if pattern in {"conditioning", "locomotion"} else
+                    "Pri obremenjeni vaji uporabi največjo trenutno obvladano in tolerirano amplitudo. "
+                    "Cilj je postopno razvijati polno amplitudo z močjo; ne žrtvuj stabilnosti ali kakovosti izvedbe."
+                    if planning_goal == "functional" else
+                    candidate.get("range_of_motion") or (
+                        "Uporabi največjo nebolečo amplitudo, ki jo dopuščata tvoja gibljivost in nadzor. "
+                        "Ne krajšaj giba po nepotrebnem; amplitudo povečuj postopno, brez izgube položaja."
+                    )
                 ),
                 "warnings": candidate["warnings"],
                 "regressions": regressions,
