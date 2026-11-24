@@ -37,16 +37,16 @@ def test_less_experienced_strength_and_hypertrophy_share_reps_and_effort_reserve
     assert hypertrophy_squat["prescription"]["tempo"] == "3–1–2–0"
 
 
-def test_endurance_is_a_distinct_conditioning_program_not_a_strength_template():
+def test_legacy_endurance_alias_uses_functional_strength_plus_conditioning():
     strength = generate_program(profile("strength", "intermediate"))
-    endurance = generate_program(profile("endurance", "intermediate"))
+    functional = generate_program(profile("endurance", "intermediate"))
     strength_patterns = {x["pattern"] for x in exercises(strength)}
-    endurance_patterns = {x["pattern"] for x in exercises(endurance)}
+    functional_items = exercises(functional)
+    functional_patterns = {x["pattern"] for x in functional_items}
 
-    assert "squat" in strength_patterns and "hinge" in strength_patterns
-    assert "locomotion" in endurance_patterns
-    assert "conditioning" in endurance_patterns
-    assert endurance_patterns != strength_patterns
+    assert {"squat", "hinge"} <= strength_patterns
+    assert "squat" in functional_patterns
+    assert any(x["training_role"] == "conditioning" for x in functional_items)
 
 
 def test_easy_feedback_changes_next_prescription_and_explains_why():
