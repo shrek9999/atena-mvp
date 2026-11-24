@@ -1740,7 +1740,7 @@ def generate_program(
         if session_set_cap is not None:
             while sum(
                 item["prescription"]["sets"] for item in selected
-                if item["pattern"] not in {"conditioning", "locomotion", "mobility", "mobility_stretch", "balance", "coordination"}
+                if item["pattern"] not in {"conditioning", "locomotion", "mobility", "mobility_stretch", "balance", "coordination", "trunk_stability", "anti_rotation"}
             ) > session_set_cap:
                 reducible = next(
                     (item for item in selected
