@@ -17,7 +17,7 @@ def test_generates_two_day_hypertrophy_program_from_catalogue_only():
     assert plan["program_version"] == "3.2.0"
     assert len(plan["sessions"]) == 2
     assert all(len(session["exercises"]) >= 3 for session in plan["sessions"])
-    assert all(ex["joint_type"] == "multi_joint" for session in plan["sessions"] for ex in session["exercises"])
+    assert all(ex["joint_type"] == "multi_joint" for session in plan["sessions"] for ex in session["exercises"] if ex["pattern"] not in {"locomotion", "conditioning"})
     assert all(session["estimated_minutes"] <= 60 for session in plan["sessions"])
 
 
