@@ -230,9 +230,8 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         extras = [["lunge", "vertical_push"], ["vertical_pull", "lunge"], ["lunge", "vertical_push"]]
     else:
         extras = [["lunge", "vertical_push"], ["vertical_pull", "lunge"], ["lunge", "vertical_push"], ["vertical_pull", "lunge"]]
-    # Keep optional accessory work inside the six-exercise cap. Preserve the
-    # vertical-pull exposure by assigning it to the accessory session and
-    # retain the other optional patterns on the remaining days.
+    # Keep optional accessory work inside the six-pattern cap. Horizontal
+    # pulling remains in the base plan; retain unilateral leg work as well.
     if include_accessories and "vertical_pull" in extras[session_index]:
         patterns = base + extras[session_index][:1]
     else:
@@ -1038,7 +1037,7 @@ def generate_program(
                 pattern for pattern, decision in movement_decisions_by_pattern.items()
                 if decision.get("decision") == "READY"
             }
-            cardio_equipment = {"bicycle", "rowing_machine", "ski_erg", "air_bike", "sled"} & available_equipment
+            cardio_equipment = {"rowing_machine", "ski_erg", "air_bike", "sled"} & available_equipment
             bodyweight_metcon_ready = {"squat", "hinge", "horizontal_push"}.issubset(ready_patterns)
             if "conditioning" in patterns and not cardio_equipment and not bodyweight_metcon_ready:
                 if "locomotion" in patterns:
