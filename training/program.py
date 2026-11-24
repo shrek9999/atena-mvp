@@ -1862,6 +1862,8 @@ def generate_program(
             "range_of_motion": "Uporabi največjo trenutno obvladano in tolerirano amplitudo; postopno jo razvijaj z obremenitvijo, brez kompenzacij.",
             "progression": ("Pri aerobni vzdržljivosti postopno povečuj trajanje ali obseg, nato po potrebi intenzivnost; pri intervalih spreminjaj le eno spremenljivko naenkrat. Ohraniti moraš ponovljivo tehniko in regeneracijo."
                 if planning_goal == "endurance" else
+                "Pri 5x5 povečaj breme za najmanjši praktični korak šele, ko vseh pet serij po pet ponovitev opraviš z načrtovanim RIR in dobro tehniko na dveh primerljivih izpostavitvah. Ne dodajaj ponovitev nad pet."
+                if planning_goal == "strength" else
                 "Pri funkcionalnosti ohrani progresivno obremenjeno vadbo in postopno razvijaj polno obvladano amplitudo; kondicijski obseg in intenzivnost povečuj postopno, ne oboje hkrati."
                 if planning_goal == "functional" else
                 "Pri hujšanju ohrani ali postopno izboljšuj delovne obremenitve pri vajah za moč, da podpreš ohranitev mišične mase. Kondicijski obseg povečuj postopno; ne kompenziraj prehrane z nenadnim povečanjem treninga."
