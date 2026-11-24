@@ -37,7 +37,7 @@ def _learning_task_videos(pattern: str, method_id: str | None, exercise_id: str 
         ]
     return []
 
-SUPPORTED_GOALS = {"hypertrophy", "strength", "strength_hypertrophy", "fat_loss", "general_fitness", "functional", "power", "endurance", "mobility"}
+SUPPORTED_GOALS = {"hypertrophy", "strength", "strength_hypertrophy", "fat_loss", "weight_management", "general_fitness", "functional", "power", "endurance", "mobility"}
 SUPPORTED_LEVELS = {"beginner", "intermediate", "advanced"}
 SUPPORTED_SESSIONS = {2, 3, 4}
 PATTERN_LABELS = {
@@ -66,6 +66,8 @@ PATTERN_LABELS = {
 GOAL_PRIMARY_PURPOSE = {
     "strength": "strength",
     "hypertrophy": "hypertrophy",
+    "strength_hypertrophy": "strength",
+    "fat_loss": "strength",
     "general_fitness": "general_fitness",
     "functional": "functional_fitness",
     "power": "power",
@@ -139,6 +141,7 @@ def validate_profile(profile: object) -> dict:
     goal = profile.get("goal")
     if goal not in SUPPORTED_GOALS:
         raise ProgramValidationError(f"Cilj mora biti eden od: {', '.join(sorted(SUPPORTED_GOALS))}.")
+    canonical_goal = normalize_goal(goal)
     level = profile.get("experience")
     if level not in SUPPORTED_LEVELS:
         raise ProgramValidationError("Izkušnje morajo biti beginner, intermediate ali advanced.")
@@ -162,15 +165,18 @@ def validate_profile(profile: object) -> dict:
     training_emphasis = profile.get("training_emphasis", "balanced")
     if training_emphasis not in {"balanced", "strength", "hypertrophy"}:
         raise ProgramValidationError("training_emphasis mora biti balanced, strength ali hypertrophy.")
-    # Specialisation is available only to advanced users whose primary goal is
-    # the combined strength-and-muscle-mass track.
-    if level != "advanced" or goal != "strength_hypertrophy":
+    # Strength and hypertrophy are one public goal for less-experienced users.
+    # Advanced users may specialize; legacy explicit goal IDs remain compatible.
+    if level != "advanced" or canonical_goal != "strength_hypertrophy":
         training_emphasis = "balanced"
+    elif "training_emphasis" not in profile and goal in {"strength", "hypertrophy"}:
+        training_emphasis = goal
     pistol_squat_capable = profile.get("pistol_squat_capable", False)
     if not isinstance(pistol_squat_capable, bool):
         raise ProgramValidationError("pistol_squat_capable mora biti true ali false.")
     return {
         **profile,
+        "goal": canonical_goal,
         "pistol_squat_capable": pistol_squat_capable,
         "sessions_per_week": sessions,
         "session_minutes": duration,
@@ -187,15 +193,15 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
     if goal == "fat_loss" and sessions >= 3 and session_index >= 2:
         # Two resistance-focused full-body days remain the foundation. Additional days
         # add a short aerobic/conditioning session rather than more lifting volume.
-        return ["locomotion", "lunge", "conditioning"]
+        return ["locomotion"]
     if goal == "functional":
         # Every session combines four resistance patterns with a distinct
         # conditioning slot. Learning one pattern must not turn the whole
         # session into a movement-drill circuit.
         if session_index == 0:
-            patterns = ["squat", "hinge", "horizontal_push", "horizontal_pull", "conditioning"]
+            patterns = ["squat", "hinge", "horizontal_push", "vertical_pull", "conditioning"]
         else:
-            patterns = ["lunge", "hinge", "horizontal_pull", "vertical_push", "conditioning"]
+            patterns = ["lunge", "vertical_push", "horizontal_pull", "carry", "conditioning"]
         if include_stability:
             patterns.insert(0, "trunk_stability")
         return patterns
@@ -217,10 +223,19 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         return patterns
     base = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
     if goal == "fat_loss":
-        # Keep both resistance sessions full-body, but cap the main exercise
-        # list at six. Alternate the unilateral knee-dominant pattern and
-        # vertical pull; conditioning remains present in both sessions.
-        patterns = base + (["vertical_pull"] if session_index == 0 else ["lunge"]) + ["conditioning"]
+        # Keep resistance as the foundation and condition in both sessions.
+        # For 30-minute sessions use three resistance patterns plus conditioning;
+        # longer sessions can accommodate an additional loaded pattern.
+        if session_minutes <= 30:
+            patterns = (
+                ["squat", "hinge", "horizontal_push", "conditioning"]
+                if session_index == 0 else
+                ["lunge", "vertical_push", "horizontal_pull", "conditioning"]
+            )
+        elif session_index == 0:
+            patterns = ["squat", "hinge", "horizontal_push", "hip_extension", "conditioning"]
+        else:
+            patterns = ["lunge", "vertical_push", "horizontal_pull", "vertical_pull", "conditioning"]
         if include_stability:
             patterns.insert(0, "trunk_stability")
         return patterns
@@ -230,10 +245,11 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         extras = [["lunge", "vertical_push"], ["vertical_pull", "lunge"], ["lunge", "vertical_push"]]
     else:
         extras = [["lunge", "vertical_push"], ["vertical_pull", "lunge"], ["lunge", "vertical_push"], ["vertical_pull", "lunge"]]
-    # Keep optional accessory work inside the six-pattern cap. Horizontal
-    # pulling remains in the base plan; retain unilateral leg work as well.
+    # Keep optional accessory work inside the six-exercise cap. Preserve the
+    # vertical-pull exposure by assigning it to the accessory session and
+    # retain the other optional patterns on the remaining days.
     if include_accessories and "vertical_pull" in extras[session_index]:
-        patterns = base + extras[session_index][:1]
+        patterns = base + ["vertical_pull"]
     else:
         patterns = base + (extras[session_index][:1] if include_stability else extras[session_index])
 
@@ -262,11 +278,9 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
     if goal == "power":
         patterns += ["jump", "hinge_power"]
     if include_accessories and session_index == 1:
-        # In a short advanced hypertrophy session, direct accessory work replaces
-        # a repeated vertical-pull slot; horizontal pulling remains in the plan.
-        if "vertical_pull" in patterns:
-            patterns[patterns.index("vertical_pull")] = "accessory"
-        elif len(patterns) < 6:
+        # Add direct accessory work only when it fits; retain the vertical-pull
+        # exposure rather than replacing a foundational movement pattern.
+        if len(patterns) < 6:
             patterns.append("accessory")
     return patterns
 
@@ -289,17 +303,20 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         else:
             sets, reps, rir, rest = 3, "6–10", None, 45
     elif goal == "fat_loss" and pattern == "locomotion":
-        duration = {"beginner": "10 min", "intermediate": "15 min", "advanced": "20 min"}[level]
+        duration = {"beginner": "20 min", "intermediate": "25 min", "advanced": "30 min"}[level]
         sets, reps, rir, rest = 1, duration, None, 0
     elif goal == "fat_loss" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
-        sets = {"beginner": 4, "intermediate": 6, "advanced": 8}[level]
-        reps, rir = "1", None
-        rest = 45 if kind == "aerobic" else 30
+        sets = (4 if session_minutes <= 30 else 6) if level == "beginner" else (6 if session_minutes <= 30 else 8) if level == "intermediate" else (8 if session_minutes <= 30 else 10)
+        if kind == "aerobic":
+            reps, rir, rest = "1 min", None, 30
+        elif kind == "anaerobic":
+            reps, rir, rest = "15–20 s", None, 40
+        else:
+            reps, rir, rest = "20–30 s", None, 30
     elif goal == "functional" and pattern == "conditioning":
-        # Interval conditioning is a real training component, not a token finisher.
-        # Keep the effort repeatable and stop before technique or breathing control degrades.
-        sets = {"beginner": 4, "intermediate": 6, "advanced": 8}[level]
+        # A meaningful, repeatable MetCon/interval block; scale by experience and time.
+        sets = (4 if session_minutes <= 30 else 6) if level == "beginner" else (6 if session_minutes <= 30 else 8) if level == "intermediate" else (8 if session_minutes <= 30 else 10)
         reps, rir = "1", None
         kind = exercise.get("endurance_type")
         rest = 45 if kind == "aerobic" else 30
@@ -424,7 +441,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         else:
             sets, reps, rir, rest = 2, "10–15", 2, 75
     elif goal in {"hypertrophy", "fat_loss"}:
-        if goal == "hypertrophy" and pattern == "accessory":
+        if goal in {"hypertrophy", "strength_hypertrophy"} and pattern == "accessory":
             sets, reps, rir, rest = (3, "10–20", 2, 60) if level == "advanced" else (2, "12–15", 2, 60)
         elif pattern in {"squat", "hinge"}:
             sets, reps, rir, rest = 3, "6–10", (2 if level != "beginner" else 3), 120 if level == "advanced" else 90
@@ -447,6 +464,10 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
             sets, reps, rir, rest = 3, "8–12", 3, 90
         else:
             sets, reps, rir, rest = 3, "6–10", 2, 120
+    if pattern == "carry":
+        carry_seconds = {"beginner": 20, "intermediate": 30, "advanced": 40}[level]
+        sets = 2 if level != "advanced" else 3
+        reps, rir, rest = f"{carry_seconds} s", (3 if level != "advanced" else 2), 60
     if pattern == "mobility_stretch":
         tempo, tempo_description, tempo_seconds = "zadržanje", "Zadrži blag do zmeren razteg, dihaj sproščeno in ne sili v končni položaj.", 0
     elif goal == "mobility" and exercise.get("mobility_strength"):
@@ -467,6 +488,8 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         tempo, tempo_description, tempo_seconds = "2–1–2–1", "2 s izteg oziroma odmik · 1 s nadzor · 2 s vrnitev · 1 s ponastavitev.", 6
     elif goal == "functional" and pattern in {"conditioning", "locomotion"}:
         tempo, tempo_description, tempo_seconds = "ritmično", "Ohrani ponovljiv ritem intervala; intenzivnost prilagodi cilju in kakovosti izvedbe.", 0
+    elif pattern == "carry":
+        tempo, tempo_description, tempo_seconds = "ritmično", "Hodi z naravnim, nadzorovanim korakom; ohrani stabilen trup in breme ob telesu.", 0
     elif goal == "functional":
         tempo, tempo_description, tempo_seconds = (
             "2–0–1–0",
@@ -493,36 +516,42 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         "squat", "hinge", "lunge", "horizontal_push", "horizontal_pull",
         "vertical_push", "vertical_pull", "hip_extension",
     }:
-        # Fit short sessions by reducing volume, not by sacrificing movement control.
+        # Keep the agreed slow learning tempo; fit short sessions by reducing
+        # volume and rest, never by rushing the movement.
         prescription["sets"] = min(2, prescription["sets"])
         prescription["rest_seconds"] = min(60, prescription["rest_seconds"])
-    if exercise.get("id") == "l_sit":
+    if pattern == "carry":
+        carry_seconds = {"beginner": 20, "intermediate": 30, "advanced": 40}[level]
+        prescription.update({
+            "reps": f"{carry_seconds} s",
+            "work_seconds": carry_seconds,
+            "rir": 3 if level != "advanced" else 2,
+            "time_label": "nošenja",
+            "effort_target": "Uporabi breme, ki omogoča stabilno hojo in vsaj 3 ponovitve v rezervi; zaključi interval, preden se spremeni drža ali korak.",
+        })
+    elif exercise.get("id") == "l_sit":
         prescription.update({"reps": "8–15 s", "work_seconds": 12, "time_label": "zadržanja"})
     elif exercise.get("time_based") and pattern in {"trunk_stability", "anti_rotation"}:
         prescription.update({"reps": "8–15 s", "work_seconds": 10, "time_label": "zadržanja"})
     elif pattern == "coordination":
         prescription.update({"work_seconds": 12, "time_label": "koordinacijskega intervala"})
     if goal == "fat_loss" and pattern == "locomotion":
-        duration = {"beginner": 600, "intermediate": 900, "advanced": 1200}[level]
+        duration_by_level = (
+            {"beginner": 900, "intermediate": 1200, "advanced": 1380}
+            if session_minutes <= 30
+            else {"beginner": 1200, "intermediate": 1500, "advanced": 1800}
+        )
+        duration_seconds = duration_by_level[level]
         prescription.update({
-            "work_seconds": duration,
-            "time_label": "hoje, po možnosti navkreber",
-            "effort_target": "Zmeren pogovorni tempo; če hodiš v klanec, izberi naklon, pri katerem ohraniš enakomeren korak in nadzor dihanja.",
+            "sets": 1,
+            "work_seconds": duration_seconds,
+            "time_label": "daljše aerobne aktivnosti",
+            "effort_target": "Zmeren pogovorni tempo; primerna je tudi hitra hoja v klanec. Končaj z občutkom, da bi lahko nadaljeval še nekaj minut.",
         })
     elif goal == "fat_loss" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
-        work_seconds = (
-            {"beginner": 35, "intermediate": 45, "advanced": 50}[level]
-            if kind == "aerobic" else
-            {"beginner": 15, "intermediate": 20, "advanced": 25}[level]
-            if kind == "anaerobic" else
-            {"beginner": 25, "intermediate": 30, "advanced": 35}[level]
-        )
-        prescription.update({
-            "work_seconds": work_seconds,
-            "time_label": "intervala",
-            "effort_target": "Zmerna do zahtevnejša, vendar ponovljiva intenzivnost; ne izvajaj maksimalno in ne žrtvuj tehnike.",
-        })
+        work_seconds = 60 if kind == "aerobic" else (18 if kind == "anaerobic" else 25)
+        prescription.update({"work_seconds": work_seconds, "time_label": "kratek kondicijski interval", "effort_target": "Nadzorovana intenzivnost; ne izvajaj maksimalno in ne žrtvuj tehnike."})
     elif goal == "functional" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
         work_seconds = (
@@ -1026,30 +1055,52 @@ def generate_program(
     missing_patterns: set[str] = set()
 
     for session_index in range(p["sessions_per_week"]):
-        learning_task_limit = 1
+        learning_task_limit = 1 if planning_goal in {"functional", "fat_loss"} else 2
         patterns = _session_patterns(
             session_index, p["sessions_per_week"], planning_goal,
             p["include_accessories"] and (planning_goal == "hypertrophy" or p["session_minutes"] >= 75) and not include_stability,
             include_stability, p["experience"], p["session_minutes"]
         )
-        if p["goal"] in {"functional", "fat_loss", "strength_hypertrophy"}:
+        # A focused movement-learning task is allowed per session. When several
+        # patterns are unready, distribute them across the week's sessions rather
+        # than repeating the first task and silently deferring every other pattern.
+        selected_learning_pattern = None
+        learning_candidates = [
+            pattern for pattern in PATTERN_DEFINITIONS
+            if pattern in movement_decisions_by_pattern
+            and movement_decisions_by_pattern[pattern].get("decision") in {"LEARN", "REGRESS"}
+            and movement_decisions_by_pattern[pattern].get("learning_only") is True
+        ]
+        if len(learning_candidates) > 1:
+            selected_learning_pattern = (
+                learning_candidates[session_index]
+                if session_index < len(learning_candidates) else None
+            )
+            patterns = [
+                pattern for pattern in patterns
+                if pattern not in learning_candidates or pattern == selected_learning_pattern
+            ]
+            if selected_learning_pattern and selected_learning_pattern not in patterns:
+                patterns.insert(0, selected_learning_pattern)
+        elif len(learning_candidates) == 1:
+            # Repeat the single priority learning task at each weekly exposure.
+            if learning_candidates[0] not in patterns:
+                patterns.insert(0, learning_candidates[0])
+        if planning_goal in {"functional", "fat_loss"}:
             ready_patterns = {
                 pattern for pattern, decision in movement_decisions_by_pattern.items()
                 if decision.get("decision") == "READY"
             }
-            cardio_equipment = {"rowing_machine", "ski_erg", "air_bike", "sled"} & available_equipment
+            cardio_equipment = {"bicycle", "rowing_machine", "ski_erg", "air_bike", "sled"} & available_equipment
             bodyweight_metcon_ready = {"squat", "hinge", "horizontal_push"}.issubset(ready_patterns)
             if "conditioning" in patterns and not cardio_equipment and not bodyweight_metcon_ready:
-                if "locomotion" in patterns:
-                    patterns.remove("conditioning")
-                else:
-                    patterns = ["locomotion" if item == "conditioning" else item for item in patterns]
+                patterns = ["locomotion" if item == "conditioning" else item for item in patterns]
             symptom_reports = any(
                 isinstance(item.get("user_report"), dict)
                 and item["user_report"].get("status") == "symptoms_reported"
                 for item in movement_decisions_by_pattern.values()
             )
-            if movement_decisions_by_pattern and len(ready_patterns) < 3 and not symptom_reports:
+            if len(movement_decisions_by_pattern) >= 3 and len(ready_patterns) < 3 and not symptom_reports:
                 fallback_added = False
                 for fallback_pattern in ("hip_extension", "carry"):
                     if fallback_pattern not in patterns and fallback_pattern not in p["excluded_patterns"]:
@@ -1062,7 +1113,7 @@ def generate_program(
                     movement_adaptation_events.append({
                         "pattern": "program_baseline",
                         "action": "fallback_loaded_patterns_added",
-                        "message": "Ker manj kot trije osnovni vzorci še imajo potrjeno pripravljenost, ATENA začasno uporabi druge primerne obremenjene vaje in kondicijski del. Nepotrjenih vzorcev ne obremeni; po ponovnem preverjanju jih lahko postopno vključi.",
+                        "message": "Ker manj kot trije osnovni vzorci še nimajo potrjene pripravljenosti, ATENA začasno uporabi druge primerne obremenjene vaje in kondicijski del. Nepotrjenih vzorcev ne obremeni; po ponovnem preverjanju jih lahko postopno vključi.",
                     })
         warm_up_minutes = 5 if p["session_minutes"] <= 30 else (7 if p["session_minutes"] <= 60 else 10)
         camera_coordination_block = None
@@ -1161,6 +1212,15 @@ def generate_program(
             }
         selected = []
         learning_tasks_for_session = []
+        deferred_learning_patterns = (
+            learning_candidates[p["sessions_per_week"]:]
+            if session_index == p["sessions_per_week"] - 1 and len(learning_candidates) > p["sessions_per_week"]
+            else []
+        )
+        ready_loaded_patterns = []
+        # Keep the warm-up focused: teach at most one unready pattern per
+        # 45–60 min session, then address the next pattern in a later exposure.
+        learning_task_limit = 1
         seen_patterns = set()
         for pattern in patterns:
             if pattern in seen_patterns and planning_goal != "mobility":
@@ -1302,15 +1362,17 @@ def generate_program(
                             "rest_seconds": 30,
                             "estimated_minutes": 2,
                         })
-                    movement_adaptation_events.append({
-                        "pattern": pattern,
-                        "tasks": affected_tasks,
-                        "action": "unloaded_learning_task_only",
-                        "message": (
-                            f"Vzorec {PATTERN_LABELS.get(pattern, pattern)} ostane brez zunanje obremenitve; "
-                            "najprej ponovi kratko učno nalogo in preveri kriterije nadzora."
-                        ),
-                    })
+                        movement_adaptation_events.append({
+                            "pattern": pattern,
+                            "tasks": affected_tasks,
+                            "action": "unloaded_learning_task_only",
+                            "message": (
+                                f"Vzorec {PATTERN_LABELS.get(pattern, pattern)} ostane brez zunanje obremenitve; "
+                                "najprej ponovi kratko učno nalogo in preveri kriterije nadzora."
+                            ),
+                        })
+                    else:
+                        deferred_learning_patterns.append(pattern)
                     continue
                 target = next((item for item in reference_catalogue if item["id"] == target_id), None)
                 if target is None or target["pattern"] != pattern:
@@ -1374,6 +1436,8 @@ def generate_program(
                 if planning_goal == "functional" and pattern in {"squat", "hinge", "lunge"}:
                     if item.get("mobility_strength") and item.get("loading_potential") in {"moderate", "high"}:
                         return -15
+                if planning_goal == "fat_loss" and pattern == "hinge" and item["id"] == "romanian_deadlift" and ({"dumbbell", "barbell", "kettlebell"} & available_equipment):
+                    return -15
                 if planning_goal == "functional" and pattern == "locomotion":
                     if item["id"] == "brisk_walking":
                         return -10
@@ -1389,7 +1453,7 @@ def generate_program(
                         return -10
                     if item["id"] == "reaching_squat":
                         return -5
-                if pattern == "squat" and planning_goal in {"hypertrophy", "strength"}:
+                if pattern == "squat" and planning_goal in {"hypertrophy", "strength", "strength_hypertrophy", "functional", "fat_loss"}:
                     weighted_squat_equipment = {"barbell", "dumbbell", "kettlebell"}
                     has_weighted_squat = bool(weighted_squat_equipment & available_equipment)
                     if not has_weighted_squat and p["experience"] == "advanced" and p["pistol_squat_capable"] and item["id"] == "pistol_squat":
@@ -1415,7 +1479,7 @@ def generate_program(
                             # suitable bodyweight push variation into the next session.
                             return -10 if session_index % 2 == 0 else 5
                         return 5
-                    if item["id"] == "dumbbell_bench_press" and planning_goal in {"hypertrophy", "strength_hypertrophy"}:
+                    if item["id"] == "dumbbell_bench_press" and planning_goal in {"hypertrophy", "strength_hypertrophy", "functional", "fat_loss"}:
                         return -10 if session_index % 2 == 0 else 5
                     if item["id"] == "bench_dip":
                         return 10
@@ -1431,7 +1495,9 @@ def generate_program(
                         # Bodyweight work is a deliberate part of mixed-equipment plans,
                         # not something discarded merely because weights are available.
                         return -5 if session_index % 2 == 1 else 0
-                if pattern == "conditioning" and planning_goal == "endurance":
+                if pattern == "conditioning" and planning_goal in {"functional", "fat_loss", "endurance"}:
+                    # Prefer low-skill cyclical conditioning when equipment is available;
+                    # avoid using box-jump intervals as a default conditioning option.
                     if item["id"] == "box_jump_intervals":
                         return 100
                     if item["id"] in {"rower_intervals", "ski_erg_intervals", "air_bike_intervals", "sled_push", "sled_backward_drag"}:
@@ -1444,7 +1510,7 @@ def generate_program(
                         return -25
                     if not has_loaded_hinge and item["id"] == "bodyweight_hip_hinge":
                         return -20
-                if pattern == "horizontal_pull" and planning_goal in {"hypertrophy", "strength"}:
+                if pattern == "horizontal_pull" and planning_goal in {"hypertrophy", "strength", "strength_hypertrophy", "functional", "fat_loss"}:
                     if planning_goal == "strength" and p["experience"] != "beginner" and item["id"] == "barbell_bent_over_row" and "barbell" in available_equipment:
                         return -10
                     if planning_goal == "hypertrophy" and session_index % 2 == 0 and item["id"] in {"dumbbell_bent_over_row", "one_arm_row", "kettlebell_one_arm_row"}:
@@ -1485,12 +1551,27 @@ def generate_program(
                 0 if item.get("training_role") == "main" or planning_goal not in {"hypertrophy", "strength_hypertrophy"} else 1,
                 used_counts[item["id"]],
                 abs(level_rank[item["level"]] - target_level),
-                {"high": 0, "moderate": 1, "low": 2}[effective_loading(item)] if planning_goal in {"hypertrophy", "strength"} else 0,
+                {"high": 0, "moderate": 1, "low": 2}[effective_loading(item)] if planning_goal in {"hypertrophy", "strength", "strength_hypertrophy", "functional", "fat_loss"} else 0,
                 item["id"],
             ))
             effective_pattern = candidate["pattern"]
             used_counts[candidate["id"]] += 1
             prescription = _prescription(planning_goal, p["experience"], effective_pattern, candidate, p["session_minutes"])
+            if (planning_goal == "fat_loss" and effective_pattern == "locomotion"
+                    and not (p["sessions_per_week"] >= 3 and session_index >= 2)):
+                # When no movement-ready interval option or cardio machine is available,
+                # use a short walking dose alongside resistance work. Longer aerobic
+                # sessions are reserved for additional training days.
+                walk_minutes = 5 if p["session_minutes"] <= 30 else 10 if p["session_minutes"] <= 45 else 12
+                prescription.update({
+                    "sets": 1,
+                    "reps": f"{walk_minutes} min",
+                    "work_seconds": walk_minutes * 60,
+                    "time_label": "hitre hoje oziroma hoje v klanec",
+                    "effort_target": "Zmeren pogovorni tempo; ohrani enakomeren korak in nadzor dihanja.",
+                })
+            if planning_goal == "fat_loss" and p["session_minutes"] <= 30 and effective_pattern != "locomotion":
+                prescription["rest_seconds"] = 45
             movement_note = None
             symptom_report = (
                 structured_decision.get("user_report", {})
@@ -1527,11 +1608,16 @@ def generate_program(
                     "message": movement_note,
                 })
             elif structured_decision and structured_decision["decision"] == "READY":
-                movement_adaptation_events.append({
-                    "pattern": pattern,
-                    "action": "ready_for_conservative_starting_variation",
-                    "message": "Samoocena potrjuje udobje pri osnovnem gibalnem vzorcu, ne pa tolerance na veliko breme. Program zato začne s konservativno različico; večje obremenitve zahtevajo ločeno, ponovljivo izvedbo in zabeleženo povratno informacijo.",
-                })
+                prescription["sets"] = min(2, prescription.get("sets", 2))
+                if prescription.get("rir") is not None:
+                    prescription["rir"] = max(3, prescription["rir"])
+                if prescription.get("rir_range") is not None:
+                    prescription["rir_range"] = "3–4"
+                movement_note = (
+                    "Začni z lahko do zmerno obremenitvijo (RIR 3–4); povečaj jo šele "
+                    "po dveh dobro toleriranih izpostavitvah. READY ni dovoljenje za težke serije."
+                )
+                ready_loaded_patterns.append(pattern)
             if symptom_tolerated:
                 # Mild, stable discomfort is not an automatic exclusion. Keep the
                 # exact tested variant, reduce resistance, slow the tempo and
@@ -1711,9 +1797,18 @@ def generate_program(
                 "primary_muscles": candidate["primary_muscles"],
                 "equipment": selected_equipment,
                 "cues": candidate["cues"],
-                "range_of_motion": candidate.get("range_of_motion") or (
-                    "Uporabi največjo nebolečo amplitudo, ki jo dopuščata tvoja gibljivost in nadzor. "
-                    "Ne krajšaj giba po nepotrebnem; amplitudo povečuj postopno, brez izgube položaja."
+                "range_of_motion": (
+                    "Ohrani naraven korak in stabilno držo; trajanje ali razdaljo povečuj postopno."
+                    if pattern == "carry" else
+                    "Ohrani ponovljiv obseg in ritem, ki omogočata kakovostno izvedbo; intenzivnost prilagodi tehniki."
+                    if pattern in {"conditioning", "locomotion"} else
+                    "Pri obremenjeni vaji uporabi največjo trenutno obvladano in tolerirano amplitudo. "
+                    "Cilj je postopno razvijati polno amplitudo z močjo; ne žrtvuj stabilnosti ali kakovosti izvedbe."
+                    if planning_goal == "functional" else
+                    candidate.get("range_of_motion") or (
+                        "Uporabi največjo nebolečo amplitudo, ki jo dopuščata tvoja gibljivost in nadzor. "
+                        "Ne krajšaj giba po nepotrebnem; amplitudo povečuj postopno, brez izgube položaja."
+                    )
                 ),
                 "warnings": candidate["warnings"],
                 "regressions": regressions,
@@ -1751,8 +1846,34 @@ def generate_program(
                     "coaching_note": "Ciljno pripravljalno delo za nadzor trupa, vključeno na podlagi tvoje povratne informacije. Izvedi po splošnem ogrevanju in pred glavnimi vajami."
                 } if pattern == "trunk_stability" and include_stability else {}),
             })
-            for muscle in candidate["primary_muscles"]:
-                exposure[muscle] += prescription["sets"]
+            if exercise_category in {"compound", "accessory"}:
+                for muscle in candidate["primary_muscles"]:
+                    exposure[muscle] += prescription["sets"]
+
+        if ready_loaded_patterns:
+            ready_labels = [PATTERN_LABELS.get(value, value) for value in ready_loaded_patterns]
+            movement_adaptation_events.append({
+                "pattern": ready_loaded_patterns[0],
+                "patterns": ready_loaded_patterns,
+                "action": "ready_for_light_loaded_start",
+                "message": (
+                    "Ponovljivo nadzorovani vzorci: " + ", ".join(ready_labels)
+                    + ". Začni z lahko do zmerno obremenitvijo (RIR 3–4); breme povečuj "
+                    "šele po dveh dobro toleriranih izpostavitvah."
+                ),
+            })
+        if deferred_learning_patterns:
+            deferred_labels = [PATTERN_LABELS.get(value, value) for value in deferred_learning_patterns]
+            movement_adaptation_events.append({
+                "pattern": deferred_learning_patterns[0],
+                "patterns": deferred_learning_patterns,
+                "action": "learning_tasks_deferred_to_later_sessions",
+                "message": (
+                    "Učne naloge za vzorce " + ", ".join(deferred_labels)
+                    + " so razporejene v naslednje vadbene izpostavitve; v tem treningu "
+                    "ostanejo brez obremenjene različice."
+                ),
+            })
 
         # Pattern-learning tasks are performed at the start of the session as part
         # of the warm-up, not as a separate practice block after the warm-up.
@@ -1780,8 +1901,9 @@ def generate_program(
                 removed = selected.pop(removable)
                 missing_patterns.add(removed["pattern"])
                 used_counts[removed["exercise_id"]] -= 1
-                for muscle in removed["primary_muscles"]:
-                    exposure[muscle] -= removed["prescription"]["sets"]
+                if removed["exercise_category"] in {"compound", "accessory"}:
+                    for muscle in removed["primary_muscles"]:
+                        exposure[muscle] -= removed["prescription"]["sets"]
                 continue
 
             # If the time budget is still exceeded, reduce a main compound lift
@@ -1798,6 +1920,22 @@ def generate_program(
                     exposure[muscle] -= 1
                 volume_adjustments.append(reducible["name"])
                 continue
+
+            # Very short fat-loss sessions may need a single-set floor to
+            # retain the resistance patterns plus a brief aerobic dose.
+            if planning_goal == "fat_loss" and p["session_minutes"] <= 30:
+                short_session_reducible = next(
+                    (item for item in selected
+                     if item["pattern"] in {"squat", "hinge", "hip_extension", "horizontal_push", "horizontal_pull", "lunge", "vertical_push"}
+                     and item["prescription"]["sets"] > 1),
+                    None,
+                )
+                if short_session_reducible is not None:
+                    short_session_reducible["prescription"]["sets"] -= 1
+                    for muscle in short_session_reducible["primary_muscles"]:
+                        exposure[muscle] -= 1
+                    volume_adjustments.append(short_session_reducible["name"])
+                    continue
 
             # Only as a last resort trim non-core additions; keep trunk control work.
             final_priority = ("vertical_push", "vertical_pull", "lunge", "anti_rotation")
@@ -1818,7 +1956,10 @@ def generate_program(
         # Keep the foundational patterns; trim excess sets before removing a secondary pattern.
         session_set_cap = 10 if p["session_minutes"] <= 30 else (15 if p["session_minutes"] <= 45 else None)
         if session_set_cap is not None:
-            while sum(item["prescription"]["sets"] for item in selected) > session_set_cap:
+            while sum(
+                item["prescription"]["sets"] for item in selected
+                if item["pattern"] not in {"conditioning", "locomotion", "mobility", "mobility_stretch", "balance", "coordination", "trunk_stability", "anti_rotation"}
+            ) > session_set_cap:
                 reducible = next(
                     (item for item in selected
                      if item["pattern"] in {"squat", "hinge", "hip_extension", "knee_flexion", "horizontal_push", "horizontal_pull"}
@@ -1843,15 +1984,17 @@ def generate_program(
                 removed = selected.pop(removal_index)
                 missing_patterns.add(removed["pattern"])
                 used_counts[removed["exercise_id"]] -= 1
-                for muscle in removed["primary_muscles"]:
-                    exposure[muscle] -= removed["prescription"]["sets"]
+                if removed["exercise_category"] in {"compound", "accessory"}:
+                    for muscle in removed["primary_muscles"]:
+                        exposure[muscle] -= removed["prescription"]["sets"]
 
         estimated = _estimated_minutes(selected, warm_up_minutes)
         if estimated > p["session_minutes"]:
             raise ProgramValidationError(
-                f"Z razpoložljivim časom {p['session_minutes']} min ni mogoče sestaviti uravnoteženega treninga. Povečaj čas ali zmanjša zahtevnost cilja."
+                f"Trening {session_index + 1} za cilj {planning_goal} je ocenjen na {estimated} min, na voljo pa je {p['session_minutes']} min. Skrajšaj vadbo ali izberi daljši termin."
             )
-        if len(selected) < 3 and not learning_tasks_for_session:
+        if (len(selected) < 3 and not learning_tasks_for_session
+                and not (planning_goal == "fat_loss" and p["sessions_per_week"] >= 3 and session_index >= 2)):
             raise ProgramValidationError(
                 "Za izbrano opremo in omejitve ni dovolj preverjenih vaj ali učnih nalog. Potrebujem več opreme ali manj izključitev."
             )
@@ -1862,7 +2005,7 @@ def generate_program(
                 if not selected and learning_tasks_for_session else
                 f"Trening {session_index + 1} – vzdržljivost" if planning_goal == "endurance" else
                 f"Trening {session_index + 1} – mobilnost in gibljivost" if planning_goal == "mobility" else
-                f"Trening {session_index + 1} – funkcionalna moč + kondicija" if planning_goal == "functional" else
+                f"Trening {session_index + 1} – funkcionalna pripravljenost: moč + kondicija" if planning_goal == "functional" else
                 f"Trening {session_index + 1} – aerobna in kondicijska priprava" if planning_goal == "fat_loss" and session_index >= 2 else
                 f"Trening {session_index + 1} – celotno telo"
             ),
@@ -1926,47 +2069,45 @@ def generate_program(
             "compound_first": True,
             "single_joint_accessories": p["include_accessories"],
             "training_emphasis": p["training_emphasis"],
-            "exercise_scaling": "Vsaka vaja ima označen potencial obremenitve, vlogo, zahteve glede opreme in stopnjevanje. Nizko obremenljive učne vaje niso privzeta glavna izbira za hipertrofijo.",
-            "equipment_policy": "Brez uteži ne pomeni brez običajnih stabilnih gospodinjskih opor. Stol, kavč, miza, stopnica, brisača ali palica so dovoljeni le, kadar jih profil izrecno vključuje in so varni za uporabo.",
+            "exercise_scaling": "Izberi breme in različico, ki omogočata ponovljive ponovitve z ustreznim RIR. Učne različice so začasna pomoč, ne glavni trening.",
+            "equipment_policy": "Uporabi samo opremo, navedeno v profilu, in stabilne opore, katerih varnost je potrjena.",
             "endurance_policy": (
-                "Pri funkcionalnosti je vzdržljivost sestavni del programa: intervali, krožna vadba ali MetCon. Kontinuirana aerobna vadba je dodatna možnost, ne edina oblika kondicije."
+                "Funkcionalnost: intervali, krožna vadba ali MetCon; daljša aerobna vadba je dodatna možnost."
                 if planning_goal == "functional" else
-                "Vzdržljivost je pri hujšanju načrtovana skupaj z vadbo za moč; uporabi intervale, MetCon ali daljšo aerobno aktivnost glede na cilj in regeneracijo."
+                "Hujšanje: kondicijo kombiniraj z vadbo z obremenitvijo; izberi intervale/MetCon ali daljšo hojo v klanec."
                 if planning_goal == "fat_loss" else
-                "Aerobne aktivnosti, intervali in mišična vzdržljivost so ločene oblike kondicijskega dela."
+                "Vzdržljivost razvijaj z aerobnim delom, intervali ali mišično vzdržljivostjo glede na cilj."
             ),
-            "mobility_policy": "Mobilnost vključuje aktivne gibalne vaje, kontrolirano gibanje v končnih amplitudah in razvoj moči skozi čim večji nadzorovan in toleriran obseg (npr. predklon z nevtralno hrbtenico/RDL, ATG izpadni počep, Cossack squat in obremenjeni globoki počep), ne samo pasivnega raztezanja.",
-            "fat_loss_policy": "Pri uravnavanju telesne teže združi vadbo moči za ohranitev mišične mase s kratkimi, odmerjenimi kondicijskimi intervali v istem treningu; ob treh ali štirih treningih je lahko dodatna enota pretežno aerobna. MetCon naj bo nadzorovan, ne maksimalen in ne na račun tehnike ali regeneracije. Za zmanjšanje telesne maščobe je potreben vzdržen energijski primanjkljaj; vadba sama ga ne zagotavlja.",
+            "mobility_policy": "Mobilnost razvijaj predvsem z obremenjenimi vajami skozi največjo trenutno obvladano amplitudo; mobilnostni drili so kratka priprava.",
+            "functional_policy": "Vsak trening: obremenjena večsklepna vadba skozi polno obvladano amplitudo + MetCon ali intervali. Mobilnostni drili ostanejo kratko ogrevanje.",
+            "fat_loss_policy": "Trije obvezni stebri: vadba z obremenitvijo za ohranjanje mišic, kondicija in vzdržen energijski primanjkljaj z dovolj beljakovinami.",
             "experience_adaptation": (
-                "Funkcionalnost: tudi začetnik izvaja prilagojene obremenjene večsklepne vaje in odmerjeno intervalno kondicijo. Učna naloga se doda samo za vzorec, ki še ni potrjeno obvladan."
+                "Funkcionalnost: obremenjene večsklepne vaje + odmerjen intervalni blok; učenje dodaj samo za vzorce, ki ga potrebujejo."
                 if planning_goal == "functional" else
-                "Hujšanje: ohrani kakovostno obremenjeno vadbo za moč in mišično maso; kondicijo ter prehranski primanjkljaj prilagajaj regeneraciji. Ne povečuj vadbe zgolj zaradi porabe kalorij."
+                "Hujšanje: ohrani vadbo z bremeni, dodaj kondicijo in uredi prehrano z zmernim energijskim primanjkljajem ter dovolj beljakovinami."
                 if planning_goal == "fat_loss" else
-                "Vzdržljivost: začetnik gradi predvsem enakomeren aerobni obseg v pogovornem tempu; intervale uvajaj postopno. Naprednejši lahko kombinira daljše aerobne enote, intervale in mišično vzdržljivost, vendar ne vsega maksimalno v isti vadbi."
-                if planning_goal == "endurance" else
-                "Mobilnost: začetnik začne z aktivnimi, podprtimi in kontroliranimi gibi. Napredovanje temelji na kakovosti, postopnem povečevanju neboleče amplitude in sposobnosti ustvarjanja sile v novih položajih; ne na siljenju v končni obseg."
-                if planning_goal == "mobility" else
-                "Začetnik: prednost imajo učenje osnovnih gibalnih vzorcev, nadzorovana amplituda in ponovljiva tehnika. Tudi pri cilju moč začni večinoma z 8–12 ponovitvami in približno 2–3 ponovitvami v rezervi; šele z napredovanjem postopno preidi na nižje razpone in večje obremenitve."
+                "Začetnik: moč + mišična masa sta skupen cilj; uporabi večsklepne vaje, praviloma 8–12 ponovitev in 2–3 ponovitve v rezervi. Učenje dodaj le, kadar je potrebno."
                 if p["experience"] == "beginner" else
-                "Intermediate: uporablja bolj specifične razpone glede na cilj; pri glavnih vajah za moč je običajen razpon 5–8 ponovitev, pri hipertrofiji večinoma 6–12. Advanced: pri glavnih vajah za moč lahko uporablja 3–6 ponovitev, ob večji obremenitvi pa zahteva ustrezno tehniko, regeneracijo in daljše odmore."
+                "Vadeči z nekaj izkušnjami: ohrani večsklepno osnovo, postopno povečuj breme in volumen; večinoma 6–12 ponovitev."
+                if p["experience"] == "intermediate" else
+                "Napredni – strength: glavne vaje lahko uporabljaš v 5x5, mrtvi dvig praviloma v nižjem volumnu; 5/3/1 samo v ločenem večtedenskem ciklu s potrjenim trening maksimumom."
+                if planning_goal == "strength" else
+                "Napredni – hipertrofija: večsklepne vaje praviloma 6–12 ponovitev, dodatne in izolacijske vaje 10–20; volumen prilagodi regeneraciji."
+                if planning_goal == "hypertrophy" else
+                "Napredni – uravnoteženo: kombiniraj težje večsklepne serije in zmerne hipertrofijske razpone; specializacijo izberi šele, ko je cilj jasen."
             ),
-            "tempo": (
-                "Pri funkcionalnosti tempo prilagodi nalogi: obremenjene vaje izvajaj skozi obvladano amplitudo s kontroliranim spustom in tekočo vrnitvijo; pri intervalih ohrani ponovljiv ritem. Različni tempi so dobrodošli, če ne poslabšajo nadzora."
+            "tempo": "Tempo je odvisen od vaje: nadzoruj ekscentrično fazo, koncentrični del izvedi odločno in brez kompenzacij. Pri intervalih ohrani ponovljiv ritem.",
+            "range_of_motion": "Pri obremenjenih vajah uporabi največjo trenutno obvladano in tolerirano amplitudo; postopno jo razvijaj brez kompenzacij.",
+            "progression": (
+                "Pri 5x5 dodaj najmanjši praktični korak bremena šele, ko vseh pet serij po pet ponovitev opraviš z načrtovanim RIR in dobro tehniko na dveh primerljivih izpostavitvah."
+                if planning_goal == "strength" else
+                "Pri funkcionalnosti postopno povečuj obremenitev ali obvladano amplitudo; pri intervalih spreminjaj samo eno spremenljivko naenkrat."
                 if planning_goal == "functional" else
-                "Pri moči in hipertrofiji je 3–1–2–0 lahko uporabno izhodišče za nadzor, ni pa univerzalna zahteva. Tempo prilagodi vaji, cilju in sposobnosti ohranjanja tehnike."
-            ),
-            "range_of_motion": "Pri vsaki vaji uporabi največjo amplitudo, ki jo omogočata gibljivost in nadzor. Amplitudo postopno razvijaj; ne žrtvuj položaja, stabilnosti ali neboleče izvedbe. Pri mobilnosti kombiniraj aktivno gibanje in moč skozi razpoložljivo amplitudo.",
-            "progression": ("Pri funkcionalnosti postopno povečuj obremenitev ali nadzorovano amplitudo pri vajah za moč; pri intervalih spreminjaj samo eno spremenljivko (trajanje, število intervalov ali odmor)."
-                if planning_goal == "functional" else
-                "Pri aerobni vzdržljivosti postopno povečuj trajanje ali obseg, nato po potrebi intenzivnost; pri intervalih spreminjaj le eno spremenljivko naenkrat. Ohraniti moraš ponovljivo tehniko in regeneracijo."
-                if planning_goal == "endurance" else
-                "Pri hujšanju ohrani ali postopno izboljšuj delovne obremenitve pri vajah za moč, da podpreš ohranitev mišične mase. Kondicijski obseg povečuj postopno; ne kompenziraj prehrane z nenadnim povečanjem treninga."
+                "Pri hujšanju ohrani ali izboljšuj delovne obremenitve; kondicijski obseg povečuj postopno in ga prilagajaj regeneraciji."
                 if planning_goal == "fat_loss" else
-                "Pri mobilnosti postopno povečuj nadzorovan obseg, kakovost končnega položaja in sposobnost ustvarjanja sile v njem. Ne sili v globino in ne napreduj skozi bolečino."
-                if planning_goal == "mobility" else
-                "Ko pri vseh serijah dosežeš zgornjo mejo ponovitev in ohraniš predpisano rezervo ter tehniko, povečaj dražljaj postopno: najprej obremenitev, če je na voljo; sicer težjo različico, daljši vzvod ali večjo nadzorovano amplitudo. Hitrost ni samodejna stopnja napredovanja: hitrejšo oziroma eksplozivno namero uvedi šele po ponovljivem obvladovanju giba skozi celotno tolerirano amplitudo v najmanj dveh primerljivih izpostavitvah in po izrecni strokovni potrditvi. Samoocena READY ali oznaka naprednih izkušenj sami po sebi ne dokazujeta obvladovanja. Če tehnika, simptomi ali regeneracija odstopajo, obdrži ali zmanjša zahtevnost."
+                "Ko dosežeš zgornjo mejo ponovitev z ustreznim RIR in tehniko na dveh primerljivih izpostavitvah, postopno povečaj breme ali zahtevnost."
             ),
-            "deload": "Razbremenitev se ne določa avtomatično po koledarju; uporabi jo ob vztrajnem slabšanju zmogljivosti, regeneracije ali kakovosti izvedbe.",
+            "deload": "Razbremeni ob vztrajnem slabšanju zmogljivosti, regeneracije ali kakovosti izvedbe.",
             "last_session_adjustment": "reduce_sets_increase_reserve" if reduce_load else ("hold_and_progress_by_rule" if response and response["difficulty"] == "easy" else "maintain"),
         },
         "feedback_applied": response,
