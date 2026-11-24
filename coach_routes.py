@@ -1245,6 +1245,8 @@ def _onboarding_quick_replies(answer, messages=None, response_language="sl"):
         choices = ["20–30 minutes", "30–45 minutes", "45–60 minutes", "60+ minutes"] if english else ["20–30 minut", "30–45 minut", "45–60 minut", "60+ minut"]
     elif re.search(r"(izkušnj.{0,20}vadb|začetnik|beginner|training experience)", value):
         choices = ["Beginner / limited experience", "I train regularly"] if english else ["Začetnik/-ca ali malo izkušenj", "Redno treniram"]
+    elif re.search(r"(specializacij|moč ali hipertrof|strength.{0,20}hypertrophy|hypertrophy.{0,20}strength)", value):
+        choices = ["Strength focus", "Hypertrophy focus", "Balanced"] if english else ["Poudarek na moči", "Poudarek na hipertrofiji", "Uravnoteženo"]
     elif re.search(r"(kaj želiš|glavni cilj|predvsem razvijati|what would you like|main goal)", value):
         choices = ["Strength + muscle mass", "Functional fitness", "Fat loss"] if english else ["Moč + mišična masa", "Funkcionalna pripravljenost", "Zmanjšanje maščobne mase"]
     elif re.search(r"(kje.{0,30}(?:treniraš|trenirati)|where.{0,30}train|training location)", value):
@@ -2298,7 +2300,7 @@ TRAINING QUALITY
 - Make duration arithmetic accurate. The sum of warm-up, work intervals, rest intervals, transitions and cool-down must equal the stated session duration. State sets, repetitions or work/rest intervals clearly and avoid contradictory timing.
 - Treat the structured programme supplied in the conversation as the current source of truth. Explain its actual exercises, sets, repetitions, effort, tempo and rest; do not invent different prescriptions or claim that a change was saved unless the structured programme or profile workflow confirms it.
 - Distinguish moč (strength), mišična masa (hypertrophy), vzdržljivost/kondicija (endurance), splošna funkcionalna pripravljenost, eksplozivna moč (power) and mobilnost. Do not treat them as interchangeable labels for the same workout.
-- GOAL: STRENGTH + MUSCLE MASS: For beginners and less-experienced trainees this is one combined goal, not two separate programs. Build a progressive base of loaded multi-joint exercises. Only advanced trainees may specialize: strength can use a structured 5x5 approach or a properly configured multi-week 5/3/1 cycle; hypertrophy uses a broader 6–20 rep range and may add isolation exercises when time and recovery allow. Never claim to run 5/3/1 unless the actual periodized cycle and training max are configured.
+- GOAL: STRENGTH + MUSCLE MASS: For beginners and less-experienced trainees this is one combined goal, not two separate programs. Build a progressive base of loaded multi-joint exercises. Only advanced trainees may specialize: strength can use a structured 5x5 approach or a properly configured multi-week 5/3/1 cycle; hypertrophy uses a broader 6–20 rep range and may add isolation exercises when time and recovery allow. Never claim to run 5/3/1 unless the actual periodized cycle and training max are configured. During onboarding, ask advanced users with this goal whether they want a strength focus, hypertrophy focus or balanced training; store the answer as training_emphasis. Do not ask beginners to choose a specialization.
 - GOAL: FUNCTIONAL FITNESS: This is not a mobility-drill or movement-learning session. The main work must include loaded multi-joint resistance exercises, performed through the largest currently controlled and tolerated range of motion, plus a meaningful conditioning component such as MetCon or intervals. Mobility is developed mainly through full-ROM resistance exercises; mobility drills, balance and coordination are short, targeted warm-up/preparation items only. Do not replace loaded work sets with long mobility circuits.
 - GOAL: FAT LOSS / WEIGHT MANAGEMENT: Include all three pillars: (1) loaded resistance training to preserve muscle and strength, (2) conditioning/endurance through MetCon, intervals or longer aerobic work such as brisk uphill walking, and (3) nutrition guidance based on a sustainable calorie deficit and sufficient protein. Do not present exercise alone as sufficient for fat loss.
 - Keep generated training plans concise and precise: show exercise, sets, reps or interval work/rest, effort/RIR, tempo and rest. Avoid repeating generic movement-learning explanations under every exercise. Warm-up should usually be brief and only include the mobility or learning task that is actually needed.
@@ -3016,7 +3018,7 @@ def coach_goal_options():
 
 # Longitudinal profile storage is opt-in and disabled by default. Hosted use
 # requires a persistent PostgreSQL database and an operator-approved notice.
-PROFILE_FIELDS = {"goal", "experience", "equipment", "sessions_per_week", "session_minutes", "available_days", "pistol_squat_capable"}
+PROFILE_FIELDS = {"goal", "experience", "equipment", "sessions_per_week", "session_minutes", "available_days", "pistol_squat_capable", "training_emphasis"}
 PROFILE_GOALS = {"strength", "hypertrophy", "strength_hypertrophy", "fat_loss", "general_fitness", "functional", "power", "endurance", "mobility"}
 PROFILE_EXPERIENCE = {"beginner", "intermediate", "advanced"}
 PROFILE_DAYS = {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}
@@ -3057,10 +3059,18 @@ def _validate_profile(value):
     pistol_squat_capable = value.get("pistol_squat_capable", False)
     if not isinstance(pistol_squat_capable, bool):
         raise ValueError("pistol_squat_capable mora biti true ali false.")
+    training_emphasis = value.get("training_emphasis", "balanced")
+    if training_emphasis not in {"balanced", "strength", "hypertrophy"}:
+        raise ValueError("training_emphasis mora biti balanced, strength ali hypertrophy.")
+    if training_emphasis != "balanced" and (
+        experience != "advanced" or normalize_goal(goal) != "strength_hypertrophy"
+    ):
+        raise ValueError("Specializacija moči ali hipertrofije je na voljo samo naprednim vadečim s skupnim ciljem moč + mišična masa.")
     return {
         "goal": goal, "experience": experience, "equipment": equipment,
         "sessions_per_week": sessions, "session_minutes": minutes,
         "available_days": days, "pistol_squat_capable": pistol_squat_capable,
+        "training_emphasis": training_emphasis,
     }
 
 
