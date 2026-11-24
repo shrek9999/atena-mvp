@@ -331,7 +331,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         sets, reps, rir, rest = 2, "5–8", None, 45
     elif pattern == "coordination":
         sets, reps, rir, rest = 3, "10–15 s", None, 45
-    elif level == "beginner" and goal in {"strength", "hypertrophy", "strength_hypertrophy"}:
+    elif level == "beginner" and goal in {"strength", "hypertrophy", "strength_hypertrophy", "functional"}:
         # Beginners first build repeatable technique with moderate reps and a clear reserve.
         if pattern in {"lunge"} or unilateral:
             sets, reps, rir, rest = 2, "8–12", 3, 90
@@ -1852,7 +1852,7 @@ def generate_program(
             "tempo": (
                 "Tempo je odvisen od cilja in vaje: pri manj izkušenih na skupnem cilju moč + mišična masa uporabi praviloma 2–1–1–0; pri funkcionalni obremenjeni vadbi nadzoruj ekscentrično fazo, koncentrični del pa izvedi odločno in brez kompenzacij. Pri kondicijskih intervalih ohrani ponovljiv ritem, ne predpisuj umetno počasnega tempa."
             ),
-            "range_of_motion": "Pri vsaki vaji uporabi največjo amplitudo, ki jo omogočata gibljivost in nadzor. Amplitudo postopno razvijaj; ne žrtvuj položaja, stabilnosti ali neboleče izvedbe. Pri mobilnosti kombiniraj aktivno gibanje in moč skozi razpoložljivo amplitudo.",
+            "range_of_motion": "Pri vsaki vaji uporabi največjo amplitudo, ki jo omogočata gibljivost in nadzor. Pri funkcionalni vadbi jo razvijaj predvsem z obremenjenimi večsklepnimi vajami; amplitudo postopno povečuj brez žrtvovanja položaja, stabilnosti ali tolerirane izvedbe.",
             "progression": ("Pri aerobni vzdržljivosti postopno povečuj trajanje ali obseg, nato po potrebi intenzivnost; pri intervalih spreminjaj le eno spremenljivko naenkrat. Ohraniti moraš ponovljivo tehniko in regeneracijo."
                 if planning_goal == "endurance" else
                 "Pri funkcionalnosti ohrani progresivno obremenjeno vadbo in postopno razvijaj polno obvladano amplitudo; kondicijski obseg in intenzivnost povečuj postopno, ne oboje hkrati."
