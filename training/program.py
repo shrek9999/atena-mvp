@@ -1612,7 +1612,7 @@ def generate_program(
                     "Pri obremenjeni vaji uporabi največjo trenutno obvladano in tolerirano amplitudo. "
                     "Cilj je postopno razvijati polno amplitudo z močjo; ne krajšaj giba po nepotrebnem, "
                     "vendar ne žrtvuj stabilnosti ali kakovosti izvedbe."
-                    if planning_goal == "functional" else
+                    if planning_goal == "functional" and pattern not in {"conditioning", "locomotion", "carry"} else
                     candidate.get("range_of_motion") or (
                         "Uporabi največjo nebolečo amplitudo, ki jo dopuščata tvoja gibljivost in nadzor. "
                         "Ne krajšaj giba po nepotrebnem; amplitudo povečuj postopno, brez izgube položaja."
