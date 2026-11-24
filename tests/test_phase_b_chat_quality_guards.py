@@ -725,7 +725,7 @@ def test_weight_regulation_prompt_contains_general_nutrition_framework_and_bound
     assert "lower energy density" in prompt
     assert "fibre-rich foods" in prompt
     assert "lean protein sources" in prompt
-    assert "1.5 g/kg/day" in prompt
+    assert "1.6–2.2 g/kg/day" in prompt
     assert "10–20% below estimated maintenance" in prompt
     assert "do not calculate or prescribe a personal diet without adequate context" in prompt
 
@@ -757,10 +757,13 @@ def test_system_prompt_makes_conversation_primary_and_avoids_intake_form():
 
 def test_system_prompt_distinguishes_general_fitness_conditioning_and_functional_fitness():
     prompt = coach_routes.SYSTEM_PROMPT
-    assert "general fitness is a balanced improvement in overall capacity" in prompt
-    assert "conditioning focuses primarily on aerobic/anaerobic work capacity" in prompt
-    assert "functional fitness develops useful physical capacities across strength, conditioning, power, balance and coordination" in prompt
-    assert "These goals may overlap but are not interchangeable" in prompt
+    assert "three ATENA tracks" in prompt or "three public goals" in prompt
+    assert "strength + muscle mass" in prompt
+    assert "functional fitness" in prompt
+    assert "fat loss/body composition" in prompt
+    assert "Strength and hypertrophy are one combined goal for beginners" in prompt
+    assert "Functional fitness combines loaded multi-joint strength" in prompt
+    assert "Fat loss combines resistance training, conditioning and nutrition" in prompt
 
 
 def test_system_prompt_distinguishes_foot_assisted_vertical_pull_from_inverted_row():
