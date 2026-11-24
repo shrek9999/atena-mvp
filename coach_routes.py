@@ -1245,7 +1245,7 @@ def _onboarding_quick_replies(answer, messages=None, response_language="sl"):
         choices = ["20–30 minutes", "30–45 minutes", "45–60 minutes", "60+ minutes"] if english else ["20–30 minut", "30–45 minut", "45–60 minut", "60+ minut"]
     elif re.search(r"(izkušnj.{0,20}vadb|začetnik|beginner|training experience)", value):
         choices = ["Beginner / limited experience", "I train regularly"] if english else ["Začetnik/-ca ali malo izkušenj", "Redno treniram"]
-    elif re.search(r"(specializacij|poudarek na moči|poudarek na hipertrofiji|strength focus|hypertrophy focus|moč ali hipertrof|strength.{0,20}hypertrophy|hypertrophy.{0,20}strength)", value):
+    elif re.search(r"(specializacij|poudarek na moči|poudarek na hipertrofiji|strength focus|hypertrophy focus|moč.{0,30}(mišičn|hipertrof)|mišičn.{0,30}moč|strength.{0,20}hypertrophy|hypertrophy.{0,20}strength)", value):
         choices = ["Strength focus", "Hypertrophy focus", "Balanced"] if english else ["Poudarek na moči", "Poudarek na hipertrofiji", "Uravnoteženo"]
     elif re.search(r"(kaj želiš|glavni cilj|predvsem razvijati|what would you like|main goal)", value):
         choices = ["Strength + muscle mass", "Functional fitness", "Fat loss"] if english else ["Moč + mišična masa", "Funkcionalna pripravljenost", "Zmanjšanje maščobne mase"]
