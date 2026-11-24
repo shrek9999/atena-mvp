@@ -1156,6 +1156,11 @@ def generate_program(
             }
         selected = []
         learning_tasks_for_session = []
+        deferred_learning_patterns = []
+        ready_loaded_patterns = []
+        # Keep the warm-up focused: teach at most one unready pattern per
+        # 45–60 min session, then address the next pattern in a later exposure.
+        learning_task_limit = 1 if p["session_minutes"] <= 60 else 2
         seen_patterns = set()
         for pattern in patterns:
             if pattern in seen_patterns and planning_goal != "mobility":
@@ -1297,15 +1302,17 @@ def generate_program(
                             "rest_seconds": 30,
                             "estimated_minutes": 2,
                         })
-                    movement_adaptation_events.append({
-                        "pattern": pattern,
-                        "tasks": affected_tasks,
-                        "action": "unloaded_learning_task_only",
-                        "message": (
-                            f"Vzorec {PATTERN_LABELS.get(pattern, pattern)} ostane brez zunanje obremenitve; "
-                            "najprej ponovi kratko učno nalogo in preveri kriterije nadzora."
-                        ),
-                    })
+                        movement_adaptation_events.append({
+                            "pattern": pattern,
+                            "tasks": affected_tasks,
+                            "action": "unloaded_learning_task_only",
+                            "message": (
+                                f"Vzorec {PATTERN_LABELS.get(pattern, pattern)} ostane brez zunanje obremenitve; "
+                                "najprej ponovi kratko učno nalogo in preveri kriterije nadzora."
+                            ),
+                        })
+                    else:
+                        deferred_learning_patterns.append(pattern)
                     continue
                 target = next((item for item in reference_catalogue if item["id"] == target_id), None)
                 if target is None or target["pattern"] != pattern:
@@ -1522,11 +1529,16 @@ def generate_program(
                     "message": movement_note,
                 })
             elif structured_decision and structured_decision["decision"] == "READY":
-                movement_adaptation_events.append({
-                    "pattern": pattern,
-                    "action": "ready_for_conservative_starting_variation",
-                    "message": "Samoocena potrjuje udobje pri osnovnem gibalnem vzorcu, ne pa tolerance na veliko breme. Program zato začne s konservativno različico; večje obremenitve zahtevajo ločeno, ponovljivo izvedbo in zabeleženo povratno informacijo.",
-                })
+                prescription["sets"] = min(2, prescription.get("sets", 2))
+                if prescription.get("rir") is not None:
+                    prescription["rir"] = max(3, prescription["rir"])
+                if prescription.get("rir_range") is not None:
+                    prescription["rir_range"] = "3–4"
+                movement_note = (
+                    "Začni z lahko do zmerno obremenitvijo (RIR 3–4); povečaj jo šele "
+                    "po dveh dobro toleriranih izpostavitvah. READY ni dovoljenje za težke serije."
+                )
+                ready_loaded_patterns.append(pattern)
             if symptom_tolerated:
                 # Mild, stable discomfort is not an automatic exclusion. Keep the
                 # exact tested variant, reduce resistance, slow the tempo and
@@ -1748,6 +1760,31 @@ def generate_program(
             })
             for muscle in candidate["primary_muscles"]:
                 exposure[muscle] += prescription["sets"]
+
+        if ready_loaded_patterns:
+            ready_labels = [PATTERN_LABELS.get(value, value) for value in ready_loaded_patterns]
+            movement_adaptation_events.append({
+                "pattern": ready_loaded_patterns[0],
+                "patterns": ready_loaded_patterns,
+                "action": "ready_for_light_loaded_start",
+                "message": (
+                    "Ponovljivo nadzorovani vzorci: " + ", ".join(ready_labels)
+                    + ". Začni z lahko do zmerno obremenitvijo (RIR 3–4); breme povečuj "
+                    "šele po dveh dobro toleriranih izpostavitvah."
+                ),
+            })
+        if deferred_learning_patterns:
+            deferred_labels = [PATTERN_LABELS.get(value, value) for value in deferred_learning_patterns]
+            movement_adaptation_events.append({
+                "pattern": deferred_learning_patterns[0],
+                "patterns": deferred_learning_patterns,
+                "action": "learning_tasks_deferred_to_later_sessions",
+                "message": (
+                    "Učne naloge za vzorce " + ", ".join(deferred_labels)
+                    + " so razporejene v naslednje vadbene izpostavitve; v tem treningu "
+                    "ostanejo brez obremenjene različice."
+                ),
+            })
 
         # Pattern-learning tasks are performed at the start of the session as part
         # of the warm-up, not as a separate practice block after the warm-up.
