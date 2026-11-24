@@ -44,13 +44,15 @@ def test_beginner_receives_lower_effort_and_volume():
                 assert exercise["prescription"]["rir"] >= 3
 
 
-def test_intermediate_strength_program_uses_shared_strength_hypertrophy_rep_ranges():
-    profile = {**BASE, "goal": "strength", "experience": "intermediate"}
-    plan = generate_program(profile)
-    main = [ex for s in plan["sessions"] for ex in s["exercises"] if ex["pattern"] in {"squat", "hinge"}]
-    assert main
-    assert all(ex["prescription"]["reps"] == "8–12" for ex in main)
-    assert all(ex["prescription"]["rir"] == 3 for ex in main)
+def test_strength_and_hypertrophy_aliases_share_the_combined_goal_for_less_experienced_users():
+    for legacy_goal in ("strength", "hypertrophy"):
+        profile = {**BASE, "goal": legacy_goal, "experience": "intermediate"}
+        plan = generate_program(profile)
+        main = [ex for s in plan["sessions"] for ex in s["exercises"] if ex["pattern"] in {"squat", "hinge"}]
+        assert plan["goal"] == "strength_hypertrophy"
+        assert main
+        assert all(ex["prescription"]["reps"] == "8–12" for ex in main)
+        assert all(ex["prescription"]["rir"] == 3 for ex in main)
 
 
 def test_beginner_strength_prioritizes_skill_and_8_to_12_reps():
@@ -172,6 +174,32 @@ def test_functional_program_has_a_distinct_user_facing_session_title():
     assert all("funkcionalna pripravljenost" not in session["title"].lower()
                for session in strength["sessions"])
 
+
+
+    
+def test_functional_training_has_loaded_strength_work_and_real_intervals_in_both_sessions():
+    plan = generate_program({
+        **BASE, "goal": "functional", "experience": "intermediate",
+        "equipment": ["bodyweight", "dumbbell", "kettlebell", "bench"],
+        "session_minutes": 45,
+    })
+    assert len(plan["sessions"]) == 2
+    for session in plan["sessions"]:
+        exercises = session["exercises"]
+        resistance = [
+            ex for ex in exercises
+            if ex["pattern"] not in {"conditioning", "locomotion", "mobility", "mobility_stretch"}
+            and ex["joint_type"] == "multi_joint"
+        ]
+        intervals = [ex for ex in exercises if ex["pattern"] == "conditioning"]
+        assert resistance
+        assert intervals
+        interval = intervals[0]["prescription"]
+        assert interval["sets"] == 8
+        assert interval["work_seconds"] == 30
+        assert interval["rest_seconds"] == 30
+        assert session["estimated_minutes"] <= 45
+    assert "obremenjeno večsklepno vadbo" in plan["methodology"]["functional_policy"]
 
 def test_functional_goal_uses_supported_general_fitness_catalogue_pool():
     plan = generate_program({**BASE, "goal": "functional"})
@@ -784,6 +812,14 @@ def test_fat_loss_goal_keeps_resistance_training_as_the_foundation():
         assert "locomotion" not in patterns
     assert "ohranitev mišične mase" in two_day["methodology"]["fat_loss_policy"]
     assert two_day["weekly_summary"]["primary_muscle_set_exposure"]
+    
+def test_fat_loss_explains_calorie_deficit_and_protein_as_required_nutrition_pillars():
+    plan = generate_program({**BASE, "goal": "fat_loss"})
+    guidance = " ".join(plan["nutrition_guidance"]).casefold()
+    assert "energijski primanjkljaj" in guidance
+    assert "beljakovin" in guidance
+    assert "1,6–2,2 g/kg" in guidance
+
 
 
 def test_fat_loss_adds_short_aerobic_and_conditioning_work_when_frequency_allows():
