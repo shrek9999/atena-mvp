@@ -1769,8 +1769,9 @@ def generate_program(
                     "coaching_note": "Ciljno pripravljalno delo za nadzor trupa, vključeno na podlagi tvoje povratne informacije. Izvedi po splošnem ogrevanju in pred glavnimi vajami."
                 } if pattern == "trunk_stability" and include_stability else {}),
             })
-            for muscle in candidate["primary_muscles"]:
-                exposure[muscle] += prescription["sets"]
+            if exercise_category in {"compound", "accessory"}:
+                for muscle in candidate["primary_muscles"]:
+                    exposure[muscle] += prescription["sets"]
 
         if ready_loaded_patterns:
             ready_labels = [PATTERN_LABELS.get(value, value) for value in ready_loaded_patterns]
@@ -1823,8 +1824,9 @@ def generate_program(
                 removed = selected.pop(removable)
                 missing_patterns.add(removed["pattern"])
                 used_counts[removed["exercise_id"]] -= 1
-                for muscle in removed["primary_muscles"]:
-                    exposure[muscle] -= removed["prescription"]["sets"]
+                if removed["exercise_category"] in {"compound", "accessory"}:
+                    for muscle in removed["primary_muscles"]:
+                        exposure[muscle] -= removed["prescription"]["sets"]
                 continue
 
             # If the time budget is still exceeded, reduce a main compound lift
@@ -1861,7 +1863,10 @@ def generate_program(
         # Keep the foundational patterns; trim excess sets before removing a secondary pattern.
         session_set_cap = 10 if p["session_minutes"] <= 30 else (15 if p["session_minutes"] <= 45 else None)
         if session_set_cap is not None:
-            while sum(item["prescription"]["sets"] for item in selected) > session_set_cap:
+            while sum(
+                item["prescription"]["sets"] for item in selected
+                if item["pattern"] not in {"conditioning", "locomotion", "mobility", "mobility_stretch", "balance", "coordination", "trunk_stability", "anti_rotation"}
+            ) > session_set_cap:
                 reducible = next(
                     (item for item in selected
                      if item["pattern"] in {"squat", "hinge", "hip_extension", "knee_flexion", "horizontal_push", "horizontal_pull"}
@@ -1886,8 +1891,9 @@ def generate_program(
                 removed = selected.pop(removal_index)
                 missing_patterns.add(removed["pattern"])
                 used_counts[removed["exercise_id"]] -= 1
-                for muscle in removed["primary_muscles"]:
-                    exposure[muscle] -= removed["prescription"]["sets"]
+                if removed["exercise_category"] in {"compound", "accessory"}:
+                    for muscle in removed["primary_muscles"]:
+                        exposure[muscle] -= removed["prescription"]["sets"]
 
         estimated = _estimated_minutes(selected, warm_up_minutes)
         if estimated > p["session_minutes"]:
