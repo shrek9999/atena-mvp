@@ -1623,10 +1623,14 @@ def generate_program(
                 "equipment": selected_equipment,
                 "cues": candidate["cues"],
                 "range_of_motion": (
+                    "Ohrani naraven korak in stabilno držo; trajanje ali razdaljo povečuj postopno."
+                    if pattern == "carry" else
+                    "Ohrani ponovljiv obseg in ritem, ki omogočata kakovostno izvedbo; intenzivnost prilagodi tehniki."
+                    if pattern in {"conditioning", "locomotion"} else
                     "Pri obremenjeni vaji uporabi največjo trenutno obvladano in tolerirano amplitudo. "
                     "Cilj je postopno razvijati polno amplitudo z močjo; ne krajšaj giba po nepotrebnem, "
                     "vendar ne žrtvuj stabilnosti ali kakovosti izvedbe."
-                    if planning_goal == "functional" and pattern not in {"conditioning", "locomotion", "carry"} else
+                    if planning_goal == "functional" else
                     candidate.get("range_of_motion") or (
                         "Uporabi največjo nebolečo amplitudo, ki jo dopuščata tvoja gibljivost in nadzor. "
                         "Ne krajšaj giba po nepotrebnem; amplitudo povečuj postopno, brez izgube položaja."
