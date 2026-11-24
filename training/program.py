@@ -175,7 +175,10 @@ def validate_profile(profile: object) -> dict:
         raise ProgramValidationError("pistol_squat_capable mora biti true ali false.")
     return {
         **profile,
-        "goal": canonical_goal,
+        # Public strength/hypertrophy aliases now share one canonical track.
+        # Keep legacy functional sub-goals (power, endurance, mobility) intact
+        # for existing API clients while the onboarding exposes only three goals.
+        "goal": "strength_hypertrophy" if goal in {"strength", "hypertrophy"} else goal,
         "pistol_squat_capable": pistol_squat_capable,
         "sessions_per_week": sessions,
         "session_minutes": duration,
