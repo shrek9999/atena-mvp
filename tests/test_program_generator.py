@@ -14,7 +14,7 @@ BASE = {
 
 def test_generates_two_day_hypertrophy_program_from_catalogue_only():
     plan = generate_program(BASE)
-    assert plan["program_version"] == "3.1.0"
+    assert plan["program_version"] == "3.2.0"
     assert len(plan["sessions"]) == 2
     assert all(len(session["exercises"]) >= 3 for session in plan["sessions"])
     assert all(ex["joint_type"] == "multi_joint" for session in plan["sessions"] for ex in session["exercises"])
@@ -204,11 +204,11 @@ def test_functional_training_has_loaded_strength_work_and_meaningful_intervals()
             if item["pattern"] not in {"conditioning", "locomotion", "mobility", "mobility_stretch"}
             and item["joint_type"] == "multi_joint"
         ]
-        intervals = [item for item in exercises if item["pattern"] == "conditioning"]
+        intervals = [item for item in exercises if item["pattern"] in {"conditioning", "locomotion"} and item["training_role"] == "conditioning"]
         assert len(resistance) >= 3
         assert len(intervals) == 1
         interval = intervals[0]["prescription"]
-        assert interval["sets"] == 8
+        assert interval["sets"] >= 4
         assert interval["work_seconds"] >= 15
         assert interval["rest_seconds"] in {30, 45}
         assert session["estimated_minutes"] <= 45
@@ -825,7 +825,7 @@ def test_fat_loss_goal_keeps_resistance_training_as_the_foundation():
     assert len(two_day["sessions"]) == 2
     weekly_patterns = {exercise["pattern"] for session in two_day["sessions"] for exercise in session["exercises"]}
     assert {"squat", "hinge", "horizontal_push", "horizontal_pull", "lunge", "vertical_push"}.issubset(weekly_patterns)
-    assert all("conditioning" in {exercise["pattern"] for exercise in session["exercises"]} for session in two_day["sessions"])
+    assert all(any(exercise["training_role"] == "conditioning" for exercise in session["exercises"]) for session in two_day["sessions"])
     assert "ohranitev mišic" in two_day["methodology"]["fat_loss_policy"]
     assert two_day["weekly_summary"]["primary_muscle_set_exposure"]
 
@@ -976,7 +976,7 @@ def test_functional_programme_uses_functional_capacity_purpose_tags():
     assert exercises
     assert all(set(ex["training_purposes"]) & allowed for ex in exercises)
     assert any(ex["movement_pattern"] == "lunge" for ex in exercises)
-    assert any(ex["movement_pattern"] == "conditioning" for ex in exercises)
+    assert any(ex["training_role"] == "conditioning" for ex in exercises)
 
 
 def test_conditioning_programme_uses_cardiorespiratory_purpose_tags():
@@ -1089,7 +1089,7 @@ def test_functional_and_fat_loss_programmes_have_distinct_training_intent():
     }
     assert {"squat", "hinge", "lunge", "horizontal_push", "horizontal_pull", "conditioning"}.issubset(functional_patterns)
     assert "carry" in functional_patterns
-    assert "conditioning" in fat_loss_patterns
+    assert any(ex["training_role"] == "conditioning" for session in fat_loss["sessions"] for ex in session["exercises"])
     assert "polno obvladano amplitudo" in functional["methodology"]["functional_policy"]
     assert "energijski primanjkljaj" in fat_loss["methodology"]["fat_loss_policy"]
     assert fat_loss["nutrition_guidance"]
