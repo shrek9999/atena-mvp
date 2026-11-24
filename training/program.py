@@ -1557,7 +1557,7 @@ def generate_program(
                 # When no movement-ready interval option or cardio machine is available,
                 # use a short walking dose alongside resistance work. Longer aerobic
                 # sessions are reserved for additional training days.
-                walk_minutes = 8 if p["session_minutes"] <= 30 else 10 if p["session_minutes"] <= 45 else 12
+                walk_minutes = 5 if p["session_minutes"] <= 30 else 10 if p["session_minutes"] <= 45 else 12
                 prescription.update({
                     "sets": 1,
                     "reps": f"{walk_minutes} min",
@@ -1565,6 +1565,8 @@ def generate_program(
                     "time_label": "hitre hoje oziroma hoje v klanec",
                     "effort_target": "Zmeren pogovorni tempo; ohrani enakomeren korak in nadzor dihanja.",
                 })
+            if planning_goal == "fat_loss" and p["session_minutes"] <= 30 and effective_pattern != "locomotion":
+                prescription["rest_seconds"] = 45
             movement_note = None
             symptom_report = (
                 structured_decision.get("user_report", {})
