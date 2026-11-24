@@ -201,8 +201,8 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # range of motion and a real conditioning dose in every session.
         # Mobility drills remain a short warm-up option, not a substitute for work sets.
         templates = [
-            ["squat", "hinge", "horizontal_push", "hip_extension", "conditioning"],
-            ["lunge", "vertical_push", "horizontal_pull", "hip_extension", "conditioning"],
+            ["squat", "hinge", "horizontal_push", "hip_extension", "carry", "conditioning"],
+            ["lunge", "vertical_push", "horizontal_pull", "hip_extension", "carry", "conditioning"],
         ]
         patterns = list(templates[session_index % len(templates)])
         if include_stability:
@@ -230,7 +230,7 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # Both weekly sessions retain loaded resistance work plus conditioning.
         # Hip extension provides an additional usable resistance option when
         # one of the six assessed patterns is still in its learning phase.
-        patterns = base + ["hip_extension", "conditioning"]
+        patterns = base + ["hip_extension", "carry", "conditioning"]
         if include_stability:
             patterns.insert(0, "trunk_stability")
         return patterns
