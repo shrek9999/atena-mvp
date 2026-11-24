@@ -1,4 +1,4 @@
-"""Quality matrix for the five visible ATENA goals and three experience levels."""
+"""Quality matrix for the three public ATENA goals and three experience levels."""
 
 from itertools import product
 
@@ -11,8 +11,6 @@ from training.program import generate_program
 VISIBLE_GOALS = [
     "strength_hypertrophy",
     "functional",
-    "mobility",
-    "endurance",
     "fat_loss",
 ]
 EXPERIENCE_LEVELS = ["beginner", "intermediate", "advanced"]
@@ -30,7 +28,7 @@ def _complete_equipment_set():
     "goal,experience",
     list(product(VISIBLE_GOALS, EXPERIENCE_LEVELS)),
 )
-def test_all_fifteen_visible_goal_experience_profiles_generate_valid_distinct_plans(goal, experience):
+def test_all_nine_public_goal_experience_profiles_generate_valid_distinct_plans(goal, experience):
     profile = {
         "goal": goal,
         "experience": experience,
@@ -62,9 +60,7 @@ def test_all_fifteen_visible_goal_experience_profiles_generate_valid_distinct_pl
 
     expected = {
         "strength_hypertrophy": {"squat", "hinge", "horizontal_push", "horizontal_pull"},
-        "functional": {"squat", "hinge", "horizontal_push", "horizontal_pull", "lunge", "locomotion", "conditioning"},
-        "mobility": {"mobility", "mobility_stretch", "squat"},
-        "endurance": {"locomotion", "conditioning"},
+        "functional": {"squat", "hinge", "horizontal_push", "horizontal_pull", "lunge", "conditioning", "vertical_pull"},
         "fat_loss": {"squat", "hinge", "conditioning"},
     }[goal]
     if goal == "functional":
@@ -74,7 +70,7 @@ def test_all_fifteen_visible_goal_experience_profiles_generate_valid_distinct_pl
     assert expected.issubset(patterns), (goal, experience, patterns)
 
 
-def test_five_visible_goals_have_distinct_program_pattern_signatures():
+def test_three_public_goals_have_distinct_program_pattern_signatures():
     equipment = _complete_equipment_set()
     signatures = {}
     for goal in VISIBLE_GOALS:
@@ -177,7 +173,7 @@ def test_conditioning_work_volume_scales_with_experience(goal):
             if exercise["pattern"] == "conditioning"
         ))
 
-    assert total_conditioning_sets == [4, 6, 8]
+    assert total_conditioning_sets == [12, 16, 20]
 
 
 def test_strength_hypertrophy_main_lift_dose_scales_across_all_three_levels():
@@ -198,7 +194,7 @@ def test_functional_main_lift_prescription_distinguishes_intermediate_and_advanc
         for level in EXPERIENCE_LEVELS
     ]
 
-    assert [item["reps"] for item in prescriptions] == ["8–12", "8–12", "6–10"]
+    assert [item["reps"] for item in prescriptions] == ["8–10", "8–12", "6–10"]
     assert [item["rir"] for item in prescriptions] == [3, 3, 2]
     assert [item["tempo"] for item in prescriptions] == ["3–1–2–0", "3–1–2–0", "3–1–2–0"]
 
