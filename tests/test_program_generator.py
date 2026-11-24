@@ -172,6 +172,41 @@ def test_functional_program_has_a_distinct_user_facing_session_title():
                for session in strength["sessions"])
 
 
+def test_functional_training_has_loaded_strength_work_and_meaningful_intervals():
+    plan = generate_program({
+        **BASE,
+        "goal": "functional",
+        "experience": "intermediate",
+        "equipment": ["bodyweight", "dumbbell", "kettlebell", "bench"],
+        "session_minutes": 45,
+    })
+    assert len(plan["sessions"]) == 2
+    for session in plan["sessions"]:
+        exercises = session["exercises"]
+        resistance = [
+            item for item in exercises
+            if item["pattern"] not in {"conditioning", "locomotion", "mobility", "mobility_stretch"}
+            and item["joint_type"] == "multi_joint"
+        ]
+        intervals = [item for item in exercises if item["pattern"] == "conditioning"]
+        assert len(resistance) >= 3
+        assert len(intervals) == 1
+        interval = intervals[0]["prescription"]
+        assert interval["sets"] == 8
+        assert interval["work_seconds"] >= 15
+        assert interval["rest_seconds"] in {30, 45}
+        assert session["estimated_minutes"] <= 45
+    assert "polno obvladano amplitudo" in plan["methodology"]["functional_policy"]
+
+
+def test_fat_loss_nutrition_guidance_includes_deficit_and_protein():
+    plan = generate_program({**BASE, "goal": "fat_loss"})
+    guidance = " ".join(plan["nutrition_guidance"]).casefold()
+    assert "energijski primanjkljaj" in guidance
+    assert "beljakovin" in guidance
+    assert "1,6–2,2 g/kg" in guidance
+
+
 def test_functional_goal_uses_supported_general_fitness_catalogue_pool():
     plan = generate_program({**BASE, "goal": "functional"})
     assert len(plan["sessions"]) == 2
@@ -836,6 +871,17 @@ def test_advanced_strength_emphasis_uses_strength_specific_main_lift_dose():
     assert result["goal"] == "strength_hypertrophy"
     assert result["training_emphasis"] == "strength"
     assert main and all(item["prescription"]["reps"] in {"5", "3–5"} for item in main)
+
+
+def test_advanced_5x5_has_a_specific_load_progression_rule():
+    profile = {
+        "goal": "strength_hypertrophy", "experience": "advanced",
+        "training_emphasis": "strength", "sessions_per_week": 2,
+        "session_minutes": 90, "equipment": ["barbell", "rack", "weight_plate", "dumbbell", "bench"],
+    }
+    plan = generate_program(profile)
+    assert "pet serij po pet ponovitev" in plan["methodology"]["progression"]
+    assert "5x5" in plan["methodology"]["experience_adaptation"]
 
 
 def test_advanced_hypertrophy_emphasis_uses_hypertrophy_specific_main_lift_dose():
