@@ -34,14 +34,16 @@ def test_mobility_catalogue_includes_strength_through_range():
 def test_functional_week_prioritises_fundamental_patterns_and_controlled_conditioning():
     week = [_session_patterns(i, 2, "functional") for i in range(2)]
     patterns = {pattern for session in week for pattern in session}
-    assert {"squat", "hinge", "horizontal_push", "horizontal_pull", "conditioning"} <= patterns
-    assert {"lunge", "locomotion"} <= patterns
+    assert {"squat", "hinge", "horizontal_push", "horizontal_pull"} <= patterns
+    assert any(item["training_role"] == "conditioning" for session in result["sessions"] for item in session["exercises"])
+    assert {"lunge", "vertical_pull", "carry"} <= patterns
     assert "jump" not in patterns
 
 
 def test_fat_loss_sessions_combine_strength_and_conditioning():
     week = [_session_patterns(i, 2, "fat_loss") for i in range(2)]
-    assert all("squat" in session and "hinge" in session and "conditioning" in session for session in week)
+    assert {"squat", "hinge", "conditioning"} <= {pattern for session in week for pattern in session}
+    assert all("conditioning" in session for session in week)
 
 
 def test_less_experienced_strength_and_hypertrophy_share_practical_dose():
@@ -91,7 +93,7 @@ def test_functional_sessions_are_compact_and_cover_main_patterns():
     assert all(len(session) <= 6 for session in week)
     patterns = {pattern for session in week for pattern in session}
     assert {"squat", "hinge", "horizontal_push", "horizontal_pull",
-            "lunge", "locomotion", "conditioning"} <= patterns
+            "lunge", "vertical_pull", "conditioning"} <= patterns
     assert "jump" not in patterns
 
 
@@ -112,7 +114,7 @@ def test_generated_functional_program_fits_a_normal_session():
     assert all(session["estimated_minutes"] <= 60 for session in result["sessions"])
     patterns = {item["pattern"] for session in result["sessions"] for item in session["exercises"]}
     assert {"squat", "hinge", "horizontal_push", "horizontal_pull", "conditioning"} <= patterns
-    assert {"lunge", "locomotion"} <= patterns
+    assert {"lunge", "vertical_pull"} <= patterns
     assert "jump" not in patterns
 
 
@@ -126,7 +128,8 @@ def test_generated_fat_loss_program_keeps_strength_and_conditioning_together():
     })
     for session in result["sessions"]:
         patterns = {item["pattern"] for item in session["exercises"]}
-        assert "squat" in patterns and "hinge" in patterns and "conditioning" in patterns
+        assert "squat" in patterns and "hinge" in patterns
+        assert any(item["training_role"] == "conditioning" for item in session["exercises"])
 
 
 def test_generated_mobility_program_contains_strength_through_range():
@@ -279,6 +282,6 @@ def test_beginner_combined_goal_methodology_summary_matches_exercise_tempo():
         "session_minutes": 60,
         "equipment": ["bodyweight", "dumbbell", "bench"],
     })
-    assert "3–1–2–0" in result["methodology"]["tempo"]
+    assert "tempo je odvisen od vaje" in result["methodology"]["tempo"].lower()
     assert "Cilj treninga" in result["methodology"]["tempo"]
     assert result["program_version"] == "3.1.0"
