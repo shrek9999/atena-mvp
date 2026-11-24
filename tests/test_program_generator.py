@@ -62,7 +62,7 @@ def test_beginner_strength_prioritizes_skill_and_8_to_12_reps():
     assert squat["prescription"]["reps"] == "8–12"
     assert squat["prescription"]["rir"] == 3
     assert squat["prescription"]["rir_range"] == "2–3"
-    assert "učenje osnovnih gibalnih vzorcev" in plan["methodology"]["experience_adaptation"]
+    assert "Učenje gibanja dodaj samo za vzorce, ki ga potrebujejo." in plan["methodology"]["experience_adaptation"]
 
 
 def test_tempo_and_full_controlled_range_are_explicit_for_every_exercise():
