@@ -463,6 +463,10 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
             sets, reps, rir, rest = 3, "8–12", 3, 90
         else:
             sets, reps, rir, rest = 3, "6–10", 2, 120
+    if pattern == "carry":
+        carry_seconds = {"beginner": 20, "intermediate": 30, "advanced": 40}[level]
+        sets = 2 if level != "advanced" else 3
+        reps, rir, rest = f"{carry_seconds} s", (3 if level != "advanced" else 2), 60
     if pattern == "mobility_stretch":
         tempo, tempo_description, tempo_seconds = "zadržanje", "Zadrži blag do zmeren razteg, dihaj sproščeno in ne sili v končni položaj.", 0
     elif goal == "mobility" and exercise.get("mobility_strength"):
@@ -477,6 +481,8 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         tempo, tempo_description, tempo_seconds = "ritmično", "Ohrani enakomeren ritem in intenzivnost, ki ustreza predpisanemu cilju.", 0
     elif goal == "functional" and pattern == "conditioning":
         tempo, tempo_description, tempo_seconds = "intervalno", "Ohrani ponovljiv ritem; napor naj bo dovolj visok za kondicijski dražljaj, vendar ne maksimalen in ne na račun tehnike.", 0
+    elif pattern == "carry":
+        tempo, tempo_description, tempo_seconds = "ritmično", "Hodi z naravnim, nadzorovanim korakom; ohrani stabilen trup in breme ob telesu. Ne pospešuj, če se drža spremeni.", 0
     elif is_power:
         tempo, tempo_description, tempo_seconds = "1–0–X–0", "Nadzorovan začetni položaj; dvig oziroma odriv izvedi hitro in tehnično čisto; med ponovitvami se ponastavi.", 3
     elif pattern in {"balance", "coordination"}:
@@ -520,7 +526,15 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         # volume and rest, never by rushing the movement.
         prescription["sets"] = min(2, prescription["sets"])
         prescription["rest_seconds"] = min(60, prescription["rest_seconds"])
-    if exercise.get("id") == "l_sit":
+    if pattern == "carry":
+        carry_seconds = {"beginner": 20, "intermediate": 30, "advanced": 40}[level]
+        prescription.update({
+            "reps": f"{carry_seconds} s",
+            "work_seconds": carry_seconds,
+            "time_label": "nošenja",
+            "effort_target": "Uporabi breme, ki omogoča stabilno hojo in vsaj 3 ponovitve v rezervi; zaključi interval, preden se spremeni drža ali korak.",
+        })
+    elif exercise.get("id") == "l_sit":
         prescription.update({"reps": "8–15 s", "work_seconds": 12, "time_label": "zadržanja"})
     elif exercise.get("time_based") and pattern in {"trunk_stability", "anti_rotation"}:
         prescription.update({"reps": "8–15 s", "work_seconds": 10, "time_label": "zadržanja"})
