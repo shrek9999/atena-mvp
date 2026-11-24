@@ -139,6 +139,7 @@ def validate_profile(profile: object) -> dict:
     goal = profile.get("goal")
     if goal not in SUPPORTED_GOALS:
         raise ProgramValidationError(f"Cilj mora biti eden od: {', '.join(sorted(SUPPORTED_GOALS))}.")
+    canonical_goal = normalize_goal(goal)
     level = profile.get("experience")
     if level not in SUPPORTED_LEVELS:
         raise ProgramValidationError("Izkušnje morajo biti beginner, intermediate ali advanced.")
@@ -162,15 +163,18 @@ def validate_profile(profile: object) -> dict:
     training_emphasis = profile.get("training_emphasis", "balanced")
     if training_emphasis not in {"balanced", "strength", "hypertrophy"}:
         raise ProgramValidationError("training_emphasis mora biti balanced, strength ali hypertrophy.")
-    # Specialisation is available only to advanced users whose primary goal is
-    # the combined strength-and-muscle-mass track.
-    if level != "advanced" or goal != "strength_hypertrophy":
+    # Strength and hypertrophy are one public goal for less-experienced users.
+    # Advanced users may specialize; legacy explicit goal IDs remain compatible.
+    if level != "advanced" or canonical_goal != "strength_hypertrophy":
         training_emphasis = "balanced"
+    elif "training_emphasis" not in profile and goal in {"strength", "hypertrophy"}:
+        training_emphasis = goal
     pistol_squat_capable = profile.get("pistol_squat_capable", False)
     if not isinstance(pistol_squat_capable, bool):
         raise ProgramValidationError("pistol_squat_capable mora biti true ali false.")
     return {
         **profile,
+        "goal": "strength_hypertrophy" if goal in {"strength", "hypertrophy"} else goal,
         "pistol_squat_capable": pistol_squat_capable,
         "sessions_per_week": sessions,
         "session_minutes": duration,
@@ -187,15 +191,15 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
     if goal == "fat_loss" and sessions >= 3 and session_index >= 2:
         # Two resistance-focused full-body days remain the foundation. Additional days
         # add a short aerobic/conditioning session rather than more lifting volume.
-        return ["locomotion", "lunge", "conditioning"]
+        return ["locomotion"]
     if goal == "functional":
         # Every session combines four resistance patterns with a distinct
         # conditioning slot. Learning one pattern must not turn the whole
         # session into a movement-drill circuit.
         if session_index == 0:
-            patterns = ["squat", "hinge", "horizontal_push", "horizontal_pull", "conditioning"]
+            patterns = ["squat", "hinge", "horizontal_push", "hip_extension", "carry", "conditioning"]
         else:
-            patterns = ["lunge", "hinge", "horizontal_pull", "vertical_push", "conditioning"]
+            patterns = ["lunge", "vertical_push", "horizontal_pull", "hip_extension", "carry", "conditioning"]
         if include_stability:
             patterns.insert(0, "trunk_stability")
         return patterns
@@ -220,7 +224,7 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # Keep both resistance sessions full-body, but cap the main exercise
         # list at six. Alternate the unilateral knee-dominant pattern and
         # vertical pull; conditioning remains present in both sessions.
-        patterns = base + (["vertical_pull"] if session_index == 0 else ["lunge"]) + ["conditioning"]
+        patterns = base + ["hip_extension", "carry", "conditioning"]
         if include_stability:
             patterns.insert(0, "trunk_stability")
         return patterns
@@ -290,11 +294,11 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         else:
             sets, reps, rir, rest = 3, "6–10", None, 45
     elif goal == "fat_loss" and pattern == "locomotion":
-        duration = {"beginner": "6 min", "intermediate": "8 min", "advanced": "10 min"}[level]
+        duration = {"beginner": "20 min", "intermediate": "25 min", "advanced": "30 min"}[level]
         sets, reps, rir, rest = 1, duration, None, 0
     elif goal == "fat_loss" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
-        sets = {"beginner": 2, "intermediate": 3, "advanced": 4}[level]
+        sets = (4 if session_minutes <= 30 else 6) if level == "beginner" else (6 if session_minutes <= 30 else 8) if level == "intermediate" else (8 if session_minutes <= 30 else 10)
         if kind == "aerobic":
             reps, rir, rest = "1 min", None, 60
         elif kind == "anaerobic":
@@ -302,9 +306,8 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         else:
             reps, rir, rest = "20–30 s", None, 60
     elif goal == "functional" and pattern == "conditioning":
-        # Interval conditioning is a real training component, not a token finisher.
-        # Keep the effort repeatable and stop before technique or breathing control degrades.
-        sets = {"beginner": 4, "intermediate": 6, "advanced": 8}[level]
+        # A meaningful, repeatable MetCon/interval block; scale by experience and time.
+        sets = (4 if session_minutes <= 30 else 6) if level == "beginner" else (6 if session_minutes <= 30 else 8) if level == "intermediate" else (8 if session_minutes <= 30 else 10)[level]
         reps, rir = "1", None
         kind = exercise.get("endurance_type")
         rest = 45 if kind == "aerobic" else 30
@@ -452,6 +455,10 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
             sets, reps, rir, rest = 3, "8–12", 3, 90
         else:
             sets, reps, rir, rest = 3, "6–10", 2, 120
+    if pattern == "carry":
+        carry_seconds = {"beginner": 20, "intermediate": 30, "advanced": 40}[level]
+        sets = 2 if level != "advanced" else 3
+        reps, rir, rest = f"{carry_seconds} s", (3 if level != "advanced" else 2), 60
     if pattern == "mobility_stretch":
         tempo, tempo_description, tempo_seconds = "zadržanje", "Zadrži blag do zmeren razteg, dihaj sproščeno in ne sili v končni položaj.", 0
     elif goal == "mobility" and exercise.get("mobility_strength"):
@@ -472,6 +479,8 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         tempo, tempo_description, tempo_seconds = "2–1–2–1", "2 s izteg oziroma odmik · 1 s nadzor · 2 s vrnitev · 1 s ponastavitev.", 6
     elif goal == "functional" and pattern in {"conditioning", "locomotion"}:
         tempo, tempo_description, tempo_seconds = "ritmično", "Ohrani ponovljiv ritem intervala; intenzivnost prilagodi cilju in kakovosti izvedbe.", 0
+    elif pattern == "carry":
+        tempo, tempo_description, tempo_seconds = "ritmično", "Hodi z naravnim, nadzorovanim korakom; ohrani stabilen trup in breme ob telesu.", 0
     elif goal == "functional":
         tempo, tempo_description, tempo_seconds = (
             "2–0–1–0",
@@ -502,14 +511,23 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         # volume and rest, never by rushing the movement.
         prescription["sets"] = min(2, prescription["sets"])
         prescription["rest_seconds"] = min(60, prescription["rest_seconds"])
-    if exercise.get("id") == "l_sit":
+    if pattern == "carry":
+        carry_seconds = {"beginner": 20, "intermediate": 30, "advanced": 40}[level]
+        prescription.update({
+            "reps": f"{carry_seconds} s",
+            "work_seconds": carry_seconds,
+            "time_label": "nošenja",
+            "effort_target": "Uporabi breme, ki omogoča stabilno hojo in vsaj 3 ponovitve v rezervi; zaključi interval, preden se spremeni drža ali korak.",
+        })
+    elif exercise.get("id") == "l_sit":
         prescription.update({"reps": "8–15 s", "work_seconds": 12, "time_label": "zadržanja"})
     elif exercise.get("time_based") and pattern in {"trunk_stability", "anti_rotation"}:
         prescription.update({"reps": "8–15 s", "work_seconds": 10, "time_label": "zadržanja"})
     elif pattern == "coordination":
         prescription.update({"work_seconds": 12, "time_label": "koordinacijskega intervala"})
     if goal == "fat_loss" and pattern == "locomotion":
-        prescription.update({"work_seconds": 480, "time_label": "kratka aerobna aktivnost", "effort_target": "Lahkoten do zmeren pogovorni tempo; izvedba naj ostane sproščena in ponovljiva."})
+        duration_seconds = {"beginner": 1200, "intermediate": 1500, "advanced": 1800}[level]
+        prescription.update({"work_seconds": duration_seconds, "time_label": "daljše aerobne aktivnosti", "effort_target": "Zmeren pogovorni tempo; primerna je tudi hitra hoja v klanec. Končaj z občutkom, da bi lahko nadaljeval še nekaj minut."})
     elif goal == "fat_loss" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
         work_seconds = 60 if kind == "aerobic" else (18 if kind == "anaerobic" else 25)
