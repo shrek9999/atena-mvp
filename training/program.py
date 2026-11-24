@@ -1848,8 +1848,12 @@ def generate_program(
                 if planning_goal == "fat_loss" else
                 "Mobilnost: začetnik začne z aktivnimi, podprtimi in kontroliranimi gibi. Napredovanje temelji na kakovosti, postopnem povečevanju neboleče amplitude in sposobnosti ustvarjanja sile v novih položajih; ne na siljenju v končni obseg."
                 if planning_goal == "mobility" else
+                "Funkcionalnost: kombiniraj obremenjene večsklepne vaje skozi polno obvladano amplitudo in intervalni kondicijski blok; drili ostanejo kratka priprava."
+                if planning_goal == "functional" else
                 "Začetnik: pri moči + mišični masi začni z večsklepnimi vajami, praviloma 8–12 ponovitvami in 2–3 ponovitvami v rezervi. Učenje gibanja dodaj samo za vzorce, ki ga potrebujejo."
                 if p["experience"] == "beginner" else
+                "Vadeči z nekaj izkušnjami: ohrani večsklepno osnovo, postopno povečuj breme in volumen; večinoma uporabi 6–12 ponovitev."
+                if p["experience"] == "intermediate" else
                 "Napredni: pri specializaciji moči uporabi npr. 5x5; 5/3/1 samo v ločenem večtedenskem ciklu s potrjenim trening maksimumom. Pri hipertrofiji uporabi 6–20 ponovitev in po potrebi dodaj izolacijske vaje."
             ),
             "tempo": (
