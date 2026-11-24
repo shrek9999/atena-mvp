@@ -761,7 +761,7 @@ def test_system_prompt_distinguishes_general_fitness_conditioning_and_functional
     assert "strength + muscle mass" in prompt
     assert "functional fitness" in prompt
     assert "fat loss/body composition" in prompt
-    assert "Strength and hypertrophy are one combined goal for beginners" in prompt
+    assert "strength + muscle mass are one combined goal for beginners" in prompt
     assert "Functional fitness combines loaded multi-joint strength" in prompt
     assert "Fat loss combines resistance training, conditioning and nutrition" in prompt
 
