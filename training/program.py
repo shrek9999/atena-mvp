@@ -185,29 +185,21 @@ def validate_profile(profile: object) -> dict:
 def _session_patterns(session_index: int, sessions: int, goal: str, include_accessories: bool = False, include_stability: bool = False, experience: str = "intermediate", session_minutes: int = 60) -> list[str]:
     """Compact full-body templates; trunk-control work is added only when feedback supports it."""
     if goal == "fat_loss" and sessions >= 3 and session_index >= 2:
-        # Two resistance-focused full-body days remain the foundation. Additional days
-        # add a short aerobic/conditioning session rather than more lifting volume.
-        return ["locomotion", "lunge", "conditioning"]
+        # Keep the first two sessions resistance-focused; an additional day can
+        # provide longer, lower-impact aerobic work.
+        return ["locomotion"]
     if goal == "functional":
-        # Functional fitness is built from fundamental movement patterns and
-        # locomotion, not generic balance/coordination add-ons.
-        patterns = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
-        # Vertical pull is a supplementary strength pattern, not a camera-assessment task.
-        # Keep all six assessed patterns represented across the week while
-        # preserving locomotion and conditioning as distinct functional work.
-        # Day 1: horizontal push + vertical pull + unilateral knee pattern.
-        # Day 2: retain squat/hinge/horizontal pull, rotate push to vertical,
-        # then add locomotion and controlled conditioning when time permits.
-        if session_index == 0:
-            patterns.extend(["vertical_pull", "lunge"])
-        else:
-            patterns.remove("horizontal_push")
-            patterns.extend(["vertical_push", "locomotion"])
-            if session_minutes > 30:
-                patterns.append("conditioning")
+        # Functional training combines loaded multi-joint strength work, usable
+        # range of motion and a real conditioning dose in every session.
+        # Mobility drills remain a short warm-up option, not a substitute for work sets.
+        templates = [
+            ["squat", "hinge", "horizontal_push", "hip_extension", "conditioning"],
+            ["lunge", "vertical_push", "horizontal_pull", "hip_extension", "conditioning"],
+        ]
+        patterns = list(templates[session_index % len(templates)])
         if include_stability:
             patterns.insert(0, "trunk_stability")
-        # Experience is not a landing-readiness screen: no default jumps.
+        # No default jumps: explosive work requires separate readiness evidence.
         return patterns
     if goal == "endurance":
         # Keep a minimum viable session even when no loaded carry equipment exists.
@@ -295,25 +287,18 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         else:
             sets, reps, rir, rest = 3, "6–10", None, 45
     elif goal == "fat_loss" and pattern == "locomotion":
-        duration = {"beginner": "6 min", "intermediate": "8 min", "advanced": "10 min"}[level]
+        duration = {"beginner": "20 min", "intermediate": "25 min", "advanced": "30 min"}[level]
         sets, reps, rir, rest = 1, duration, None, 0
     elif goal == "fat_loss" and pattern == "conditioning":
         kind = exercise.get("endurance_type")
-        sets = {"beginner": 2, "intermediate": 3, "advanced": 4}[level]
-        if kind == "aerobic":
-            reps, rir, rest = "1 min", None, 60
-        elif kind == "anaerobic":
-            reps, rir, rest = "15–20 s", None, 60
-        else:
-            reps, rir, rest = "20–30 s", None, 60
-    elif goal == "functional" and pattern == "conditioning":
-        # Light, repeatable MetCon supports the strength base; it is not an
-        # all-out finisher or a test of maximal capacity. Timed work is stored
-        # as work_seconds (not a textual reps value) for duration calculations.
-        sets = {"beginner": 2, "intermediate": 3, "advanced": 4}[level]
+        sets = (4 if session_minutes <= 30 else 6) if level == "beginner" else (6 if session_minutes <= 30 else 8) if level == "intermediate" else (8 if session_minutes <= 30 else 10)
         reps, rir = "1", None
-        kind = exercise.get("endurance_type")
-        rest = 60 if kind == "anaerobic" else 45
+        rest = 40 if kind == "anaerobic" else 30
+    elif goal == "functional" and pattern == "conditioning":
+        # A meaningful, repeatable interval/MetCon block—not a token 2–4 reps.
+        sets = (4 if session_minutes <= 30 else 6) if level == "beginner" else (6 if session_minutes <= 30 else 8) if level == "intermediate" else (8 if session_minutes <= 30 else 10)
+        reps, rir = "1", None
+        rest = {"beginner": 40, "intermediate": 30, "advanced": 20}[level]
     elif goal == "endurance" and pattern == "locomotion":
         sets, reps, rir, rest = 1, "20–30 min", None, 0
     elif goal == "endurance" and pattern == "conditioning":
@@ -409,7 +394,9 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         rir_range = "2–3"
     elif goal == "strength":
         if pattern in {"squat", "hinge"}:
-            sets, reps, rir, rest = (4, "3–6", 2, 210) if level == "advanced" else (3, "5–8", 2, 180)
+            # Advanced strength specialization can use a simple 5x5 base.
+            # Wendler 5/3/1 needs its own multi-week training-max cycle.
+            sets, reps, rir, rest = (5, "5", 2, 210) if level == "advanced" else (3, "5–8", 2, 180)
         elif is_stability:
             sets, reps, rir, rest = 2, "10–15", 3, 60
         elif pattern in {"carry", "hip_extension"}:
@@ -427,6 +414,23 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
             sets, reps, rir, rest = 2, "10–15", 2, 75
         else:
             sets, reps, rir, rest = 2, "10–15", 2, 75
+    elif goal == "hypertrophy" and level == "advanced":
+        # Advanced hypertrophy uses a wider 6–20 rep spectrum and allows
+        # targeted single-joint work; multi-joint exercises remain the base.
+        if pattern in {"squat", "hinge"}:
+            sets, reps, rir, rest = 4, "6–12", 2, 150
+        elif pattern == "accessory":
+            sets, reps, rir, rest = 3, "10–20", 1, 75
+        elif pattern == "lunge" or unilateral:
+            sets, reps, rir, rest = 3, "8–15", 2, 90
+        elif pattern in {"vertical_push", "vertical_pull"}:
+            sets, reps, rir, rest = 3, "8–15", 2, 90
+        elif pattern in {"trunk_stability", "anti_rotation"}:
+            sets, reps, rir, rest = 2, "10–15", 3, 60
+        elif pattern in {"hip_extension", "carry"}:
+            sets, reps, rir, rest = 3, "8–15", 2, 90
+        else:
+            sets, reps, rir, rest = 3, "8–15", 2, 90
     elif goal in {"hypertrophy", "fat_loss"}:
         if pattern in {"squat", "hinge"}:
             sets, reps, rir, rest = 3, "6–10", (2 if level != "beginner" else 3), 120 if level == "advanced" else 90
@@ -459,21 +463,35 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         )
     elif goal == "mobility" or pattern == "mobility":
         tempo, tempo_description, tempo_seconds = "kontrolirano", "Aktivno raziskuj razpoložljivo amplitudo brez sunkov in prisiljevanja.", 4
-    elif goal == "endurance" or (goal == "fat_loss" and pattern in {"locomotion", "conditioning"}):
+    elif goal in {"endurance", "fat_loss"} and pattern in {"locomotion", "conditioning"}:
         tempo, tempo_description, tempo_seconds = "ritmično", "Ohrani enakomeren ritem in intenzivnost, ki ustreza predpisanemu cilju.", 0
+    elif goal == "functional" and pattern == "conditioning":
+        tempo, tempo_description, tempo_seconds = "intervalno", "Ohrani ponovljiv ritem; napor naj bo dovolj visok za kondicijski dražljaj, vendar ne maksimalen in ne na račun tehnike.", 0
     elif is_power:
         tempo, tempo_description, tempo_seconds = "1–0–X–0", "Nadzorovan začetni položaj; dvig oziroma odriv izvedi hitro in tehnično čisto; med ponovitvami se ponastavi.", 3
     elif pattern in {"balance", "coordination"}:
         tempo, tempo_description, tempo_seconds = "kontrolirano", "Najprej kakovost in nadzor; hitrost ali doseg povečuj šele, ko je izvedba ponovljiva.", 0
     elif is_stability:
         tempo, tempo_description, tempo_seconds = "2–1–2–1", "2 s izteg oziroma odmik · 1 s nadzor · 2 s vrnitev · 1 s ponastavitev.", 6
-    else:
-        # Universal motor-learning default across strength, hypertrophy, functional
-        # and fat-loss goals. Training age and goal do not prove movement mastery.
+    elif goal == "functional":
         tempo, tempo_description, tempo_seconds = (
-            "3–1–2–0",
-            "3 s nadzorovan spust oziroma ekscentrična faza · 1 s miren nadzor v izbranem položaju · 2 s nadzorovana vrnitev oziroma koncentrična faza · brez sunkov in brez izgube položaja.",
-            6,
+            "2–0–1–0",
+            "Približno 2 s nadzorovana ekscentrična faza in odločna, vendar nadzorovana koncentrična faza. Ohrani največjo trenutno obvladano amplitudo; ne upočasnjuj giba po nepotrebnem.",
+            3,
+        )
+    elif goal == "strength_hypertrophy" and level == "beginner":
+        tempo, tempo_description, tempo_seconds = (
+            "2–1–1–0",
+            "2 s nadzorovan spust · 1 s nadzor v spodnjem oziroma raztegnjenem položaju, kjer je smiseln · 1 s nadzorovan dvig · brez nepotrebnega zadrževanja na vrhu.",
+            4,
+        )
+    else:
+        # Controlled execution is a coaching tool, not a requirement to make
+        # every repetition artificially slow.
+        tempo, tempo_description, tempo_seconds = (
+            "2–0–1–0",
+            "2 s nadzorovana ekscentrična faza · 1 s odločna, vendar nadzorovana koncentrična faza · brez sunkov ali izgube položaja.",
+            3,
         )
     prescription = {
         "sets": sets,
