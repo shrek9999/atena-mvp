@@ -863,3 +863,18 @@ def test_system_prompt_maps_regular_training_to_intermediate_not_automatically_a
     assert "Map regular training to intermediate by default" in prompt
     assert "Never infer advanced ability" in prompt
 
+def test_system_prompt_enforces_concise_non_repetitive_responses():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "OUTPUT LENGTH — HIGH PRIORITY" in prompt
+    assert "Normal chat: 1–3 short sentences" in prompt
+    assert "usually no more than 45 words" in prompt
+    assert "Answer the user's exact question first" in prompt
+    assert "Never repeat information already stated" in prompt
+    assert "Keep essential safety instructions" in prompt
+
+
+def test_system_prompt_keeps_programme_prescriptions_compact_but_actionable():
+    prompt = coach_routes.SYSTEM_PROMPT
+    assert "Programmes: show only the session structure and actionable prescription" in prompt
+    assert "exercise, sets × reps/time, tempo and rest" in prompt
+    assert "Do not repeat the user's profile, coaching philosophy" in prompt
