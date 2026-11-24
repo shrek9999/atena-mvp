@@ -1088,7 +1088,7 @@ def generate_program(
                 and item["user_report"].get("status") == "symptoms_reported"
                 for item in movement_decisions_by_pattern.values()
             )
-            if movement_decisions_by_pattern and len(ready_patterns) < 3 and not symptom_reports:
+            if len(movement_decisions_by_pattern) >= 3 and len(ready_patterns) < 3 and not symptom_reports:
                 fallback_added = False
                 for fallback_pattern in ("hip_extension", "carry"):
                     if fallback_pattern not in patterns and fallback_pattern not in p["excluded_patterns"]:
