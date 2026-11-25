@@ -2561,15 +2561,15 @@ def coach_chat():
     expected_token = os.getenv("AI_COACH_TEST_TOKEN", "").strip()
     supplied_token = request.headers.get("X-Pilot-Token", "").strip()
     if not expected_token:
-        return jsonify({"error": "Testni dostop še ni nastavljen na strežniku."}), 503
+        return jsonify({"error": localize_chat_api_error("Testni dostop še ni nastavljen na strežniku.", response_language)}), 503
     if not supplied_token or not hmac.compare_digest(supplied_token, expected_token):
-        return jsonify({"error": "Testni dostopni ključ ni pravilen."}), 403
+        return jsonify({"error": localize_chat_api_error("Testni dostopni ključ ni pravilen.", response_language)}), 403
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     if not api_key:
-        return jsonify({"error": "Pilot še ni aktiviran: skrbnik mora na strežniku nastaviti GEMINI_API_KEY."}), 503
+        return jsonify({"error": localize_chat_api_error("Pilot še ni aktiviran: skrbnik mora na strežniku nastaviti GEMINI_API_KEY.", response_language)}), 503
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
-        return jsonify({"error": "Pričakovan je JSON objekt."}), 400
+        return jsonify({"error": localize_chat_api_error("Pričakovan je JSON objekt.", response_language)}), 400
     messages = payload.get("messages")
     if isinstance(messages, list):
         response_language = resolve_response_language(
@@ -2584,27 +2584,27 @@ def coach_chat():
     contents = []
     for item in messages:
         if not isinstance(item, dict) or item.get("role") not in ("user", "model"):
-            return jsonify({"error": "Neveljavna zgodovina pogovora."}), 400
+            return jsonify({"error": localize_chat_api_error("Neveljavna zgodovina pogovora.", response_language)}), 400
         content = item.get("content")
         max_chars = _chat_message_character_limit(item["role"])
         if not isinstance(content, str) or not content.strip() or len(content) > max_chars:
-            return jsonify({"error": f"Sporočilo je prazno ali predolgo (največ {max_chars} znakov)."}), 400
+            return jsonify({"error": localize_chat_api_error(f"Sporočilo je prazno ali predolgo (največ {max_chars} znakov).", response_language)}), 400
         contents.append({"role": item["role"], "parts": [{"text": content.strip()}]})
     system_prompt = SYSTEM_PROMPT + "\n\n" + language_instruction(response_language)
     profile_id = request.headers.get("X-Profile-Id", "").strip()
     profile_token = request.headers.get("X-Profile-Token", "").strip()
     if bool(profile_id) != bool(profile_token):
-        return jsonify({"error": "Za uporabo zgodovine treningov sta potrebna ID profila in dostopni ključ."}), 400
+        return jsonify({"error": localize_chat_api_error("Za uporabo zgodovine treningov sta potrebna ID profila in dostopni ključ.", response_language)}), 400
     if profile_id and profile_token:
         if len(profile_id) > 64 or not 20 <= len(profile_token) <= 256:
-            return jsonify({"error": "Podatki za dostop do profila niso veljavni."}), 400
+            return jsonify({"error": localize_chat_api_error("Podatki za dostop do profila niso veljavni.", response_language)}), 400
         try:
             recent_sessions = store_list_sessions(profile_id, profile_token, limit=5)
             history_context = _format_recent_training_context(recent_sessions)
             if history_context:
                 system_prompt += "\n\n" + history_context
         except ProfileNotFound:
-            return jsonify({"error": "Dostop do profila ni pravilen. Obnovi dostop z ID-jem in ključem."}), 403
+            return jsonify({"error": localize_chat_api_error("Dostop do profila ni pravilen. Obnovi dostop z ID-jem in ključem.", response_language)}), 403
         except StorageUnavailable:
             logger.warning("Stored training history unavailable for authenticated coach chat")
             system_prompt += (
@@ -2724,7 +2724,7 @@ def coach_chat():
         answer = "\n".join(p.get("text", "") for p in parts if isinstance(p, dict)).strip()
         if not answer:
             logger.warning("Gemini returned no text for model %s", model)
-            return jsonify({"error": "Model ni vrnil odgovora. Poskusi znova."}), 502
+            return jsonify({"error": localize_chat_api_error("Model ni vrnil odgovora. Poskusi znova.", response_language)}), 502
         answer = _sanitize_model_markup(answer)
         answer = _normalize_slovene_coaching_terms(answer)
         answer = _sanitize_onboarding_questions(answer, messages)
@@ -2759,13 +2759,13 @@ def coach_chat():
         # Log only status and model; never log provider body, API key, or secret-bearing URL.
         logger.error("Gemini provider returned HTTP %s for model %s", exc.code, model)
         if exc.code in (400, 401, 403):
-            return jsonify({"error": "Povezava z modelom ni pravilno nastavljena. Skrbnik naj preveri ključ in model."}), 502
+            return jsonify({"error": localize_chat_api_error("Povezava z modelom ni pravilno nastavljena. Skrbnik naj preveri ključ in model.", response_language)}), 502
         if exc.code == 429:
-            return jsonify({"error": "Trenutno je dosežena omejitev uporabe. Poskusi pozneje."}), 429
-        return jsonify({"error": "Storitev trenutno ni dosegljiva. Poskusi znova."}), 502
+            return jsonify({"error": localize_chat_api_error("Trenutno je dosežena omejitev uporabe. Poskusi pozneje.", response_language)}), 429
+        return jsonify({"error": localize_chat_api_error("Storitev trenutno ni dosegljiva. Poskusi znova.", response_language)}), 502
     except (OSError, TimeoutError, socket.timeout, urllib.error.URLError, json.JSONDecodeError, UnicodeDecodeError):
         logger.warning("Gemini request failed due to timeout, network error, or invalid JSON for model %s", model)
-        return jsonify({"error": "Odgovor se je predolgo pripravljal ali povezava ni uspela. Poskusi znova."}), 504
+        return jsonify({"error": localize_chat_api_error("Odgovor se je predolgo pripravljal ali povezava ni uspela. Poskusi znova.", response_language)}), 504
 
 
 @coach_bp.route("/coach/program", methods=["POST", "OPTIONS"])
