@@ -705,7 +705,7 @@ def generate_program(
             ):
                 preferred_learning_methods = {
                     "squat": "supported_squat_assistance" if report_status == "needs_support" else "reaching_counterbalance",
-                    "hinge": "wall_hip_hinge" if report_status == "needs_support" else "dowel_four_point",
+                    "hinge": "wall_hip_hinge" if report_status in {"needs_support", "selected_for_learning"} else "dowel_four_point",
                     "horizontal_push": "incline_push_up",
                     "horizontal_pull": "scapular_coordination",
                     "vertical_push": "unloaded_overhead_reach",
