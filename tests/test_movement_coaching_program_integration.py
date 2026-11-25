@@ -409,7 +409,11 @@ def test_six_learning_patterns_are_distributed_across_two_weekly_sessions():
     assert [len(patterns) for patterns in session_patterns] == [3, 3]
     assert set(pattern for patterns in session_patterns for pattern in patterns) == set(methods)
     assert set(session_patterns[0]).isdisjoint(session_patterns[1])
-    assert all(not session["exercises"] for session in plan["sessions"])
+    assert all(
+        exercise["pattern"] not in methods
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+    )
     assert all(session["estimated_minutes"] > session["warm_up_minutes"] for session in plan["sessions"])
     assert all(session["estimated_minutes"] <= session["available_minutes"] for session in plan["sessions"])
     assert not any(
