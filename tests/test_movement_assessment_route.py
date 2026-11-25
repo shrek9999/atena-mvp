@@ -590,3 +590,44 @@ def test_program_route_rejects_ready_when_pattern_was_only_selected_for_learning
     )
     assert response.status_code == 400
     assert response.get_json()["invalid_report_patterns"] == ["squat"]
+
+
+
+def test_saved_six_pattern_selection_is_persisted_as_learning_not_assessment(monkeypatch, client):
+    import coach_routes
+    from training.movement_coaching import PATTERN_DEFINITIONS
+
+    captured = {}
+    monkeypatch.setattr(coach_routes, "_profile_token", lambda: "profile-token")
+    monkeypatch.setattr(
+        coach_routes, "store_get_profile",
+        lambda profile_id, token: {"health_data_consent": True},
+    )
+
+    def save_assessment(profile_id, token, record):
+        captured["record"] = record
+        return {"updated_at": "2026-11-25T14:00:00Z"}
+
+    monkeypatch.setattr(coach_routes, "store_save_movement_assessment", save_assessment)
+    patterns = {
+        pattern: {"status": "not_assessed"}
+        for pattern in PATTERN_DEFINITIONS
+    }
+    patterns["squat"] = {"status": "selected_for_learning"}
+
+    response = client.put(
+        "/coach/profile/test-profile/movement-assessment",
+        headers={"X-Profile-Token": "profile-token"},
+        json={"movement_assessment_consent": True, "movement_patterns": patterns},
+    )
+
+    assert response.status_code == 200
+    decisions = response.get_json()["movement_decisions"]
+    assert decisions["squat"]["decision"] == "LEARN"
+    assert decisions["squat"]["user_report"]["status"] == "selected_for_learning"
+    assert decisions["squat"].get("training_phase") != "capacity_development"
+    assert all(
+        decisions[pattern]["decision"] == "UNASSESSABLE"
+        for pattern in PATTERN_DEFINITIONS if pattern != "squat"
+    )
+    assert captured["record"]["decisions"]["squat"]["user_report"]["status"] == "selected_for_learning"
