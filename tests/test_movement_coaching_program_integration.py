@@ -651,13 +651,8 @@ def test_additional_exercises_have_complete_english_coaching_arrays():
         "brisk_walking", "cycling", "jump_rope", "burpee", "sled_push",
         "rower_intervals", "mountain_climber", "deep_squat_hold",
         "ankle_knee_to_wall", "cossack_squat", "pistol_squat",
-        "kettlebell_swing", "single_leg_rdl", "long_lever_glute_bridge",
-        "elevated_heel_hip_lift", "slider_leg_curl", "nordic_hamstring_curl",
-        "farmer_carry_bodyweight", "suitcase_carry", "running_easy",
-        "brisk_walking", "cycling", "jump_rope", "burpee", "sled_push",
-        "rower_intervals", "mountain_climber", "deep_squat_hold",
-        "ankle_knee_to_wall", "cossack_squat", "pistol_squat",
     }
+    assert len(translated_ids) == 40
     source_fields = {
         "cues_en": "cues",
         "warnings_en": "warnings",
@@ -671,4 +666,3 @@ def test_additional_exercises_have_complete_english_coaching_arrays():
         for english_field, source_field in source_fields.items():
             assert len(exercise[english_field]) == len(exercise[source_field])
             assert all(item.strip() for item in exercise[english_field])
-
