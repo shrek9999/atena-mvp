@@ -1,5 +1,5 @@
 """Programme integration for structured six-pattern movement decisions."""
-from training.movement_coaching import build_movement_decision
+from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision, get_method_english, get_pattern_english
 from training.program import PATTERN_LABELS, ProgramValidationError, _estimated_minutes, generate_program
 
 
@@ -42,6 +42,10 @@ def test_learn_decision_selects_reaching_squat_and_adds_learning_task():
     assert all(task["exercise_id"] is None for task in tasks)
     assert all(task["demo_url"] == "https://youtu.be/f6LSIpaDdSA" for task in tasks)
     assert all(task["tempo"] == "3-1-1" for task in tasks)
+    assert all(task["pattern_label_en"] == "Squat" for task in tasks)
+    assert all("controlled squat" in task["task_en"].lower() for task in tasks)
+    assert all(task["method_en"] == "Counterbalance squat" for task in tasks)
+    assert all("counterbalance" in task["description_en"].lower() for task in tasks)
 
 
 def test_separate_movement_learning_tasks_do_not_inflate_workout_warmup_or_duration():
@@ -574,3 +578,21 @@ def test_all_selected_for_learning_patterns_get_safe_learning_methods_without_lo
     assert not any(exercise["pattern"] in methods for exercise in exercises)
     by_pattern = {task["movement_pattern"]: task["method_id"] for task in tasks}
     assert {pattern: by_pattern[pattern] for pattern in methods} == methods
+
+
+
+def test_every_foundational_pattern_and_learning_method_has_reviewed_english_copy():
+    assert set(PATTERN_DEFINITIONS) == {
+        "squat", "hinge", "horizontal_push", "horizontal_pull",
+        "vertical_push", "lunge",
+    }
+    for pattern, definition in PATTERN_DEFINITIONS.items():
+        english_pattern = get_pattern_english(pattern)
+        assert english_pattern
+        assert english_pattern["label"]
+        assert english_pattern["task"]
+        for method in definition["learning_methods"]:
+            english_method = get_method_english(method["id"])
+            assert english_method, f"Missing English learning method: {method['id']}"
+            assert english_method[0]
+            assert english_method[1]
