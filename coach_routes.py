@@ -2805,9 +2805,9 @@ def coach_program():
             "assessment_required": True,
             "missing_patterns": missing_patterns,
             "unknown_patterns": unknown_patterns,
-            "message": "Pred individualnim programom odgovori na vseh šest osnovnih gibalnih vzorcev. Če naloge ne moreš ali ne želiš oceniti, izberi »Neocenjeno – preskoči«; ta vzorec bo izpuščen iz programa.",
+            "message": "Za vsak od šestih gibalnih vzorcev izberi naslednji korak. Vzorce, ki se jih ne želiš učiti, preskoči; za individualni program izberi vsaj en vzorec za učenje ali prijavi simptome.",
         }), 409
-    valid_report_statuses = {"comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled"}
+    valid_report_statuses = {"selected_for_learning", "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled"}
     control_criteria = {
         "squat": {"tempo", "balance", "knee_hip_foot_control", "lumbopelvic_control", "tolerated_rom"},
         "hinge": {"tempo", "hip_hinge_coordination", "spine_control", "balance", "tolerated_rom"},
@@ -2839,6 +2839,12 @@ def coach_program():
                 )
             except MovementCoachingError:
                 invalid_report_patterns.append(pattern)
+        elif report_status == "selected_for_learning" and (
+            decision not in {"LEARN", "UNASSESSABLE"}
+            or record.get("selected_exercise_id") is not None
+        ):
+            # Selecting a pattern is intent to learn, never evidence of mastery or clearance to load.
+            invalid_report_patterns.append(pattern)
         elif report_status in {"comfortable", "needs_support"} and decision == "READY":
             # A comfortable self-report is not proof of learned, repeatable motor control.
             invalid_report_patterns.append(pattern)
@@ -2859,7 +2865,7 @@ def coach_program():
                 invalid_report_patterns.append(pattern)
     if invalid_report_patterns:
         return jsonify({
-            "error": "Vsak vzorec mora imeti veljavno samooceno, odločitev pa mora biti skladna z njo.",
+            "error": "Vsak vzorec mora imeti veljavno izbiro ali poročilo o simptomih, odločitev pa mora biti skladna z njim.",
             "invalid_report_patterns": sorted(invalid_report_patterns),
         }), 400
     assessable_patterns = [
@@ -2870,7 +2876,7 @@ def coach_program():
         return jsonify({
             "blocked": True,
             "assessment_required": True,
-            "message": "Vseh šest vzorcev je trenutno neocenjenih ali nejasnih. Pred individualnim programom je treba vsaj en vzorec varno oceniti; sicer program ne bi imel zanesljivega gibalnega izhodišča.",
+            "message": "Noben gibalni vzorec ni izbran za učenje ali potrjen po ustreznem ponovnem preizkusu. Izberi vsaj en vzorec za učenje oziroma razjasni prijavljene simptome.",
         }), 409
     coordination_record = (camera_observations or {}).get("coordination", {})
     coordination_values = coordination_record.get("observations", {}) if isinstance(coordination_record, dict) else {}
@@ -3740,6 +3746,7 @@ def save_six_pattern_movement_assessment(profile_id):
         }), 400
 
     status_to_decision = {
+        "selected_for_learning": "LEARN",
         "comfortable": "LEARN",
         "needs_support": "LEARN",
         "uncertain": "UNASSESSABLE",
@@ -3809,6 +3816,7 @@ def save_six_pattern_movement_assessment(profile_id):
                 if warning_flags and (selected_exercise_id is not None or "regression_test" in value):
                     return jsonify({"error": f"Ob akutnem opozorilnem znaku se vzorec {pattern} ne sme ponovno testirati."}), 400
             reason = {
+                "selected_for_learning": "Uporabnik je izbral ta vzorec za vodeno učenje; izbira ne potrjuje tehnike ali pripravljenosti za obremenitev.",
                 "comfortable": "Uporabnik poroča, da je osnovno izvedbo opravil udobno in nadzorovano.",
                 "needs_support": "Uporabnik poroča, da pri izvedbi potrebuje podporo ali lažjo različico.",
                 "uncertain": "Uporabnik ni prepričan o kakovosti ali udobju izvedbe.",
