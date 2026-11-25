@@ -711,7 +711,7 @@ def test_all_unmastered_patterns_can_form_a_learning_only_program(monkeypatch):
         assert all(task["exercise_id"] is None for task in session["learning_tasks"])
         assert all(task["decision"] == "LEARN" for task in session["learning_tasks"])
         seen_learning_patterns.update(task["movement_pattern"] for task in session["learning_tasks"])
-    assert len(seen_learning_patterns) == 2
+    assert len(seen_learning_patterns) == 6
     deferred = [
         event for event in program["movement_adaptation"]["events"]
         if event["action"] == "learning_tasks_deferred_to_later_sessions"
