@@ -523,3 +523,21 @@ def test_selected_for_learning_creates_learning_task_without_loaded_exercise():
     assert tasks
     assert all(task["method_id"] == "reaching_counterbalance" for task in tasks)
     assert all(task["exercise_id"] is None for task in tasks)
+
+
+
+def test_saved_profile_hinge_selection_uses_supported_wall_learning_method():
+    decision = build_movement_decision(
+        "hinge", "LEARN",
+        user_report={"status": "selected_for_learning", "intent": "learn_this_pattern"},
+        decision_reason="The user selected the hinge pattern to learn.",
+    )
+    plan = generate_program(BASE, movement_decisions={"hinge": decision})
+    assert _pattern_exercises(plan, "hinge") == []
+    tasks = [
+        task for session in plan["sessions"] for task in session["learning_tasks"]
+        if task["movement_pattern"] == "hinge"
+    ]
+    assert tasks
+    assert all(task["method_id"] == "wall_hip_hinge" for task in tasks)
+    assert all(task["exercise_id"] is None for task in tasks)
