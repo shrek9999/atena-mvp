@@ -719,13 +719,21 @@ def test_all_unmastered_patterns_can_form_a_learning_only_program(monkeypatch):
     assert not deferred
 
 
-def test_program_endpoint_localizes_errors_for_english_and_preserves_slovenian(monkeypatch):
-    client = _client(monkeypatch)
-    headers = {"X-Pilot-Token": "test-only-secret"}
-    base = {"language": "en", "profile": {"goal": "hypertrophy"}}
-    english = client.post("/coach/program", headers=headers, json=base)
-    assert english.status_code == 403 or english.status_code == 400
-    assert english.get_json()["error"].isascii()
+
+def test_program_endpoint_localizes_pilot_access_errors_by_requested_language(monkeypatch):
     monkeypatch.delenv("AI_COACH_TEST_TOKEN", raising=False)
-    unavailable = client.post("/coach/program", headers=headers, json={"language": "en"})
-    assert "Pilot access" in unavailable.get_json()["error"]
+    client = _client(monkeypatch)
+    english = client.post("/coach/program", json={"language": "en"})
+    slovenian = client.post("/coach/program", json={"language": "sl"})
+    assert english.status_code == 503
+    assert english.get_json()["error"] == "Pilot access has not been configured on the server yet."
+    assert slovenian.status_code == 503
+    assert slovenian.get_json()["error"] == "Testni dostop še ni nastavljen na strežniku."
+
+
+def test_program_api_message_localization_has_safe_english_fallback():
+    from training.localization import localize_program_api_message
+
+    assert localize_program_api_message("Testni dostopni ključ ni pravilen.", "en") == "The pilot access token is invalid."
+    assert localize_program_api_message("Testni dostopni ključ ni pravilen.", "sl") == "Testni dostopni ključ ni pravilen."
+    assert localize_program_api_message("Neznano sporočilo", "en").startswith("The programme request")
