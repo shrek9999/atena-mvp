@@ -898,6 +898,7 @@ def generate_program(
                 "learning_only": bool(method and method.get("learning_only") is True),
                 **({"omission_reason": omission_reason} if omission_reason else {}),
             }
+    strict_six_pattern_mode = set(movement_decisions_by_pattern) == set(PATTERN_DEFINITIONS)
     reduce_load = bool(response and (
         response["difficulty"] == "hard" or not response["completed"] or response["recovery"] == "poor"
     ))
@@ -1098,9 +1099,29 @@ def generate_program(
                 and item["user_report"].get("status") == "symptoms_reported"
                 for item in movement_decisions_by_pattern.values()
             )
-            # Structured six-pattern assessment is authoritative. Do not add
-            # unassessed hip-extension/carry fallbacks merely to fill a session;
-            # those patterns can be introduced after their own assessment.
+            # Older partial structured payloads retain the compatibility fallback.
+            # The current six-pattern contract is strict: it never invents extra
+            # loaded patterns to fill time or reach a minimum exercise count.
+            if (
+                not strict_six_pattern_mode
+                and len(movement_decisions_by_pattern) >= 3
+                and len(ready_patterns) < 3
+                and not symptom_reports
+            ):
+                fallback_added = False
+                for fallback_pattern in ("hip_extension", "carry"):
+                    if fallback_pattern not in patterns and fallback_pattern not in p["excluded_patterns"]:
+                        patterns.append(fallback_pattern)
+                        fallback_added = True
+                if fallback_added and not any(
+                    event.get("action") == "fallback_loaded_patterns_added"
+                    for event in movement_adaptation_events
+                ):
+                    movement_adaptation_events.append({
+                        "pattern": "program_baseline",
+                        "action": "fallback_loaded_patterns_added",
+                        "message": "Ker manj kot trije osnovni vzorci še nimajo potrjene pripravljenosti, ATENA začasno uporabi druge primerne obremenjene vaje in kondicijski del. Nepotrjenih vzorcev ne obremeni; po ponovnem preverjanju jih lahko postopno vključi.",
+                    })
         warm_up_minutes = 5 if p["session_minutes"] <= 30 else (7 if p["session_minutes"] <= 60 else 10)
         camera_coordination_block = None
         if camera_coordination_exercise is not None:
@@ -1214,7 +1235,7 @@ def generate_program(
             seen_patterns.add(pattern)
             # The six-pattern engine must not silently introduce additional
             # unassessed patterns (e.g. vertical pull, carry or hip extension).
-            if movement_decisions_by_pattern and pattern not in movement_decisions_by_pattern:
+            if strict_six_pattern_mode and pattern not in movement_decisions_by_pattern:
                 continue
             movement_status = movement_status_by_pattern.get(pattern)
             affected_tasks = movement_tasks_by_pattern.get(pattern, [])
@@ -2009,6 +2030,7 @@ def generate_program(
                 f"Trening {session_index + 1} za cilj {planning_goal} je ocenjen na {estimated} min, na voljo pa je {p['session_minutes']} min. Skrajšaj vadbo ali izberi daljši termin."
             )
         if (len(selected) < 3 and not learning_tasks_for_session
+                and not movement_decisions_by_pattern
                 and not (planning_goal == "fat_loss" and p["sessions_per_week"] >= 3 and session_index >= 2)):
             raise ProgramValidationError(
                 "Za izbrano opremo in omejitve ni dovolj preverjenih vaj ali učnih nalog. Potrebujem več opreme ali manj izključitev."
@@ -2017,7 +2039,7 @@ def generate_program(
         # learning variations that may be carried alongside it.
         def counts_as_training_pattern(item: dict) -> bool:
             decision = movement_decisions_by_pattern.get(item["pattern"])
-            if movement_decisions_by_pattern and not decision:
+            if strict_six_pattern_mode and not decision:
                 return False
             if not decision:
                 return True
