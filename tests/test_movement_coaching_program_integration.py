@@ -753,3 +753,22 @@ def test_dynamic_coaching_methodology_tempo_and_limitations_have_english_fields(
             "learning_or_regression_variant_selected",
         }:
             assert event.get("message_en")
+
+def test_functional_preparation_blocks_expose_reviewed_english_fields():
+    plan = generate_program({**BASE, "goal": "functional", "experience": "beginner"})
+    blocks = [
+        session.get("mobility_block")
+        for session in plan["sessions"]
+        if session.get("mobility_block")
+    ]
+    assert blocks
+    for block in blocks:
+        assert block["purpose_en"]
+        assert block["amplitude_rule_en"]
+        for exercise in block["exercises"]:
+            assert exercise["name_en"]
+            assert exercise["component_en"] in {"mobility", "balance", "coordination", "stability"}
+            assert exercise["tempo_en"] == "slow and controlled"
+            assert isinstance(exercise["cues_en"], list)
+            assert isinstance(exercise["warnings_en"], list)
+
