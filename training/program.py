@@ -575,6 +575,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         "tempo_description": tempo_description,
         "tempo_seconds_per_rep": tempo_seconds,
     }
+    prescription["tempo_description_en"] = _TEMPO_DESCRIPTION_EN.get(tempo_description)
     if session_minutes <= 30 and pattern in {
         "squat", "hinge", "lunge", "horizontal_push", "horizontal_pull",
         "vertical_push", "vertical_pull", "hip_extension",
@@ -1847,6 +1848,14 @@ def generate_program(
             if movement_note:
                 existing_note = prescription.get("adjustment_note")
                 prescription["adjustment_note"] = movement_note + ((" " + existing_note) if existing_note else "")
+            if prescription.get("adjustment_note"):
+                prescription["adjustment_note_en"] = _ADJUSTMENT_NOTE_EN.get(prescription["adjustment_note"])
+            if movement_note:
+                prescription["movement_adaptation_note_en"] = (
+                    "A movement-specific adjustment has been made based on the assessment. "
+                    "Follow the selected variation, range and control requirements; do not progress "
+                    "until the stated criteria are met."
+                )
             def equipment_priority(item: str) -> tuple[int, str]:
                 if item in {"dumbbell", "kettlebell", "barbell", "resistance_band"}:
                     return (0, item)
@@ -2281,7 +2290,10 @@ def generate_program(
             ),
             "is_diagnosis": False,
             "automatic_progression": "movement_assessment_does_not_trigger_progression",
-            "events": movement_adaptation_events,
+            "events": [
+                {**event, **({"message_en": _event_message_english(event)} if _event_message_english(event) else {})}
+                for event in movement_adaptation_events
+            ],
             "summary": movement_summary,
             "structured_decisions": movement_decisions_by_pattern,
         } if movement_summary is not None or movement_decisions_by_pattern else None,
