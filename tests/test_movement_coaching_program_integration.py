@@ -651,8 +651,15 @@ def test_additional_exercises_have_complete_english_coaching_arrays():
         "brisk_walking", "cycling", "jump_rope", "burpee", "sled_push",
         "rower_intervals", "mountain_climber", "deep_squat_hold",
         "ankle_knee_to_wall", "cossack_squat", "pistol_squat",
+        "hip_90_90_switch", "shinbox_getup", "thoracic_rotation_quadruped",
+        "shoulder_car", "loaded_deep_squat", "calf_raise_full_rom",
+        "tibialis_raise", "copenhagen_plank", "dead_bug_band",
+        "single_leg_box_squat", "band_assisted_pull_up", "shoulder_pass_through_stick",
+        "wall_slide", "ski_erg_intervals", "air_bike_intervals", "shuttle_run",
+        "bear_crawl", "step_up_intervals", "band_assisted_parallel_bar_dip",
+        "box_jump_intervals",
     }
-    assert len(translated_ids) == 40
+    assert len(translated_ids) == 60
     source_fields = {
         "cues_en": "cues",
         "warnings_en": "warnings",
