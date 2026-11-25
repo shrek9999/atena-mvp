@@ -450,6 +450,7 @@ def test_six_learning_patterns_repeat_in_both_weekly_sessions():
     plan = generate_program(BASE, movement_decisions=decisions)
 
     assert len(plan["sessions"]) == 2
+    assert all(session["session_focus"] == "movement_learning" for session in plan["sessions"])
     expected_patterns = set(methods)
     session_patterns = [
         [task["movement_pattern"] for task in session["learning_tasks"]]
