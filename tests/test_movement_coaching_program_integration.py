@@ -110,6 +110,7 @@ def test_one_ready_pattern_is_not_mislabelled_as_a_full_body_session():
             session["exercises"], session["warm_up_minutes"]
         )
         assert all(item["pattern"] == "horizontal_push" for item in session["exercises"])
+        assert all(item["exercise_id"] == "push_up" for item in session["exercises"])
 
 
 def test_dowel_hinge_learning_task_uses_a_catalogue_supported_low_skill_variant():
