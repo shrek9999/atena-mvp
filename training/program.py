@@ -1361,8 +1361,12 @@ def generate_program(
                             "demo_url": method.get("demo_url"),
                             "demonstration_videos": _learning_task_videos(pattern, method["id"], None),
                             "decision": structured_decision["decision"],
-                            "sets": 1,
-                            "reps": "2–3 kontrolirane ponovitve",
+                            "sets": 2,
+                            "reps": (
+                                "4–6 controlled reps per side" if pattern == "lunge" else
+                                "6–8 controlled reps" if pattern == "horizontal_pull" else
+                                "4–6 controlled reps"
+                            ),
                             "tempo": "3-1-1",
                             "rest_seconds": 30,
                             "estimated_minutes": 2,
