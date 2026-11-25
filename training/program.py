@@ -1548,7 +1548,14 @@ def generate_program(
                 0 if primary_purpose and primary_purpose in item["training_purposes"] else 1,
                 0 if item.get("training_role") == "main" or planning_goal not in {"hypertrophy", "strength_hypertrophy"} else 1,
                 used_counts[item["id"]],
-                abs(level_rank[item["level"]] - target_level),
+                # READY confirms control of the pattern, not competence in the
+                # hardest exercise variation. Start from the easiest verified
+                # catalogue level; exercise-specific loading is earned later.
+                (
+                    level_rank[item["level"]]
+                    if structured_decision and structured_decision["decision"] == "READY"
+                    else abs(level_rank[item["level"]] - target_level)
+                ),
                 {"high": 0, "moderate": 1, "low": 2}[effective_loading(item)] if planning_goal in {"hypertrophy", "strength", "strength_hypertrophy", "functional", "fat_loss"} else 0,
                 item["id"],
             ))
