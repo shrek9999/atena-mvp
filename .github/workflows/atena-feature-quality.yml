@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - "feature/atena-coach-core-v3"
+      - "feature/camera-v2-contract"
     paths:
       - "tests/**"
       - "training/**"
