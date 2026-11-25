@@ -491,3 +491,102 @@ def test_saved_six_pattern_assessment_rejects_malformed_control_criteria(monkeyp
     )
 
     assert response.status_code == 400
+
+
+
+def test_program_route_accepts_selected_for_learning_as_learning_only(monkeypatch, client):
+    import coach_routes
+    from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
+
+    methods = {
+        "squat": "reaching_counterbalance",
+        "hinge": "wall_hip_hinge",
+        "horizontal_push": "incline_push_up",
+        "horizontal_pull": "scapular_coordination",
+        "vertical_push": "unloaded_overhead_reach",
+        "lunge": "supported_split_squat",
+    }
+    captured = {}
+
+    def fake_generate_program(profile, feedback=None, movement_assessment=None, movement_decisions=None, camera_coordination_observed=False):
+        captured["movement_decisions"] = movement_decisions
+        return {
+            "goal": "functional",
+            "sessions": [{"session": 1, "exercises": [], "learning_tasks": []}],
+            "movement_adaptation": {
+                "source": "structured_six_pattern_decisions",
+                "is_diagnosis": False,
+                "events": [],
+                "summary": None,
+            },
+        }
+
+    monkeypatch.setattr(coach_routes, "generate_program", fake_generate_program)
+    decisions = {
+        pattern: build_movement_decision(
+            pattern, "LEARN",
+            selected_learning_method=methods[pattern],
+            user_report={"status": "selected_for_learning", "intent": "learn_this_pattern"},
+            decision_reason="The user selected this pattern to learn.",
+        )
+        for pattern in PATTERN_DEFINITIONS
+    }
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-token"},
+        json={
+            "movement_assessment_consent": True,
+            "profile": {
+                "goal": "functional", "experience": "beginner",
+                "equipment": ["bodyweight", "chair", "wall", "household_support"],
+                "sessions_per_week": 2, "session_minutes": 45,
+            },
+            "movement_decisions": decisions,
+        },
+    )
+    assert response.status_code == 200
+    assert set(captured["movement_decisions"]) == set(PATTERN_DEFINITIONS)
+    assert all(record["decision"] == "LEARN" for record in captured["movement_decisions"].values())
+    assert all(record["user_report"]["status"] == "selected_for_learning" for record in captured["movement_decisions"].values())
+
+
+def test_program_route_rejects_ready_when_pattern_was_only_selected_for_learning(client):
+    from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
+
+    methods = {
+        "squat": "reaching_counterbalance",
+        "hinge": "wall_hip_hinge",
+        "horizontal_push": "incline_push_up",
+        "horizontal_pull": "scapular_coordination",
+        "vertical_push": "unloaded_overhead_reach",
+        "lunge": "supported_split_squat",
+    }
+    decisions = {
+        pattern: build_movement_decision(
+            pattern, "LEARN",
+            selected_learning_method=methods[pattern],
+            user_report={"status": "selected_for_learning", "intent": "learn_this_pattern"},
+        )
+        for pattern in PATTERN_DEFINITIONS
+    }
+    decisions["squat"] = build_movement_decision(
+        "squat", "READY",
+        selected_learning_method="reaching_counterbalance",
+        user_report={"status": "selected_for_learning", "intent": "learn_this_pattern"},
+    )
+    decisions["squat"]["training_phase"] = "capacity_development"
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-token"},
+        json={
+            "movement_assessment_consent": True,
+            "profile": {
+                "goal": "functional", "experience": "beginner",
+                "equipment": ["bodyweight", "chair", "wall", "household_support"],
+                "sessions_per_week": 2, "session_minutes": 45,
+            },
+            "movement_decisions": decisions,
+        },
+    )
+    assert response.status_code == 400
+    assert response.get_json()["invalid_report_patterns"] == ["squat"]
