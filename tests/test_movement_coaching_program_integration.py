@@ -409,6 +409,14 @@ def test_six_learning_patterns_are_distributed_across_two_weekly_sessions():
     assert [len(patterns) for patterns in session_patterns] == [3, 3]
     assert set(pattern for patterns in session_patterns for pattern in patterns) == set(methods)
     assert set(session_patterns[0]).isdisjoint(session_patterns[1])
+    all_learning_tasks = [
+        task for session in plan["sessions"] for task in session["learning_tasks"]
+    ]
+    assert all(task["sets"] == 2 for task in all_learning_tasks)
+    assert all("controlled reps" in task["reps"] for task in all_learning_tasks)
+    assert all("kontrolirane" not in task["reps"] for task in all_learning_tasks)
+    assert next(task for task in all_learning_tasks if task["movement_pattern"] == "lunge")["reps"].endswith("per side")
+    assert next(task for task in all_learning_tasks if task["movement_pattern"] == "horizontal_pull")["reps"].startswith("6–8")
     assert all(
         exercise["pattern"] not in methods
         for session in plan["sessions"]
