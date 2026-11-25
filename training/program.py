@@ -1635,8 +1635,10 @@ def generate_program(
                 if prescription.get("rir_range") is not None:
                     prescription["rir_range"] = "3–4"
                 movement_note = (
-                    "Začni z lahko do zmerno obremenitvijo (RIR 3–4); povečaj jo šele "
-                    "po dveh dobro toleriranih izpostavitvah. Potrjena pripravljenost še ne pomeni dovoljenja za težke serije."
+                    "Izberi različico in obremenitev, pri kateri ti po seriji ostanejo približno "
+                    "3–4 ponovitve v rezervi (RIR 3–4). Breme ali zahtevnost povečaj šele po "
+                    "dveh dobro toleriranih vadbah z enako kakovostjo izvedbe. Potrjena "
+                    "pripravljenost gibalnega vzorca še ne pomeni dovoljenja za težke serije."
                 )
                 ready_loaded_patterns.append(pattern)
             if symptom_tolerated:
@@ -1827,8 +1829,8 @@ def generate_program(
                     "Cilj je postopno razvijati polno amplitudo z močjo; ne žrtvuj stabilnosti ali kakovosti izvedbe."
                     if planning_goal == "functional" else
                     candidate.get("range_of_motion") or (
-                        "Uporabi največjo nebolečo amplitudo, ki jo dopuščata tvoja gibljivost in nadzor. "
-                        "Ne krajšaj giba po nepotrebnem; amplitudo povečuj postopno, brez izgube položaja."
+                        "Uporabi največjo amplitudo, ki jo lahko izvedeš neboleče in z nadzorom. "
+                        "Amplitudo postopno povečuj, ne da bi izgubil stabilnost ali položaj telesa."
                     )
                 ),
                 "warnings": candidate["warnings"],
