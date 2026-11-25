@@ -46,7 +46,7 @@ from training.camera_observations import CameraObservationError, validate_camera
 from training.goals import normalize_goal, public_goal_options
 from training.localization import (
     resolve_response_language, language_instruction, localize_guardrail_reply,
-    localize_chat_api_error,
+    localize_chat_api_error, localize_program_api_message, normalize_language,
 )
 from training.movement_coaching import (
     ASSESSMENT_VERSION as SIX_PATTERN_ASSESSMENT_VERSION,
@@ -2773,15 +2773,18 @@ def coach_program():
     """Return a deterministic programme generated only from the curated catalogue."""
     if request.method == "OPTIONS":
         return ("", 204)
+    payload = request.get_json(silent=True)
+    response_language = normalize_language(payload.get("language") or payload.get("locale")) if isinstance(payload, dict) else None
+    response_language = response_language or "en"
+    localize = lambda message: localize_program_api_message(message, response_language)
     expected_token = os.getenv("AI_COACH_TEST_TOKEN", "").strip()
     supplied_token = request.headers.get("X-Pilot-Token", "").strip()
     if not expected_token:
-        return jsonify({"error": localize_program_api_message("Testni dostop še ni nastavljen na strežniku.", "en")}), 503
+        return jsonify({"error": localize("Testni dostop še ni nastavljen na strežniku.")}), 503
     if not supplied_token or not hmac.compare_digest(supplied_token, expected_token):
-        return jsonify({"error": localize_program_api_message("Testni dostopni ključ ni pravilen.", "en")}), 403
-    payload = request.get_json(silent=True)
+        return jsonify({"error": localize("Testni dostopni ključ ni pravilen.")}), 403
     if not isinstance(payload, dict):
-        return jsonify({"error": "Pričakovan je JSON objekt s profilom vadečega."}), 400
+        return jsonify({"error": localize("Pričakovan je JSON objekt s profilom vadečega.")}), 400
     profile = payload.get("profile", payload)
     feedback = payload.get("feedback")
     camera_observations = None
@@ -2876,7 +2879,7 @@ def coach_program():
                 invalid_report_patterns.append(pattern)
     if invalid_report_patterns:
         return jsonify({
-            "error": "Vsak vzorec mora imeti veljavno izbiro ali poročilo o simptomih, odločitev pa mora biti skladna z njim.",
+            "error": localize("Vsak vzorec mora imeti veljavno izbiro ali poročilo o simptomih, odločitev pa mora biti skladna z njim."),
             "invalid_report_patterns": sorted(invalid_report_patterns),
         }), 400
     assessable_patterns = [
@@ -2909,7 +2912,7 @@ def coach_program():
             camera_coordination_observed=camera_coordination_observed,
         )
     except ProgramSafetyBlock as exc:
-        return jsonify({"blocked": True, "message": str(exc)}), 409
+        return jsonify({"blocked": True, "message": localize(str(exc))}), 409
     except ProgramValidationError as exc:
         return jsonify({"error": localize(str(exc))}), 400
     except (OSError, ValueError):
