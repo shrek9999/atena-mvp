@@ -2088,28 +2088,53 @@ def generate_program(
 
         if session_focus == "movement_learning":
             session_title = f"Trening {session_index + 1} – učenje gibalnih vzorcev"
+            session_title_en = f"Session {session_index + 1} – Movement Pattern Learning"
         elif planning_goal == "endurance":
             session_title = f"Trening {session_index + 1} – vzdržljivost"
+            session_title_en = f"Session {session_index + 1} – Endurance"
         elif planning_goal == "mobility":
             session_title = f"Trening {session_index + 1} – mobilnost in gibljivost"
+            session_title_en = f"Session {session_index + 1} – Mobility"
         elif planning_goal == "functional":
             session_title = f"Trening {session_index + 1} – funkcionalna pripravljenost: moč + kondicija"
+            session_title_en = f"Session {session_index + 1} – Functional Fitness: Strength + Conditioning"
         elif planning_goal == "fat_loss" and session_index >= 2:
             session_title = f"Trening {session_index + 1} – aerobna in kondicijska priprava"
+            session_title_en = f"Session {session_index + 1} – Aerobic and Conditioning Work"
         elif session_focus == "full_body":
             session_title = f"Trening {session_index + 1} – celotno telo"
+            session_title_en = f"Session {session_index + 1} – Full Body"
         else:
             focus_labels = [PATTERN_LABELS.get(value, value) for value in covered_patterns]
             focus_name = " + ".join(focus_labels) if focus_labels else "omejen nabor vzorcev"
+            pattern_labels_en = {
+                "squat": "Squat", "lunge": "Lunge", "hinge": "Hip Hinge",
+                "hip_extension": "Hip Extension", "horizontal_push": "Horizontal Push",
+                "horizontal_pull": "Horizontal Pull", "vertical_push": "Vertical Push",
+                "vertical_pull": "Vertical Pull", "carry": "Carry",
+                "anti_rotation": "Anti-Rotation", "trunk_stability": "Trunk Stability",
+                "jump": "Jump", "hinge_power": "Explosive Hip Extension",
+                "accessory": "Accessory", "conditioning": "Conditioning",
+                "locomotion": "Locomotion", "mobility": "Active Mobility",
+                "mobility_stretch": "Stretching", "knee_flexion": "Knee Flexion",
+                "balance": "Balance", "coordination": "Coordination",
+            }
+            focus_name_en = " + ".join(pattern_labels_en.get(value, value.replace("_", " ").title()) for value in covered_patterns) or "Selected Movement Patterns"
             session_title = (
                 f"Trening {session_index + 1} – ciljno delo: {focus_name}"
                 if session_focus == "targeted"
                 else f"Trening {session_index + 1} – usmerjena vadba: {focus_name}"
             )
+            session_title_en = (
+                f"Session {session_index + 1} – Targeted Work: {focus_name_en}"
+                if session_focus == "targeted"
+                else f"Session {session_index + 1} – Focused Training: {focus_name_en}"
+            )
 
         plans.append({
             "session": session_index + 1,
             "title": session_title,
+            "title_en": session_title_en,
             "session_focus": session_focus,
             "covered_patterns": covered_patterns,
             "learning_tasks_estimated_minutes": learning_task_minutes,
@@ -2151,7 +2176,41 @@ def generate_program(
         "program_version": "3.2.0",
         "camera_coordination_add_on_applied": camera_coordination_exercise is not None,
         "goal_framework": CANONICAL_GOALS[canonical_goal],
+        "goal_framework_en": {
+            "id": canonical_goal,
+            "label": {
+                "strength_hypertrophy": "Strength + Muscle Mass",
+                "functional": "Functional Fitness",
+                "fat_loss": "Fat Loss",
+            }[canonical_goal],
+            "description": {
+                "strength_hypertrophy": (
+                    "For less experienced trainees, strength and muscle growth are closely related goals "
+                    "and are developed together through loaded compound exercises. More advanced trainees "
+                    "can choose a separate strength or hypertrophy emphasis."
+                ),
+                "functional": (
+                    "Build practical strength through loaded compound exercises and the greatest controlled "
+                    "range of motion available. Develop mobility primarily through strength across range "
+                    "of motion, and conditioning through intervals, circuits or MetCon."
+                ),
+                "fat_loss": (
+                    "Combine resistance training to preserve muscle mass, conditioning, and a sustainable "
+                    "moderate energy deficit with adequate protein."
+                ),
+            }[canonical_goal],
+            "pillars": list(CANONICAL_GOALS[canonical_goal]["pillars"]),
+        },
         "nutrition_guidance": list(CANONICAL_GOALS[canonical_goal].get("nutrition_guidance", [])),
+        "nutrition_guidance_en": (
+            [
+                "Create a moderate, sustainable energy deficit; avoid aggressive diets.",
+                "Prioritize protein. A practical range is approximately 1.6–2.2 g/kg of target or adjusted body mass per day when there are no relevant medical restrictions.",
+                "Keep regular resistance training to help preserve muscle mass and performance.",
+                "Add conditioning through intervals, MetCon or longer uphill walks; adjust the volume to recovery.",
+                "Track multi-week trends in body mass and waist circumference, and adjust nutrition sustainably.",
+            ] if canonical_goal == "fat_loss" else []
+        ),
         "movement_adaptation": {
             "source": (
                 "structured_six_pattern_decisions"
