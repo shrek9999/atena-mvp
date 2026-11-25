@@ -44,7 +44,7 @@ def test_learn_decision_selects_reaching_squat_and_adds_learning_task():
     assert all(task["tempo"] == "3-1-1" for task in tasks)
 
 
-def test_movement_learning_tasks_are_counted_inside_warmup_once():
+def test_separate_movement_learning_tasks_do_not_inflate_workout_warmup_or_duration():
     decision = build_movement_decision(
         "squat", "LEARN",
         selected_learning_method="supported_squat_assistance",
@@ -57,12 +57,59 @@ def test_movement_learning_tasks_are_counted_inside_warmup_once():
             if task["movement_pattern"] == "squat"
         ]
         assert tasks
-        assert session["warm_up_minutes"] == 9
-        assert session["warm_up_range"] == "9 min"
+        assert session["warm_up_minutes"] == 7
+        assert session["warm_up_range"] == "5–10 min"
+        assert session["learning_tasks_estimated_minutes"] == 2
         assert session["estimated_minutes"] == _estimated_minutes(
             session["exercises"], session["warm_up_minutes"]
         )
         assert session["estimated_minutes"] <= session["available_minutes"]
+
+
+def test_one_ready_pattern_is_not_mislabelled_as_a_full_body_session():
+    methods = {
+        "squat": "reaching_counterbalance",
+        "hinge": "wall_hip_hinge",
+        "horizontal_pull": "scapular_coordination",
+        "vertical_push": "unloaded_overhead_reach",
+        "lunge": "supported_split_squat",
+    }
+    decisions = {
+        pattern: build_movement_decision(
+            pattern, "LEARN",
+            selected_learning_method=method,
+            user_report={"status": "comfortable"},
+            decision_reason="The pattern needs repeatable control before loaded training.",
+        )
+        for pattern, method in methods.items()
+    }
+    push = build_movement_decision(
+        "horizontal_push", "READY",
+        user_report={"status": "movement_controlled", "movement_control": {
+            "confirmed_by_user": True, "repeatable": True,
+            "criteria": {
+                "tempo": True, "shoulder_elbow_wrist_control": True,
+                "trunk_control": True, "stable_support": True, "tolerated_rom": True,
+            },
+        }},
+        decision_reason="Horizontal push control is repeatable.",
+    )
+    push["training_phase"] = "capacity_development"
+    decisions["horizontal_push"] = push
+
+    plan = generate_program(BASE, movement_decisions=decisions)
+
+    assert len(plan["sessions"]) == 2
+    for session in plan["sessions"]:
+        assert session["session_focus"] == "targeted"
+        assert session["covered_patterns"] == ["horizontal_push"]
+        assert "celotno telo" not in session["title"]
+        assert session["warm_up_minutes"] == 7
+        assert session["learning_tasks_estimated_minutes"] == 10
+        assert session["estimated_minutes"] == _estimated_minutes(
+            session["exercises"], session["warm_up_minutes"]
+        )
+        assert all(item["pattern"] == "horizontal_push" for item in session["exercises"])
 
 
 def test_dowel_hinge_learning_task_uses_a_catalogue_supported_low_skill_variant():
