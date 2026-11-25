@@ -380,7 +380,7 @@ def test_kettlebell_only_ready_row_does_not_override_conservative_loading_gate()
         for event in plan["movement_adaptation"]["events"]
     )
 
-def test_six_learning_patterns_are_distributed_across_two_weekly_sessions():
+def test_six_learning_patterns_repeat_in_both_weekly_sessions():
     methods = {
         "squat": "reaching_counterbalance",
         "hinge": "wall_hip_hinge",
@@ -402,13 +402,13 @@ def test_six_learning_patterns_are_distributed_across_two_weekly_sessions():
     plan = generate_program(BASE, movement_decisions=decisions)
 
     assert len(plan["sessions"]) == 2
+    expected_patterns = set(methods)
     session_patterns = [
         [task["movement_pattern"] for task in session["learning_tasks"]]
         for session in plan["sessions"]
     ]
-    assert [len(patterns) for patterns in session_patterns] == [3, 3]
-    assert set(pattern for patterns in session_patterns for pattern in patterns) == set(methods)
-    assert set(session_patterns[0]).isdisjoint(session_patterns[1])
+    assert [len(patterns) for patterns in session_patterns] == [6, 6]
+    assert all(set(patterns) == expected_patterns for patterns in session_patterns)
     all_learning_tasks = [
         task for session in plan["sessions"] for task in session["learning_tasks"]
     ]
