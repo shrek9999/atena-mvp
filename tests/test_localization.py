@@ -111,3 +111,19 @@ def test_english_no_pain_confirmation_is_recognized():
     from coach_routes import _has_explicit_no_pain_confirmation
 
     assert _has_explicit_no_pain_confirmation("I have no pain right now.")
+
+
+
+def test_chat_api_errors_are_localized_deterministically_and_keep_limits():
+    from training.localization import localize_chat_api_error
+
+    assert localize_chat_api_error("Pošlji od 1 do 12 sporočil.", "en") == "Send between 1 and 12 messages."
+    assert localize_chat_api_error("Sporočilo je prazno ali predolgo (največ 1800 znakov).", "en") == "Message is empty or too long (maximum 1800 characters)."
+    assert localize_chat_api_error("Trenutno je dosežena omejitev uporabe. Poskusi pozneje.", "en") == "The service has reached its current usage limit. Please try again later."
+
+
+def test_chat_api_errors_remain_slovenian_when_slovenian_is_selected():
+    from training.localization import localize_chat_api_error
+
+    message = "Pošlji od 1 do 12 sporočil."
+    assert localize_chat_api_error(message, "sl") == message
