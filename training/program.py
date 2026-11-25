@@ -770,7 +770,7 @@ def generate_program(
                 raise ProgramValidationError(
                     f"Regresija vzorca {pattern} nima ustreznega poročila za učno ali simptomatsko prilagoditev."
                 )
-            if decision == "LEARN" and report_status not in {"comfortable", "needs_support", None}:
+            if decision == "LEARN" and report_status not in {"selected_for_learning", "comfortable", "needs_support", None}:
                 raise ProgramValidationError(
                     f"Učna faza vzorca {pattern} zahteva udobno samooceno ali potrebo po opori."
                 )
@@ -800,7 +800,7 @@ def generate_program(
                         )
                         method_id = method["id"] if method else None
             if report_status is not None and report_status not in {
-                "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled"
+                "selected_for_learning", "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled"
             }:
                 raise ProgramValidationError(f"Neveljaven status uporabnikovega poročila za {pattern}.")
             if report_status in {"uncertain", "not_assessed"} and decision != "UNASSESSABLE":
