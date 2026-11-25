@@ -532,6 +532,27 @@
     "stability_focus": [
       "trunk_control",
       "balance"
+    ],
+    "cues_en": [
+      "Step forward into a stable stance.",
+      "Control the deceleration and the return.",
+      "Maintain balance throughout the repetition."
+    ],
+    "warnings_en": [
+      "Requires more control during deceleration than a reverse lunge."
+    ],
+    "common_errors_en": [
+      "Uncontrolled foot contact.",
+      "Loss of balance when returning to the starting position."
+    ],
+    "regressions_en": [
+      "reverse_lunge"
+    ],
+    "progressions_en": [
+      "Forward lunge with dumbbells"
+    ],
+    "alternatives_en": [
+      "split_squat"
     ]
   },
   {
@@ -604,6 +625,27 @@
     "stability_focus": [
       "trunk_control",
       "balance"
+    ],
+    "cues_en": [
+      "Place the rear foot on a stable support.",
+      "Let the front leg do most of the work.",
+      "Use a stable, repeatable range of motion."
+    ],
+    "warnings_en": [
+      "Place the rear foot on a stable, immovable support of suitable height, such as a bench or sturdy chair. Adjust the height to the individual."
+    ],
+    "common_errors_en": [
+      "Rear-foot support is too high.",
+      "Loss of balance or pelvic rotation."
+    ],
+    "regressions_en": [
+      "split_squat"
+    ],
+    "progressions_en": [
+      "Rear-foot elevated split squat with dumbbells"
+    ],
+    "alternatives_en": [
+      "reverse_lunge"
     ]
   },
   {
@@ -676,6 +718,28 @@
     "stability_focus": [
       "trunk_control",
       "balance"
+    ],
+    "cues_en": [
+      "Gradually develop the available ankle and knee range of motion.",
+      "Maintain control throughout the movement.",
+      "Add load only after the movement is stable and repeatable."
+    ],
+    "warnings_en": [
+      "A large range of motion is not mandatory. Do not move through increasing pain."
+    ],
+    "common_errors_en": [
+      "Forcing depth without control.",
+      "Loading a large range of motion too quickly."
+    ],
+    "regressions_en": [
+      "split_squat",
+      "Supported split squat"
+    ],
+    "progressions_en": [
+      "Loaded ATG split squat"
+    ],
+    "alternatives_en": [
+      "reverse_lunge"
     ]
   },
   {
@@ -1425,6 +1489,28 @@
     "stability_role": "primary",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Walk tall with a natural stride.",
+      "Keep the loads stable at your sides.",
+      "Maintain steady breathing and trunk control."
+    ],
+    "warnings_en": [
+      "Include carries only when they serve a clear purpose in the programme; they are not essential in every programme.",
+      "Use a clear, non-slip walking path."
+    ],
+    "common_errors_en": [
+      "Leaning to one side.",
+      "Using a load that is too heavy and changes your walking pattern."
+    ],
+    "regressions_en": [
+      "Single-arm carry with a lighter load"
+    ],
+    "progressions_en": [
+      "Farmer's carry with a heavier load"
+    ],
+    "alternatives_en": [
+      "Suitcase carry"
     ]
   },
   {
@@ -1498,6 +1584,27 @@
     "stability_role": "primary",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Keep your pelvis and chest facing forwards.",
+      "Extend your arms without rotating your trunk.",
+      "Breathe normally."
+    ],
+    "warnings_en": [
+      "Choose a resistance that allows full control."
+    ],
+    "common_errors_en": [
+      "Rotating towards the resistance.",
+      "Holding your breath excessively."
+    ],
+    "regressions_en": [
+      "Pallof press with a shorter lever"
+    ],
+    "progressions_en": [
+      "Split-stance Pallof press"
+    ],
+    "alternatives_en": [
+      "dead_bug"
     ]
   },
   {
@@ -1564,6 +1671,27 @@
     "stability_role": "primary",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Maintain control of your pelvic position.",
+      "Extend the opposite arm and leg only as far as you can control.",
+      "Keep breathing smoothly."
+    ],
+    "warnings_en": [
+      "Reduce the range of motion if you lose control."
+    ],
+    "common_errors_en": [
+      "Losing control of the lower-back position.",
+      "Using too large a range of motion."
+    ],
+    "regressions_en": [
+      "Heel taps in the supine position"
+    ],
+    "progressions_en": [
+      "Banded dead bug"
+    ],
+    "alternatives_en": [
+      "Opposite arm and leg extension from quadruped"
     ]
   },
   {
@@ -1620,7 +1748,28 @@
       "hypertrophy"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Use a controlled range of motion.",
+      "Raise the dumbbells without momentum.",
+      "Keep your neck relaxed."
+    ],
+    "warnings_en": [
+      "Adjust the range of motion to your shoulder tolerance."
+    ],
+    "common_errors_en": [
+      "Swinging the weights.",
+      "Using excessive load."
+    ],
+    "regressions_en": [
+      "Resistance-band lateral raise"
+    ],
+    "progressions_en": [
+      "Cable lateral raise"
+    ],
+    "alternatives_en": [
+      "Machine lateral raise"
+    ]
   },
   {
     "id": "biceps_curl",
@@ -1677,7 +1826,28 @@
       "hypertrophy"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Keep your upper arms still.",
+      "Lower the load under control.",
+      "Avoid swinging your trunk."
+    ],
+    "warnings_en": [
+      "Choose a load that allows you to maintain control."
+    ],
+    "common_errors_en": [
+      "Swinging the trunk to move the load.",
+      "Using only a partial lowering range."
+    ],
+    "regressions_en": [
+      "Biceps curl with lighter dumbbells"
+    ],
+    "progressions_en": [
+      "Incline dumbbell curl"
+    ],
+    "alternatives_en": [
+      "Cable biceps curl"
+    ]
   },
   {
     "id": "triceps_pressdown",
@@ -1731,7 +1901,28 @@
       "hypertrophy"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Keep your elbows close to your torso.",
+      "Extend your elbows without swinging.",
+      "Return to the starting position under control."
+    ],
+    "warnings_en": [
+      "Adjust the load to your elbow comfort."
+    ],
+    "common_errors_en": [
+      "Moving the upper arms during the exercise.",
+      "Leaning the trunk to assist the movement."
+    ],
+    "regressions_en": [
+      "Resistance-band triceps extension"
+    ],
+    "progressions_en": [
+      "Overhead cable triceps extension"
+    ],
+    "alternatives_en": [
+      "Close-grip push-up"
+    ]
   },
   {
     "id": "box_jump",
@@ -1798,6 +1989,28 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Choose a box height you can reach without excessive hip or knee tucking.",
+      "Land quietly and stably.",
+      "Allow enough rest between repetitions."
+    ],
+    "warnings_en": [
+      "Use only when adequately prepared and in a safe area. Step down from the box; do not jump down."
+    ],
+    "common_errors_en": [
+      "Choosing a box that is too high.",
+      "Unstable landings or continuing repetitions while fatigued."
+    ],
+    "regressions_en": [
+      "Low box jump",
+      "Quick drop into an athletic stance"
+    ],
+    "progressions_en": [
+      "Higher box jump"
+    ],
+    "alternatives_en": [
+      "Standing broad jump"
     ]
   },
   {
