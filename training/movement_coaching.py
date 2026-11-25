@@ -39,7 +39,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "reaching_counterbalance",
                 "learning_only": True,
-                "demo_url": "https://youtu.be/vGu9T3FFjmc",
+                "demo_url": "https://youtu.be/f6LSIpaDdSA",
                 "label": "Reaching squat s protiutežjo",
                 "description": "Izteg rok oziroma lahek kolut pred telesom uporabi kot protiutež za lažje učenje ravnotežja in organizacije počepa.",
                 "exercise_id": "reaching_squat",
