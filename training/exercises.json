@@ -2902,6 +2902,19 @@
     "warnings_en": [
       "This is not the default main strength or muscle-building exercise: heavier dumbbells may make grip the limiting factor, and the starting position can be awkward.",
       "For posterior-chain development, a dumbbell Romanian deadlift is generally the preferred option."
+    ],
+    "common_errors_en": [
+      "Rounding the back when initiating the lift.",
+      "Lifting too quickly without first bracing the trunk."
+    ],
+    "regressions_en": [
+      "Bodyweight hip hinge with a neutral spine"
+    ],
+    "progressions_en": [
+      "Romanian deadlift"
+    ],
+    "alternatives_en": [
+      "romanian_deadlift"
     ]
   },
   {
@@ -2979,6 +2992,20 @@
     ],
     "warnings_en": [
       "This drill teaches the movement pattern. Progress gradually to external resistance when suitable equipment is available."
+    ],
+    "common_errors_en": [
+      "Moving mainly by bending the knees into a squat.",
+      "Losing a neutral spinal position while lowering."
+    ],
+    "regressions_en": [
+      "Wall-supported hip hinge"
+    ],
+    "progressions_en": [
+      "Dumbbell deadlift",
+      "Romanian deadlift"
+    ],
+    "alternatives_en": [
+      "dumbbell_deadlift"
     ]
   },
   {
@@ -3155,7 +3182,19 @@
     ],
     "warnings_en": [
       "This may be too easy for hypertrophy in more advanced trainees; choose a harder variation when the prescribed reps in reserve are no longer appropriate."
-    ]
+    ],
+    "common_errors_en": [
+      "Losing balance.",
+      "Lowering without control."
+    ],
+    "regressions_en": [
+      "Reaching squat"
+    ],
+    "progressions_en": [
+      "single_leg_box_squat",
+      "squat_goblet"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "reaching_squat",
@@ -3245,7 +3284,20 @@
     ],
     "warnings_en": [
       "The light plate is a counterbalance to help organise the position, not a load to compete with. Do not force depth or an arm position that causes pain."
-    ]
+    ],
+    "common_errors_en": [
+      "Lifting the heels without adequate control.",
+      "Allowing the trunk to collapse.",
+      "Using a plate that is too heavy and losing trunk or positional control."
+    ],
+    "regressions_en": [
+      "Squat to a chair"
+    ],
+    "progressions_en": [
+      "air_squat",
+      "squat_goblet"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "dumbbell_squat_side",
@@ -3315,7 +3367,18 @@
     "warnings_en": [
       "This is not the default main strength or muscle-building squat. A goblet squat or dumbbell front-rack squat is generally preferred.",
       "Choose a load you can safely put down."
-    ]
+    ],
+    "common_errors_en": [
+      "Allowing the dumbbells to drift away from the body.",
+      "Losing trunk stability."
+    ],
+    "regressions_en": [
+      "Goblet squat"
+    ],
+    "progressions_en": [
+      "Squat with a heavier load"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "dumbbell_squat_front_rack",
@@ -3396,6 +3459,22 @@
     ],
     "warnings_en": [
       "Adjust the dumbbell position to your shoulder and wrist mobility; do not force your elbows into an uncomfortable position."
+    ],
+    "common_errors_en": [
+      "Excessive extension through the lower back.",
+      "Allowing the elbows to drop."
+    ],
+    "regressions_en": [
+      "squat_goblet",
+      "air_squat"
+    ],
+    "progressions_en": [
+      "front_squat",
+      "back_squat"
+    ],
+    "alternatives_en": [
+      "squat_goblet",
+      "heel_elevated_squat"
     ]
   },
   {
@@ -3901,7 +3980,19 @@
     ],
     "warnings_en": [
       "The anchor and straps must be purpose-built and securely attached."
-    ]
+    ],
+    "common_errors_en": [
+      "Allowing the hips to sag.",
+      "Shrugging the shoulders towards the ears."
+    ],
+    "regressions_en": [
+      "band_row"
+    ],
+    "progressions_en": [
+      "Use a more horizontal body position",
+      "Single-arm row"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "ring_row",
@@ -4141,7 +4232,18 @@
     ],
     "warnings_en": [
       "The support surface must be stable."
-    ]
+    ],
+    "common_errors_en": [
+      "Rotating the trunk.",
+      "Jerking the weight."
+    ],
+    "regressions_en": [
+      "one_arm_row"
+    ],
+    "progressions_en": [
+      "Increase the kettlebell load"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "chin_up",
@@ -4210,7 +4312,19 @@
     ],
     "warnings_en": [
       "The bar must be securely fixed; adjust your grip to your shoulder and wrist comfort."
-    ]
+    ],
+    "common_errors_en": [
+      "Using a swing to complete repetitions.",
+      "Lowering without control."
+    ],
+    "regressions_en": [
+      "band_assisted_pull_up",
+      "foot_assisted_pull_up"
+    ],
+    "progressions_en": [
+      "Weighted chin-up"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "foot_assisted_pull_up",
@@ -4294,7 +4408,23 @@
       "Use only a bar that is securely and stably fixed in the rack.",
       "Keep your feet on a non-slip surface; assistance from your legs should be gradual and controlled.",
       "If your trunk leans backwards, adjust your foot position and bar height to maintain a vertical pull."
-    ]
+    ],
+    "common_errors_en": [
+      "Leaning the trunk backwards so the movement becomes similar to a row.",
+      "Placing the feet so far forwards that the movement changes into a horizontal pull.",
+      "Pushing off too much with the legs or initiating the movement with a jerk.",
+      "Using a shortened bottom position without extending the elbows.",
+      "Lowering without control."
+    ],
+    "regressions_en": [
+      "Use more foot assistance and/or a higher bar that allows an easier upright body position"
+    ],
+    "progressions_en": [
+      "Use less foot assistance while maintaining the same upright position",
+      "band_assisted_pull_up",
+      "pull_up"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "barbell_overhead_press",
@@ -4444,7 +4574,18 @@
     ],
     "warnings_en": [
       "Do not use a damaged band or position it so it could snap back towards your face."
-    ]
+    ],
+    "common_errors_en": [
+      "Losing trunk tension.",
+      "The resistance band slipping or being damaged."
+    ],
+    "regressions_en": [
+      "pike_push_up"
+    ],
+    "progressions_en": [
+      "Use a stronger band or increase band stretch"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "single_leg_rdl",
@@ -6959,7 +7100,18 @@
     ],
     "warnings_en": [
       "This places a high demand on the shoulders; adjust the angle and range of motion."
-    ]
+    ],
+    "common_errors_en": [
+      "Transferring too much body weight onto the head.",
+      "Losing trunk position."
+    ],
+    "regressions_en": [
+      "Pike push-up with hands elevated"
+    ],
+    "progressions_en": [
+      "Pike push-up with feet elevated"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "band_assisted_pull_up",
@@ -7108,7 +7260,19 @@
     ],
     "warnings_en": [
       "Adjust the load to your ability to maintain your trunk position."
-    ]
+    ],
+    "common_errors_en": [
+      "Losing trunk position.",
+      "Using momentum from the lower back."
+    ],
+    "regressions_en": [
+      "trx_row",
+      "ring_row"
+    ],
+    "progressions_en": [
+      "Row with a heavier load or add a pause"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "shoulder_pass_through_stick",
@@ -8248,7 +8412,19 @@
     ],
     "warnings_en": [
       "Check the support before every set."
-    ]
+    ],
+    "common_errors_en": [
+      "Allowing the hips to sag.",
+      "Losing control in the bottom position."
+    ],
+    "regressions_en": [
+      "wall_push_up"
+    ],
+    "progressions_en": [
+      "push_up",
+      "push_up_decline"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "wall_push_up",
@@ -10458,7 +10634,21 @@
     ],
     "warnings_en": [
       "This is an adaptable starting variation for practising standing up. If another person must assist you or pain occurs, an individual assessment is needed."
-    ]
+    ],
+    "common_errors_en": [
+      "Using an unstable chair.",
+      "Dropping uncontrollably onto the seat.",
+      "Forcing repetitions despite increasing pain or loss of control."
+    ],
+    "regressions_en": [
+      "Use a higher seat",
+      "Use the armrests for assistance"
+    ],
+    "progressions_en": [
+      "Reaching squat",
+      "Air squat"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "wall_hip_hinge",
@@ -10537,7 +10727,20 @@
     ],
     "warnings_en": [
       "This is a movement-learning variation. Do not force depth or pick an object up from the floor if that feels uncomfortable."
-    ]
+    ],
+    "common_errors_en": [
+      "Excessively flexing the lumbar spine.",
+      "Squatting instead of moving the pelvis backwards.",
+      "Moving away from the wall while losing control."
+    ],
+    "regressions_en": [
+      "Stand closer to the wall"
+    ],
+    "progressions_en": [
+      "Bodyweight hip hinge with a neutral spine",
+      "Romanian deadlift"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "superman",
@@ -10902,6 +11105,21 @@
       "Use only a stable, securely attached support. A resistance band requires a purpose-built anchor; a rack bar must be secured in the rack.",
       "Stop the test if pain increases, becomes sharp, changes your movement, or if acute swelling or spasm occurs.",
       "A supported variation is not permission to move through acute or worsening pain."
+    ],
+    "common_errors_en": [
+      "Pulling yourself up with your arms instead of controlling the movement with your legs.",
+      "Using a movable or unstable support.",
+      "Forcing depth or repetitions despite increasing pain."
+    ],
+    "regressions_en": [
+      "Chair sit-to-stand",
+      "Use a smaller range with stable support"
+    ],
+    "progressions_en": [
+      "Air squat"
+    ],
+    "alternatives_en": [
+      "Chair sit-to-stand"
     ]
   }
 ]
