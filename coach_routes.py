@@ -44,7 +44,10 @@ from training.movement_assessment import (
 )
 from training.camera_observations import CameraObservationError, validate_camera_observations
 from training.goals import normalize_goal, public_goal_options
-from training.localization import resolve_response_language, language_instruction, localize_guardrail_reply
+from training.localization import (
+    resolve_response_language, language_instruction, localize_guardrail_reply,
+    localize_chat_api_error,
+)
 from training.movement_coaching import (
     ASSESSMENT_VERSION as SIX_PATTERN_ASSESSMENT_VERSION,
     ACUTE_WARNING_SIGNS, PATTERN_DEFINITIONS, MovementCoachingError, build_movement_decision,
@@ -2552,6 +2555,7 @@ def _request_gemini_content(api_key, model, fallback_model, payload):
 
 @coach_bp.route("/coach/chat", methods=["POST", "OPTIONS"])
 def coach_chat():
+    response_language = "en"
     if request.method == "OPTIONS":
         return ("", 204)
     expected_token = os.getenv("AI_COACH_TEST_TOKEN", "").strip()
@@ -2567,8 +2571,16 @@ def coach_chat():
     if not isinstance(payload, dict):
         return jsonify({"error": "Pričakovan je JSON objekt."}), 400
     messages = payload.get("messages")
+    if isinstance(messages, list):
+        response_language = resolve_response_language(
+            messages, payload.get("language") or payload.get("locale")
+        )
+    else:
+        response_language = resolve_response_language(
+            [], payload.get("language") or payload.get("locale")
+        )
     if not isinstance(messages, list) or not messages or len(messages) > MAX_MESSAGES:
-        return jsonify({"error": "Pošlji od 1 do 12 sporočil."}), 400
+        return jsonify({"error": localize_chat_api_error("Pošlji od 1 do 12 sporočil.", response_language)}), 400
     contents = []
     for item in messages:
         if not isinstance(item, dict) or item.get("role") not in ("user", "model"):
@@ -2578,7 +2590,6 @@ def coach_chat():
         if not isinstance(content, str) or not content.strip() or len(content) > max_chars:
             return jsonify({"error": f"Sporočilo je prazno ali predolgo (največ {max_chars} znakov)."}), 400
         contents.append({"role": item["role"], "parts": [{"text": content.strip()}]})
-    response_language = resolve_response_language(messages, payload.get("language") or payload.get("locale"))
     system_prompt = SYSTEM_PROMPT + "\n\n" + language_instruction(response_language)
     profile_id = request.headers.get("X-Profile-Id", "").strip()
     profile_token = request.headers.get("X-Profile-Token", "").strip()
