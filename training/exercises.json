@@ -2509,6 +2509,28 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Securely anchor the resistance band above head height.",
+      "Pull your elbows down alongside your torso.",
+      "Return under control."
+    ],
+    "warnings_en": [
+      "Check the anchor point and the condition of the band before starting."
+    ],
+    "common_errors_en": [
+      "Attaching the band to an unstable anchor.",
+      "Excessive trunk arching.",
+      "Jerking the band."
+    ],
+    "regressions_en": [
+      "Band lat pulldown with a lighter band"
+    ],
+    "progressions_en": [
+      "Single-arm band lat pulldown"
+    ],
+    "alternatives_en": [
+      "pull_up"
     ]
   },
   {
@@ -2732,6 +2754,32 @@
     "stability_focus": [
       "trunk_control",
       "balance"
+    ],
+    "cues_en": [
+      "If needed, lightly hold a wall or stable support with one hand.",
+      "Keep the standing knee slightly bent and initiate the movement by moving your hips backwards.",
+      "Hinge your trunk forwards while maintaining a neutral spinal position.",
+      "Keep your pelvis as level as possible; return to standing by extending the hip under control."
+    ],
+    "warnings_en": [
+      "Use the support for balance, not to pull yourself upwards.",
+      "If you cannot control your pelvis and spine, choose an easier variation."
+    ],
+    "common_errors_en": [
+      "Bending through the lower back instead of hinging at the hip.",
+      "Rotating the pelvis and trunk towards the open side.",
+      "Losing balance by moving the supporting hand away unnecessarily.",
+      "Excessively straightening the standing knee."
+    ],
+    "regressions_en": [
+      "bodyweight_hip_hinge"
+    ],
+    "progressions_en": [
+      "single_leg_rdl"
+    ],
+    "alternatives_en": [
+      "single_leg_rdl",
+      "bodyweight_hip_hinge"
     ]
   },
   {
@@ -3121,7 +3169,25 @@
     "stability_focus": [
       "trunk_control",
       "balance"
-    ]
+    ],
+    "cues_en": [
+      "Use consistent, stable steps.",
+      "Control the lowering phase and the push-off."
+    ],
+    "warnings_en": [
+      "Choose a safe, level path with enough room to turn."
+    ],
+    "common_errors_en": [
+      "Steps placed too narrowly in a straight line.",
+      "Loss of balance during the transition."
+    ],
+    "regressions_en": [
+      "reverse_lunge"
+    ],
+    "progressions_en": [
+      "Walking lunge with dumbbells"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "lateral_lunge",
@@ -3192,7 +3258,25 @@
     "stability_focus": [
       "trunk_control",
       "balance"
-    ]
+    ],
+    "cues_en": [
+      "Move your hips backwards towards the bent leg.",
+      "Keep the opposite leg extended to the extent you can comfortably control."
+    ],
+    "warnings_en": [
+      "Adjust depth to your current hip and ankle mobility."
+    ],
+    "common_errors_en": [
+      "Losing full-foot contact with the floor.",
+      "Uncontrolled inward collapse of the knee."
+    ],
+    "regressions_en": [
+      "Lateral weight shift with support"
+    ],
+    "progressions_en": [
+      "Lateral lunge with a dumbbell"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "step_up",
@@ -3264,7 +3348,25 @@
     "stability_focus": [
       "trunk_control",
       "balance"
-    ]
+    ],
+    "cues_en": [
+      "Step onto a stable support of appropriate height.",
+      "Lower yourself under control."
+    ],
+    "warnings_en": [
+      "The support must be stable, non-slip and an appropriate height."
+    ],
+    "common_errors_en": [
+      "Pushing off mainly with the trailing leg.",
+      "Using an unstable support."
+    ],
+    "regressions_en": [
+      "Low step-up with support"
+    ],
+    "progressions_en": [
+      "Higher step-up or added load"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "bench_dip",
@@ -3322,7 +3424,25 @@
       "general_fitness"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Place your hands on a stable support.",
+      "Lower yourself only through a pain-free range."
+    ],
+    "warnings_en": [
+      "This variation requires substantial shoulder extension and is not the default choice for people with sensitivity at the front of the shoulder."
+    ],
+    "common_errors_en": [
+      "Moving the upper arm too far behind the torso.",
+      "Lowering without control."
+    ],
+    "regressions_en": [
+      "Close-grip push-up"
+    ],
+    "progressions_en": [
+      "Assisted parallel-bar dip"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "parallel_bar_dip",
@@ -3386,7 +3506,27 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Start from a stable support position.",
+      "Lower only through a range you can control.",
+      "Use a resistance band for assistance, not as an unstable support."
+    ],
+    "warnings_en": [
+      "This exercise requires strength and shoulder-girdle tolerance. Stop if pain occurs."
+    ],
+    "common_errors_en": [
+      "Uncontrolled, excessively deep lowering.",
+      "Swinging and losing shoulder position."
+    ],
+    "regressions_en": [
+      "band_assisted_parallel_bar_dip",
+      "push_up"
+    ],
+    "progressions_en": [
+      "Weighted dip"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "trx_row",
@@ -3529,7 +3669,26 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Set both rings to the same height.",
+      "Keep your body braced and control your shoulder blades."
+    ],
+    "warnings_en": [
+      "The rings and their anchor point must be installed correctly and securely."
+    ],
+    "common_errors_en": [
+      "Rotating the trunk.",
+      "Uncontrolled return."
+    ],
+    "regressions_en": [
+      "trx_row",
+      "band_row"
+    ],
+    "progressions_en": [
+      "Ring row with feet elevated"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "inverted_row_table",
@@ -3593,7 +3752,25 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Before use, check that the table is sturdy, heavy enough and cannot tip over.",
+      "Keep your body braced throughout the movement."
+    ],
+    "warnings_en": [
+      "Use only under a solid, immovable structure. If you cannot confirm that it is safe, do not perform the exercise."
+    ],
+    "common_errors_en": [
+      "Using a light or unstable table.",
+      "Lowering without control."
+    ],
+    "regressions_en": [
+      "Resistance-band row"
+    ],
+    "progressions_en": [
+      "Suspension trainer row"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "kettlebell_one_arm_row",
@@ -3882,7 +4059,26 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Brace your trunk.",
+      "Guide the bar close to your face and finish with it stacked over your mid-foot."
+    ],
+    "warnings_en": [
+      "Ensure that you can safely get the bar into the starting position and return it to the rack."
+    ],
+    "common_errors_en": [
+      "Excessive extension through the lower back.",
+      "The bar travels too far forwards."
+    ],
+    "regressions_en": [
+      "band_overhead_press",
+      "pike_push_up"
+    ],
+    "progressions_en": [
+      "Overhead press with a heavier load"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "band_overhead_press",
