@@ -699,7 +699,8 @@ def test_all_unmastered_patterns_can_form_a_learning_only_program(monkeypatch):
     )
 
     assert len(program["sessions"]) == 2
-    seen_learning_patterns = set()
+    expected_patterns = set(methods)
+    assert len(program["sessions"]) == 2
     for session in program["sessions"]:
         assert not any(
             exercise["pattern"] in PATTERN_DEFINITIONS
@@ -707,11 +708,10 @@ def test_all_unmastered_patterns_can_form_a_learning_only_program(monkeypatch):
         )
         assert session["session_phase"] == "movement_learning"
         assert "učenje gibalnih vzorcev" in session["title"].lower()
-        assert session["learning_tasks"]
+        assert len(session["learning_tasks"]) == 6
+        assert {task["movement_pattern"] for task in session["learning_tasks"]} == expected_patterns
         assert all(task["exercise_id"] is None for task in session["learning_tasks"])
         assert all(task["decision"] == "LEARN" for task in session["learning_tasks"])
-        seen_learning_patterns.update(task["movement_pattern"] for task in session["learning_tasks"])
-    assert len(seen_learning_patterns) == 6
     deferred = [
         event for event in program["movement_adaptation"]["events"]
         if event["action"] == "learning_tasks_deferred_to_later_sessions"
