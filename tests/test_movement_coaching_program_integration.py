@@ -727,3 +727,29 @@ def test_functional_program_goal_framework_is_localized():
     plan = generate_program({**BASE, "goal": "functional"})
     assert plan["goal_framework_en"]["label"] == "Functional Fitness"
     assert "controlled range of motion" in plan["goal_framework_en"]["description"]
+
+
+def test_dynamic_coaching_methodology_tempo_and_limitations_have_english_fields():
+    plan = generate_program(BASE)
+    methodology = plan["methodology_en"]
+    assert "greatest range of motion" in methodology["range_of_motion"]
+    assert "one principal variable at a time" in methodology["progression"]
+    assert methodology["deload"]
+    assert plan["limitations_en"]
+    prescriptions = [
+        exercise["prescription"]
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+    ]
+    assert any(item.get("tempo_description_en") for item in prescriptions)
+    for event in plan.get("movement_adaptation", {}).get("events", []):
+        if event.get("action") in {
+            "mild_symptom_load_tempo_and_rom_adjustment",
+            "simpler_catalogue_variant_selected",
+            "stable_support_cue",
+            "kept_selection_pending_user_clarification",
+            "ready_for_light_loaded_start",
+            "learning_tasks_deferred_to_later_sessions",
+            "learning_or_regression_variant_selected",
+        }:
+            assert event.get("message_en")
