@@ -1192,17 +1192,23 @@ def generate_program(
             camera_coordination_block = {
                 "source": "adequate_positive_camera_proxy",
                 "purpose": "Neobvezna, kratka koordinacijska priprava; ne predstavlja ocene pripravljenosti ali pomanjkljivosti.",
+                "purpose_en": "Optional brief coordination preparation; it is not an assessment of readiness or deficits.",
                 "is_readiness_assessment": False,
                 "exercises": [{
                     "exercise_id": camera_coordination_exercise["id"],
                     "name": camera_coordination_exercise["name"],
+                    "name_en": camera_coordination_exercise.get("name_en"),
                     "component": "koordinacija",
+                    "component_en": "coordination",
                     "sets": 1,
                     "work_seconds": 10,
                     "tempo": "počasi in nadzorovano",
+                    "tempo_en": "slow and controlled",
                     "equipment": camera_coordination_exercise["equipment"],
                     "cues": camera_coordination_exercise["cues"],
+                    "cues_en": camera_coordination_exercise.get("cues_en", []),
                     "warnings": camera_coordination_exercise["warnings"],
+                    "warnings_en": camera_coordination_exercise.get("warnings_en", []),
                 }],
             }
         mobility_block = None
@@ -1234,14 +1240,19 @@ def generate_program(
                 {
                     "exercise_id": item["id"],
                     "name": item["name"],
+                    "name_en": item.get("name_en"),
                     "component": "mobilnost",
+                    "component_en": "mobility",
                     "sets": 1,
                     "reps": 6 if item.get("unilateral") else 8,
                     "reps_per_side": bool(item.get("unilateral") or item.get("reps_per_side")),
                     "tempo": "počasi in nadzorovano",
+                    "tempo_en": "slow and controlled",
                     "equipment": item["equipment"],
                     "cues": item["cues"],
+                    "cues_en": item.get("cues_en", []),
                     "warnings": item["warnings"],
+                    "warnings_en": item.get("warnings_en", []),
                 }
                 for item in selected_mobility
             ]
@@ -1252,14 +1263,19 @@ def generate_program(
                     "exercise_id": selected_skill["id"],
                     "name": selected_skill["name"],
                     "component": "ravnotežje" if is_balance else "koordinacija",
+                    "component_en": "balance" if is_balance else "coordination",
+                    "name_en": selected_skill.get("name_en"),
                     "sets": 1,
                     "reps": 5 if is_balance else f"{work_seconds} s",
                     "work_seconds": work_seconds,
                     "reps_per_side": is_balance,
                     "tempo": "počasi in nadzorovano",
+                    "tempo_en": "slow and controlled",
                     "equipment": selected_skill["equipment"],
                     "cues": selected_skill["cues"],
+                    "cues_en": selected_skill.get("cues_en", []),
                     "warnings": selected_skill["warnings"],
+                    "warnings_en": selected_skill.get("warnings_en", []),
                 })
             selected_stability = None
             if selected_stability is not None:
@@ -1267,18 +1283,25 @@ def generate_program(
                     "exercise_id": selected_stability["id"],
                     "name": selected_stability["name"],
                     "component": "stabilnost",
+                    "component_en": "stability",
+                    "name_en": selected_stability.get("name_en"),
                     "sets": 1,
                     "reps": 6,
                     "reps_per_side": True,
                     "tempo": "počasi in nadzorovano",
+                    "tempo_en": "slow and controlled",
                     "equipment": selected_stability["equipment"],
                     "cues": selected_stability["cues"],
+                    "cues_en": selected_stability.get("cues_en", []),
                     "warnings": selected_stability["warnings"],
+                    "warnings_en": selected_stability.get("warnings_en", []),
                 })
             mobility_block = {
                 "purpose": "Kratka, ciljno izbrana aktivna priprava pred glavnimi vajami.",
+                "purpose_en": "Brief, targeted active preparation before the main exercises.",
                 "estimated_minutes": 1,
                 "amplitude_rule": "Gib izvedi skozi največjo trenutno nadzorovano in tolerirano amplitudo; brez sunkov, izgube ravnotežja ali siljenja.",
+                "amplitude_rule_en": "Move through the greatest range you can currently control and tolerate, without jerking, losing balance or forcing the end position.",
                 "exercises": prep_exercises,
             }
         selected = []
@@ -1967,7 +1990,8 @@ def generate_program(
                 "prescription": prescription,
                 **({"movement_adaptation_note": movement_note} if movement_note else {}),
                 **({
-                    "coaching_note": "Ciljno pripravljalno delo za nadzor trupa, vključeno na podlagi tvoje povratne informacije. Izvedi po splošnem ogrevanju in pred glavnimi vajami."
+                    "coaching_note": "Ciljno pripravljalno delo za nadzor trupa, vključeno na podlagi tvoje povratne informacije. Izvedi po splošnem ogrevanju in pred glavnimi vajami.",
+                    "coaching_note_en": "Targeted trunk-control preparation added in response to your feedback. Perform it after the general warm-up and before the main exercises."
                 } if pattern == "trunk_stability" and include_stability else {}),
             })
             if exercise_category in {"compound", "accessory"}:
