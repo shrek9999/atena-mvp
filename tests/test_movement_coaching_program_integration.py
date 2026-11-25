@@ -477,3 +477,29 @@ def test_six_learning_patterns_repeat_in_both_weekly_sessions():
         for event in plan["movement_adaptation"]["events"]
     )
 
+
+
+
+def test_ready_pattern_keeps_the_same_main_exercise_across_weekly_sessions():
+    squat = build_movement_decision(
+        "squat", "READY",
+        user_report={"status": "movement_controlled", "movement_control": {
+            "confirmed_by_user": True, "repeatable": True,
+            "criteria": {
+                "tempo": True, "balance": True, "knee_hip_foot_control": True,
+                "lumbopelvic_control": True, "tolerated_rom": True,
+            },
+        }},
+        decision_reason="Počep je po učenju ponovljivo nadzorovan.",
+    )
+    squat["training_phase"] = "capacity_development"
+
+    plan = generate_program(BASE, movement_decisions={"squat": squat})
+
+    assert len(plan["sessions"]) == 2
+    squat_ids_by_session = [
+        [item["exercise_id"] for item in session["exercises"] if item["pattern"] == "squat"]
+        for session in plan["sessions"]
+    ]
+    assert all(len(ids) == 1 for ids in squat_ids_by_session)
+    assert squat_ids_by_session[0] == squat_ids_by_session[1]
