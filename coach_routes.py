@@ -2775,7 +2775,7 @@ def coach_program():
         return ("", 204)
     payload = request.get_json(silent=True)
     response_language = normalize_language(payload.get("language") or payload.get("locale")) if isinstance(payload, dict) else None
-    response_language = response_language or "en"
+    response_language = response_language or "sl"
     localize = lambda message: localize_program_api_message(message, response_language)
     expected_token = os.getenv("AI_COACH_TEST_TOKEN", "").strip()
     supplied_token = request.headers.get("X-Pilot-Token", "").strip()
