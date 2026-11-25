@@ -12,7 +12,7 @@ from training.movement_assessment import (
 )
 from training.movement_coaching import (
     PATTERN_DEFINITIONS, VALID_DECISIONS, MovementCoachingError, get_exercise_options,
-    validate_symptom_regression_report,
+    validate_symptom_regression_report, get_method_english, get_pattern_english,
 )
 from training.video_demonstrations import get_video_demonstrations
 
@@ -1360,9 +1360,13 @@ def generate_program(
                         learning_tasks_for_session.append({
                             "movement_pattern": pattern,
                             "task_id": PATTERN_DEFINITIONS[pattern]["task_id"],
+                            "pattern_label_en": (get_pattern_english(pattern) or {}).get("label"),
+                            "task_en": (get_pattern_english(pattern) or {}).get("task"),
                             "method_id": method["id"],
                             "method": method["label"],
                             "description": method["description"],
+                            "method_en": (get_method_english(method["id"]) or (None, None))[0],
+                            "description_en": (get_method_english(method["id"]) or (None, None))[1],
                             "exercise_id": None,
                             "demo_url": method.get("demo_url"),
                             "demonstration_videos": _learning_task_videos(pattern, method["id"], None),
