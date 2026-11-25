@@ -2386,6 +2386,22 @@ def generate_program(
             "pattern_work_sets": dict(pattern_work_sets),
             "unfilled_patterns": sorted(missing_patterns),
         },
+        "limitations_en": [
+            "Session duration is an estimate. Allow approximately 5–10 minutes for warm-up; the remaining time depends on tempo, rest periods and exercise difficulty.",
+            "Stability exercises are not automatic additions to hypertrophy sessions. Include them when feedback identifies a relevant trunk-control need.",
+            "Duration estimates are approximate and depend on execution speed, equipment changes and individual rest periods.",
+            "The exercise catalogue does not assess medical conditions. A coach or appropriate healthcare professional should review relevant limitations and symptoms before exercise selection.",
+            "Weekly muscle-group exposure from multi-joint exercises is not equivalent to the number of direct working sets for each muscle.",
+        ] + (
+            ["The following movement patterns are not included: " + _english_pattern_labels(sorted(missing_patterns)) + ". ATENA has not replaced them with unrelated movements. Their omission may reflect available equipment, movement assessment, profile exclusions or time limits. Review equipment, reassess movement or adjust session duration if you want to include them."]
+            if missing_patterns else []
+        ) + (
+            ["Without suitable equipment, an effective horizontal pull (for example, a row) cannot be guaranteed. The programme does not replace it with unsuitable self-resisted exercises. Add a safe support, resistance band, bar or weight for balanced back development."]
+            if "horizontal_pull" in missing_patterns else []
+        ) + (
+            ["Long-term strength and muscle-mass gains are limited without external resistance. The programme therefore uses more demanding unilateral and tempo variations; additional resistance may eventually be useful for further progression."]
+            if planning_goal in {"strength", "hypertrophy", "strength_hypertrophy", "fat_loss"} and not ({"barbell", "dumbbell", "kettlebell"} & available_equipment) else []
+        ),
         "limitations": [
             "Čas treninga je okviren; ogrevanje traja približno 5–10 minut, preostanek pa se prilagodi tempu, odmorom in zahtevnosti vaj.",
             "Stabilizacijske vaje niso privzeti dodatek k hipertrofiji; vključijo se ciljno, kadar povratna informacija pokaže težavo z nadzorom trupa.",
