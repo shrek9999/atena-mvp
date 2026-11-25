@@ -17,6 +17,69 @@ from training.movement_coaching import (
 from training.video_demonstrations import get_video_demonstrations
 
 
+
+# Reviewed English coaching copy for deterministic programme explanations.
+_TEMPO_DESCRIPTION_EN = {
+    "Zadrži blag do zmeren razteg, dihaj sproščeno in ne sili v končni položaj.": "Hold a mild to moderate stretch, breathe comfortably and do not force the end position.",
+    "3 s nadzorovan povratek iz končne amplitude · 1 s stabilen nadzor v razpoložljivem končnem položaju · 2 s aktivna vrnitev · brez sunkov ali siljenja.": "3 seconds to return from the end of the range under control · 1 second of stable control in the available end position · 2 seconds for the active return · no bouncing or forcing.",
+    "Aktivno raziskuj razpoložljivo amplitudo brez sunkov in prisiljevanja.": "Actively explore the available range of motion without bouncing or forcing the movement.",
+    "Ohrani enakomeren ritem in intenzivnost, ki ustreza predpisanemu cilju.": "Maintain a steady rhythm and an intensity appropriate to the prescribed goal.",
+    "Nadzorovan začetni položaj; dvig oziroma odriv izvedi hitro in tehnično čisto; med ponovitvami se ponastavi.": "Establish a controlled starting position; lift or push explosively with sound technique; reset between repetitions.",
+    "Najprej kakovost in nadzor; hitrost ali doseg povečuj šele, ko je izvedba ponovljiva.": "Prioritize movement quality and control; increase speed or range only when execution is repeatable.",
+    "2 s izteg oziroma odmik · 1 s nadzor · 2 s vrnitev · 1 s ponastavitev.": "2 seconds to extend or move away · 1 second of control · 2 seconds to return · 1 second to reset.",
+    "Ohrani ponovljiv ritem intervala; intenzivnost prilagodi cilju in kakovosti izvedbe.": "Maintain a repeatable interval rhythm; adjust intensity to the goal and quality of execution.",
+    "Hodi z naravnim, nadzorovanim korakom; ohrani stabilen trup in breme ob telesu.": "Walk with a natural, controlled stride; keep your trunk stable and the load close to your body.",
+    "Nadzorovan spust skozi uporabno amplitudo in aktivna, tekoča vrnitev. Tempo prilagodi vaji; ne sili v počasnost ali hitrost na račun nadzora.": "Lower through a useful range under control and return actively and smoothly. Match the tempo to the exercise; do not force slowness or speed at the expense of control.",
+    "3 s nadzorovan spust · 1 s nadzor v izbranem položaju · 2 s nadzorovana vrnitev · brez sunkov in izgube položaja.": "3 seconds for a controlled lowering phase · 1 second of control in the selected position · 2 seconds for a controlled return · no bouncing or loss of position.",
+    "Počasen, nadzorovan tempo: 4 s spuščanje, 1 s nadzor, 2 s vračanje. Ne pospešuj izvedbe.": "Use a slow, controlled tempo: 4 seconds lowering, 1 second holding control and 2 seconds returning. Do not speed up the movement.",
+}
+_ADJUSTMENT_NOTE_EN = {
+    "Regeneracija je bila slabša, zato je zmanjšan samo del glavnega večsklepnega volumna; ostalo delo ostaja nespremenjeno.": "Recovery was poorer, so only part of the main compound-exercise volume has been reduced; the remaining work is unchanged.",
+    "Ker je bil zadnji trening pretežek oziroma regeneracija slabša, je naslednji vadbeni odmerek konservativno zmanjšan. Ohrani nadzorovano izvedbo.": "Because the previous session felt too hard or recovery was poorer, the next training dose has been conservatively reduced. Keep every repetition controlled.",
+    "Ker je bil zadnji trening prelahek, je delovni interval podaljšan za majhen korak. Ohrani predpisano ciljno intenzivnost.": "Because the previous session felt too easy, the work interval has been increased by a small step. Maintain the prescribed target intensity.",
+    "Ker je bil zadnji trening prelahek, je cilj naslednjič nekoliko višji: dodaj eno kakovostno ponovitev na serijo. Breme povečaj šele, ko večkrat dosežeš zgornjo mejo z ustrezno rezervo in tehniko.": "Because the previous session felt too easy, the next target is slightly higher: add one good-quality repetition per set. Increase the load only after repeatedly reaching the top of the range with the intended reserve and sound technique.",
+}
+_PATTERN_LABELS_EN = {
+    "squat": "squat", "lunge": "lunge", "hinge": "hip hinge",
+    "horizontal_push": "horizontal push", "horizontal_pull": "horizontal pull",
+    "vertical_push": "overhead push", "vertical_pull": "vertical pull",
+    "hip_extension": "hip extension", "carry": "loaded carry",
+    "trunk_stability": "trunk stability", "anti_rotation": "anti-rotation",
+    "balance": "balance", "coordination": "coordination",
+    "conditioning": "conditioning", "locomotion": "locomotion",
+    "mobility": "mobility", "mobility_stretch": "stretching",
+}
+_EVENT_MESSAGE_EN = {
+    "mild_symptom_load_tempo_and_rom_adjustment": "Mild discomfort was reported. The same tested variation is retained with a lighter load, no more than two sets, a controlled 4–1–2–0 tempo and only the tolerated range of motion. Do not progress this exposure. Stop if pain increases, becomes sharp or changes the movement.",
+    "simpler_catalogue_variant_selected": "Based on your movement self-assessment, an easier version of the same movement pattern has been selected. Start with no more than two quality sets and keep at least three repetitions in reserve. Stop if the movement is uncomfortable or cannot be controlled.",
+    "stable_support_cue": "Use stable support within reach. Adjust the range and duration so the movement remains controlled.",
+    "kept_selection_pending_user_clarification": "Your response for this task was uncertain, so ATENA has not changed the exercise based on a guess. Before the first working set, check that the variation is comfortable and controlled. If unsure, ask a coach for an easier option.",
+    "ready_for_light_loaded_start": "The movement pattern has been demonstrated with repeatable control. Begin with a light to moderate load (RIR 3–4). Increase the load only after two well-tolerated exposures.",
+    "learning_tasks_deferred_to_later_sessions": "Learning tasks have been scheduled for later training sessions. They remain separate from loaded exercise in this session.",
+    "learning_or_regression_variant_selected": "A learning or regression variation has been selected for this movement pattern. Follow the listed setup and control requirements before adding load.",
+}
+
+
+def _english_pattern_labels(patterns: list[str]) -> str:
+    return ", ".join(_PATTERN_LABELS_EN.get(item, item.replace("_", " ")) for item in patterns)
+
+
+def _event_message_english(event: dict) -> str | None:
+    """Return reviewed English event copy; never guess-translate safety messages."""
+    action = event.get("action")
+    base = _EVENT_MESSAGE_EN.get(action)
+    if base is None:
+        return None
+    patterns = event.get("patterns") or ([event.get("pattern")] if event.get("pattern") else [])
+    labels = _english_pattern_labels(patterns)
+    if action == "ready_for_light_loaded_start" and labels:
+        return f"Movement patterns confirmed with repeatable control: {labels}. {base}"
+    if action == "learning_tasks_deferred_to_later_sessions" and labels:
+        return f"Learning tasks for {labels} have been scheduled for later sessions. They remain separate from loaded exercise in this session."
+    return base
+
+
+
 def _learning_task_videos(pattern: str, method_id: str | None, exercise_id: str | None) -> list[dict]:
     """Prefer exact method/exercise videos; allow a clearly generic pattern demo as fallback."""
     exact = []
