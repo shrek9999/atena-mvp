@@ -717,4 +717,3 @@ def test_all_unmastered_patterns_can_form_a_learning_only_program(monkeypatch):
         if event["action"] == "learning_tasks_deferred_to_later_sessions"
     ]
     assert not deferred
-    assert len(deferred[-1]["patterns"]) == 4
