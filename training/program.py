@@ -1815,6 +1815,7 @@ def generate_program(
                 "exercise_id": candidate["id"],
                 "exercise_category": exercise_category,
                 "name": candidate["name"],
+                "name_en": candidate["name_en"],
                 "pattern": effective_pattern,
                 "movement_pattern": candidate["movement_pattern"],
                 "training_purposes": candidate["training_purposes"],
