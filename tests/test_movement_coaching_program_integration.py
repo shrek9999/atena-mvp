@@ -1,6 +1,6 @@
 """Programme integration for structured six-pattern movement decisions."""
 from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision, get_method_english, get_pattern_english
-from training.catalogue import get_exercise
+from training.catalogue import get_exercise, load_catalogue
 from training.program import PATTERN_LABELS, ProgramValidationError, _estimated_minutes, generate_program
 
 
@@ -682,3 +682,24 @@ def test_additional_exercises_have_complete_english_coaching_arrays():
         for english_field, source_field in source_fields.items():
             assert len(exercise[english_field]) == len(exercise[source_field])
             assert all(item.strip() for item in exercise[english_field])
+
+
+def test_entire_exercise_catalogue_has_complete_english_coaching_arrays():
+    source_fields = {
+        "cues_en": "cues",
+        "warnings_en": "warnings",
+        "common_errors_en": "common_errors",
+        "regressions_en": "regressions",
+        "progressions_en": "progressions",
+        "alternatives_en": "alternatives",
+    }
+    exercises = load_catalogue()
+    assert len(exercises) == 128
+    for exercise in exercises:
+        assert exercise["name_en"].strip()
+        for english_field, source_field in source_fields.items():
+            translated = exercise[english_field]
+            source = exercise[source_field]
+            assert isinstance(translated, list)
+            assert len(translated) == len(source)
+            assert all(isinstance(item, str) and item.strip() for item in translated)
