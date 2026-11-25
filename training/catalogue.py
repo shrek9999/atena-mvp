@@ -103,6 +103,26 @@ def validate_catalogue(exercises: object) -> None:
             value = exercise[field]
             if not isinstance(value, list) or any(not isinstance(item, str) or not item.strip() for item in value):
                 raise CatalogueValidationError(f"{exercise_id}: polje {field} mora biti seznam nepraznih nizov.")
+        for field in ("cues_en", "warnings_en"):
+            if field in exercise:
+                value = exercise[field]
+                source_field = "cues" if field == "cues_en" else "warnings"
+                if (
+                    not isinstance(value, list)
+                    or len(value) != len(exercise[source_field])
+                    or any(not isinstance(item, str) or not item.strip() for item in value)
+                ):
+                    raise CatalogueValidationError(
+                        f"{exercise_id}: {field} mora vsebovati enako število nepraznih prevedenih postavk kot {source_field}."
+                    )
+        if "range_of_motion_en" in exercise and (
+            not isinstance(exercise["range_of_motion_en"], str)
+            or not exercise["range_of_motion_en"].strip()
+            or not exercise.get("range_of_motion")
+        ):
+            raise CatalogueValidationError(
+                f"{exercise_id}: range_of_motion_en zahteva neprazen angleški in izvorni opis amplitude."
+            )
         if not exercise["goals"] or not (exercise["equipment"] or exercise["equipment_any"]) or not exercise["primary_muscles"] or not exercise.get("loading_potential") or not exercise.get("training_role"):
             raise CatalogueValidationError(f"{exercise_id}: goals, vsaj ena zahteva glede opreme in primary_muscles ne smejo biti prazni.")
 
