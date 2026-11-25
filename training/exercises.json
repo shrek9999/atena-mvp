@@ -2082,6 +2082,28 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Generate the movement from your hips, not by lifting with your arms.",
+      "Keep your trunk stable and your spine in a neutral position.",
+      "The kettlebell should float as a result of hip extension."
+    ],
+    "warnings_en": [
+      "First demonstrate control of the hip hinge with a neutral spine and the deadlift."
+    ],
+    "common_errors_en": [
+      "Squatting instead of hinging at the hips.",
+      "Excessive extension through the lower back."
+    ],
+    "regressions_en": [
+      "Learn the hip hinge with a dowel",
+      "Kettlebell deadlift"
+    ],
+    "progressions_en": [
+      "Kettlebell swing with a heavier load"
+    ],
+    "alternatives_en": [
+      "Medicine-ball slam"
     ]
   },
   {
@@ -4219,7 +4241,27 @@
     "stability_focus": [
       "trunk_control",
       "balance"
-    ]
+    ],
+    "cues_en": [
+      "Move your hips backwards.",
+      "Keep your pelvis as level as possible.",
+      "Use light fingertip support if needed."
+    ],
+    "warnings_en": [
+      "Balance should not compromise safe execution; use support when needed."
+    ],
+    "common_errors_en": [
+      "Opening or rotating the pelvis.",
+      "Rotating the trunk to create more range."
+    ],
+    "regressions_en": [
+      "bodyweight_hip_hinge"
+    ],
+    "progressions_en": [
+      "romanian_deadlift",
+      "dumbbell_deadlift"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "long_lever_glute_bridge",
@@ -4283,7 +4325,25 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Place your heels farther away from your hips.",
+      "Lift your pelvis without excessively extending your lower back."
+    ],
+    "warnings_en": [
+      "Shorten the lever if you lose control or experience cramping."
+    ],
+    "common_errors_en": [
+      "Hamstring cramping because the lever is too long.",
+      "Driving the movement through the lower back."
+    ],
+    "regressions_en": [
+      "glute_bridge"
+    ],
+    "progressions_en": [
+      "elevated_heel_hip_lift"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "elevated_heel_hip_lift",
@@ -4350,7 +4410,26 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Place your heels on a stable support.",
+      "Keep your knees almost straight, but do not lock them.",
+      "Lift your pelvis under control."
+    ],
+    "warnings_en": [
+      "The chair or support must be stable, placed against a wall and unable to move."
+    ],
+    "common_errors_en": [
+      "Excessive arching through the lower back.",
+      "Using an unstable support."
+    ],
+    "regressions_en": [
+      "long_lever_glute_bridge"
+    ],
+    "progressions_en": [
+      "Single-leg variation or sliding leg curl"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "slider_leg_curl",
@@ -4414,7 +4493,25 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Keep your hips lifted.",
+      "Pull your heels towards your hips, then slowly extend your knees."
+    ],
+    "warnings_en": [
+      "Use a smooth, non-slip surface and a towel or slider that actually glides."
+    ],
+    "common_errors_en": [
+      "Allowing the hips to drop.",
+      "Uncontrolled eccentric phase."
+    ],
+    "regressions_en": [
+      "Long-lever glute bridge"
+    ],
+    "progressions_en": [
+      "Eccentric-only or single-leg variation"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "nordic_hamstring_curl",
@@ -4473,7 +4570,25 @@
       "strength"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Keep your hips extended.",
+      "Lower yourself slowly and use assistance to return to the start."
+    ],
+    "warnings_en": [
+      "Secure your feet properly; do not use an improvised anchor."
+    ],
+    "common_errors_en": [
+      "Flexing at the hips instead of keeping the body aligned.",
+      "Falling forwards too quickly without control."
+    ],
+    "regressions_en": [
+      "slider_leg_curl"
+    ],
+    "progressions_en": [
+      "Use less band assistance and increase eccentric control"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "farmer_carry_bodyweight",
@@ -4546,7 +4661,25 @@
     "stability_role": "primary",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Distribute the load evenly.",
+      "Walk tall and control each step."
+    ],
+    "warnings_en": [
+      "The load must be enclosed, stable and securely fastened."
+    ],
+    "common_errors_en": [
+      "Carrying a load that is too heavy or unstable.",
+      "Leaning the trunk."
+    ],
+    "regressions_en": [
+      "Shorter walk with a lighter load"
+    ],
+    "progressions_en": [
+      "Longer walk or heavier load"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "suitcase_carry",
@@ -4616,7 +4749,25 @@
     "stability_role": "primary",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Do not lean towards the load.",
+      "Walk with a steady, controlled stride."
+    ],
+    "warnings_en": [
+      "Make sure the load can be gripped securely."
+    ],
+    "common_errors_en": [
+      "Lateral trunk lean.",
+      "Walking too quickly."
+    ],
+    "regressions_en": [
+      "Use a lighter load or shorter distance"
+    ],
+    "progressions_en": [
+      "Increase the load or walking distance"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "running_easy",
@@ -4684,7 +4835,25 @@
       "functional_fitness"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Run at a conversational pace.",
+      "Start with walk-run intervals if needed."
+    ],
+    "warnings_en": [
+      "Increase volume gradually and adapt to the surface and your current readiness."
+    ],
+    "common_errors_en": [
+      "Starting too fast.",
+      "Increasing running volume abruptly."
+    ],
+    "regressions_en": [
+      "Brisk walking"
+    ],
+    "progressions_en": [
+      "Longer duration or a slightly faster pace"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "brisk_walking",
@@ -4751,7 +4920,24 @@
       "mobility"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Walk fast enough to raise your breathing rate moderately.",
+      "Maintain a natural stride."
+    ],
+    "warnings_en": [
+      "Choose a safe route and suitable footwear."
+    ],
+    "common_errors_en": [
+      "Walking at a pace that is too fast for your current fitness."
+    ],
+    "regressions_en": [
+      "Easy walking"
+    ],
+    "progressions_en": [
+      "Longer duration or a faster pace"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "cycling",
@@ -4814,7 +5000,24 @@
       "general_fitness"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Maintain a steady cadence.",
+      "Choose a gear that allows you to sustain the intended intensity."
+    ],
+    "warnings_en": [
+      "Check the bike setup, brakes and traffic conditions."
+    ],
+    "common_errors_en": [
+      "Using too high a gear and losing a smooth cadence."
+    ],
+    "regressions_en": [
+      "Stationary cycling at low resistance"
+    ],
+    "progressions_en": [
+      "Longer duration or intervals"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "jump_rope",
@@ -4882,7 +5085,25 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Keep jumps low and rhythmic.",
+      "Progress the workload through intervals."
+    ],
+    "warnings_en": [
+      "Use a suitable surface and footwear. If you have foot or calf issues, choose an alternative."
+    ],
+    "common_errors_en": [
+      "Jumping too high.",
+      "Starting with intervals that are too long."
+    ],
+    "regressions_en": [
+      "Step over the rope"
+    ],
+    "progressions_en": [
+      "Longer intervals or a faster rhythm"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "burpee",
@@ -4955,7 +5176,25 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Choose a version without a push-up or with your hands elevated if needed.",
+      "Maintain a steady rhythm."
+    ],
+    "warnings_en": [
+      "This is a high-intensity exercise; adjust the pace and variation to your capacity."
+    ],
+    "common_errors_en": [
+      "Starting too fast.",
+      "Losing control when moving down to the floor."
+    ],
+    "regressions_en": [
+      "Step back into the plank position without a push-up"
+    ],
+    "progressions_en": [
+      "Burpee with a push-up or jump"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "sled_push",
@@ -5024,7 +5263,25 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Keep your trunk braced and apply steady pressure.",
+      "Adjust your steps to the resistance."
+    ],
+    "warnings_en": [
+      "Use a suitable surface and ensure the path is clear."
+    ],
+    "common_errors_en": [
+      "Starting with too much resistance.",
+      "Losing trunk position."
+    ],
+    "regressions_en": [
+      "Uphill walking"
+    ],
+    "progressions_en": [
+      "Increase the distance or load"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "rower_intervals",
@@ -5089,7 +5346,24 @@
       "general_fitness"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Drive with your legs first, then swing your trunk and pull with your arms.",
+      "Return in the reverse order: arms, trunk, then legs."
+    ],
+    "warnings_en": [
+      "Learn the technique before increasing intensity."
+    ],
+    "common_errors_en": [
+      "Increasing stroke rate too quickly and losing technique."
+    ],
+    "regressions_en": [
+      "Steady rowing at low intensity"
+    ],
+    "progressions_en": [
+      "Longer or more intense intervals"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "mountain_climber",
@@ -5158,7 +5432,25 @@
       "functional_fitness"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Maintain a stable plank position.",
+      "Adjust the pace to the level of control you can maintain."
+    ],
+    "warnings_en": [
+      "Reduce speed if you lose trunk stability."
+    ],
+    "common_errors_en": [
+      "Hiking the hips upwards.",
+      "Moving too quickly."
+    ],
+    "regressions_en": [
+      "Slow alternating knee drives"
+    ],
+    "progressions_en": [
+      "Faster intervals"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "deep_squat_hold",
@@ -5225,7 +5517,25 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Use support if it helps you maintain the position.",
+      "Actively explore a comfortable range of motion."
+    ],
+    "warnings_en": [
+      "Do not force depth; allow your knees and ankles to adapt gradually."
+    ],
+    "common_errors_en": [
+      "Forcing depth.",
+      "Collapsing into the position without active control."
+    ],
+    "regressions_en": [
+      "Supported squat"
+    ],
+    "progressions_en": [
+      "Active weight shifts and a longer hold"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "ankle_knee_to_wall",
@@ -5283,7 +5593,25 @@
       "mobility"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Keep your heel on the floor.",
+      "Guide your knee towards the wall in line with your second or third toe."
+    ],
+    "warnings_en": [
+      "Keep the movement pain-free and controlled."
+    ],
+    "common_errors_en": [
+      "Lifting the heel.",
+      "Allowing the arch of the foot to collapse."
+    ],
+    "regressions_en": [
+      "Stand closer to the wall"
+    ],
+    "progressions_en": [
+      "Gradually increase the distance while maintaining control"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "cossack_squat",
@@ -5354,7 +5682,25 @@
     "stability_focus": [
       "trunk_control",
       "balance"
-    ]
+    ],
+    "cues_en": [
+      "Keep the bent knee tracking in line with the foot.",
+      "Extend the opposite leg only as far as you can comfortably control."
+    ],
+    "warnings_en": [
+      "Increase range of motion gradually and without pain."
+    ],
+    "common_errors_en": [
+      "Losing full-foot contact with the floor.",
+      "Forcing depth."
+    ],
+    "regressions_en": [
+      "Lateral weight shift with support"
+    ],
+    "progressions_en": [
+      "Cossack squat with a dumbbell"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "pistol_squat",
@@ -5432,6 +5778,34 @@
     "stability_focus": [
       "trunk_control",
       "balance"
+    ],
+    "cues_en": [
+      "Keep the standing foot stable and evenly loaded.",
+      "Extend the other leg in front of you and maintain balance.",
+      "Lower slowly to the deepest position you can control without losing alignment.",
+      "Keep the knee tracking in the direction of the foot; stand up without bouncing."
+    ],
+    "warnings_en": [
+      "This is a very demanding single-leg variation. It is suitable only for advanced trainees with sufficient strength, balance and mobility.",
+      "Choose an easier variation if control is lost; do not perform through pain."
+    ],
+    "common_errors_en": [
+      "Losing balance or dropping uncontrolled into the bottom position.",
+      "Losing contact between parts of the foot and the floor.",
+      "The knee drifting out of line with the foot.",
+      "Forcing depth despite loss of control."
+    ],
+    "regressions_en": [
+      "single_leg_box_squat",
+      "cossack_squat",
+      "air_squat"
+    ],
+    "progressions_en": [
+      "Pistol squat with a dumbbell"
+    ],
+    "alternatives_en": [
+      "single_leg_box_squat",
+      "cossack_squat"
     ]
   },
   {
