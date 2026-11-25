@@ -703,3 +703,27 @@ def test_entire_exercise_catalogue_has_complete_english_coaching_arrays():
             assert isinstance(translated, list)
             assert len(translated) == len(source)
             assert all(isinstance(item, str) and item.strip() for item in translated)
+
+
+
+def test_program_exposes_english_goal_framework_and_session_titles_without_replacing_slovenian():
+    plan = generate_program(BASE)
+    assert plan["goal_framework_en"]["label"] == "Strength + Muscle Mass"
+    assert "compound exercises" in plan["goal_framework_en"]["description"]
+    assert all(session["title"].startswith("Trening ") for session in plan["sessions"])
+    assert all(session["title_en"].startswith("Session ") for session in plan["sessions"])
+    assert all("Squat" in session["title_en"] or "Full Body" in session["title_en"] or "Targeted Work" in session["title_en"] or "Focused Training" in session["title_en"] for session in plan["sessions"])
+
+
+def test_fat_loss_program_includes_complete_english_nutrition_guidance():
+    plan = generate_program({**BASE, "goal": "fat_loss"})
+    assert plan["goal_framework_en"]["label"] == "Fat Loss"
+    assert len(plan["nutrition_guidance_en"]) == 5
+    assert any("energy deficit" in item for item in plan["nutrition_guidance_en"])
+    assert any("resistance training" in item for item in plan["nutrition_guidance_en"])
+
+
+def test_functional_program_goal_framework_is_localized():
+    plan = generate_program({**BASE, "goal": "functional"})
+    assert plan["goal_framework_en"]["label"] == "Functional Fitness"
+    assert "controlled range of motion" in plan["goal_framework_en"]["description"]
