@@ -2043,7 +2043,7 @@ def generate_program(
         has_lower = bool(set(covered_patterns) & lower_patterns)
         has_push = bool(set(covered_patterns) & {"horizontal_push", "vertical_push"})
         has_pull = bool(set(covered_patterns) & {"horizontal_pull", "vertical_pull"})
-        if not selected and learning_tasks_for_session:
+        if not covered_patterns and learning_tasks_for_session:
             session_focus = "movement_learning"
         elif has_lower and has_push and has_pull and len(covered_patterns) >= 3:
             session_focus = "full_body"
@@ -2079,7 +2079,7 @@ def generate_program(
             "session_focus": session_focus,
             "covered_patterns": covered_patterns,
             "learning_tasks_estimated_minutes": learning_task_minutes,
-            "session_phase": "movement_learning" if not selected and learning_tasks_for_session else "mixed_or_capacity",
+            "session_phase": "movement_learning" if not covered_patterns and learning_tasks_for_session else "mixed_or_capacity",
             "warm_up_minutes": warm_up_minutes,
             "warm_up_range": warm_up_range,
             **({"mobility_block": mobility_block} if mobility_block else {}),
