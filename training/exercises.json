@@ -63,6 +63,14 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Keep the load close to your torso.",
+      "Lower under control through a range you can maintain without compensations.",
+      "Keep your feet stable."
+    ],
+    "warnings_en": [
+      "Adjust range of motion and load to your current ability."
     ]
   },
   {
@@ -268,6 +276,14 @@
     "stability_focus": [
       "trunk_control",
       "balance"
+    ],
+    "cues_en": [
+      "Keep your pelvis stable.",
+      "Lower vertically through a controlled range.",
+      "Both legs should contribute actively."
+    ],
+    "warnings_en": [
+      "Start with a range you can control."
     ]
   },
   {
@@ -342,6 +358,15 @@
     "stability_focus": [
       "trunk_control",
       "balance"
+    ],
+    "cues_en": [
+      "Hold a stable, immovable support lightly with one or both hands.",
+      "Keep your pelvis stable and lower only through a controlled range.",
+      "Both legs should contribute actively; use the support for balance, not to pull yourself upwards."
+    ],
+    "warnings_en": [
+      "Use only a stable, immovable support that cannot tip or slide.",
+      "Stop if pain or discomfort appears; support does not make it appropriate to move through symptoms."
     ]
   },
   {
@@ -413,6 +438,14 @@
     "stability_focus": [
       "trunk_control",
       "balance"
+    ],
+    "cues_en": [
+      "Step back far enough to establish a stable stance.",
+      "Keep the front foot stable.",
+      "Return to standing under control."
+    ],
+    "warnings_en": [
+      "Adjust step length and depth to your current control."
     ]
   },
   {
@@ -902,7 +935,17 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Keep your body aligned as one unit.",
+      "Guide your elbows through a controlled path.",
+      "Lower your chest towards the floor or support through the greatest range in which you can maintain trunk stability and shoulder-blade control.",
+      "Adjust support height so you can maintain control and gradually increase the challenge."
+    ],
+    "warnings_en": [
+      "Adjust the support height to your ability."
+    ],
+    "range_of_motion_en": "Lower your chest towards the floor or support through the greatest range in which you can maintain trunk stability and shoulder-blade control. Choose a support height that matches your current ability; lower it gradually as the movement becomes repeatable."
   },
   {
     "id": "dumbbell_bench_press",
@@ -1098,6 +1141,14 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Brace and stabilise your trunk before pressing.",
+      "Keep the load close to your face as it travels upwards.",
+      "Finish above your midline without excessive back arching."
+    ],
+    "warnings_en": [
+      "Adjust the range and variation to your shoulder mobility and tolerance."
     ]
   },
   {
@@ -1228,6 +1279,14 @@
     "stability_focus": [
       "trunk_control",
       "balance"
+    ],
+    "cues_en": [
+      "Stabilise your trunk by supporting your free hand on your thigh or a secure, stable surface.",
+      "Drive your elbow towards your hip.",
+      "Avoid rotating your trunk."
+    ],
+    "warnings_en": [
+      "If you use a chair or bench for support, check that it is stable and on a non-slip surface."
     ]
   },
   {
@@ -2000,6 +2059,14 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Secure the band at lower-chest height.",
+      "Pull your elbows back close to your torso.",
+      "Return slowly without losing trunk position."
+    ],
+    "warnings_en": [
+      "Check the band for wear and make sure its anchor is secure before training."
     ]
   },
   {
@@ -2263,6 +2330,14 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Stand with your feet hip-width apart and knees slightly bent.",
+      "Move your pelvis backwards and hinge your trunk forwards while maintaining your natural spinal position.",
+      "Stop at the limit of mobility you can control, then return to the starting position."
+    ],
+    "warnings_en": [
+      "This drill teaches the movement pattern. Progress gradually to external resistance when suitable equipment is available."
     ]
   },
   {
@@ -2405,6 +2480,14 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Keep your feet stable.",
+      "Lower slowly and under control. Gradually increase depth while maintaining foot, knee and trunk stability.",
+      "Let your knees track in the direction of your feet."
+    ],
+    "warnings_en": [
+      "This may be too easy for hypertrophy in more advanced trainees; choose a harder variation when the prescribed reps in reserve are no longer appropriate."
     ]
   },
   {
@@ -2485,6 +2568,16 @@
       "trunk_bracing",
       "balance",
       "coordination"
+    ],
+    "cues_en": [
+      "Reach your arms forwards or overhead, depending on your mobility and control.",
+      "If useful, hold a light plate (for example, a 5 kg bumper plate) in front of your body as a counterbalance; loading is not the goal of this drill.",
+      "Reaching and holding a light plate can assist balance and help you organise trunk tension and stability.",
+      "Use support if it helps you maintain a safe, controlled position.",
+      "Develop depth gradually while keeping your feet stable."
+    ],
+    "warnings_en": [
+      "The light plate is a counterbalance to help organise the position, not a load to compete with. Do not force depth or an arm position that causes pain."
     ]
   },
   {
@@ -3025,6 +3118,13 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Keep your body aligned as one unit.",
+      "Adjust your body angle to change the difficulty."
+    ],
+    "warnings_en": [
+      "The anchor and straps must be purpose-built and securely attached."
     ]
   },
   {
@@ -3479,6 +3579,13 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Stand on the band and check its condition before use.",
+      "Press without excessive back arching."
+    ],
+    "warnings_en": [
+      "Do not use a damaged band or position it so it could snap back towards your face."
     ]
   },
   {
@@ -6476,6 +6583,14 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Place your hands on a stable, non-slip support.",
+      "A higher support reduces the difficulty.",
+      "Keep your body in a straight line."
+    ],
+    "warnings_en": [
+      "Check the support before every set."
     ]
   },
   {
@@ -8174,7 +8289,17 @@
       "skill"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Use a stable chair placed against a wall so it cannot slide during the movement.",
+      "Position your feet comfortably. Lean your trunk forwards only as much as needed to stand up under control.",
+      "If needed, use your hands on the armrests or thighs; assistance is an acceptable modification.",
+      "Stand without jerking and lower yourself back to the chair slowly.",
+      "Adjust seat height and range of movement to your current ability."
+    ],
+    "warnings_en": [
+      "This is an adaptable starting variation for practising standing up. If another person must assist you or pain occurs, an individual assessment is needed."
+    ]
   },
   {
     "id": "wall_hip_hinge",
@@ -8243,7 +8368,17 @@
       "skill"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Stand with your back towards a wall, about 10–20 cm away.",
+      "Bend your knees slightly and move your pelvis backwards until your glutes gently touch the wall.",
+      "Hinge your trunk forwards while maintaining a comfortable, neutral spinal position.",
+      "Move slowly and return to standing.",
+      "Gradually adjust your distance from the wall only if the movement remains comfortable and controlled."
+    ],
+    "warnings_en": [
+      "This is a movement-learning variation. Do not force depth or pick an object up from the floor if that feels uncomfortable."
+    ]
   },
   {
     "id": "superman",
@@ -8527,6 +8662,19 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Choose one approved support and check its stability before every set. Use only a stable support: suspension trainer, securely anchored resistance band, fixed rack bar around chest height or another immovable support.",
+      "Use the suspension trainer or band to assist balance and reduce load. If using a band, check the purpose-built anchor and the condition of the material.",
+      "If using a rack bar, make sure the rack is stable and the bar is fixed around chest height.",
+      "Use the support for balance and assistance; do not pull yourself upwards with your arms.",
+      "Lower only through a range you can control without increasing symptoms.",
+      "Keep your feet stable and guide your knees in the direction of your feet."
+    ],
+    "warnings_en": [
+      "Use only a stable, securely attached support. A resistance band requires a purpose-built anchor; a rack bar must be secured in the rack.",
+      "Stop the test if pain increases, becomes sharp, changes your movement, or if acute swelling or spasm occurs.",
+      "A supported variation is not permission to move through acute or worsening pain."
     ]
   }
 ]
