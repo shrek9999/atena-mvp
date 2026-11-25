@@ -2341,7 +2341,7 @@
   },
   {
     "id": "air_squat",
-    "name": "Počep z lastno težo (air squat)",
+    "name": "Počep z lastno težo",
     "name_en": "Air squat",
     "pattern": "squat",
     "joint_type": "multi_joint",
