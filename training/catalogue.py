@@ -103,10 +103,17 @@ def validate_catalogue(exercises: object) -> None:
             value = exercise[field]
             if not isinstance(value, list) or any(not isinstance(item, str) or not item.strip() for item in value):
                 raise CatalogueValidationError(f"{exercise_id}: polje {field} mora biti seznam nepraznih nizov.")
-        for field in ("cues_en", "warnings_en"):
+        english_list_fields = {
+            "cues_en": "cues",
+            "warnings_en": "warnings",
+            "common_errors_en": "common_errors",
+            "regressions_en": "regressions",
+            "progressions_en": "progressions",
+            "alternatives_en": "alternatives",
+        }
+        for field, source_field in english_list_fields.items():
             if field in exercise:
                 value = exercise[field]
-                source_field = "cues" if field == "cues_en" else "warnings"
                 if (
                     not isinstance(value, list)
                     or len(value) != len(exercise[source_field])
