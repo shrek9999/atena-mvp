@@ -1636,7 +1636,7 @@ def generate_program(
                     prescription["rir_range"] = "3–4"
                 movement_note = (
                     "Začni z lahko do zmerno obremenitvijo (RIR 3–4); povečaj jo šele "
-                    "po dveh dobro toleriranih izpostavitvah. READY ni dovoljenje za težke serije."
+                    "po dveh dobro toleriranih izpostavitvah. Potrjena pripravljenost še ne pomeni dovoljenja za težke serije."
                 )
                 ready_loaded_patterns.append(pattern)
             if symptom_tolerated:
