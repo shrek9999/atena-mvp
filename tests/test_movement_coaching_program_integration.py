@@ -1,5 +1,6 @@
 """Programme integration for structured six-pattern movement decisions."""
 from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision, get_method_english, get_pattern_english
+from training.catalogue import get_exercise
 from training.program import PATTERN_LABELS, ProgramValidationError, _estimated_minutes, generate_program
 
 
@@ -596,3 +597,21 @@ def test_every_foundational_pattern_and_learning_method_has_reviewed_english_cop
             assert english_method, f"Missing English learning method: {method['id']}"
             assert english_method[0]
             assert english_method[1]
+
+
+def test_core_movement_exercises_have_complete_english_cues_and_safety_notes():
+    core_ids = {
+        "supported_squat", "chair_sit_to_stand", "reaching_squat", "air_squat",
+        "squat_goblet", "wall_hip_hinge", "bodyweight_hip_hinge",
+        "push_up_incline", "push_up", "band_row", "trx_row", "one_arm_row",
+        "band_overhead_press", "overhead_press", "supported_split_squat",
+        "split_squat", "reverse_lunge",
+    }
+    for exercise_id in core_ids:
+        exercise = get_exercise(exercise_id)
+        assert len(exercise["cues_en"]) == len(exercise["cues"])
+        assert len(exercise["warnings_en"]) == len(exercise["warnings"])
+        assert all(text.strip() for text in exercise["cues_en"] + exercise["warnings_en"])
+    push_up = get_exercise("push_up")
+    assert push_up["range_of_motion_en"]
+    assert "shoulder-blade control" in push_up["range_of_motion_en"]
