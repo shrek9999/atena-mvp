@@ -645,6 +645,12 @@ def test_additional_exercises_have_complete_english_coaching_arrays():
         "band_lat_pulldown", "supported_single_leg_rdl", "walking_lunge",
         "lateral_lunge", "step_up", "bench_dip", "parallel_bar_dip",
         "ring_row", "inverted_row_table", "barbell_overhead_press",
+        "kettlebell_swing", "single_leg_rdl", "long_lever_glute_bridge",
+        "elevated_heel_hip_lift", "slider_leg_curl", "nordic_hamstring_curl",
+        "farmer_carry_bodyweight", "suitcase_carry", "running_easy",
+        "brisk_walking", "cycling", "jump_rope", "burpee", "sled_push",
+        "rower_intervals", "mountain_climber", "deep_squat_hold",
+        "ankle_knee_to_wall", "cossack_squat", "pistol_squat",
     }
     source_fields = {
         "cues_en": "cues",
