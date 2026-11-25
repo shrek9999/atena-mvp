@@ -605,7 +605,13 @@ def test_core_movement_exercises_have_complete_english_cues_and_safety_notes():
         "squat_goblet", "wall_hip_hinge", "bodyweight_hip_hinge",
         "push_up_incline", "push_up", "band_row", "trx_row", "one_arm_row",
         "band_overhead_press", "overhead_press", "supported_split_squat",
-        "split_squat", "reverse_lunge",
+        "split_squat", "reverse_lunge", "back_squat", "front_squat",
+        "romanian_deadlift", "deadlift", "hip_thrust", "dumbbell_bench_press",
+        "barbell_bench_press", "pull_up", "two_dumbbell_squat", "glute_bridge",
+        "dumbbell_floor_press", "dumbbell_bent_over_row", "dumbbell_deadlift",
+        "dumbbell_squat_side", "dumbbell_squat_front_rack",
+        "kettlebell_one_arm_row", "chin_up", "foot_assisted_pull_up",
+        "pike_push_up", "barbell_bent_over_row",
     }
     for exercise_id in core_ids:
         exercise = get_exercise(exercise_id)
