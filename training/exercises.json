@@ -9435,6 +9435,29 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Use support for balance if needed.",
+      "Guide your knees forwards while keeping your trunk and hips in the agreed position.",
+      "Use only a range you can control without pain."
+    ],
+    "warnings_en": [
+      "This is an advanced, quadriceps-focused exercise. It requires good knee tolerance and gradual introduction; do not perform it through pain."
+    ],
+    "common_errors_en": [
+      "Forcing depth despite losing control.",
+      "Dropping uncontrollably into the end position."
+    ],
+    "regressions_en": [
+      "air_squat",
+      "heel_elevated_squat"
+    ],
+    "progressions_en": [
+      "Sissy squat with a larger controlled range"
+    ],
+    "alternatives_en": [
+      "heel_elevated_squat",
+      "reverse_nordic_curl"
     ]
   },
   {
@@ -9505,6 +9528,31 @@
     "stability_role": "primary",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Actively push the support away from you.",
+      "Keep your knees straight and lift your legs only through a range you can manage.",
+      "Start with short, high-quality holds."
+    ],
+    "warnings_en": [
+      "This is an advanced gymnastics skill. Check the support, shoulder strength and active hip compression. Do not expect beginners to perform the full variation."
+    ],
+    "common_errors_en": [
+      "Allowing the shoulders to collapse.",
+      "Bending the knees because the hold is too long.",
+      "Holding your breath."
+    ],
+    "regressions_en": [
+      "tuck_sit",
+      "seated_leg_lift"
+    ],
+    "progressions_en": [
+      "Single-leg L-sit",
+      "Full L-sit with a longer hold"
+    ],
+    "alternatives_en": [
+      "dead_bug",
+      "hollow_body_hold"
     ]
   },
   {
@@ -9577,6 +9625,29 @@
     "stability_focus": [
       "balance",
       "joint_control"
+    ],
+    "cues_en": [
+      "Stand on one leg and maintain a stable foot tripod.",
+      "Reach forwards or diagonally with the other leg under control.",
+      "Increase difficulty by reaching farther, not by losing control."
+    ],
+    "warnings_en": [
+      "Choose a safe area with a stable support nearby. Do not use unstable equipment as an automatic progression."
+    ],
+    "common_errors_en": [
+      "Allowing the arch of the foot to collapse.",
+      "Reaching quickly without control.",
+      "Compensating by leaning the trunk."
+    ],
+    "regressions_en": [
+      "Single-leg stance with support"
+    ],
+    "progressions_en": [
+      "Single-leg reach in multiple directions",
+      "Single-leg reach combined with an additional task"
+    ],
+    "alternatives_en": [
+      "supported_single_leg_rdl"
     ]
   },
   {
@@ -9648,6 +9719,29 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Maintain a low athletic stance that you can control.",
+      "Move sideways with coordinated foot and arm action.",
+      "First learn to decelerate and change direction; increase speed only afterwards."
+    ],
+    "warnings_en": [
+      "Ensure enough space and a non-slip surface. Adjust speed to your control and current joint tolerance."
+    ],
+    "common_errors_en": [
+      "Crossing your feet when moving quickly.",
+      "Losing control while decelerating.",
+      "Moving too fast for the available space or your ability."
+    ],
+    "regressions_en": [
+      "Slow lateral steps"
+    ],
+    "progressions_en": [
+      "Lateral shuffle with controlled changes of direction"
+    ],
+    "alternatives_en": [
+      "brisk_walking",
+      "shuttle_run"
     ]
   },
   {
@@ -9716,6 +9810,27 @@
     "stability_role": "primary",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Sit upright and actively straighten your knee.",
+      "Lift your heel off the floor without leaning your trunk.",
+      "Move slowly through a controlled range."
+    ],
+    "warnings_en": [
+      "Keep the effort within a controlled muscular range; adjust the range if pain occurs."
+    ],
+    "common_errors_en": [
+      "Losing control of your pelvic position.",
+      "Holding your breath."
+    ],
+    "regressions_en": [
+      "Seated knee lift"
+    ],
+    "progressions_en": [
+      "Seated straight-leg lift with a longer hold"
+    ],
+    "alternatives_en": [
+      "dead_bug"
     ]
   },
   {
@@ -9782,6 +9897,28 @@
     "stability_role": "primary",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Place your hands beside your hips and actively push the floor away.",
+      "Lift your hips and draw your knees towards your chest.",
+      "Keep your shoulders active and hold only while you can maintain control."
+    ],
+    "warnings_en": [
+      "Requires good wrist and shoulder tolerance. Use a stable surface or suitable parallettes."
+    ],
+    "common_errors_en": [
+      "Losing control of your pelvic position.",
+      "Holding your breath."
+    ],
+    "regressions_en": [
+      "seated_leg_lift",
+      "dead_bug"
+    ],
+    "progressions_en": [
+      "L-sit"
+    ],
+    "alternatives_en": [
+      "hollow_body_hold"
     ]
   },
   {
@@ -9846,6 +9983,28 @@
     "stability_role": "primary",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Lie on your back and gently bring your lower ribs towards your pelvis.",
+      "Keep your lower back in contact with the floor.",
+      "Extend your arms and legs only as far as you can maintain the position."
+    ],
+    "warnings_en": [
+      "If your lower back lifts off the floor, shorten the lever or choose an easier variation."
+    ],
+    "common_errors_en": [
+      "Losing control of your pelvic position.",
+      "Holding your breath."
+    ],
+    "regressions_en": [
+      "dead_bug",
+      "Bent-knee hollow hold"
+    ],
+    "progressions_en": [
+      "Hollow body hold with a longer lever"
+    ],
+    "alternatives_en": [
+      "dead_bug"
     ]
   },
   {
@@ -9920,7 +10079,28 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Step sideways with a small, controlled step.",
+      "Transfer your weight onto the working leg without leaning your trunk.",
+      "First master the rhythm and deceleration; increase speed gradually."
+    ],
+    "warnings_en": [
+      "Perform on a level, non-slip surface. If you lose balance, shorten the step or return to supported weight shifts."
+    ],
+    "common_errors_en": [
+      "Taking a step that is too large to control.",
+      "Leaning the trunk or losing balance.",
+      "Transferring weight too quickly without controlled deceleration."
+    ],
+    "regressions_en": [
+      "Lateral weight shift with stable support"
+    ],
+    "progressions_en": [
+      "Longer lateral step with controlled deceleration",
+      "Slow lateral stepping in both directions"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "chair_sit_to_stand",
@@ -10148,7 +10328,29 @@
     "stability_role": "supporting",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Lie face down and keep your neck aligned with your spine.",
+      "Gently lift your chest and/or limbs without jerking.",
+      "Keep the lift small and controlled; do not force end-range extension."
+    ],
+    "warnings_en": [
+      "Use this exercise only if lying face down is comfortable and pain-free.",
+      "Stop if back pain or increasing discomfort occurs and reassess your response."
+    ],
+    "common_errors_en": [
+      "Excessive arching through the lower back.",
+      "Jerking upwards or lifting the head too high.",
+      "Holding your breath."
+    ],
+    "regressions_en": [
+      "Small chest lift with your arms by your sides"
+    ],
+    "progressions_en": [
+      "Alternating opposite arm and leg lift while lying face down",
+      "Short isometric Superman hold with a controlled position"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "kettlebell_lateral_deadlift",
@@ -10219,6 +10421,30 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Place the kettlebell beside your foot where you can reach and grip it safely.",
+      "Before lifting, brace your trunk and maintain your natural, neutral spinal alignment.",
+      "Lift the load by extending your hips and knees under control."
+    ],
+    "warnings_en": [
+      "Start with a light load and check that the kettlebell position and grip are suitable for the individual.",
+      "If the exercise requires trunk rotation or side bending that you cannot control, choose another variation."
+    ],
+    "common_errors_en": [
+      "Reaching for the kettlebell while losing control of spinal position.",
+      "Twisting the trunk or allowing the load to move away uncontrollably."
+    ],
+    "regressions_en": [
+      "bodyweight_hip_hinge",
+      "Kettlebell deadlift from an elevated position"
+    ],
+    "progressions_en": [
+      "deadlift",
+      "romanian_deadlift"
+    ],
+    "alternatives_en": [
+      "dumbbell_deadlift"
     ]
   },
   {
@@ -10286,6 +10512,28 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Grip the plate securely with both hands and start in a stable position in front of your upper torso.",
+      "Press through your available pain-free range without excessive extension through the lower back.",
+      "Return the plate to the starting position under control."
+    ],
+    "warnings_en": [
+      "Use a light plate that you can grip and control safely throughout the full movement.",
+      "Do not perform through pain or a feeling of shoulder instability."
+    ],
+    "common_errors_en": [
+      "Excessive arching through the lower back.",
+      "Losing control of the plate or lowering it uncontrollably."
+    ],
+    "regressions_en": [
+      "band_overhead_press"
+    ],
+    "progressions_en": [
+      "barbell_overhead_press"
+    ],
+    "alternatives_en": [
+      "dumbbell_overhead_press"
     ]
   },
   {
