@@ -138,6 +138,14 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Establish a stable trunk position before each repetition.",
+      "Lower under control while keeping your balance over the mid-foot.",
+      "Use a repeatable range of motion."
+    ],
+    "warnings_en": [
+      "Requires appropriate technique, a squat rack and safety arms or pins."
     ]
   },
   {
@@ -204,6 +212,13 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Point your elbows forwards and upwards.",
+      "Keep your trunk stable and your whole foot in contact with the floor."
+    ],
+    "warnings_en": [
+      "Adjust the range and grip position to your wrist and shoulder mobility."
     ]
   },
   {
@@ -736,6 +751,14 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Keep the load close to your legs.",
+      "Move your hips backwards; keep your knees slightly bent.",
+      "Hinge your trunk forwards while controlling your spinal position, then return by extending your hips."
+    ],
+    "warnings_en": [
+      "Choose a load that allows a secure grip and all prescribed repetitions. If grip fails before the target muscles, adjust the load or choose another variation."
     ]
   },
   {
@@ -805,6 +828,14 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Position the load over the mid-foot.",
+      "Create trunk tension and a secure grip before lifting.",
+      "Push the floor away from you."
+    ],
+    "warnings_en": [
+      "Requires learning the setup and developing control of the load."
     ]
   },
   {
@@ -868,6 +899,14 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Keep your ribs stacked over your pelvis.",
+      "Reach the top position through hip extension, not lower-back extension.",
+      "Lower under control."
+    ],
+    "warnings_en": [
+      "The back support must be stable."
     ]
   },
   {
@@ -1006,7 +1045,16 @@
       "strength"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Keep your shoulder blades stable against the bench.",
+      "Lower the dumbbells under control to the greatest depth you can maintain without losing shoulder position.",
+      "Keep your wrists stacked over your elbows."
+    ],
+    "warnings_en": [
+      "Use a load you can safely bring into position and put down."
+    ],
+    "range_of_motion_en": "Lower the dumbbells to a depth at which you can maintain shoulder-blade and shoulder control. Use the full pain-free range available to you; do not restrict it unnecessarily."
   },
   {
     "id": "barbell_bench_press",
@@ -1073,7 +1121,16 @@
       "hypertrophy"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Set your shoulder blades firmly against the bench and keep your feet in contact with the floor.",
+      "Lower the bar towards the mid-chest along a controlled path.",
+      "Keep your wrists over your elbows and press without losing trunk stability."
+    ],
+    "warnings_en": [
+      "Set the safety arms correctly before the set or use a competent spotter.",
+      "Choose a load that allows a controlled bar path and stable position."
+    ]
   },
   {
     "id": "overhead_press",
@@ -1211,6 +1268,14 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Start from an active, controlled shoulder position.",
+      "Drive your elbows downwards.",
+      "Lower yourself under control."
+    ],
+    "warnings_en": [
+      "Adjust the range and assistance to your current ability."
     ]
   },
   {
@@ -1865,6 +1930,14 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Hold the dumbbells securely at your shoulders or by your sides.",
+      "Lower under control and keep your whole foot on the floor.",
+      "Guide your knees in the direction of your toes."
+    ],
+    "warnings_en": [
+      "Choose a load you can safely position and put down."
     ]
   },
   {
@@ -1929,6 +2002,14 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Position your feet so your shins are approximately vertical at the top.",
+      "Lift your pelvis by extending your hips.",
+      "Reach the top without excessively arching your lower back."
+    ],
+    "warnings_en": [
+      "Position the load securely and use a mat."
     ]
   },
   {
@@ -1990,7 +2071,16 @@
       "strength"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Lie on your back with your knees bent and trunk stable.",
+      "Lower the dumbbells under control until your upper arms gently touch the floor.",
+      "Press the dumbbells upwards without jerking."
+    ],
+    "warnings_en": [
+      "Put the dumbbells down under control and choose a load you can handle safely."
+    ],
+    "range_of_motion_en": "The range is limited by your upper arms contacting the floor. When equipment and ability allow, prefer a push-up with an adjusted support height or a dumbbell press on a stable bench."
   },
   {
     "id": "band_row",
@@ -2133,6 +2223,14 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Bend your knees slightly and hinge at the hips while maintaining your natural spinal position.",
+      "Keep your trunk stable and let the dumbbells hang below your shoulders.",
+      "Drive your elbows backwards, then lower the dumbbells under control."
+    ],
+    "warnings_en": [
+      "Choose a load that lets you maintain a stable hip-hinged position throughout."
     ]
   },
   {
@@ -2261,6 +2359,15 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Position the dumbbells outside your feet and maintain a secure grip.",
+      "Move your hips backwards and bend your knees only as much as needed to maintain a stable spinal position.",
+      "Push through the floor and finish by extending your hips without arching your lower back."
+    ],
+    "warnings_en": [
+      "This is not the default main strength or muscle-building exercise: heavier dumbbells may make grip the limiting factor, and the starting position can be awkward.",
+      "For posterior-chain development, a dumbbell Romanian deadlift is generally the preferred option."
     ]
   },
   {
@@ -2640,6 +2747,14 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Hold the dumbbells by your sides.",
+      "Keep your whole foot in contact with the floor."
+    ],
+    "warnings_en": [
+      "This is not the default main strength or muscle-building squat. A goblet squat or dumbbell front-rack squat is generally preferred.",
+      "Choose a load you can safely put down."
     ]
   },
   {
@@ -2712,6 +2827,15 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Position the dumbbells securely at your shoulders in a front-rack position.",
+      "Keep your trunk braced and as upright as your build and mobility allow.",
+      "Lower through the greatest controlled range you can maintain without pain.",
+      "Keep your feet stable and guide your knees in the direction of your toes."
+    ],
+    "warnings_en": [
+      "Adjust the dumbbell position to your shoulder and wrist mobility; do not force your elbows into an uncomfortable position."
     ]
   },
   {
@@ -3321,6 +3445,13 @@
     "stability_focus": [
       "trunk_control",
       "balance"
+    ],
+    "cues_en": [
+      "Support yourself with your other hand on a stable surface.",
+      "Drive your elbow towards your hip."
+    ],
+    "warnings_en": [
+      "The support surface must be stable."
     ]
   },
   {
@@ -3383,6 +3514,13 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Start from an active, controlled hang.",
+      "Drive your elbows downwards."
+    ],
+    "warnings_en": [
+      "The bar must be securely fixed; adjust your grip to your shoulder and wrist comfort."
     ]
   },
   {
@@ -3455,6 +3593,18 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Set the rack bar at approximately chest height and check that it is securely fixed.",
+      "Use an overhand grip. Lower your hips beneath the bar, bend your hips and knees, and place your feet on the floor slightly in front of your body, as if sitting.",
+      "Start with your elbows extended and your trunk as upright as possible; do not lean backwards into a row.",
+      "Pull upwards using your arms and back muscles while your feet assist only as much as needed to maintain control through the full range.",
+      "Lower slowly until your elbows are extended, keeping your trunk upright."
+    ],
+    "warnings_en": [
+      "Use only a bar that is securely and stably fixed in the rack.",
+      "Keep your feet on a non-slip surface; assistance from your legs should be gradual and controlled.",
+      "If your trunk leans backwards, adjust your foot position and bar height to maintain a vertical pull."
     ]
   },
   {
@@ -5568,6 +5718,13 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Lift your hips into an inverted V position.",
+      "Lower your head between your hands under control."
+    ],
+    "warnings_en": [
+      "This places a high demand on the shoulders; adjust the angle and range of motion."
     ]
   },
   {
@@ -5691,6 +5848,13 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Establish the hip hinge and keep your trunk stable.",
+      "Pull the bar towards your lower ribs."
+    ],
+    "warnings_en": [
+      "Adjust the load to your ability to maintain your trunk position."
     ]
   },
   {
