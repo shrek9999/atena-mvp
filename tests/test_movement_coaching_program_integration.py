@@ -636,3 +636,24 @@ def test_functional_programme_exposes_english_full_range_guidance():
         isinstance(value, str) and "greatest range of motion" in value
         for value in english_ranges
     )
+
+def test_additional_exercises_have_complete_english_coaching_arrays():
+    translated_ids = {
+        "forward_lunge", "rear_foot_elevated_split_squat", "atg_split_squat",
+        "farmer_carry", "pallof_press", "dead_bug", "lateral_raise",
+        "biceps_curl", "triceps_pressdown", "box_jump",
+    }
+    source_fields = {
+        "cues_en": "cues",
+        "warnings_en": "warnings",
+        "common_errors_en": "common_errors",
+        "regressions_en": "regressions",
+        "progressions_en": "progressions",
+        "alternatives_en": "alternatives",
+    }
+    for exercise_id in translated_ids:
+        exercise = get_exercise(exercise_id)
+        for english_field, source_field in source_fields.items():
+            assert len(exercise[english_field]) == len(exercise[source_field])
+            assert all(item.strip() for item in exercise[english_field])
+
