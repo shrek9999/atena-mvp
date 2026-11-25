@@ -863,7 +863,7 @@
     "cues": [
       "Telo ohrani v enotni liniji.",
       "Komolce vodi pod nadzorovanim kotom.",
-      "Prsni koš približaj tlom oziroma opori skozi polno kontrolirano amplitudo.",
+      "Prsni koš spuščaj proti tlom oziroma opori v največji amplitudi, v kateri ohranjaš stabilen trup in nadzor nad lopaticami.",
       "Višino opore prilagodi tako, da ohraniš nadzor in postopno povečuješ zahtevnost."
     ],
     "common_errors": [
@@ -885,7 +885,7 @@
     ],
     "single_joint": false,
     "equipment_any": [],
-    "range_of_motion": "Spusti prsni koš čim bližje tlom oziroma opori skozi polno kontrolirano amplitudo. Višino opore izberi glede na moč in nadzor; z napredovanjem jo postopno znižuj.",
+    "range_of_motion": "Prsni koš spuščaj proti tlom oziroma opori v največji amplitudi, v kateri ohranjaš stabilen trup in nadzor nad lopaticami. Višino opore izberi glede na sposobnost izvedbe; ko postane vaja ponovljiva, jo postopno znižuj.",
     "training_role": "main",
     "loading_potential": "moderate",
     "time_based": false,
@@ -2362,8 +2362,8 @@
       "trunk"
     ],
     "cues": [
-      "Stopala ohrani stabilna.",
-      "Spuščaj se v največjo kontrolirano nebolečo amplitudo.",
+      "Stopala naj ostanejo stabilna.",
+      "Spuščaj se počasi in nadzorovano; globino postopno povečuj, dokler ohranjaš stabilnost stopal, kolen in trupa.",
       "Kolena naj sledijo smeri stopal."
     ],
     "common_errors": [
@@ -3777,7 +3777,7 @@
     ],
     "common_errors": [
       "Upogib v kolkih.",
-      "Prehiter nekontroliran padec."
+      "Prehiter nenadzorovan padec."
     ],
     "regressions": [
       "slider_leg_curl"
@@ -5092,7 +5092,7 @@
       "foot_intrinsics"
     ],
     "cues": [
-      "Spusti peto v kontroliran razteg, nato se dvigni visoko.",
+      "Spusti peto v nadzorovan razteg, nato se dvigni visoko.",
       "Ne uporabljaj odboja."
     ],
     "common_errors": [
@@ -5154,7 +5154,7 @@
     ],
     "cues": [
       "Pete ostanejo na tleh.",
-      "Prste dviguj skozi kontrolirano amplitudo."
+      "Prste dviguj skozi nadzorovano amplitudo."
     ],
     "common_errors": [
       "Zamah in krajšanje obsega."
@@ -5947,7 +5947,7 @@
       "Počasno premikanje iz položaja na vseh štirih"
     ],
     "progressions": [
-      "Daljše razdalje ali kontroliran tempo"
+      "Daljše razdalje ali nadzorovan tempo"
     ],
     "alternatives": [],
     "warnings": [
@@ -6751,7 +6751,7 @@
     ],
     "cues": [
       "Dlani in stopala postavi stabilno na tla.",
-      "Dvigni boke in z eno roko odpri prsni koš v kontrolirano rotacijo.",
+      "Dvigni boke in z eno roko odpri prsni koš v nadzorovano rotacijo.",
       "Položaj medenice in ramena ohrani pod nadzorom."
     ],
     "common_errors": [
@@ -6981,7 +6981,7 @@
   },
   {
     "id": "patrick_step",
-    "name": "Patrick step – kontroliran spust kolena naprej",
+    "name": "Patrick step – nadzorovan spust kolena naprej",
     "name_en": "Patrick step",
     "pattern": "lunge",
     "joint_type": "multi_joint",
@@ -7717,7 +7717,7 @@
     ],
     "cues": [
       "Stoj na eni nogi in ohrani stabilno oporo stopala.",
-      "Z drugo nogo kontrolirano sezi naprej ali diagonalno.",
+      "Z drugo nogo nadzorovano sezi naprej ali diagonalno.",
       "Težavnost povečuj z dosegom, ne z izgubo nadzora."
     ],
     "common_errors": [
