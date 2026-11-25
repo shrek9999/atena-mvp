@@ -2348,6 +2348,29 @@ def generate_program(
             "deload": "Razbremeni ob vztrajnem slabšanju zmogljivosti, regeneracije ali kakovosti izvedbe.",
             "last_session_adjustment": "reduce_sets_increase_reserve" if reduce_load else ("hold_and_progress_by_rule" if response and response["difficulty"] == "easy" else "maintain"),
         },
+        "methodology_en": {
+            "exercise_source": "verified_catalogue_only",
+            "compound_first": True,
+            "single_joint_accessories": p["include_accessories"],
+            "training_emphasis": p["training_emphasis"],
+            "exercise_scaling": "Choose a load and variation that allow repeatable repetitions at the intended RIR. Learning variations are temporary support, not the main training stimulus.",
+            "equipment_policy": "Use only equipment listed in the profile and supports whose stability has been confirmed.",
+            "endurance_policy": (
+                "Functional fitness: use intervals, circuit training or MetCon; longer aerobic work is optional."
+                if planning_goal == "functional" else
+                "Fat loss: combine resistance training with conditioning; choose intervals/MetCon or longer uphill walks."
+                if planning_goal == "fat_loss" else
+                "Develop endurance through aerobic work, intervals or muscular-endurance training according to the goal."
+            ),
+            "mobility_policy": "Develop mobility primarily through loaded exercises across the greatest currently controlled range of motion. Mobility drills are brief preparation.",
+            "functional_policy": "Each session combines loaded multi-joint training through the greatest controlled range of motion with MetCon or intervals. Mobility drills remain a brief warm-up.",
+            "fat_loss_policy": "Three essential elements: resistance training to preserve muscle, conditioning, and a sustainable energy deficit with adequate protein.",
+            "tempo": "Tempo depends on the exercise: control the eccentric phase and perform the concentric phase decisively without compensations. Maintain a repeatable rhythm during intervals.",
+            "range_of_motion": "For loaded exercises, use the greatest range of motion you can currently control and tolerate; develop it gradually without compensations.",
+            "progression": "Change one principal variable at a time. Progress only after repeatable target performance, controlled technique and adequate recovery; use the smallest practical increase.",
+            "deload": "Use a deload when performance, recovery or movement quality show a sustained decline.",
+            "last_session_adjustment": "reduce_sets_increase_reserve" if reduce_load else ("hold_and_progress_by_rule" if response and response["difficulty"] == "easy" else "maintain"),
+        },
         "feedback_applied": response,
         "sessions": plans,
         "weekly_summary": {
