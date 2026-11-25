@@ -3746,6 +3746,7 @@ def save_six_pattern_movement_assessment(profile_id):
         }), 400
 
     status_to_decision = {
+        "selected_for_learning": "LEARN",
         "comfortable": "LEARN",
         "needs_support": "LEARN",
         "uncertain": "UNASSESSABLE",
@@ -3815,6 +3816,7 @@ def save_six_pattern_movement_assessment(profile_id):
                 if warning_flags and (selected_exercise_id is not None or "regression_test" in value):
                     return jsonify({"error": f"Ob akutnem opozorilnem znaku se vzorec {pattern} ne sme ponovno testirati."}), 400
             reason = {
+                "selected_for_learning": "Uporabnik je izbral ta vzorec za vodeno učenje; izbira ne potrjuje tehnike ali pripravljenosti za obremenitev.",
                 "comfortable": "Uporabnik poroča, da je osnovno izvedbo opravil udobno in nadzorovano.",
                 "needs_support": "Uporabnik poroča, da pri izvedbi potrebuje podporo ali lažjo različico.",
                 "uncertain": "Uporabnik ni prepričan o kakovosti ali udobju izvedbe.",
