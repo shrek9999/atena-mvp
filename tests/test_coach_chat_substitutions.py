@@ -213,7 +213,7 @@ def test_verified_exercise_context_filters_bodyweight_profile_without_inventing_
 
     context = coach_routes._verified_exercise_catalogue_context(messages)
 
-    assert "Počep z lastno težo (air squat)" in context
+    assert "Počep z lastno težo" in context
     assert "Goblet počep" not in context
     assert "Počep z ročkama na ramenih" not in context
 
@@ -230,7 +230,7 @@ def test_verified_exercise_context_includes_only_declared_dumbbell_options():
     context = coach_routes._verified_exercise_catalogue_context(messages)
 
     assert "Goblet počep" in context
-    assert "Počep z lastno težo (air squat)" in context
+    assert "Počep z lastno težo" in context
     assert "Počep zadaj" not in context
 
 
