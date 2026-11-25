@@ -642,6 +642,9 @@ def test_additional_exercises_have_complete_english_coaching_arrays():
         "forward_lunge", "rear_foot_elevated_split_squat", "atg_split_squat",
         "farmer_carry", "pallof_press", "dead_bug", "lateral_raise",
         "biceps_curl", "triceps_pressdown", "box_jump",
+        "band_lat_pulldown", "supported_single_leg_rdl", "walking_lunge",
+        "lateral_lunge", "step_up", "bench_dip", "parallel_bar_dip",
+        "ring_row", "inverted_row_table", "barbell_overhead_press",
     }
     source_fields = {
         "cues_en": "cues",
