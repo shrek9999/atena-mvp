@@ -541,3 +541,36 @@ def test_saved_profile_hinge_selection_uses_supported_wall_learning_method():
     assert tasks
     assert all(task["method_id"] == "wall_hip_hinge" for task in tasks)
     assert all(task["exercise_id"] is None for task in tasks)
+
+
+
+def test_all_selected_for_learning_patterns_get_safe_learning_methods_without_loaded_work():
+    methods = {
+        "squat": "reaching_counterbalance",
+        "hinge": "wall_hip_hinge",
+        "horizontal_push": "incline_push_up",
+        "horizontal_pull": "scapular_coordination",
+        "vertical_push": "unloaded_overhead_reach",
+        "lunge": "supported_split_squat",
+    }
+    decisions = {
+        pattern: build_movement_decision(
+            pattern, "LEARN",
+            user_report={"status": "selected_for_learning", "intent": "learn_this_pattern"},
+            decision_reason="The user selected this pattern for guided learning.",
+        )
+        for pattern in methods
+    }
+    profile = {
+        **BASE,
+        "goal": "functional",
+        "experience": "beginner",
+        "equipment": ["bodyweight", "household_support", "wall"],
+        "session_minutes": 45,
+    }
+    plan = generate_program(profile, movement_decisions=decisions)
+    exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
+    tasks = [task for session in plan["sessions"] for task in session["learning_tasks"]]
+    assert not any(exercise["pattern"] in methods for exercise in exercises)
+    by_pattern = {task["movement_pattern"]: task["method_id"] for task in tasks}
+    assert {pattern: by_pattern[pattern] for pattern in methods} == methods
