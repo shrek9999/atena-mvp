@@ -2776,9 +2776,9 @@ def coach_program():
     expected_token = os.getenv("AI_COACH_TEST_TOKEN", "").strip()
     supplied_token = request.headers.get("X-Pilot-Token", "").strip()
     if not expected_token:
-        return jsonify({"error": "Testni dostop še ni nastavljen na strežniku."}), 503
+        return jsonify({"error": localize_program_api_message("Testni dostop še ni nastavljen na strežniku.", "en")}), 503
     if not supplied_token or not hmac.compare_digest(supplied_token, expected_token):
-        return jsonify({"error": "Testni dostopni ključ ni pravilen."}), 403
+        return jsonify({"error": localize_program_api_message("Testni dostopni ključ ni pravilen.", "en")}), 403
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
         return jsonify({"error": "Pričakovan je JSON objekt s profilom vadečega."}), 400
@@ -2792,18 +2792,18 @@ def coach_program():
                 payload.get("camera_observations"), payload.get("camera_protocol")
             )
         except CameraObservationError as exc:
-            return jsonify({"error": str(exc)}), 400
+            return jsonify({"error": localize(str(exc))}), 400
     if payload.get("movement_assessment") is not None:
         return jsonify({
             "blocked": True,
             "assessment_required": True,
-            "message": "Stara delna samoocena ne zadošča za individualni program. Pred pripravo izpolni vseh šest osnovnih gibalnih vzorcev.",
+            "message": localize("Stara delna samoocena ne zadošča za individualni program. Pred pripravo izpolni vseh šest osnovnih gibalnih vzorcev."),
         }), 409
     if payload.get("movement_assessment_consent") is not True:
         return jsonify({
             "blocked": True,
             "consent_required": True,
-            "message": "Pred uporabo odgovorov o gibanju za pripravo programa moraš izrecno potrditi ločeno soglasje.",
+            "message": localize("Pred uporabo odgovorov o gibanju za pripravo programa moraš izrecno potrditi ločeno soglasje."),
         }), 403
     expected_patterns = set(PATTERN_DEFINITIONS)
     movement_decisions = payload.get("movement_decisions")
@@ -2816,7 +2816,7 @@ def coach_program():
             "assessment_required": True,
             "missing_patterns": missing_patterns,
             "unknown_patterns": unknown_patterns,
-            "message": "Za vsak od šestih gibalnih vzorcev izberi naslednji korak. Vzorce, ki se jih ne želiš učiti, preskoči; za individualni program izberi vsaj en vzorec za učenje ali prijavi simptome.",
+            "message": localize("Za vsak od šestih gibalnih vzorcev izberi naslednji korak. Vzorce, ki se jih ne želiš učiti, preskoči; za individualni program izberi vsaj en vzorec za učenje ali prijavi simptome."),
         }), 409
     valid_report_statuses = {"selected_for_learning", "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled"}
     control_criteria = {
@@ -2887,7 +2887,7 @@ def coach_program():
         return jsonify({
             "blocked": True,
             "assessment_required": True,
-            "message": "Noben gibalni vzorec ni izbran za učenje ali potrjen po ustreznem ponovnem preizkusu. Izberi vsaj en vzorec za učenje oziroma razjasni prijavljene simptome.",
+            "message": localize("Noben gibalni vzorec ni izbran za učenje ali potrjen po ustreznem ponovnem preizkusu. Izberi vsaj en vzorec za učenje oziroma razjasni prijavljene simptome."),
         }), 409
     coordination_record = (camera_observations or {}).get("coordination", {})
     coordination_values = coordination_record.get("observations", {}) if isinstance(coordination_record, dict) else {}
@@ -2911,10 +2911,10 @@ def coach_program():
     except ProgramSafetyBlock as exc:
         return jsonify({"blocked": True, "message": str(exc)}), 409
     except ProgramValidationError as exc:
-        return jsonify({"error": str(exc)}), 400
+        return jsonify({"error": localize(str(exc))}), 400
     except (OSError, ValueError):
         logger.exception("ATENA catalogue/program generation failed")
-        return jsonify({"error": "Programa trenutno ni mogoče sestaviti iz kataloga."}), 500
+        return jsonify({"error": localize("Programa trenutno ni mogoče sestaviti iz kataloga.")}), 500
     response = {"program": result, "source": "curated_exercise_catalogue", "pilot": True}
     if result.get("movement_adaptation") is not None:
         response["movement_adaptation"] = result["movement_adaptation"]

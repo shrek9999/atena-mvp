@@ -717,3 +717,15 @@ def test_all_unmastered_patterns_can_form_a_learning_only_program(monkeypatch):
         if event["action"] == "learning_tasks_deferred_to_later_sessions"
     ]
     assert not deferred
+
+
+def test_program_endpoint_localizes_errors_for_english_and_preserves_slovenian(monkeypatch):
+    client = _client(monkeypatch)
+    headers = {"X-Pilot-Token": "test-only-secret"}
+    base = {"language": "en", "profile": {"goal": "hypertrophy"}}
+    english = client.post("/coach/program", headers=headers, json=base)
+    assert english.status_code == 403 or english.status_code == 400
+    assert english.get_json()["error"].isascii()
+    monkeypatch.delenv("AI_COACH_TEST_TOKEN", raising=False)
+    unavailable = client.post("/coach/program", headers=headers, json={"language": "en"})
+    assert "Pilot access" in unavailable.get_json()["error"]

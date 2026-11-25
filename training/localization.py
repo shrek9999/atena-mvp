@@ -147,3 +147,27 @@ def localize_chat_api_error(message: str, language: str) -> str:
         if limit.isdigit():
             return f"Message is empty or too long (maximum {limit} characters)."
     return _CHAT_API_ERRORS_EN.get(message, message)
+
+
+_PROGRAM_API_ERRORS_EN = {
+    "Testni dostop še ni nastavljen na strežniku.": "Pilot access has not been configured on the server yet.",
+    "Testni dostopni ključ ni pravilen.": "The pilot access token is invalid.",
+    "Pričakovan je JSON objekt s profilom vadečega.": "A JSON object containing the trainee profile is required.",
+    "Stara delna samoocena ne zadošča za individualni program. Pred pripravo izpolni vseh šest osnovnih gibalnih vzorcev.": "The older partial self-assessment is not sufficient for an individual programme. Complete all six basic movement patterns before programme generation.",
+    "Pred uporabo odgovorov o gibanju za pripravo programa moraš izrecno potrditi ločeno soglasje.": "You must explicitly confirm separate consent before your movement responses can be used to create a programme.",
+    "Za vsak od šestih gibalnih vzorcev izberi naslednji korak. Vzorce, ki se jih ne želiš učiti, preskoči; za individualni program izberi vsaj en vzorec za učenje ali prijavi simptome.": "Choose a next step for each of the six movement patterns. Skip patterns you do not want to learn; select at least one pattern for learning or report symptoms to create an individual programme.",
+    "Vsak vzorec mora imeti veljavno izbiro ali poročilo o simptomih, odločitev pa mora biti skladna z njim.": "Each pattern must have a valid selection or symptom report, and the decision must be consistent with that report.",
+    "Noben gibalni vzorec ni izbran za učenje ali potrjen po ustreznem ponovnem preizkusu. Izberi vsaj en vzorec za učenje oziroma razjasni prijavljene simptome.": "No movement pattern has been selected for learning or confirmed after an appropriate retest. Select at least one pattern to learn or clarify the reported symptoms.",
+    "Programa trenutno ni mogoče sestaviti iz kataloga.": "The programme cannot currently be generated from the exercise catalogue.",
+    "Ob bolečini ali novem nelagodju ne bom samodejno spreminjal programa. Prekini oziroma prilagodi vadbo; če so simptomi novi, izraziti ali vztrajajo, se posvetuj z ustreznim zdravstvenim strokovnjakom.": "I will not automatically change the programme when pain or new discomfort is reported. Stop or modify the session; if symptoms are new, significant or persistent, consult an appropriate healthcare professional.",
+}
+
+
+def localize_program_api_message(message: str, language: str) -> str:
+    """Localize deterministic programme API messages without changing Slovenian responses."""
+    if language != "en" or not isinstance(message, str):
+        return message
+    return _PROGRAM_API_ERRORS_EN.get(
+        message,
+        "The programme request could not be completed. Please review the profile and movement selections, then try again.",
+    )
