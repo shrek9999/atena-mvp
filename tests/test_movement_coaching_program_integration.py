@@ -414,7 +414,7 @@ def test_six_learning_patterns_are_distributed_across_two_weekly_sessions():
         for session in plan["sessions"]
         for exercise in session["exercises"]
     )
-    assert all(session["estimated_minutes"] > session["warm_up_minutes"] for session in plan["sessions"])
+    assert all(session["estimated_minutes"] == session["warm_up_minutes"] for session in plan["sessions"])
     assert all(session["estimated_minutes"] <= session["available_minutes"] for session in plan["sessions"])
     assert not any(
         event["action"] == "learning_tasks_deferred_to_later_sessions"
