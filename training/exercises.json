@@ -7649,7 +7649,26 @@
       "mobility"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Place your rear knee on a soft surface.",
+      "Gently tuck your pelvis and keep your rib cage stacked over it.",
+      "Increase the range without arching your lower back."
+    ],
+    "warnings_en": [
+      "The couch or support must be stable; use a soft pad under your knee. Choose an easier variation if the position feels too intense."
+    ],
+    "common_errors_en": [
+      "Excessive extension through the lower back.",
+      "Forcing the knee or hip into position."
+    ],
+    "regressions_en": [
+      "Use a shorter, pain-free range"
+    ],
+    "progressions_en": [
+      "Hold for longer while maintaining relaxed breathing"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "supine_hamstring_stretch",
@@ -7707,7 +7726,26 @@
       "mobility"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Lie on your back and raise one leg with the knee slightly bent.",
+      "Keep your pelvis stable.",
+      "Maintain a mild to moderate stretch."
+    ],
+    "warnings_en": [
+      "Do not pull into pain or tingling. Stop if nerve-related symptoms occur."
+    ],
+    "common_errors_en": [
+      "Locking the knee at all costs.",
+      "Lifting the pelvis or holding your breath."
+    ],
+    "regressions_en": [
+      "Use a shorter, pain-free range"
+    ],
+    "progressions_en": [
+      "Hold for longer while maintaining relaxed breathing"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "doorway_pec_stretch",
@@ -7765,7 +7803,26 @@
       "mobility"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Place your forearm against the door frame at a comfortable height.",
+      "Rotate your trunk only until you feel a mild stretch.",
+      "Keep breathing relaxed."
+    ],
+    "warnings_en": [
+      "Do not stretch through pain or a feeling of shoulder instability."
+    ],
+    "common_errors_en": [
+      "Rotating the trunk too far.",
+      "Pain at the front of the shoulder."
+    ],
+    "regressions_en": [
+      "Use a shorter, pain-free range"
+    ],
+    "progressions_en": [
+      "Hold for longer while maintaining relaxed breathing"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "calf_wall_stretch",
@@ -7824,7 +7881,26 @@
       "mobility"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Keep your heel on the floor.",
+      "Keep your knee straight or slightly bent depending on the target muscle.",
+      "Shift your weight forwards gradually."
+    ],
+    "warnings_en": [
+      "Keep the movement pain-free; reduce the range if you have Achilles tendon symptoms."
+    ],
+    "common_errors_en": [
+      "Lifting the heel.",
+      "Forcing the ankle into its end range."
+    ],
+    "regressions_en": [
+      "Use a shorter, pain-free range"
+    ],
+    "progressions_en": [
+      "Hold for longer while maintaining relaxed breathing"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "push_up_incline",
@@ -7957,7 +8033,26 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Place your hands on the wall at chest height.",
+      "Lean your whole body towards the wall as one unit.",
+      "Adjust your foot distance to change the difficulty."
+    ],
+    "warnings_en": [
+      "Perform the movement through a pain-free range."
+    ],
+    "common_errors_en": [
+      "Bending at the hips instead of leaning your body as one unit.",
+      "Lowering too quickly."
+    ],
+    "regressions_en": [
+      "Wall push-up with a more upright body position"
+    ],
+    "progressions_en": [
+      "push_up_incline"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "push_up_decline",
@@ -8020,7 +8115,27 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Place your feet on a stable, non-slip support.",
+      "Brace your trunk and lower yourself under control.",
+      "Increase the support height only if you maintain full control."
+    ],
+    "warnings_en": [
+      "Check the support before every set."
+    ],
+    "common_errors_en": [
+      "Allowing the hips to sag.",
+      "Using a support that is too high for your current ability."
+    ],
+    "regressions_en": [
+      "push_up",
+      "push_up_incline"
+    ],
+    "progressions_en": [
+      "Slower push-up with a controlled pause at the bottom"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "dead_hang",
@@ -8080,7 +8195,26 @@
       "mobility"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Grip the bar at a width that allows a comfortable shoulder position.",
+      "Start with your feet supported or with some body weight taken off your arms.",
+      "Breathe normally and increase the duration gradually."
+    ],
+    "warnings_en": [
+      "The bar must be securely fixed. Do not use this exercise in a painful or unstable shoulder position."
+    ],
+    "common_errors_en": [
+      "Hanging passively through pain.",
+      "Losing a secure grip."
+    ],
+    "regressions_en": [
+      "Supported hang with your feet on the floor"
+    ],
+    "progressions_en": [
+      "Longer hang or active hang with controlled shoulder-blade position"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "hip_90_90_ir_isometric",
@@ -8141,7 +8275,26 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Keep your pelvis stable in the 90/90 position.",
+      "Gently press your rear foot into the floor as if trying to lift your ankle.",
+      "Use a moderate effort and release without jerking."
+    ],
+    "warnings_en": [
+      "Adjust the range and effort to your hip tolerance."
+    ],
+    "common_errors_en": [
+      "Rotating the pelvis instead of moving at the hip.",
+      "Forcing maximal effort into the end position."
+    ],
+    "regressions_en": [
+      "Supported 90/90 position"
+    ],
+    "progressions_en": [
+      "Stronger isometric contraction or active transition without using your hands"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "crab_reach",
@@ -8206,7 +8359,26 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Place your hands and feet securely on the floor.",
+      "Lift your hips and open your chest into a controlled rotation with one arm.",
+      "Maintain control of your pelvis and shoulder position."
+    ],
+    "warnings_en": [
+      "Do not perform through wrist or shoulder pain."
+    ],
+    "common_errors_en": [
+      "Collapsing into the shoulder.",
+      "Rotating without controlling the trunk."
+    ],
+    "regressions_en": [
+      "Supported crab position with a smaller range"
+    ],
+    "progressions_en": [
+      "Crab reach with a longer reach while maintaining control"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "elevated_pigeon_hinge",
@@ -8270,7 +8442,26 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Support your front shin on a low, stable surface.",
+      "Keep your pelvis as level as possible.",
+      "Hinge forwards slowly without forcing the knee."
+    ],
+    "warnings_en": [
+      "The support must be stable. If the position stresses your knee, choose a different hip mobility exercise."
+    ],
+    "common_errors_en": [
+      "Using a support that is too high.",
+      "Pelvic rotation and pressure through the knee."
+    ],
+    "regressions_en": [
+      "Floor pigeon position with hand support"
+    ],
+    "progressions_en": [
+      "Increase the controlled forward hinge or reduce hand support"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "straight_leg_hip_hinge",
@@ -8333,7 +8524,26 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Keep your knees soft, not locked.",
+      "Move your hips backwards while keeping your spine in a controlled position.",
+      "Stop before you lose control."
+    ],
+    "warnings_en": [
+      "This is an active mobility and hip-hinge learning exercise, not a primary hypertrophy exercise without external load."
+    ],
+    "common_errors_en": [
+      "Forcing your hands towards the floor.",
+      "Bending the spine instead of hinging at the hips."
+    ],
+    "regressions_en": [
+      "Hip hinge with more knee bend"
+    ],
+    "progressions_en": [
+      "Increase the controlled range or use a single-leg variation"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "wall_butterfly",
@@ -8396,7 +8606,26 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Keep your back and pelvis in a comfortable position against the wall.",
+      "Slide your arms only through a range you can control.",
+      "Breathe comfortably."
+    ],
+    "warnings_en": [
+      "Do not press your arms into a position that causes shoulder pain."
+    ],
+    "common_errors_en": [
+      "Forcing your wrists or elbows against the wall.",
+      "Excessive extension through the lower back."
+    ],
+    "regressions_en": [
+      "Use a smaller range and stand slightly away from the wall"
+    ],
+    "progressions_en": [
+      "Increase the controlled range"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "patrick_step",
@@ -8474,7 +8703,27 @@
     "stability_focus": [
       "trunk_control",
       "balance"
-    ]
+    ],
+    "cues_en": [
+      "Start on a low, stable step.",
+      "Move your knee forwards over your foot through a range you can control.",
+      "Lower and return slowly; use hand support if needed."
+    ],
+    "warnings_en": [
+      "Start with a low step and build tolerance gradually. Do not force the knee into pain."
+    ],
+    "common_errors_en": [
+      "Moving too quickly.",
+      "Lifting the heel unintentionally.",
+      "Using a step that is too high."
+    ],
+    "regressions_en": [
+      "Use a shorter descent from a lower step with support"
+    ],
+    "progressions_en": [
+      "Increase the range or add load if technique remains stable"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "reverse_nordic_curl",
@@ -8536,7 +8785,26 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Kneel on a padded surface and keep your hips extended.",
+      "Lean your trunk backwards as one unit while keeping your knees in place.",
+      "Use a small range and return under control."
+    ],
+    "warnings_en": [
+      "This is a demanding quadriceps exercise in a lengthened position; introduce it gradually and without pain."
+    ],
+    "common_errors_en": [
+      "Flexing at the hips instead of leaning back as one unit.",
+      "Using too large a range too soon."
+    ],
+    "regressions_en": [
+      "Use a shorter backward lean with hand support"
+    ],
+    "progressions_en": [
+      "Increase the controlled range or add a small external load"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "sled_backward_drag",
@@ -8610,7 +8878,26 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Pull the sled backwards with steady, short steps.",
+      "Keep your trunk upright and control your knees.",
+      "Adjust the load so your steps remain smooth."
+    ],
+    "warnings_en": [
+      "Use a suitable surface and a clear path; do not increase resistance at the expense of technique."
+    ],
+    "common_errors_en": [
+      "Using too much resistance.",
+      "Losing control of your steps or trunk position."
+    ],
+    "regressions_en": [
+      "Walk backwards on level ground without a load"
+    ],
+    "progressions_en": [
+      "Increase the distance or resistance while maintaining technique"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "front_rack_carry",
@@ -8685,6 +8972,28 @@
     "stability_role": "primary",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Rest the load securely against your shoulder in the front-rack position.",
+      "Keep your trunk upright and your steps even.",
+      "Breathe normally and switch sides as prescribed."
+    ],
+    "warnings_en": [
+      "Make sure the load can be gripped securely and keep the walking path clear."
+    ],
+    "common_errors_en": [
+      "Leaning your trunk.",
+      "Losing control of the load or walking too quickly."
+    ],
+    "regressions_en": [
+      "Use a lighter load or shorter distance"
+    ],
+    "progressions_en": [
+      "Increase the distance or load gradually"
+    ],
+    "alternatives_en": [
+      "farmer_carry",
+      "suitcase_carry"
     ]
   },
   {
@@ -8761,6 +9070,28 @@
     "stability_role": "primary",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Stabilize the load overhead and keep your shoulder actively engaged.",
+      "Walk with short, controlled steps.",
+      "Keep your trunk upright without leaning to the side."
+    ],
+    "warnings_en": [
+      "Requires adequate shoulder mobility and stability. Do not perform through pain or loss of control."
+    ],
+    "common_errors_en": [
+      "Leaning your trunk.",
+      "Losing control of the load or walking too quickly."
+    ],
+    "regressions_en": [
+      "Use a lighter single-arm carry at your side"
+    ],
+    "progressions_en": [
+      "Increase the distance or load gradually"
+    ],
+    "alternatives_en": [
+      "farmer_carry",
+      "suitcase_carry"
     ]
   },
   {
@@ -8828,7 +9159,26 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Perform a short, controlled squat, then jump explosively.",
+      "Land quietly while controlling your knees and trunk.",
+      "Reset between repetitions if needed."
+    ],
+    "warnings_en": [
+      "Start with low volume and stop when landing quality deteriorates."
+    ],
+    "common_errors_en": [
+      "Jumping higher at the expense of landing quality.",
+      "Losing alignment on landing."
+    ],
+    "regressions_en": [
+      "Quick squat to calf raise without a jump"
+    ],
+    "progressions_en": [
+      "Jump higher only while maintaining landing quality"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "standing_broad_jump",
@@ -8895,7 +9245,26 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Push off with both legs and use an arm swing.",
+      "Land on both feet with bent knees and control.",
+      "Reset fully between jumps."
+    ],
+    "warnings_en": [
+      "Use a non-slip surface with enough space. Do not chase distance at the expense of landing quality."
+    ],
+    "common_errors_en": [
+      "Landing with stiff knees.",
+      "Jumping farther than you can control on landing."
+    ],
+    "regressions_en": [
+      "Small-amplitude jump on the spot"
+    ],
+    "progressions_en": [
+      "Increase distance while maintaining the same landing quality"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "heel_elevated_squat",
@@ -8974,6 +9343,35 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
+    ],
+    "cues_en": [
+      "Place your heels on a stable support approximately 5–10 cm high.",
+      "Keep your feet stable and distribute pressure across the whole foot.",
+      "Your trunk may remain more upright; let your knees track in the direction of your toes.",
+      "Descend to the greatest controlled range allowed by your mobility and pain-free movement.",
+      "Stand up decisively without losing control."
+    ],
+    "warnings_en": [
+      "Use only a stable purpose-made slant board or securely fixed weight plates; do not use unstable objects.",
+      "Adjust heel elevation to the individual. 5–10 cm is a guide, not a mandatory height."
+    ],
+    "common_errors_en": [
+      "Using an unstable or too-narrow heel support.",
+      "Lifting the toes or losing contact between the forefoot and the floor.",
+      "Forcing depth despite losing control."
+    ],
+    "regressions_en": [
+      "squat_goblet",
+      "air_squat"
+    ],
+    "progressions_en": [
+      "front_squat",
+      "back_squat"
+    ],
+    "alternatives_en": [
+      "squat_goblet",
+      "dumbbell_squat_front_rack",
+      "front_squat"
     ]
   },
   {
