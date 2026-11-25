@@ -664,8 +664,11 @@ def test_additional_exercises_have_complete_english_coaching_arrays():
         "straight_leg_hip_hinge", "wall_butterfly", "patrick_step",
         "reverse_nordic_curl", "sled_backward_drag", "front_rack_carry",
         "overhead_carry", "squat_jump", "standing_broad_jump", "heel_elevated_squat",
+        "sissy_squat", "l_sit", "single_leg_balance_reach", "lateral_shuffle",
+        "seated_leg_lift", "tuck_sit", "hollow_body_hold", "controlled_lateral_step",
+        "superman", "kettlebell_lateral_deadlift", "plate_overhead_press",
     }
-    assert len(translated_ids) == 80
+    assert len(translated_ids) == 91
     source_fields = {
         "cues_en": "cues",
         "warnings_en": "warnings",
