@@ -1098,21 +1098,9 @@ def generate_program(
                 and item["user_report"].get("status") == "symptoms_reported"
                 for item in movement_decisions_by_pattern.values()
             )
-            if len(movement_decisions_by_pattern) >= 3 and len(ready_patterns) < 3 and not symptom_reports:
-                fallback_added = False
-                for fallback_pattern in ("hip_extension", "carry"):
-                    if fallback_pattern not in patterns and fallback_pattern not in p["excluded_patterns"]:
-                        patterns.append(fallback_pattern)
-                        fallback_added = True
-                if fallback_added and not any(
-                    event.get("action") == "fallback_loaded_patterns_added"
-                    for event in movement_adaptation_events
-                ):
-                    movement_adaptation_events.append({
-                        "pattern": "program_baseline",
-                        "action": "fallback_loaded_patterns_added",
-                        "message": "Ker manj kot trije osnovni vzorci še nimajo potrjene pripravljenosti, ATENA začasno uporabi druge primerne obremenjene vaje in kondicijski del. Nepotrjenih vzorcev ne obremeni; po ponovnem preverjanju jih lahko postopno vključi.",
-                    })
+            # Structured six-pattern assessment is authoritative. Do not add
+            # unassessed hip-extension/carry fallbacks merely to fill a session;
+            # those patterns can be introduced after their own assessment.
         warm_up_minutes = 5 if p["session_minutes"] <= 30 else (7 if p["session_minutes"] <= 60 else 10)
         camera_coordination_block = None
         if camera_coordination_exercise is not None:
@@ -1224,6 +1212,10 @@ def generate_program(
             if pattern in seen_patterns and planning_goal != "mobility":
                 continue
             seen_patterns.add(pattern)
+            # The six-pattern engine must not silently introduce additional
+            # unassessed patterns (e.g. vertical pull, carry or hip extension).
+            if movement_decisions_by_pattern and pattern not in movement_decisions_by_pattern:
+                continue
             movement_status = movement_status_by_pattern.get(pattern)
             affected_tasks = movement_tasks_by_pattern.get(pattern, [])
             structured_decision = movement_decisions_by_pattern.get(pattern)
@@ -2025,6 +2017,8 @@ def generate_program(
         # learning variations that may be carried alongside it.
         def counts_as_training_pattern(item: dict) -> bool:
             decision = movement_decisions_by_pattern.get(item["pattern"])
+            if movement_decisions_by_pattern and not decision:
+                return False
             if not decision:
                 return True
             if decision.get("decision") == "READY":
