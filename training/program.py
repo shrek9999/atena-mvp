@@ -1839,7 +1839,6 @@ def generate_program(
                 "equipment": selected_equipment,
                 "cues": candidate["cues"],
                 "cues_en": candidate.get("cues_en"),
-                "range_of_motion_en": candidate.get("range_of_motion_en"),
                 "warnings_en": candidate.get("warnings_en"),
                 "range_of_motion": (
                     "Ohrani naraven korak in stabilno držo; trajanje ali razdaljo povečuj postopno."
@@ -1853,6 +1852,15 @@ def generate_program(
                         "Uporabi največjo amplitudo, ki jo lahko izvedeš neboleče in z nadzorom. "
                         "Amplitudo postopno povečuj, ne da bi izgubil stabilnost ali položaj telesa."
                     )
+                ),
+                "range_of_motion_en": (
+                    "Use a natural stride and stable posture; increase duration or distance gradually."
+                    if pattern == "carry" else
+                    "Maintain a repeatable range and rhythm that support good-quality execution; adjust intensity to the goal."
+                    if pattern in {"conditioning", "locomotion"} else
+                    "For loaded exercises, use the greatest range of motion you can currently control and tolerate without sacrificing stability or execution quality. Progress towards full range gradually."
+                    if planning_goal == "functional" else
+                    candidate.get("range_of_motion_en")
                 ),
                 "warnings": candidate["warnings"],
                 "regressions": regressions,
