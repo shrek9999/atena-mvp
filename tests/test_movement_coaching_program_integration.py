@@ -658,8 +658,14 @@ def test_additional_exercises_have_complete_english_coaching_arrays():
         "wall_slide", "ski_erg_intervals", "air_bike_intervals", "shuttle_run",
         "bear_crawl", "step_up_intervals", "band_assisted_parallel_bar_dip",
         "box_jump_intervals",
+        "couch_stretch", "supine_hamstring_stretch", "doorway_pec_stretch",
+        "calf_wall_stretch", "wall_push_up", "push_up_decline", "dead_hang",
+        "hip_90_90_ir_isometric", "crab_reach", "elevated_pigeon_hinge",
+        "straight_leg_hip_hinge", "wall_butterfly", "patrick_step",
+        "reverse_nordic_curl", "sled_backward_drag", "front_rack_carry",
+        "overhead_carry", "squat_jump", "standing_broad_jump", "heel_elevated_squat",
     }
-    assert len(translated_ids) == 60
+    assert len(translated_ids) == 80
     source_fields = {
         "cues_en": "cues",
         "warnings_en": "warnings",
