@@ -615,3 +615,18 @@ def test_core_movement_exercises_have_complete_english_cues_and_safety_notes():
     push_up = get_exercise("push_up")
     assert push_up["range_of_motion_en"]
     assert "shoulder-blade control" in push_up["range_of_motion_en"]
+
+
+def test_functional_programme_exposes_english_full_range_guidance():
+    functional = {**BASE, "goal": "functional", "experience": "beginner"}
+    plan = generate_program(functional)
+    exercises = [
+        exercise
+        for session in plan["sessions"]
+        for exercise in session["exercises"]
+    ]
+    english_ranges = [exercise.get("range_of_motion_en") for exercise in exercises]
+    assert any(
+        isinstance(value, str) and "greatest range of motion" in value
+        for value in english_ranges
+    )
