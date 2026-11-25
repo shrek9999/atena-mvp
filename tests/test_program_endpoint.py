@@ -721,8 +721,8 @@ def test_all_unmastered_patterns_can_form_a_learning_only_program(monkeypatch):
 
 
 def test_program_endpoint_localizes_pilot_access_errors_by_requested_language(monkeypatch):
-    monkeypatch.delenv("AI_COACH_TEST_TOKEN", raising=False)
     client = _client(monkeypatch)
+    monkeypatch.setenv("AI_COACH_TEST_TOKEN", "")
     english = client.post("/coach/program", json={"language": "en"})
     slovenian = client.post("/coach/program", json={"language": "sl"})
     assert english.status_code == 503
