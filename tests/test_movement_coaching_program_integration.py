@@ -504,3 +504,22 @@ def test_ready_pattern_keeps_the_same_main_exercise_across_weekly_sessions():
     ]
     assert all(len(ids) == 1 for ids in squat_ids_by_session)
     assert squat_ids_by_session[0] == squat_ids_by_session[1]
+
+
+
+def test_selected_for_learning_creates_learning_task_without_loaded_exercise():
+    decision = build_movement_decision(
+        "squat", "LEARN",
+        selected_learning_method="reaching_counterbalance",
+        user_report={"status": "selected_for_learning", "intent": "learn_this_pattern"},
+        decision_reason="The user selected the squat pattern to learn.",
+    )
+    plan = generate_program(BASE, movement_decisions={"squat": decision})
+    assert _pattern_exercises(plan, "squat") == []
+    tasks = [
+        task for session in plan["sessions"] for task in session["learning_tasks"]
+        if task["movement_pattern"] == "squat"
+    ]
+    assert tasks
+    assert all(task["method_id"] == "reaching_counterbalance" for task in tasks)
+    assert all(task["exercise_id"] is None for task in tasks)
