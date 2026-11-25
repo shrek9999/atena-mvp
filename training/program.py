@@ -1061,25 +1061,18 @@ def generate_program(
             p["include_accessories"] and (planning_goal == "hypertrophy" or p["session_minutes"] >= 75) and not include_stability,
             include_stability, p["experience"], p["session_minutes"]
         )
-        # Distribute all unready movement patterns across the available
-        # weekly sessions. With two sessions and six learning-only patterns,
-        # each session teaches three patterns; no pattern is silently deferred
-        # merely because the user trains twice per week.
+        # Repeat every unmastered pattern in each weekly session. Motor learning
+        # needs recurring practice; spreading six patterns 3+3 would expose each
+        # pattern only once per week and slow the transition to controlled loading.
         learning_candidates = [
             pattern for pattern in PATTERN_DEFINITIONS
             if pattern in movement_decisions_by_pattern
             and movement_decisions_by_pattern[pattern].get("decision") in {"LEARN", "REGRESS"}
             and movement_decisions_by_pattern[pattern].get("learning_only") is True
         ]
-        learning_task_limit = (
-            max(1, (len(learning_candidates) + p["sessions_per_week"] - 1) // p["sessions_per_week"])
-            if len(learning_candidates) > 1 else 1
-        )
-        if len(learning_candidates) > 1:
-            first_learning_index = session_index * learning_task_limit
-            selected_learning_patterns = learning_candidates[
-                first_learning_index:first_learning_index + learning_task_limit
-            ]
+        learning_task_limit = max(1, len(learning_candidates))
+        if learning_candidates:
+            selected_learning_patterns = list(learning_candidates)
             patterns = [
                 pattern for pattern in patterns
                 if pattern not in learning_candidates or pattern in selected_learning_patterns
@@ -1087,10 +1080,6 @@ def generate_program(
             for selected_pattern in reversed(selected_learning_patterns):
                 if selected_pattern not in patterns:
                     patterns.insert(0, selected_pattern)
-        elif len(learning_candidates) == 1:
-            # Repeat a single priority learning task at each weekly exposure.
-            if learning_candidates[0] not in patterns:
-                patterns.insert(0, learning_candidates[0])
         if planning_goal in {"functional", "fat_loss"}:
             ready_patterns = {
                 pattern for pattern, decision in movement_decisions_by_pattern.items()
