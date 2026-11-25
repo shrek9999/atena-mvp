@@ -380,3 +380,40 @@ def test_kettlebell_only_ready_row_does_not_override_conservative_loading_gate()
         for event in plan["movement_adaptation"]["events"]
     )
 
+def test_six_learning_patterns_are_distributed_across_two_weekly_sessions():
+    methods = {
+        "squat": "reaching_counterbalance",
+        "hinge": "wall_hip_hinge",
+        "horizontal_push": "incline_push_up",
+        "horizontal_pull": "scapular_coordination",
+        "vertical_push": "unloaded_overhead_reach",
+        "lunge": "supported_split_squat",
+    }
+    decisions = {
+        pattern: build_movement_decision(
+            pattern, "LEARN",
+            selected_learning_method=method,
+            user_report={"status": "comfortable"},
+            decision_reason="The pattern needs repeatable control before loaded training.",
+        )
+        for pattern, method in methods.items()
+    }
+
+    plan = generate_program(BASE, movement_decisions=decisions)
+
+    assert len(plan["sessions"]) == 2
+    session_patterns = [
+        [task["movement_pattern"] for task in session["learning_tasks"]]
+        for session in plan["sessions"]
+    ]
+    assert [len(patterns) for patterns in session_patterns] == [3, 3]
+    assert set(pattern for patterns in session_patterns for pattern in patterns) == set(methods)
+    assert set(session_patterns[0]).isdisjoint(session_patterns[1])
+    assert all(not session["exercises"] for session in plan["sessions"])
+    assert all(session["estimated_minutes"] > session["warm_up_minutes"] for session in plan["sessions"])
+    assert all(session["estimated_minutes"] <= session["available_minutes"] for session in plan["sessions"])
+    assert not any(
+        event["action"] == "learning_tasks_deferred_to_later_sessions"
+        for event in plan["movement_adaptation"]["events"]
+    )
+
