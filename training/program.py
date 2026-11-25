@@ -1875,12 +1875,12 @@ def generate_program(
 
         # Pattern-learning tasks are performed at the start of the session as part
         # of the warm-up, not as a separate practice block after the warm-up.
-        learning_warmup_minutes = sum(task["estimated_minutes"] for task in learning_tasks_for_session)
-        warm_up_minutes += learning_warmup_minutes
-        warm_up_range = (
-            f"{warm_up_minutes} min" if learning_warmup_minutes
-            else ("5–7 min" if p["session_minutes"] <= 30 else "5–10 min")
-        )
+        # Learning checks are a separate motor-learning task, not part of the
+        # workout warm-up or loaded-session duration. Keep their time visible
+        # separately so a short readiness-limited workout is not misreported
+        # as having a 15–20 minute warm-up.
+        learning_task_minutes = sum(task["estimated_minutes"] for task in learning_tasks_for_session)
+        warm_up_range = "5–7 min" if p["session_minutes"] <= 30 else "5–10 min"
 
         # The session duration is an approximate envelope, not a rigid work/rest split.
         planning_budget = p["session_minutes"]
@@ -1996,17 +1996,47 @@ def generate_program(
             raise ProgramValidationError(
                 "Za izbrano opremo in omejitve ni dovolj preverjenih vaj ali učnih nalog. Potrebujem več opreme ali manj izključitev."
             )
+        covered_patterns = list(dict.fromkeys(item["pattern"] for item in selected))
+        lower_patterns = {"squat", "lunge", "hinge", "hip_extension", "knee_flexion"}
+        has_lower = bool(set(covered_patterns) & lower_patterns)
+        has_push = bool(set(covered_patterns) & {"horizontal_push", "vertical_push"})
+        has_pull = bool(set(covered_patterns) & {"horizontal_pull", "vertical_pull"})
+        if not selected and learning_tasks_for_session:
+            session_focus = "movement_learning"
+        elif has_lower and has_push and has_pull and len(covered_patterns) >= 3:
+            session_focus = "full_body"
+        elif len(covered_patterns) == 1:
+            session_focus = "targeted"
+        else:
+            session_focus = "focused"
+
+        if session_focus == "movement_learning":
+            session_title = f"Trening {session_index + 1} – učenje gibalnih vzorcev"
+        elif planning_goal == "endurance":
+            session_title = f"Trening {session_index + 1} – vzdržljivost"
+        elif planning_goal == "mobility":
+            session_title = f"Trening {session_index + 1} – mobilnost in gibljivost"
+        elif planning_goal == "functional":
+            session_title = f"Trening {session_index + 1} – funkcionalna pripravljenost: moč + kondicija"
+        elif planning_goal == "fat_loss" and session_index >= 2:
+            session_title = f"Trening {session_index + 1} – aerobna in kondicijska priprava"
+        elif session_focus == "full_body":
+            session_title = f"Trening {session_index + 1} – celotno telo"
+        else:
+            focus_labels = [PATTERN_LABELS.get(value, value) for value in covered_patterns]
+            focus_name = " + ".join(focus_labels) if focus_labels else "omejen nabor vzorcev"
+            session_title = (
+                f"Trening {session_index + 1} – ciljno delo: {focus_name}"
+                if session_focus == "targeted"
+                else f"Trening {session_index + 1} – usmerjena vadba: {focus_name}"
+            )
+
         plans.append({
             "session": session_index + 1,
-            "title": (
-                f"Trening {session_index + 1} – učenje gibalnih vzorcev"
-                if not selected and learning_tasks_for_session else
-                f"Trening {session_index + 1} – vzdržljivost" if planning_goal == "endurance" else
-                f"Trening {session_index + 1} – mobilnost in gibljivost" if planning_goal == "mobility" else
-                f"Trening {session_index + 1} – funkcionalna pripravljenost: moč + kondicija" if planning_goal == "functional" else
-                f"Trening {session_index + 1} – aerobna in kondicijska priprava" if planning_goal == "fat_loss" and session_index >= 2 else
-                f"Trening {session_index + 1} – celotno telo"
-            ),
+            "title": session_title,
+            "session_focus": session_focus,
+            "covered_patterns": covered_patterns,
+            "learning_tasks_estimated_minutes": learning_task_minutes,
             "session_phase": "movement_learning" if not selected and learning_tasks_for_session else "mixed_or_capacity",
             "warm_up_minutes": warm_up_minutes,
             "warm_up_range": warm_up_range,
