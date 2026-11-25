@@ -2805,7 +2805,7 @@ def coach_program():
             "assessment_required": True,
             "missing_patterns": missing_patterns,
             "unknown_patterns": unknown_patterns,
-            "message": "Pred individualnim programom odgovori na vseh šest osnovnih gibalnih vzorcev. Če naloge ne moreš ali ne želiš oceniti, izberi »Neocenjeno – preskoči«; ta vzorec bo izpuščen iz programa.",
+            "message": "Za vsak od šestih gibalnih vzorcev izberi naslednji korak. Vzorce, ki se jih ne želiš učiti, preskoči; za individualni program izberi vsaj en vzorec za učenje ali prijavi simptome.",
         }), 409
     valid_report_statuses = {"selected_for_learning", "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled"}
     control_criteria = {
