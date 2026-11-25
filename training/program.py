@@ -1052,6 +1052,10 @@ def generate_program(
     plans = []
     used_counts: Counter[str] = Counter()
     exposure: Counter[str] = Counter()
+    # Keep the same main exercise for a READY pattern across weekly sessions.
+    # This makes progression measurable instead of swapping between unrelated
+    # regressions (e.g. air squat one day and chair sit-to-stand the next).
+    selected_ready_exercise_by_pattern: dict[str, str] = {}
     missing_patterns: set[str] = set()
 
     for session_index in range(p["sessions_per_week"]):
@@ -1543,22 +1547,34 @@ def generate_program(
             level_rank = {"beginner": 0, "intermediate": 1, "advanced": 2}
             target_level = level_rank[p["experience"]]
             primary_purpose = GOAL_PRIMARY_PURPOSE.get(planning_goal)
-            candidate = min(candidates, key=lambda item: (
-                selection_priority(item),
-                0 if primary_purpose and primary_purpose in item["training_purposes"] else 1,
-                0 if item.get("training_role") == "main" or planning_goal not in {"hypertrophy", "strength_hypertrophy"} else 1,
-                used_counts[item["id"]],
-                # READY confirms control of the pattern, not competence in the
-                # hardest exercise variation. Start from the easiest verified
-                # catalogue level; exercise-specific loading is earned later.
-                (
-                    level_rank[item["level"]]
-                    if structured_decision and structured_decision["decision"] == "READY"
-                    else abs(level_rank[item["level"]] - target_level)
-                ),
-                {"high": 0, "moderate": 1, "low": 2}[effective_loading(item)] if planning_goal in {"hypertrophy", "strength", "strength_hypertrophy", "functional", "fat_loss"} else 0,
-                item["id"],
-            ))
+            preferred_ready_id = (
+                selected_ready_exercise_by_pattern.get(pattern)
+                if structured_decision and structured_decision["decision"] == "READY"
+                else None
+            )
+            candidate = next(
+                (item for item in candidates if item["id"] == preferred_ready_id),
+                None,
+            ) if preferred_ready_id else None
+            if candidate is None:
+                candidate = min(candidates, key=lambda item: (
+                    selection_priority(item),
+                    0 if primary_purpose and primary_purpose in item["training_purposes"] else 1,
+                    0 if item.get("training_role") == "main" or planning_goal not in {"hypertrophy", "strength_hypertrophy"} else 1,
+                    used_counts[item["id"]],
+                    # READY confirms control of the pattern, not competence in the
+                    # hardest exercise variation. Start from the easiest verified
+                    # catalogue level; exercise-specific loading is earned later.
+                    (
+                        level_rank[item["level"]]
+                        if structured_decision and structured_decision["decision"] == "READY"
+                        else abs(level_rank[item["level"]] - target_level)
+                    ),
+                    {"high": 0, "moderate": 1, "low": 2}[effective_loading(item)] if planning_goal in {"hypertrophy", "strength", "strength_hypertrophy", "functional", "fat_loss"} else 0,
+                    item["id"],
+                ))
+            if structured_decision and structured_decision["decision"] == "READY":
+                selected_ready_exercise_by_pattern.setdefault(pattern, candidate["id"])
             effective_pattern = candidate["pattern"]
             used_counts[candidate["id"]] += 1
             prescription = _prescription(planning_goal, p["experience"], effective_pattern, candidate, p["session_minutes"])
