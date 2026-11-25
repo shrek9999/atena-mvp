@@ -2019,7 +2019,26 @@ def generate_program(
             raise ProgramValidationError(
                 "Za izbrano opremo in omejitve ni dovolj preverjenih vaj ali učnih nalog. Potrebujem več opreme ali manj izključitev."
             )
-        covered_patterns = list(dict.fromkeys(item["pattern"] for item in selected))
+        # Session focus describes loaded training work, not the unloaded
+        # learning variations that may be carried alongside it.
+        def counts_as_training_pattern(item: dict) -> bool:
+            decision = movement_decisions_by_pattern.get(item["pattern"])
+            if not decision:
+                return True
+            if decision.get("decision") == "READY":
+                return True
+            report = decision.get("user_report", {})
+            return (
+                decision.get("decision") == "REGRESS"
+                and isinstance(report, dict)
+                and report.get("status") == "symptoms_reported"
+                and isinstance(report.get("regression_test"), dict)
+                and report["regression_test"].get("status") == "tolerated"
+            )
+
+        covered_patterns = list(dict.fromkeys(
+            item["pattern"] for item in selected if counts_as_training_pattern(item)
+        ))
         lower_patterns = {"squat", "lunge", "hinge", "hip_extension", "knee_flexion"}
         has_lower = bool(set(covered_patterns) & lower_patterns)
         has_push = bool(set(covered_patterns) & {"horizontal_push", "vertical_push"})
