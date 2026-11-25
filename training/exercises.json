@@ -5866,7 +5866,25 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Move your knees with control.",
+      "Use your hands for support if needed."
+    ],
+    "warnings_en": [
+      "Adjust the range of motion to your current hip tolerance."
+    ],
+    "common_errors_en": [
+      "Using momentum to initiate the movement.",
+      "Hip pain."
+    ],
+    "regressions_en": [
+      "Supported 90/90 position"
+    ],
+    "progressions_en": [
+      "Active transition without using your hands"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "shinbox_getup",
@@ -5928,7 +5946,24 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Perform the transition slowly.",
+      "Use your hands for assistance if needed."
+    ],
+    "warnings_en": [
+      "Start with a small range of motion on a stable surface."
+    ],
+    "common_errors_en": [
+      "Losing control during the transition."
+    ],
+    "regressions_en": [
+      "90/90 hip switches"
+    ],
+    "progressions_en": [
+      "Shinbox get-up without support"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "thoracic_rotation_quadruped",
@@ -5989,7 +6024,24 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Keep your pelvis stable.",
+      "Generate the rotation through your thoracic spine."
+    ],
+    "warnings_en": [
+      "Keep the movement controlled and pain-free."
+    ],
+    "common_errors_en": [
+      "Generating most of the rotation from the lower back."
+    ],
+    "regressions_en": [
+      "Use a smaller range of rotation"
+    ],
+    "progressions_en": [
+      "Increase the active range of motion"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "shoulder_car",
@@ -6048,7 +6100,24 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Move slowly and isolate the movement at the shoulder.",
+      "Keep your trunk as still as possible."
+    ],
+    "warnings_en": [
+      "Do not move through pain or force the end range."
+    ],
+    "common_errors_en": [
+      "Compensating with the lower back."
+    ],
+    "regressions_en": [
+      "Use smaller circles"
+    ],
+    "progressions_en": [
+      "Gradually increase the controlled range"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "loaded_deep_squat",
@@ -6109,7 +6178,24 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Use a light load as a counterbalance or external resistance.",
+      "Maintain control throughout your available range of motion."
+    ],
+    "warnings_en": [
+      "Full range means the greatest range you can control; it does not mean a universal squat depth."
+    ],
+    "common_errors_en": [
+      "Forcing depth while losing position."
+    ],
+    "regressions_en": [
+      "Reaching squat"
+    ],
+    "progressions_en": [
+      "Goblet squat with a gradual increase in range of motion"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "calf_raise_full_rom",
@@ -6171,7 +6257,25 @@
       "mobility"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Lower your heel into a controlled stretch, then rise as high as you can.",
+      "Do not bounce."
+    ],
+    "warnings_en": [
+      "Use a stable support for balance."
+    ],
+    "common_errors_en": [
+      "Using only a partial range of motion.",
+      "Pushing through the knees instead of moving at the ankles."
+    ],
+    "regressions_en": [
+      "Calf raises on a flat surface"
+    ],
+    "progressions_en": [
+      "Loaded single-leg calf raises"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "tibialis_raise",
@@ -6230,7 +6334,24 @@
       "mobility"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Keep your heels on the floor.",
+      "Lift your toes through a controlled range of motion."
+    ],
+    "warnings_en": [
+      "Adjust your distance from the wall to match your ability."
+    ],
+    "common_errors_en": [
+      "Using momentum and shortening the range."
+    ],
+    "regressions_en": [
+      "Lean less away from the wall"
+    ],
+    "progressions_en": [
+      "Increase the lean or add resistance"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "copenhagen_plank",
@@ -6300,7 +6421,25 @@
     "stability_role": "primary",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Lift your pelvis and keep it aligned.",
+      "Start with your knee supported."
+    ],
+    "warnings_en": [
+      "This places a high demand on the hip adductors; progress gradually."
+    ],
+    "common_errors_en": [
+      "Starting with too long a lever.",
+      "Rotating the pelvis."
+    ],
+    "regressions_en": [
+      "Side plank with bent knees"
+    ],
+    "progressions_en": [
+      "Long-lever version with ankle support"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "dead_bug_band",
@@ -6366,7 +6505,24 @@
     "stability_role": "primary",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Keep your rib cage aligned with your pelvis.",
+      "Extend only as far as you can maintain control."
+    ],
+    "warnings_en": [
+      "Make sure the band anchor is securely fixed."
+    ],
+    "common_errors_en": [
+      "Losing control of the lower-back position."
+    ],
+    "regressions_en": [
+      "Dead bug without a resistance band"
+    ],
+    "progressions_en": [
+      "Use a longer lever or a stronger band"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "single_leg_box_squat",
@@ -6435,7 +6591,25 @@
     "stability_focus": [
       "trunk_control",
       "balance"
-    ]
+    ],
+    "cues_en": [
+      "Lower yourself towards a stable support while standing on one leg.",
+      "Adjust the support height to your strength and control."
+    ],
+    "warnings_en": [
+      "The chair or bench must be stable and unable to move."
+    ],
+    "common_errors_en": [
+      "Dropping onto the support.",
+      "The knee losing alignment with the foot."
+    ],
+    "regressions_en": [
+      "air_squat"
+    ],
+    "progressions_en": [
+      "Use a lower support or add external load"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "pike_push_up",
@@ -6570,7 +6744,26 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Secure the resistance band to the bar and your foot or knee.",
+      "Lower yourself under control."
+    ],
+    "warnings_en": [
+      "Check the condition of the band and the stability of the pull-up bar."
+    ],
+    "common_errors_en": [
+      "Incorrectly positioning the band.",
+      "Pushing off excessively with the legs."
+    ],
+    "regressions_en": [
+      "foot_assisted_pull_up"
+    ],
+    "progressions_en": [
+      "pull_up",
+      "chin_up"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "barbell_bent_over_row",
@@ -6698,7 +6891,25 @@
       "mobility"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Adjust your grip width to allow a pain-free pass-through.",
+      "Keep your rib cage and pelvis under control."
+    ],
+    "warnings_en": [
+      "Do not move through pain; use a light, undamaged stick."
+    ],
+    "common_errors_en": [
+      "Forcing the range of motion.",
+      "Excessive extension through the lower back."
+    ],
+    "regressions_en": [
+      "Use a wider grip and a smaller range"
+    ],
+    "progressions_en": [
+      "Gradually narrow the grip while maintaining control"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "wall_slide",
@@ -6759,7 +6970,25 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Slide your forearms upwards along the wall.",
+      "Maintain control of your rib cage and pelvis."
+    ],
+    "warnings_en": [
+      "Adjust the range of motion to your shoulder tolerance."
+    ],
+    "common_errors_en": [
+      "Excessive arching through the lower back.",
+      "Shrugging the shoulders without control."
+    ],
+    "regressions_en": [
+      "Use a smaller range of motion"
+    ],
+    "progressions_en": [
+      "Increase the range or move farther away from the wall"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "ski_erg_intervals",
@@ -6828,7 +7057,25 @@
       "functional_fitness"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Initiate the pull with your trunk and hips, then use your arms.",
+      "Adjust your rhythm to the target interval."
+    ],
+    "warnings_en": [
+      "Progress technique and intensity gradually."
+    ],
+    "common_errors_en": [
+      "Starting too fast.",
+      "Pulling excessively with the arms alone."
+    ],
+    "regressions_en": [
+      "Steady work at low resistance"
+    ],
+    "progressions_en": [
+      "Longer intervals or higher intensity"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "air_bike_intervals",
@@ -6898,7 +7145,24 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Coordinate the work of your arms and legs.",
+      "Set the intensity according to the duration of the interval."
+    ],
+    "warnings_en": [
+      "Maintain repeatable technique throughout the intervals."
+    ],
+    "common_errors_en": [
+      "Starting at maximal effort during long intervals."
+    ],
+    "regressions_en": [
+      "Steady work at low intensity"
+    ],
+    "progressions_en": [
+      "Shorter or more intense intervals"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "shuttle_run",
@@ -6965,7 +7229,25 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Slow down before changing direction.",
+      "Control your knees and feet while decelerating."
+    ],
+    "warnings_en": [
+      "Use a flat, non-slip surface with enough space."
+    ],
+    "common_errors_en": [
+      "Uncontrolled deceleration.",
+      "Running too fast for the surface or available space."
+    ],
+    "regressions_en": [
+      "Brisk walking with changes of direction"
+    ],
+    "progressions_en": [
+      "More repetitions or shorter rest periods"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "bear_crawl",
@@ -7034,7 +7316,25 @@
       "functional_fitness"
     ],
     "stability_role": "none",
-    "stability_focus": []
+    "stability_focus": [],
+    "cues_en": [
+      "Keep your knees low above the floor.",
+      "Move the opposite arm and leg together."
+    ],
+    "warnings_en": [
+      "Choose a clean, non-slip surface."
+    ],
+    "common_errors_en": [
+      "Rotating the pelvis.",
+      "Lifting the hips too high."
+    ],
+    "regressions_en": [
+      "Slow alternating movements from quadruped"
+    ],
+    "progressions_en": [
+      "Longer distances or a controlled increase in pace"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "step_up_intervals",
@@ -7103,7 +7403,25 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Step rhythmically onto a stable step.",
+      "Alternate the leading leg."
+    ],
+    "warnings_en": [
+      "The step must be stable and non-slip."
+    ],
+    "common_errors_en": [
+      "Using a step that is too high.",
+      "Pushing off mainly with the trailing leg."
+    ],
+    "regressions_en": [
+      "Use a lower step and slower pace"
+    ],
+    "progressions_en": [
+      "Longer intervals or a higher cadence"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "band_assisted_parallel_bar_dip",
@@ -7165,7 +7483,26 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Securely attach the band to the parallel bars and position your knee or foot in it.",
+      "Use enough band assistance to control the full movement.",
+      "Lower only to a pain-free depth."
+    ],
+    "warnings_en": [
+      "Use a purpose-made, undamaged band and stable parallel bars. Stop if shoulder pain occurs."
+    ],
+    "common_errors_en": [
+      "Using excessive assistance and losing control.",
+      "Uncontrolled deep lowering."
+    ],
+    "regressions_en": [
+      "push_up"
+    ],
+    "progressions_en": [
+      "parallel_bar_dip"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "box_jump_intervals",
@@ -7233,7 +7570,27 @@
     "stability_role": "incidental",
     "stability_focus": [
       "trunk_control"
-    ]
+    ],
+    "cues_en": [
+      "Choose a low box you can land on reliably and quietly.",
+      "Keep intervals short and allow enough rest to maintain landing quality.",
+      "Step down; do not jump off the box."
+    ],
+    "warnings_en": [
+      "This is an advanced, high-impact interval option; do not use it as default aerobic training. Stop when landing quality deteriorates."
+    ],
+    "common_errors_en": [
+      "Declining landing quality.",
+      "Using a box that is too high or packing in too many jumps."
+    ],
+    "regressions_en": [
+      "box_jump",
+      "Quick squat into an athletic stance"
+    ],
+    "progressions_en": [
+      "Increase the number of quality repetitions per interval, not the box height at all costs."
+    ],
+    "alternatives_en": []
   },
   {
     "id": "couch_stretch",
