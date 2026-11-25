@@ -742,7 +742,7 @@ def test_dynamic_coaching_methodology_tempo_and_limitations_have_english_fields(
         for exercise in session["exercises"]
     ]
     assert any(item.get("tempo_description_en") for item in prescriptions)
-    for event in plan.get("movement_adaptation", {}).get("events", []):
+    for event in (plan.get("movement_adaptation") or {}).get("events", []):
         if event.get("action") in {
             "mild_symptom_load_tempo_and_rom_adjustment",
             "simpler_catalogue_variant_selected",
