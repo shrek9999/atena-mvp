@@ -71,6 +71,20 @@
     ],
     "warnings_en": [
       "Adjust range of motion and load to your current ability."
+    ],
+    "common_errors_en": [
+      "Losing stable foot contact with the floor.",
+      "Dropping uncontrollably into the bottom position."
+    ],
+    "regressions_en": [
+      "Chair or bench sit-to-stand"
+    ],
+    "progressions_en": [
+      "front_squat",
+      "Double-dumbbell front squat"
+    ],
+    "alternatives_en": [
+      "Squat to a bench"
     ]
   },
   {
@@ -146,6 +160,20 @@
     ],
     "warnings_en": [
       "Requires appropriate technique, a squat rack and safety arms or pins."
+    ],
+    "common_errors_en": [
+      "Losing trunk tension.",
+      "Uneven pressure through the feet."
+    ],
+    "regressions_en": [
+      "Goblet squat",
+      "Squat to a bench"
+    ],
+    "progressions_en": [
+      "Paused back squat"
+    ],
+    "alternatives_en": [
+      "front_squat"
     ]
   },
   {
@@ -219,6 +247,19 @@
     ],
     "warnings_en": [
       "Adjust the range and grip position to your wrist and shoulder mobility."
+    ],
+    "common_errors_en": [
+      "Allowing the elbows to drop.",
+      "Dropping too quickly into the bottom position."
+    ],
+    "regressions_en": [
+      "Goblet squat"
+    ],
+    "progressions_en": [
+      "Paused front squat"
+    ],
+    "alternatives_en": [
+      "Goblet squat"
     ]
   },
   {
@@ -299,6 +340,20 @@
     ],
     "warnings_en": [
       "Start with a range you can control."
+    ],
+    "common_errors_en": [
+      "Losing balance.",
+      "Using a stance that is too short or too long for the movement."
+    ],
+    "regressions_en": [
+      "Supported split squat"
+    ],
+    "progressions_en": [
+      "Split squat with dumbbells",
+      "rear_foot_elevated_split_squat"
+    ],
+    "alternatives_en": [
+      "reverse_lunge"
     ]
   },
   {
@@ -382,6 +437,19 @@
     "warnings_en": [
       "Use only a stable, immovable support that cannot tip or slide.",
       "Stop if pain or discomfort appears; support does not make it appropriate to move through symptoms."
+    ],
+    "common_errors_en": [
+      "Putting your full body weight on an unstable object for support.",
+      "Losing balance or lowering without control."
+    ],
+    "regressions_en": [
+      "Use a smaller split-squat range with stable support"
+    ],
+    "progressions_en": [
+      "split_squat"
+    ],
+    "alternatives_en": [
+      "chair_sit_to_stand"
     ]
   },
   {
@@ -461,6 +529,19 @@
     ],
     "warnings_en": [
       "Adjust step length and depth to your current control."
+    ],
+    "common_errors_en": [
+      "Placing the feet too close together laterally.",
+      "Pushing off mainly with the rear leg."
+    ],
+    "regressions_en": [
+      "Supported split squat"
+    ],
+    "progressions_en": [
+      "Reverse lunge with dumbbells"
+    ],
+    "alternatives_en": [
+      "split_squat"
     ]
   },
   {
@@ -823,6 +904,22 @@
     ],
     "warnings_en": [
       "Choose a load that allows a secure grip and all prescribed repetitions. If grip fails before the target muscles, adjust the load or choose another variation."
+    ],
+    "common_errors_en": [
+      "Changing the knee angle excessively during the movement.",
+      "Seeking more depth by bending the spine."
+    ],
+    "regressions_en": [
+      "bodyweight_hip_hinge",
+      "supported_single_leg_rdl"
+    ],
+    "progressions_en": [
+      "deadlift",
+      "single_leg_rdl"
+    ],
+    "alternatives_en": [
+      "supported_single_leg_rdl",
+      "deadlift"
     ]
   },
   {
@@ -900,6 +997,21 @@
     ],
     "warnings_en": [
       "Requires learning the setup and developing control of the load."
+    ],
+    "common_errors_en": [
+      "Lifting before creating tension and bracing.",
+      "Allowing the load to drift away from the body."
+    ],
+    "regressions_en": [
+      "Kettlebell deadlift",
+      "Deadlift from an elevated position"
+    ],
+    "progressions_en": [
+      "Paused deadlift"
+    ],
+    "alternatives_en": [
+      "Trap-bar deadlift",
+      "romanian_deadlift"
     ]
   },
   {
@@ -971,6 +1083,19 @@
     ],
     "warnings_en": [
       "The back support must be stable."
+    ],
+    "common_errors_en": [
+      "Excessive extension through the lower back.",
+      "Pushing mainly through the toes."
+    ],
+    "regressions_en": [
+      "Glute bridge"
+    ],
+    "progressions_en": [
+      "Barbell hip thrust"
+    ],
+    "alternatives_en": [
+      "romanian_deadlift"
     ]
   },
   {
@@ -1048,7 +1173,21 @@
     "warnings_en": [
       "Adjust the support height to your ability."
     ],
-    "range_of_motion_en": "Lower your chest towards the floor or support through the greatest range in which you can maintain trunk stability and shoulder-blade control. Choose a support height that matches your current ability; lower it gradually as the movement becomes repeatable."
+    "range_of_motion_en": "Lower your chest towards the floor or support through the greatest range in which you can maintain trunk stability and shoulder-blade control. Choose a support height that matches your current ability; lower it gradually as the movement becomes repeatable.",
+    "common_errors_en": [
+      "Allowing the hips to sag.",
+      "Shortening the range of motion because control is lost."
+    ],
+    "regressions_en": [
+      "push_up_incline",
+      "wall_push_up"
+    ],
+    "progressions_en": [
+      "push_up_decline"
+    ],
+    "alternatives_en": [
+      "dumbbell_bench_press"
+    ]
   },
   {
     "id": "dumbbell_bench_press",
@@ -1118,7 +1257,20 @@
     "warnings_en": [
       "Use a load you can safely bring into position and put down."
     ],
-    "range_of_motion_en": "Lower the dumbbells to a depth at which you can maintain shoulder-blade and shoulder control. Use the full pain-free range available to you; do not restrict it unnecessarily."
+    "range_of_motion_en": "Lower the dumbbells to a depth at which you can maintain shoulder-blade and shoulder control. Use the full pain-free range available to you; do not restrict it unnecessarily.",
+    "common_errors_en": [
+      "Flaring the elbows too far out.",
+      "Lowering the dumbbells without control."
+    ],
+    "regressions_en": [
+      "push_up"
+    ],
+    "progressions_en": [
+      "Barbell bench press"
+    ],
+    "alternatives_en": [
+      "push_up"
+    ]
   },
   {
     "id": "barbell_bench_press",
@@ -1194,6 +1346,22 @@
     "warnings_en": [
       "Set the safety arms correctly before the set or use a competent spotter.",
       "Choose a load that allows a controlled bar path and stable position."
+    ],
+    "common_errors_en": [
+      "Losing a stable shoulder-blade position.",
+      "Flaring the elbows excessively.",
+      "Bouncing the bar off the chest.",
+      "Lifting without safety bars or a spotter."
+    ],
+    "regressions_en": [
+      "dumbbell_bench_press",
+      "push_up"
+    ],
+    "progressions_en": [
+      "Bench press with a heavier load"
+    ],
+    "alternatives_en": [
+      "dumbbell_bench_press"
     ]
   },
   {
@@ -1270,6 +1438,20 @@
     ],
     "warnings_en": [
       "Adjust the range and variation to your shoulder mobility and tolerance."
+    ],
+    "common_errors_en": [
+      "Excessive extension through the lower back.",
+      "Allowing the load to travel far in front of the body."
+    ],
+    "regressions_en": [
+      "band_overhead_press",
+      "pike_push_up"
+    ],
+    "progressions_en": [
+      "Push press"
+    ],
+    "alternatives_en": [
+      "Incline barbell press"
     ]
   },
   {
@@ -1340,7 +1522,20 @@
     ],
     "warnings_en": [
       "Adjust the range and assistance to your current ability."
-    ]
+    ],
+    "common_errors_en": [
+      "Using a swing to complete repetitions.",
+      "Lowering without control."
+    ],
+    "regressions_en": [
+      "band_assisted_pull_up",
+      "foot_assisted_pull_up"
+    ],
+    "progressions_en": [
+      "chin_up",
+      "Weighted pull-up"
+    ],
+    "alternatives_en": []
   },
   {
     "id": "one_arm_row",
@@ -1416,6 +1611,19 @@
     ],
     "warnings_en": [
       "If you use a chair or bench for support, check that it is stable and on a non-slip surface."
+    ],
+    "common_errors_en": [
+      "Rotating the trunk to lift the load.",
+      "Jerking the weight."
+    ],
+    "regressions_en": [
+      "Chest-supported row"
+    ],
+    "progressions_en": [
+      "Single-arm row with a heavier load"
+    ],
+    "alternatives_en": [
+      "Inverted row"
     ]
   },
   {
@@ -2173,6 +2381,20 @@
     ],
     "warnings_en": [
       "Choose a load you can safely position and put down."
+    ],
+    "common_errors_en": [
+      "Losing trunk stability.",
+      "Shifting weight towards the forefoot."
+    ],
+    "regressions_en": [
+      "Goblet squat",
+      "Squat to a bench"
+    ],
+    "progressions_en": [
+      "Dumbbell squat with a heavier load"
+    ],
+    "alternatives_en": [
+      "squat_goblet"
     ]
   },
   {
@@ -2245,6 +2467,19 @@
     ],
     "warnings_en": [
       "Position the load securely and use a mat."
+    ],
+    "common_errors_en": [
+      "Excessive extension through the lower back.",
+      "Pushing mainly through the toes."
+    ],
+    "regressions_en": [
+      "Use a shorter bridge range"
+    ],
+    "progressions_en": [
+      "Glute bridge with a dumbbell on the pelvis"
+    ],
+    "alternatives_en": [
+      "hip_thrust"
     ]
   },
   {
@@ -2315,7 +2550,21 @@
     "warnings_en": [
       "Put the dumbbells down under control and choose a load you can handle safely."
     ],
-    "range_of_motion_en": "The range is limited by your upper arms contacting the floor. When equipment and ability allow, prefer a push-up with an adjusted support height or a dumbbell press on a stable bench."
+    "range_of_motion_en": "The range is limited by your upper arms contacting the floor. When equipment and ability allow, prefer a push-up with an adjusted support height or a dumbbell press on a stable bench.",
+    "common_errors_en": [
+      "Flaring the elbows too far out.",
+      "Lowering the dumbbells without control."
+    ],
+    "regressions_en": [
+      "Incline push-up"
+    ],
+    "progressions_en": [
+      "Dumbbell bench press"
+    ],
+    "alternatives_en": [
+      "push_up",
+      "dumbbell_bench_press"
+    ]
   },
   {
     "id": "band_row",
@@ -2392,6 +2641,19 @@
     ],
     "warnings_en": [
       "Check the band for wear and make sure its anchor is secure before training."
+    ],
+    "common_errors_en": [
+      "Swinging the trunk.",
+      "Shrugging the shoulders and shortening the range of motion."
+    ],
+    "regressions_en": [
+      "Resistance-band row with a lighter band"
+    ],
+    "progressions_en": [
+      "Use a stronger band or a longer lever"
+    ],
+    "alternatives_en": [
+      "one_arm_row"
     ]
   },
   {
@@ -2466,6 +2728,21 @@
     ],
     "warnings_en": [
       "Choose a load that lets you maintain a stable hip-hinged position throughout."
+    ],
+    "common_errors_en": [
+      "Swinging the trunk.",
+      "Losing a stable spinal position.",
+      "Shrugging the shoulders towards the ears."
+    ],
+    "regressions_en": [
+      "Resistance-band row"
+    ],
+    "progressions_en": [
+      "Bent-over row with heavier dumbbells"
+    ],
+    "alternatives_en": [
+      "one_arm_row",
+      "band_row"
     ]
   },
   {
