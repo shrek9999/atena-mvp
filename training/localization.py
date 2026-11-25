@@ -43,13 +43,12 @@ def resolve_response_language(messages: list[dict], requested_language: object =
         if isinstance(item, dict) and item.get("role") == "user"
         and isinstance(item.get("content"), str)
     ]
-    # A short reply such as 'no', 'ne', 'yes' or 'ok' has no reliable language
-    # signal. Inherit the latest substantive user turn instead of defaulting to English.
     for turn in reversed(user_turns):
         hint = _language_hint(turn)
         if hint:
             return hint
     return "en"
+
 
 def language_instruction(language: str) -> str:
     """Return a concise, explicit output-language contract for the model."""
@@ -63,7 +62,10 @@ def language_instruction(language: str) -> str:
     return (
         "RESPONSE LANGUAGE: English (en). Reply entirely in natural, clear, "
         "grammatically correct international English. Use standard strength-and-"
-        "conditioning terminology, explain specialist terms briefly when useful. Ignore Slovenian-only grammar and terminology instructions when replying in English; use canonical English exercise names and idiomatic English coaching language. Do not switch languages mid-answer."
+        "conditioning terminology, explain specialist terms briefly when useful. "
+        "Ignore Slovenian-only grammar and terminology instructions when replying "
+        "in English; use canonical English exercise names and idiomatic English "
+        "coaching language. Do not switch languages mid-answer."
     )
 
 
@@ -72,33 +74,6 @@ def localize_guardrail_reply(reply: str, language: str) -> str:
     if language != "en" or not isinstance(reply, str):
         return reply
 
-_CHAT_API_ERRORS_EN = {
-    "Testni dostop še ni nastavljen na strežniku.": "Pilot access has not been configured on the server yet.",
-    "Testni dostopni ključ ni pravilen.": "The pilot access token is invalid.",
-    "Pilot še ni aktiviran: skrbnik mora na strežniku nastaviti GEMINI_API_KEY.": "The pilot is not active yet. The administrator must configure GEMINI_API_KEY on the server.",
-    "Pričakovan je JSON objekt.": "A JSON object is required.",
-    "Pošlji od 1 do 12 sporočil.": "Send between 1 and 12 messages.",
-    "Neveljavna zgodovina pogovora.": "The conversation history is invalid.",
-    "Za uporabo zgodovine treningov sta potrebna ID profila in dostopni ključ.": "A profile ID and access token are required to use training history.",
-    "Podatki za dostop do profila niso veljavni.": "The profile access details are invalid.",
-    "Dostop do profila ni pravilen. Obnovi dostop z ID-jem in ključem.": "Profile access was denied. Restore access using the profile ID and token.",
-    "Model ni vrnil odgovora. Poskusi znova.": "The AI model did not return a response. Please try again.",
-    "Povezava z modelom ni pravilno nastavljena. Skrbnik naj preveri ključ in model.": "The AI service is not configured correctly. The administrator should check the API key and model settings.",
-    "Trenutno je dosežena omejitev uporabe. Poskusi pozneje.": "The service has reached its current usage limit. Please try again later.",
-    "Storitev trenutno ni dosegljiva. Poskusi znova.": "The service is temporarily unavailable. Please try again.",
-    "Odgovor se je predolgo pripravljal ali povezava ni uspela. Poskusi znova.": "The response timed out or the connection failed. Please try again.",
-}
-
-
-def localize_chat_api_error(message: str, language: str) -> str:
-    """Localize known chat endpoint errors without changing their meaning."""
-    if language != "en" or not isinstance(message, str):
-        return message
-    if message.startswith("Sporočilo je prazno ali predolgo (največ ") and message.endswith(" znakov)."):
-        limit = message.removeprefix("Sporočilo je prazno ali predolgo (največ ").removesuffix(" znakov).")
-        if limit.isdigit():
-            return f"Message is empty or too long (maximum {limit} characters)."
-    return _CHAT_API_ERRORS_EN.get(message, message)
     lowered = reply.casefold()
     if "ker noge ne moreš normalno obremeniti" in lowered:
         return (
@@ -139,6 +114,36 @@ def localize_chat_api_error(message: str, language: str) -> str:
             "loads. Do you currently have any pain, injury, movement limitation, or "
             "medical restriction I should take into account?"
         )
-    # For an unrecognized guardrail, preserve the original deterministic wording.
-    # A generic translation could accidentally remove a clinically important instruction.
+    # Keep unknown safety messages unchanged rather than applying a risky generic translation.
     return reply
+
+
+_CHAT_API_ERRORS_EN = {
+    "Testni dostop še ni nastavljen na strežniku.": "Pilot access has not been configured on the server yet.",
+    "Testni dostopni ključ ni pravilen.": "The pilot access token is invalid.",
+    "Pilot še ni aktiviran: skrbnik mora na strežniku nastaviti GEMINI_API_KEY.": "The pilot is not active yet. The administrator must configure GEMINI_API_KEY on the server.",
+    "Pričakovan je JSON objekt.": "A JSON object is required.",
+    "Pošlji od 1 do 12 sporočil.": "Send between 1 and 12 messages.",
+    "Neveljavna zgodovina pogovora.": "The conversation history is invalid.",
+    "Za uporabo zgodovine treningov sta potrebna ID profila in dostopni ključ.": "A profile ID and access token are required to use training history.",
+    "Podatki za dostop do profila niso veljavni.": "The profile access details are invalid.",
+    "Dostop do profila ni pravilen. Obnovi dostop z ID-jem in ključem.": "Profile access was denied. Restore access using the profile ID and token.",
+    "Model ni vrnil odgovora. Poskusi znova.": "The AI model did not return a response. Please try again.",
+    "Povezava z modelom ni pravilno nastavljena. Skrbnik naj preveri ključ in model.": "The AI service is not configured correctly. The administrator should check the API key and model settings.",
+    "Trenutno je dosežena omejitev uporabe. Poskusi pozneje.": "The service has reached its current usage limit. Please try again later.",
+    "Storitev trenutno ni dosegljiva. Poskusi znova.": "The service is temporarily unavailable. Please try again.",
+    "Odgovor se je predolgo pripravljal ali povezava ni uspela. Poskusi znova.": "The response timed out or the connection failed. Please try again.",
+}
+
+
+def localize_chat_api_error(message: str, language: str) -> str:
+    """Localize known chat endpoint errors without changing their meaning."""
+    if language != "en" or not isinstance(message, str):
+        return message
+    prefix = "Sporočilo je prazno ali predolgo (največ "
+    suffix = " znakov)."
+    if message.startswith(prefix) and message.endswith(suffix):
+        limit = message[len(prefix):-len(suffix)]
+        if limit.isdigit():
+            return f"Message is empty or too long (maximum {limit} characters)."
+    return _CHAT_API_ERRORS_EN.get(message, message)
