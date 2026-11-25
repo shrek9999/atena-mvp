@@ -1838,6 +1838,9 @@ def generate_program(
                 "primary_muscles": candidate["primary_muscles"],
                 "equipment": selected_equipment,
                 "cues": candidate["cues"],
+                "cues_en": candidate.get("cues_en"),
+                "range_of_motion_en": candidate.get("range_of_motion_en"),
+                "warnings_en": candidate.get("warnings_en"),
                 "range_of_motion": (
                     "Ohrani naraven korak in stabilno držo; trajanje ali razdaljo povečuj postopno."
                     if pattern == "carry" else
