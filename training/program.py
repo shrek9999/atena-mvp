@@ -1452,32 +1452,46 @@ def generate_program(
                     None,
                 )
                 if method is not None and method.get("learning_only") is True:
-                    if len(learning_tasks_for_session) < learning_task_limit:
-                        learning_tasks_for_session.append({
-                            "movement_pattern": pattern,
-                            "task_id": PATTERN_DEFINITIONS[pattern]["task_id"],
-                            "pattern_label_en": (get_pattern_english(pattern) or {}).get("label"),
-                            "task_en": (get_pattern_english(pattern) or {}).get("task"),
-                            "method_id": method["id"],
-                            "method": method["label"],
-                            "description": method["description"],
-                            "method_en": (get_method_english(method["id"]) or (None, None))[0],
-                            "description_en": (get_method_english(method["id"]) or (None, None))[1],
-                            "exercise_id": None,
-                            "demo_url": method.get("demo_url"),
-                            "demonstration_videos": _learning_task_videos(pattern, method["id"], None),
-                            "decision": structured_decision["decision"],
-                            "sets": 2,
-                            "reps": (
-                                "4–6 controlled reps per side" if pattern == "lunge" else
-                                "6–8 controlled reps" if pattern == "horizontal_pull" else
-                                "4–6 controlled reps"
-                            ),
-                            "tempo": "3-1-1",
-                            "rest_seconds": 30,
-                            "estimated_minutes": 2,
-                        })
-                        if target_id is None:
+                    if report_status != "learning_completed_by_user":
+                        if len(learning_tasks_for_session) < learning_task_limit:
+                            learning_tasks_for_session.append({
+                                "movement_pattern": pattern,
+                                "task_id": PATTERN_DEFINITIONS[pattern]["task_id"],
+                                "pattern_label_en": (get_pattern_english(pattern) or {}).get("label"),
+                                "task_en": (get_pattern_english(pattern) or {}).get("task"),
+                                "method_id": method["id"],
+                                "method": method["label"],
+                                "description": method["description"],
+                                "method_en": (get_method_english(method["id"]) or (None, None))[0],
+                                "description_en": (get_method_english(method["id"]) or (None, None))[1],
+                                "exercise_id": None,
+                                "demo_url": method.get("demo_url"),
+                                "demonstration_videos": _learning_task_videos(pattern, method["id"], None),
+                                "decision": structured_decision["decision"],
+                                "sets": 2,
+                                "reps": (
+                                    "4–6 controlled reps per side" if pattern == "lunge" else
+                                    "6–8 controlled reps" if pattern == "horizontal_pull" else
+                                    "4–6 controlled reps"
+                                ),
+                                "tempo": "3-1-1",
+                                "rest_seconds": 30,
+                                "estimated_minutes": 2,
+                            })
+                        else:
+                            deferred_learning_patterns.append(pattern)
+                    if target_id is None:
+                        if report_status == "learning_completed_by_user":
+                            movement_adaptation_events.append({
+                                "pattern": pattern,
+                                "tasks": affected_tasks,
+                                "action": "no_safe_starter_variant_available",
+                                "message": (
+                                    f"Za vzorec {PATTERN_LABELS.get(pattern, pattern)} trenutno ni varne podprte začetne vaje "
+                                    "z izbrano opremo; vzorec ostane brez obremenitve."
+                                ),
+                            })
+                        elif len(learning_tasks_for_session) > 0:
                             movement_adaptation_events.append({
                                 "pattern": pattern,
                                 "tasks": affected_tasks,
@@ -1487,9 +1501,6 @@ def generate_program(
                                     "najprej ponovi kratko učno nalogo in preveri kriterije nadzora."
                                 ),
                             })
-                    else:
-                        deferred_learning_patterns.append(pattern)
-                    if target_id is None:
                         continue
                 target = next((item for item in reference_catalogue if item["id"] == target_id), None)
                 if target is None or target["pattern"] != pattern:
@@ -2200,7 +2211,16 @@ def generate_program(
         else:
             session_focus = "focused"
 
-        if session_focus == "movement_learning":
+        completed_learning_starter = bool(selected) and any(
+            item.get("decision") == "LEARN"
+            and isinstance(item.get("user_report"), dict)
+            and item["user_report"].get("status") == "learning_completed_by_user"
+            for item in movement_decisions_by_pattern.values()
+        )
+        if completed_learning_starter:
+            session_title = f"Trening {session_index + 1} – začetni podprti trening"
+            session_title_en = f"Session {session_index + 1} – Supported Starter Training"
+        elif session_focus == "movement_learning":
             session_title = f"Trening {session_index + 1} – učenje gibalnih vzorcev"
             session_title_en = f"Session {session_index + 1} – Movement Pattern Learning"
         elif planning_goal == "endurance":
