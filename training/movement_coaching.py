@@ -227,6 +227,15 @@ def validate_symptom_regression_report(
         if test is not None:
             if not isinstance(test, dict):
                 raise MovementCoachingError("Ponovni preizkus mora biti objekt.")
+            context = test.get("symptom_context")
+            if context is not None and (
+                not isinstance(context, dict)
+                or set(context) != {"familiarity", "movement_quality_changed", "next_day_response"}
+                or context.get("familiarity") not in {"familiar_stable", "new_or_worsening"}
+                or not isinstance(context.get("movement_quality_changed"), bool)
+                or context.get("next_day_response") not in {"same_or_better", "worse"}
+            ):
+                raise MovementCoachingError("Kontekst simptomov pri ponovnem preizkusu ni veljaven.")
             pain = test.get("pain_during")
             flags = test.get("acute_warning_signs", [])
             if (
@@ -249,6 +258,7 @@ def validate_symptom_regression_report(
         raise MovementCoachingError("Za vključitev simptomatskega vzorca je potreben zabeležen ponovni preizkus.")
     pain = test.get("pain_during")
     flags = test.get("acute_warning_signs", [])
+    context = test.get("symptom_context")
     support_method = test.get("support_method")
     valid_support_methods = {"trx", "band", "fixed_bar", "stable_support"}
     if support_method is not None and support_method not in valid_support_methods:
@@ -277,6 +287,11 @@ def validate_symptom_regression_report(
         or test.get("tempo") != "slow_controlled"
         or test.get("load_adjustment") not in {"reduced", "bodyweight_or_assisted"}
         or test.get("range_adjustment") != "within_tolerance"
+        or not isinstance(context, dict)
+        or set(context) != {"familiarity", "movement_quality_changed", "next_day_response"}
+        or context.get("familiarity") != "familiar_stable"
+        or context.get("movement_quality_changed") is not False
+        or context.get("next_day_response") != "same_or_better"
     ):
         raise MovementCoachingError(
             "Blago nelagodje do 4/10 je mogoče tolerirati le, če se ne stopnjuje, "
