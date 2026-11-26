@@ -101,7 +101,7 @@ def test_ready_decision_starts_conservatively_without_automatic_progression():
     )
 
 
-def test_horizontal_pull_and_overhead_learning_stay_unloaded_until_control_is_verified():
+def test_horizontal_pull_and_overhead_press_learning_stay_low_demand_until_control_is_verified():
     pull = build_movement_decision(
         "horizontal_pull", "LEARN",
         selected_learning_method="scapular_coordination",
@@ -110,9 +110,9 @@ def test_horizontal_pull_and_overhead_learning_stay_unloaded_until_control_is_ve
     )
     overhead = build_movement_decision(
         "vertical_push", "LEARN",
-        selected_learning_method="unloaded_overhead_reach",
+        selected_learning_method="light_implement_press",
         user_report={"status": "comfortable"},
-        decision_reason="Najprej vadi pot rok nad glavo brez bremena.",
+        decision_reason="Najprej vadi dejanski potisk nad glavo z zelo lahkim pripomočkom.",
     )
     plan = generate_program(BASE, movement_decisions={
         "horizontal_pull": pull, "vertical_push": overhead,
