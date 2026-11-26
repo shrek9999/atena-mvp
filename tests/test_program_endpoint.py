@@ -251,6 +251,9 @@ def test_program_endpoint_returns_camera_observations_as_separate_non_decisional
 
 def test_program_endpoint_rejects_camera_payload_claiming_video_storage(monkeypatch):
     payload = {
+        "movement_assessment_consent": True,
+        "learning_progress": _complete_learning_progress(),
+        "movement_decisions": _six_pattern_decisions(),
         "profile": {
             "goal": "functional", "experience": "beginner",
             "equipment": ["bodyweight"], "sessions_per_week": 2,
