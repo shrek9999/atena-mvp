@@ -29,7 +29,7 @@ def _decisions(status="selected_for_learning"):
         "hinge": "wall_hip_hinge",
         "horizontal_push": "incline_push_up",
         "horizontal_pull": "scapular_coordination",
-        "vertical_push": "unloaded_overhead_reach",
+        "vertical_push": "light_implement_press",
         "lunge": "supported_split_squat",
     }
     return {
