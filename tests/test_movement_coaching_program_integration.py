@@ -49,7 +49,7 @@ def test_learn_decision_selects_reaching_squat_and_adds_learning_task():
     assert all("counterbalance" in task["description_en"].lower() for task in tasks)
 
 
-def test_separate_movement_learning_tasks_do_not_inflate_workout_warmup_or_duration():
+def test_guided_learning_tasks_are_included_in_total_session_duration():
     decision = build_movement_decision(
         "squat", "LEARN",
         selected_learning_method="supported_squat_assistance",
@@ -65,10 +65,59 @@ def test_separate_movement_learning_tasks_do_not_inflate_workout_warmup_or_durat
         assert session["warm_up_minutes"] == 7
         assert session["warm_up_range"] == "5–10 min"
         assert session["learning_tasks_estimated_minutes"] == 2
-        assert session["estimated_minutes"] == _estimated_minutes(
-            session["exercises"], session["warm_up_minutes"]
+        assert session["estimated_minutes"] == (
+            _estimated_minutes(session["exercises"], session["warm_up_minutes"])
+            + session["learning_tasks_estimated_minutes"]
         )
         assert session["estimated_minutes"] <= session["available_minutes"]
+
+
+def test_completed_learning_starts_a_supported_variation_without_marking_ready():
+    decision = build_movement_decision(
+        "squat", "LEARN",
+        selected_learning_method="reaching_counterbalance",
+        user_report={"status": "learning_completed_by_user"},
+    )
+    plan = generate_program(BASE, movement_decisions={"squat": decision})
+    exercises = _pattern_exercises(plan, "squat")
+    assert exercises
+    assert all(item["id"] == "reaching_squat" for item in exercises)
+    assert all(item["prescription"]["sets"] <= 2 for item in exercises)
+    assert all(item["prescription"]["rir_min"] >= 3 for item in exercises)
+    assert all(
+        task["movement_pattern"] != "squat"
+        for session in plan["sessions"]
+        for task in session["learning_tasks"]
+    )
+
+
+def test_completed_learning_does_not_add_a_row_without_confirmed_support():
+    profile = {**BASE, "equipment": ["bodyweight", "resistance_band"]}
+    decision = build_movement_decision(
+        "horizontal_pull", "LEARN",
+        selected_learning_method="scapular_coordination",
+        user_report={"status": "learning_completed_by_user"},
+    )
+    plan = generate_program(profile, movement_decisions={"horizontal_pull": decision})
+    assert _pattern_exercises(plan, "horizontal_pull") == []
+    assert any(
+        event["action"] == "no_safe_starter_variant_available"
+        for event in plan["movement_adaptation"]["events"]
+    )
+
+
+def test_completed_learning_can_start_a_band_row_only_with_a_confirmed_anchor():
+    profile = {**BASE, "equipment": ["bodyweight", "resistance_band", "anchor_point"]}
+    decision = build_movement_decision(
+        "horizontal_pull", "LEARN",
+        selected_learning_method="scapular_coordination",
+        user_report={"status": "learning_completed_by_user"},
+    )
+    plan = generate_program(profile, movement_decisions={"horizontal_pull": decision})
+    exercises = _pattern_exercises(plan, "horizontal_pull")
+    assert exercises
+    assert all(item["id"] == "band_row" for item in exercises)
+    assert all(item["prescription"]["sets"] <= 2 for item in exercises)
 
 
 def test_one_ready_pattern_is_not_mislabelled_as_a_full_body_session():
