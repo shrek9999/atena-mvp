@@ -1446,6 +1446,8 @@ def generate_program(
             structured_decision = movement_decisions_by_pattern.get(pattern)
             if structured_decision and structured_decision["decision"] in {"LEARN", "REGRESS"}:
                 target_id = structured_decision.get("resolved_exercise_id")
+                user_report = structured_decision.get("user_report")
+                report_status = user_report.get("status") if isinstance(user_report, dict) else None
                 method = next(
                     (item for item in PATTERN_DEFINITIONS[pattern]["learning_methods"]
                      if item["id"] == structured_decision.get("selected_learning_method")),
