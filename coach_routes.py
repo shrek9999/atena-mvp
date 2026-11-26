@@ -4169,6 +4169,7 @@ def coach_profile_program(profile_id):
             return jsonify({
                 "blocked": True,
                 "learning_required": True,
+                "assessment_required": True,
                 "missing_patterns": sorted(expected_patterns),
                 "message": "Pred programom skupaj predelajva šest osnovnih gibalnih vzorcev. Pri vsakem potrdi šest kratkih učnih kriterijev.",
             }), 409
@@ -4180,6 +4181,7 @@ def coach_profile_program(profile_id):
             return jsonify({
                 "blocked": True,
                 "learning_required": True,
+                "assessment_required": True,
                 "missing_patterns": incomplete_patterns,
                 "message": "Učenje še ni zaključeno pri vseh šestih vzorcih. Nadaljujva tam, kjer je ostalo.",
             }), 409
@@ -4193,7 +4195,7 @@ def coach_profile_program(profile_id):
             movement_decisions[pattern] = build_movement_decision(
                 pattern, "LEARN",
                 selected_learning_method=method["id"],
-                user_report={"status": "learning_completed_by_user"},
+                user_report={"status": "selected_for_learning"},
                 decision_reason="Uporabnik je zaključil vodeno učno nalogo in potrdil kriterije. To ni objektivna potrditev tehnike ali dovoljenje za samodejno povečanje bremena.",
             )
             movement_decisions[pattern]["training_phase"] = "movement_learning"
