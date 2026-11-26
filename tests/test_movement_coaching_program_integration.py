@@ -101,12 +101,12 @@ def test_ready_decision_starts_conservatively_without_automatic_progression():
     )
 
 
-def test_horizontal_pull_and_overhead_press_learning_stay_low_demand_until_control_is_verified():
+def test_horizontal_pull_and_overhead_press_learning_use_real_light_catalogue_exercises_when_equipment_exists():
     pull = build_movement_decision(
         "horizontal_pull", "LEARN",
         selected_learning_method="scapular_coordination",
         user_report={"status": "comfortable"},
-        decision_reason="Najprej vadi gibanje lopatic brez bremena.",
+        decision_reason="Najprej utrdi koordinacijo lopatic, nato uporabi ustrezno veslanje.",
     )
     overhead = build_movement_decision(
         "vertical_push", "LEARN",
@@ -117,12 +117,22 @@ def test_horizontal_pull_and_overhead_press_learning_stay_low_demand_until_contr
     plan = generate_program(BASE, movement_decisions={
         "horizontal_pull": pull, "vertical_push": overhead,
     })
-    assert _pattern_exercises(plan, "horizontal_pull") == []
-    assert _pattern_exercises(plan, "vertical_push") == []
+    pulls = _pattern_exercises(plan, "horizontal_pull")
+    presses = _pattern_exercises(plan, "vertical_push")
+    assert pulls and all(item["exercise_id"] in {"band_row", "trx_row", "ring_row", "one_arm_row"} for item in pulls)
+    assert presses and all(item["exercise_id"] in {"band_overhead_press", "plate_overhead_press", "overhead_press"} for item in presses)
+    assert all(item["prescription"]["sets"] <= 2 for item in pulls + presses)
+    assert all(item["prescription"]["rir"] >= 3 for item in pulls + presses)
     tasks = [task for session in plan["sessions"] for task in session["learning_tasks"]]
     method_ids = {task["method_id"] for task in tasks}
     assert "scapular_coordination" in method_ids
     assert "light_implement_press" in method_ids
+    assert all(
+        {task["movement_pattern"] for task in session["learning_tasks"]}.issubset(
+            {pattern for pattern in ["squat", "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge"]}
+        )
+        for session in plan["sessions"]
+    )
 
 
 def test_unassessable_omits_pattern_until_assessment_is_available():
