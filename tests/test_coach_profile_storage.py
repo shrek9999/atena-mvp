@@ -895,3 +895,81 @@ def test_profile_next_program_is_blocked_when_storage_is_paused(monkeypatch, tmp
         json={"no_current_pain_or_restrictions": True},
     )
     assert response.status_code == 503
+
+
+def test_profile_program_uses_learning_phase_after_all_six_checklists_without_health_consent(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path, health_consent=False)
+    created = _create(client, health_consent=False)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    _save_six_pattern_assessment(client, profile_id, token)
+
+    import coach_routes
+    captured = {}
+
+    def fake_generate(profile, feedback=None, movement_assessment=None, movement_decisions=None):
+        captured["movement_decisions"] = movement_decisions
+        return {"goal": profile["goal"], "sessions": []}
+
+    monkeypatch.setattr(coach_routes, "generate_program", fake_generate)
+    response = client.post(
+        f"/coach/profile/{profile_id}/program",
+        headers={"X-Profile-Token": token},
+        json={"no_current_pain_or_restrictions": True},
+    )
+
+    assert response.status_code == 200, response.get_json()
+    decisions = captured["movement_decisions"]
+    assert set(decisions) == set(PATTERN_DEFINITIONS)
+    assert all(item["decision"] == "LEARN" for item in decisions.values())
+    assert all(item["training_phase"] == "movement_learning" for item in decisions.values())
+    assert all(item["user_report"]["status"] == "selected_for_learning" for item in decisions.values())
+
+
+def test_stateless_program_rejects_checklist_as_proof_of_movement_mastery(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path, health_consent=False)
+    created = _create(client, health_consent=False)
+    profile = created["profile"]["profile"]
+    decisions = {}
+    for pattern in PATTERN_DEFINITIONS:
+        if pattern == "squat":
+            criteria = {
+                "tempo": True, "balance": True, "knee_hip_foot_control": True,
+                "lumbopelvic_control": True, "tolerated_rom": True,
+            }
+            decisions[pattern] = {
+                "decision": "READY",
+                "training_phase": "capacity_development",
+                "user_report": {
+                    "status": "movement_controlled",
+                    "movement_control": {
+                        "confirmed_by_user": True, "repeatable": True, "criteria": criteria,
+                    },
+                },
+            }
+        else:
+            decisions[pattern] = {
+                "decision": "LEARN",
+                "training_phase": "movement_learning",
+                "user_report": {"status": "selected_for_learning"},
+            }
+    learning_progress = {
+        "version": "guided-six-pattern-learning-v1",
+        "patterns": {
+            pattern: {"criteria": {key: True for key in criteria}}
+            for pattern, criteria in LEARNING_CONTROL_CRITERIA.items()
+        },
+    }
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "pilot-test-secret"},
+        json={
+            "profile": profile,
+            "movement_assessment_consent": True,
+            "learning_progress": learning_progress,
+            "movement_decisions": decisions,
+        },
+    )
+
+    assert response.status_code == 400
+    assert "squat" in response.get_json()["invalid_report_patterns"]
