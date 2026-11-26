@@ -2854,7 +2854,7 @@ def coach_program():
             "assessment_required": True,
             "missing_patterns": missing_patterns,
             "unknown_patterns": unknown_patterns,
-            "message": localize("Za vsak od šestih gibalnih vzorcev izberi naslednji korak. Vzorce, ki se jih ne želiš učiti, preskoči; za individualni program izberi vsaj en vzorec za učenje ali prijavi simptome."),
+            "message": localize("Pred individualnim programom zaključi vseh šest vodenih učnih nalog."),
         }), 409
     valid_report_statuses = {"selected_for_learning", "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed"}
     invalid_report_patterns = []
@@ -2862,9 +2862,7 @@ def coach_program():
         report = record.get("user_report") if isinstance(record, dict) else None
         report_status = report.get("status") if isinstance(report, dict) else None
         decision = record.get("decision") if isinstance(record, dict) else None
-        expected_phase = "capacity_development" if decision == "READY" else (
-            "movement_learning" if decision in {"LEARN", "REGRESS"} else "excluded"
-        )
+        expected_phase = "movement_learning" if decision in {"LEARN", "REGRESS"} else "excluded"
         supplied_phase = record.get("training_phase") if isinstance(record, dict) else None
         if report_status not in valid_report_statuses:
             invalid_report_patterns.append(pattern)
@@ -2896,7 +2894,7 @@ def coach_program():
         }), 400
     assessable_patterns = [
         pattern for pattern, record in movement_decisions.items()
-        if isinstance(record, dict) and record.get("decision") in {"READY", "LEARN", "REGRESS"}
+        if isinstance(record, dict) and record.get("decision") in {"LEARN", "REGRESS"}
     ]
     if not assessable_patterns:
         return jsonify({
