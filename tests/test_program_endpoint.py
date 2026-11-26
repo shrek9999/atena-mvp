@@ -20,7 +20,7 @@ def _six_pattern_decisions():
         "hinge": "dowel_four_point",
         "horizontal_push": "incline_push_up",
         "horizontal_pull": "scapular_coordination",
-        "vertical_push": "unloaded_overhead_reach",
+        "vertical_push": "light_implement_press",
         "lunge": "supported_split_squat",
     }
     return {
@@ -628,7 +628,7 @@ def test_all_unmastered_patterns_can_form_a_learning_only_program(monkeypatch):
         "hinge": "dowel_four_point",
         "horizontal_push": "incline_push_up",
         "horizontal_pull": "scapular_coordination",
-        "vertical_push": "unloaded_overhead_reach",
+        "vertical_push": "light_implement_press",
         "lunge": "supported_split_squat",
     }
     decisions = {
