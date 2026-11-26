@@ -680,3 +680,44 @@ def test_all_unmastered_patterns_can_form_a_learning_only_program(monkeypatch):
 
 
 
+
+
+def test_program_endpoint_allows_one_temporarily_excluded_pattern(monkeypatch):
+    client = _client(monkeypatch)
+    learning = _complete_learning_progress()
+    learning["patterns"]["hinge"] = {
+        "status": "excluded",
+        "exclusion_reason": "pain",
+    }
+    decisions = _six_pattern_decisions()
+    from training.movement_coaching import build_movement_decision
+    decisions["hinge"] = {
+        **build_movement_decision(
+            "hinge", "UNASSESSABLE",
+            user_report={"status": "symptoms_reported"},
+            decision_reason="The user temporarily excluded this pattern because of symptoms.",
+        ),
+        "training_phase": "excluded",
+    }
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-secret"},
+        json={
+            "movement_assessment_consent": True,
+            "learning_progress": learning,
+            "movement_decisions": decisions,
+            "profile": {
+                "goal": "hypertrophy", "experience": "intermediate",
+                "equipment": ["dumbbell", "bench"], "sessions_per_week": 2,
+                "session_minutes": 60,
+            },
+        },
+    )
+    assert response.status_code == 200, response.get_json()
+    program = response.get_json()["program"]
+    assert all(
+        exercise.get("pattern") != "hinge"
+        for session in program["sessions"]
+        for exercise in session["exercises"]
+    )
+    assert program["movement_adaptation"]["structured_decisions"]["hinge"]["decision"] == "UNASSESSABLE"
