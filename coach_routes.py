@@ -66,6 +66,15 @@ LEARNING_CONTROL_CRITERIA = {
 
 LEARNING_EXCLUSION_REASONS = {"pain", "limitation", "uncertain", "deferred"}
 
+CAPACITY_CONTROL_CRITERIA = {
+    "squat": {"tempo", "balance", "knee_hip_foot_control", "lumbopelvic_control", "tolerated_rom"},
+    "hinge": {"tempo", "hip_hinge_coordination", "spine_control", "balance", "tolerated_rom"},
+    "horizontal_push": {"tempo", "shoulder_elbow_wrist_control", "trunk_control", "stable_support", "tolerated_rom"},
+    "horizontal_pull": {"tempo", "scapular_arm_control", "trunk_control", "stable_base", "tolerated_rom"},
+    "vertical_push": {"tempo", "overhead_control", "trunk_control", "balance", "tolerated_rom"},
+    "lunge": {"tempo", "balance", "pelvis_hip_knee_foot_control", "trunk_control", "tolerated_rom"},
+}
+
 def _validate_learning_progress_patterns(patterns, *, allow_in_progress=False):
     required_patterns = set(LEARNING_CONTROL_CRITERIA)
     if not isinstance(patterns, dict) or set(patterns) != required_patterns:
@@ -3953,6 +3962,17 @@ def coach_profile_program(profile_id):
         feedback, adaptation = _build_profile_adaptation(sessions)
         exercise_progressions = recommend_exercise_progression(sessions)
         positive_feedback_hold_exercises = _hold_successfully_confirmed_exercises(profile_id, token, sessions, exercise_progressions)
+        # Capacity development is earned from two comparable, completed and
+        # individually logged exposures. The progression engine has already
+        # checked set completion, controlled execution, prescribed tempo,
+        # per-set RIR, stable recovery and the absence of a symptom hold.
+        capacity_ready_patterns = {
+            item.get("pattern")
+            for item in exercise_progressions
+            if isinstance(item, dict)
+            and item.get("pattern") in CAPACITY_CONTROL_CRITERIA
+            and item.get("decision") in {"add_repetitions", "increase_load", "progress_variation"}
+        }
         longitudinal_progression = summarize_longitudinal_progression(sessions)
         conditioning_progression = summarize_conditioning_progress(sessions)
         adaptive_decision = _build_adaptive_decision(
@@ -4031,13 +4051,43 @@ def coach_profile_program(profile_id):
                     )
                     movement_decisions[pattern]["training_phase"] = "excluded"
                 else:
-                    movement_decisions[pattern] = build_movement_decision(
-                        pattern, "LEARN",
-                        selected_learning_method=method["id"],
-                        user_report={"status": "learning_completed_by_user"},
-                        decision_reason="Učna naloga je zaključena po uporabnikovi potrditvi. To ni dokaz objektivne tehnične obvladanosti; napredovanje temelji na ponovljivih izvedbah, obremenitvi in odzivu med vadbo ter po njej.",
-                    )
-                    movement_decisions[pattern]["training_phase"] = "movement_learning"
+                    if pattern in capacity_ready_patterns:
+                        movement_control = {
+                            "confirmed_by_user": True,
+                            "repeatable": True,
+                            "criteria": {
+                                key: True for key in CAPACITY_CONTROL_CRITERIA[pattern]
+                            },
+                        }
+                        movement_decisions[pattern] = build_movement_decision(
+                            pattern, "READY",
+                            selected_learning_method=method["id"],
+                            user_report={
+                                "status": "movement_controlled",
+                                "movement_control": movement_control,
+                            },
+                            decision_reason=(
+                                "Prehod iz učenja v razvoj osnovne zmogljivosti: uporabnik je zaključil "
+                                "učno nalogo in zabeležil najmanj dve primerljivi, dokončani izpostavitvi "
+                                "iste vaje z nadzorovano izvedbo, upoštevanim tempom, popolnimi serijami, "
+                                "vsaj 3 RIR in ustrezno regeneracijo. To potrjuje ponovljiv začetni nadzor, "
+                                "ne pa pripravljenosti za maksimalne obremenitve."
+                            ),
+                        )
+                        movement_decisions[pattern]["training_phase"] = "capacity_development"
+                    else:
+                        movement_decisions[pattern] = build_movement_decision(
+                            pattern, "LEARN",
+                            selected_learning_method=method["id"],
+                            user_report={"status": "learning_completed_by_user"},
+                            decision_reason=(
+                                "Učna naloga je zaključena po uporabnikovi potrditvi. To ni dokaz "
+                                "objektivne tehnične obvladanosti. Vzorec ostane v začetni fazi, "
+                                "dokler dve primerljivi vadbeni izpostavitvi ne potrdita ponovljive "
+                                "izvedbe, tempa, rezerve in ustrezne regeneracije."
+                            ),
+                        )
+                        movement_decisions[pattern]["training_phase"] = "movement_learning"
             guided_learning_applied = True
             learning_progress_version = learning_progress.get("version")
         else:
@@ -4058,6 +4108,7 @@ def coach_profile_program(profile_id):
             "training_cycle": training_cycle,
             "guided_learning_applied": guided_learning_applied,
             "learning_progress_version": learning_progress_version,
+            "capacity_development_patterns": sorted(capacity_ready_patterns),
         }
         store_add_program_version(
             profile_id, token, program_version_id, result, decision_record
@@ -4068,6 +4119,11 @@ def coach_profile_program(profile_id):
             "program_stored": True,
             "guided_learning_applied": guided_learning_applied,
             "learning_progress_version": learning_progress_version,
+            "capacity_development_patterns": sorted(capacity_ready_patterns),
+            "movement_training_phases": {
+                pattern: record.get("training_phase")
+                for pattern, record in movement_decisions.items()
+            },
             "movement_assessment_applied": not guided_learning_applied,
             "profile": profile["profile"],
             "adaptation_guidance": adaptation,
