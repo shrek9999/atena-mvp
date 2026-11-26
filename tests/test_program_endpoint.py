@@ -1,6 +1,6 @@
 from flask import Flask
 
-from coach_routes import coach_bp, LEARNING_CONTROL_CRITERIA
+from coach_routes import coach_bp, LEARNING_CONTROL_CRITERIA, LEARNING_CONTROL_CRITERIA
 
 
 def _client(monkeypatch):
