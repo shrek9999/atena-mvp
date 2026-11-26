@@ -66,7 +66,7 @@ LEARNING_CONTROL_CRITERIA = {
 
 LEARNING_EXCLUSION_REASONS = {"pain", "limitation", "uncertain", "deferred"}
 
-def _validate_learning_progress_patterns(patterns):
+def _validate_learning_progress_patterns(patterns, *, allow_in_progress=False):
     if not isinstance(patterns, dict) or set(patterns) != set(LEARNING_CONTROL_CRITERIA):
         return None, sorted(set(LEARNING_CONTROL_CRITERIA) - set(patterns or {})) if isinstance(patterns, dict) else sorted(LEARNING_CONTROL_CRITERIA)
     normalized = {}
@@ -84,14 +84,24 @@ def _validate_learning_progress_patterns(patterns):
                 continue
             normalized[pattern] = {"status": "excluded", "exclusion_reason": reason}
             continue
-        if status != "completed" or set(item) not in ({"criteria"}, {"status", "criteria"}):
+        if status not in {"completed", "in_progress"} or set(item) not in ({"criteria"}, {"status", "criteria"}):
             incomplete.append(pattern)
             continue
         criteria = item.get("criteria")
-        if not isinstance(criteria, dict) or set(criteria) != required or any(value is not True for value in criteria.values()):
+        if not isinstance(criteria, dict) or set(criteria) != required or any(not isinstance(value, bool) for value in criteria.values()):
             incomplete.append(pattern)
             continue
-        normalized[pattern] = {"status": "completed", "criteria": dict(criteria)}
+        complete = all(criteria.values())
+        if status == "completed" and not complete:
+            incomplete.append(pattern)
+            continue
+        if status == "in_progress" and (not allow_in_progress or complete):
+            incomplete.append(pattern)
+            continue
+        normalized[pattern] = {
+            "status": "completed" if complete else "in_progress",
+            "criteria": dict(criteria),
+        }
     return (normalized if not incomplete else None), incomplete
 
 
@@ -3739,7 +3749,9 @@ def coach_profile_learning_progress(profile_id):
         payload = request.get_json(silent=True)
         if not isinstance(payload, dict) or set(payload) != {"patterns"}:
             return jsonify({"error": "Pošlji šest učnih vzorcev."}), 400
-        normalized_patterns, invalid_patterns = _validate_learning_progress_patterns(payload["patterns"])
+        normalized_patterns, invalid_patterns = _validate_learning_progress_patterns(
+            payload["patterns"], allow_in_progress=True
+        )
         if invalid_patterns:
             return jsonify({
                 "error": "Pri vsakem vzorcu zaključi učenje ali ga začasno izloči z razlogom.",
@@ -3755,10 +3767,11 @@ def coach_profile_learning_progress(profile_id):
                 }
             else:
                 checks = dict(item["criteria"])
+                completed = item["status"] == "completed"
                 normalized[pattern] = {
-                    "status": "completed",
+                    "status": "completed" if completed else "in_progress",
                     "criteria_acknowledged": checks,
-                    "learning_completed_by_user": True,
+                    "learning_completed_by_user": completed,
                 }
         record = {
             "version": "guided-six-pattern-learning-v1",
