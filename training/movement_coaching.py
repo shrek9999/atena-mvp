@@ -152,6 +152,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "learning_methods": [
             {
                 "id": "light_implement_press",
+                "learning_only": True,
                 "label": "Potisk nad glavo z zelo lahkim pripomočkom",
                 "description": "Izvedi dejanski potisk in kontroliran povratek z zelo lahkim pripomočkom. Izberi izvedbo, ki ustreza tvoji opremi in trenutnim sposobnostim; ne sili v končni položaj in ne povečuj bremena zaradi samega zaključka učne naloge.",
                 "exercise_id": None,
