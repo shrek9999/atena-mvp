@@ -3805,7 +3805,6 @@ def save_six_pattern_movement_assessment(profile_id):
         "guided_learning_required": True,
     }), 410
 
-
 @coach_bp.route("/coach/profile/<profile_id>/progress", methods=["GET", "OPTIONS"])
 def coach_training_progress(profile_id):
     """Return descriptive training trends; never prescribe automatic load increases."""
