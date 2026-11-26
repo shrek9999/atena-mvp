@@ -688,7 +688,7 @@ def generate_program(
                         )
                         method_id = method["id"] if method else None
             if report_status is not None and report_status not in {
-                "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled"
+                "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled", "learning_completed_by_user"
             }:
                 raise ProgramValidationError(f"Neveljaven status uporabnikovega poročila za {pattern}.")
             if report_status in {"uncertain", "not_assessed"} and decision != "UNASSESSABLE":
