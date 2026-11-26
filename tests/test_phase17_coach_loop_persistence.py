@@ -2,7 +2,7 @@ import sqlite3
 
 from flask import Flask
 
-from coach_routes import coach_bp
+from coach_routes import coach_bp, LEARNING_CONTROL_CRITERIA
 from training.catalogue import load_catalogue
 from training.movement_coaching import PATTERN_DEFINITIONS
 
@@ -39,53 +39,40 @@ def _client(monkeypatch, tmp_path, *, health_consent=True, profile=None, databas
     return client, payload["profile"]["profile_id"], payload["profile_access_token"], database
 
 
-def test_movement_assessment_is_persisted_only_with_separate_health_consent(monkeypatch, tmp_path):
-    client, profile_id, token, _ = _client(monkeypatch, tmp_path, health_consent=False)
+def test_legacy_movement_self_assessment_is_retired_regardless_of_health_consent(monkeypatch, tmp_path):
+    for health_consent in (False, True):
+        client, profile_id, token, _ = _client(monkeypatch, tmp_path, health_consent=health_consent)
+        response = client.put(
+            f"/coach/profile/{profile_id}/assessment",
+            headers={"X-Profile-Token": token},
+            json={"movement_tasks": {"squat": {"status": "needs_support"}}},
+        )
+        assert response.status_code == 410
+        assert response.get_json()["guided_learning_required"] is True
+
+
+
+def _save_six_pattern_learning_progress(client, profile_id, token, incomplete_patterns=None):
+    incomplete_patterns = set(incomplete_patterns or [])
     response = client.put(
-        f"/coach/profile/{profile_id}/assessment",
-        headers={"X-Profile-Token": token},
-        json={"movement_tasks": {"squat": {"status": "needs_support"}}},
-    )
-    assert response.status_code == 403
-
-    client, profile_id, token, _ = _client(monkeypatch, tmp_path, health_consent=True)
-    response = client.put(
-        f"/coach/profile/{profile_id}/assessment",
-        headers={"X-Profile-Token": token},
-        json={"movement_tasks": {
-            "squat": {"status": "needs_support"},
-            "hinge": {"status": "comfortable"},
-        }},
-    )
-    assert response.status_code == 200
-    body = response.get_json()
-    assert body["assessment_stored"] is True
-    assert body["assessment"]["is_diagnosis"] is False
-    assert body["assessment"]["automatic_programme_change"] == "none"
-
-
-
-def _save_six_pattern_assessment(client, profile_id, token, *, status="comfortable", statuses=None):
-    response = client.put(
-        f"/coach/profile/{profile_id}/movement-assessment",
+        f"/coach/profile/{profile_id}/learning-progress",
         headers={"X-Profile-Token": token},
         json={
-            "movement_assessment_consent": True,
-            "movement_patterns": {
-                pattern: {"status": (statuses or {}).get(pattern, status)}
-                for pattern in PATTERN_DEFINITIONS
-            },
+            "patterns": {
+                pattern: {"criteria": {key: pattern not in incomplete_patterns for key in criteria}}
+                for pattern, criteria in LEARNING_CONTROL_CRITERIA.items()
+            }
         },
     )
     assert response.status_code == 200, response.get_json()
     return response.get_json()
 
 
-def test_saved_movement_assessment_is_used_when_generating_next_programme(monkeypatch, tmp_path):
+def test_saved_guided_learning_progress_is_used_when_generating_next_programme(monkeypatch, tmp_path):
     import coach_routes
 
     client, profile_id, token, _ = _client(monkeypatch, tmp_path, health_consent=True)
-    saved = _save_six_pattern_assessment(client, profile_id, token)
+    saved = _save_six_pattern_learning_progress(client, profile_id, token)
 
     called = {}
     def fake_generate_program(profile, feedback=None, movement_assessment=None, movement_decisions=None):
@@ -102,13 +89,14 @@ def test_saved_movement_assessment_is_used_when_generating_next_programme(monkey
     assert response.status_code == 200
     assert called["movement_assessment"] is None
     assert set(called["movement_decisions"]) == set(PATTERN_DEFINITIONS)
-    assert response.get_json()["movement_assessment_applied"] is True
+    assert response.get_json()["guided_learning_applied"] is True
+    assert response.get_json()["movement_assessment_applied"] is False
     assert response.get_json()["program_stored"] is True
 
 
-def test_saved_profile_programme_blocks_when_all_patterns_are_unassessable(monkeypatch, tmp_path):
-    client, profile_id, token, _ = _client(monkeypatch, tmp_path, health_consent=True)
-    _save_six_pattern_assessment(client, profile_id, token, status="not_assessed")
+def test_saved_profile_programme_blocks_when_a_learning_task_is_incomplete(monkeypatch, tmp_path):
+    client, profile_id, token, _ = _client(monkeypatch, tmp_path, health_consent=False)
+    _save_six_pattern_learning_progress(client, profile_id, token, incomplete_patterns={"squat"})
     response = client.post(
         f"/coach/profile/{profile_id}/program",
         headers={"X-Profile-Token": token},
@@ -117,8 +105,8 @@ def test_saved_profile_programme_blocks_when_all_patterns_are_unassessable(monke
     assert response.status_code == 409
     body = response.get_json()
     assert body["blocked"] is True
-    assert body["assessment_required"] is True
-    assert "Noben gibalni vzorec še ni primeren za vključitev v program." in body["message"]
+    assert body["learning_required"] is True
+    assert "squat" in body["missing_patterns"]
 
 
 def test_programme_versions_are_listed_and_included_in_export(monkeypatch, tmp_path):
@@ -156,18 +144,14 @@ def test_programme_versions_are_listed_and_included_in_export(monkeypatch, tmp_p
     )
     assert exported.status_code == 200
     assert exported.get_json()["export_version"] == "1.2"
+    assert exported.get_json()["learning_progress"] is not None
     assert len(exported.get_json()["program_versions"]) == 1
 
 
-def test_health_data_consent_withdrawal_erases_assessment_and_heart_rate(monkeypatch, tmp_path):
+def test_health_data_consent_withdrawal_erases_health_data_but_keeps_learning_progress(monkeypatch, tmp_path):
     client, profile_id, token, database = _client(monkeypatch, tmp_path, health_consent=True)
     headers = {"X-Profile-Token": token}
-    assessment = client.put(
-        f"/coach/profile/{profile_id}/assessment",
-        headers=headers,
-        json={"movement_tasks": {"squat": {"status": "symptoms_reported"}}},
-    )
-    assert assessment.status_code == 200
+    _save_six_pattern_learning_progress(client, profile_id, token)
 
     exercise_id = next(item["id"] for item in load_catalogue() if item["id"] == "push_up")
     logged = client.post(
@@ -219,6 +203,12 @@ def test_health_data_consent_withdrawal_erases_assessment_and_heart_rate(monkeyp
     conn.close()
     assert assessment_count == 0
     assert "average_heart_rate" not in session_json
+    learning = client.get(
+        f"/coach/profile/{profile_id}/learning-progress",
+        headers=headers,
+    )
+    assert learning.status_code == 200
+    assert learning.get_json()["learning_progress"] is not None
 
 
 
