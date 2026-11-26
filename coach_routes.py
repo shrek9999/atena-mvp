@@ -2927,7 +2927,12 @@ def coach_program():
     for pattern, learning_item in learning_patterns.items():
         record = movement_decisions.get(pattern, {})
         if learning_item["status"] == "excluded":
-            if record.get("decision") != "UNASSESSABLE":
+            pain_regression = (
+                learning_item.get("exclusion_reason") == "pain"
+                and record.get("decision") == "REGRESS"
+                and record.get("user_report", {}).get("status") == "symptoms_reported"
+            )
+            if record.get("decision") != "UNASSESSABLE" and not pain_regression:
                 inconsistent_learning.append(pattern)
         elif record.get("decision") not in {"LEARN", "REGRESS"}:
             inconsistent_learning.append(pattern)
