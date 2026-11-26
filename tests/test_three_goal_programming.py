@@ -77,7 +77,7 @@ def test_three_day_functional_program_rotates_vertical_patterns_and_stays_within
     patterns = {item["pattern"] for session in plan["sessions"] for item in session["exercises"]}
     assert {"vertical_push", "vertical_pull"}.issubset(patterns)
     assert all(session["exercise_count"] <= 6 for session in plan["sessions"])
-    assert {"lunge", "locomotion", "conditioning"} & patterns
+    assert {"lunge", "locomotion", "conditioning"}.issubset(patterns)
 
 
 @pytest.mark.parametrize("experience", LEVELS)
