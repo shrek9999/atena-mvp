@@ -614,6 +614,25 @@ def test_six_pattern_assessment_requires_separate_health_data_consent(monkeypatc
     )
     assert response.status_code == 403
 
+def test_withdrawing_health_data_consent_keeps_separate_learning_progress(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    _save_six_pattern_assessment(client, profile_id, token)
+    withdrawn = client.post(
+        f"/coach/profile/{profile_id}/consent",
+        headers={"X-Profile-Token": token},
+        json={"health_data_consent": False},
+    )
+    assert withdrawn.status_code == 200
+    restored = client.get(
+        f"/coach/profile/{profile_id}/learning-progress",
+        headers={"X-Profile-Token": token},
+    )
+    assert restored.status_code == 200
+    assert all(item["learning_completed_by_user"] for item in restored.get_json()["learning_progress"]["patterns"].values())
+
 def test_profile_program_waits_for_all_six_learning_tasks_without_health_consent(monkeypatch, tmp_path):
     client = _client(monkeypatch, tmp_path)
     created = _create(client, health_consent=False)
