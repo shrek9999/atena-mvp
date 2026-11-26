@@ -86,6 +86,22 @@ def test_program_endpoint_accepts_six_completed_guided_learning_checklists(monke
     )
     assert response.status_code == 200, response.get_json()
 
+def test_program_endpoint_requires_learning_progress_before_generating_a_programme(monkeypatch):
+    response = _client(monkeypatch).post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-secret"},
+        json={
+            "movement_assessment_consent": True,
+            "movement_decisions": _six_pattern_decisions(),
+            "goal": "hypertrophy", "experience": "intermediate",
+            "equipment": ["dumbbell", "bench"], "sessions_per_week": 2,
+            "session_minutes": 60,
+        },
+    )
+    assert response.status_code == 409
+    assert response.get_json()["learning_required"] is True
+
+
 def test_program_endpoint_requires_pilot_token(monkeypatch):
     response = _client(monkeypatch).post("/coach/program", json={
         "goal": "hypertrophy", "experience": "intermediate",
