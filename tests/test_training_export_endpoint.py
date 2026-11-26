@@ -44,7 +44,7 @@ def test_profile_export_requires_profile_token_and_disables_caching(monkeypatch)
     assert response.headers["Cache-Control"] == "no-store, private"
     assert "attachment" in response.headers["Content-Disposition"]
     payload = response.get_json()
-    assert payload["export_version"] == "1.1"
+    assert payload["export_version"] == "1.2"
     assert payload["movement_assessment"] is None
     assert payload["program_versions"] == []
     assert payload["profile"]["profile_id"] == "example"
