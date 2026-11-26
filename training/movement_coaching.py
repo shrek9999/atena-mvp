@@ -145,22 +145,15 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
     "vertical_push": {
         "label": "Vertikalni potisk – potisk nad glavo",
         "task_id": "overhead_press",
-        "task": "Najprej nadzorovan dvig rok nad glavo brez bremena; zunanji upor se uvede šele po potrjenem nadzoru poti rok, trupa in tolerirane amplitude.",
+        "task": "Potisk nad glavo z zelo lahkim, primernim pripomočkom in obsegom, ki ga lahko nadzoruješ. Vzorec vključuje dejanski potisk in kontroliran povratek, ne zgolj dviga rok.",
         "exercise_ids": [
             "band_overhead_press", "overhead_press", "plate_overhead_press", "barbell_overhead_press", "pike_push_up",
         ],
         "learning_methods": [
             {
-                "id": "unloaded_overhead_reach",
-                "learning_only": True,
-                "label": "Dvig rok nad glavo brez bremena",
-                "description": "Vadi počasen dvig in spust rok brez zunanjega bremena. Ohrani nadzor trupa in reber ter se ustavi v amplitudi, ki jo lahko ponoviš brez kompenzacije.",
-                "exercise_id": None,
-            },
-            {
                 "id": "light_implement_press",
-                "label": "Potisk z zelo lahkim pripomočkom",
-                "description": "Uporabi palico, lahko ploščo, ročki ali elastiko. Pripomoček in breme zabeleži; različne izvedbe niso samodejno enakovredne.",
+                "label": "Potisk nad glavo z zelo lahkim pripomočkom",
+                "description": "Izvedi dejanski potisk in kontroliran povratek z zelo lahkim pripomočkom. Izberi izvedbo, ki ustreza tvoji opremi in trenutnim sposobnostim; ne sili v končni položaj in ne povečuj bremena zaradi samega zaključka učne naloge.",
                 "exercise_id": None,
             },
             {
