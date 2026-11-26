@@ -3774,7 +3774,7 @@ def coach_profile_learning_progress(profile_id):
                     "learning_completed_by_user": completed,
                 }
         record = {
-            "version": "guided-six-pattern-learning-v1",
+            "version": "guided-six-pattern-learning-v2",
             "patterns": normalized,
             "meaning": "User-confirmed learning completion only; not objective technique verification.",
         }
