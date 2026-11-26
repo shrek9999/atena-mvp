@@ -623,7 +623,7 @@ def test_camera_v4_protocol_accepts_nine_views_for_frontal_lunge(monkeypatch):
     assert body["camera_observations"]["lunge"]["observations"]["hip_extension_excursion_proxy_deg"] == 28
     assert body["camera_observations_used_for_programme_decisions"] is False
 
-def test_program_endpoint_accepts_current_vertical_push_and_lunge_mastery_criteria(monkeypatch):
+def test_program_endpoint_rejects_self_reported_readiness_even_with_all_pattern_criteria(monkeypatch):
     from training.movement_coaching import build_movement_decision
 
     decisions = _six_pattern_decisions()
@@ -666,6 +666,7 @@ def test_program_endpoint_accepts_current_vertical_push_and_lunge_mastery_criter
         headers={"X-Pilot-Token": "test-only-secret"},
         json={
             "movement_assessment_consent": True,
+            "learning_progress": _complete_learning_progress(),
             "movement_decisions": decisions,
             "profile": {
                 "goal": "functional",
@@ -676,7 +677,7 @@ def test_program_endpoint_accepts_current_vertical_push_and_lunge_mastery_criter
             },
         },
     )
-    assert response.status_code == 200, response.get_json()
+    assert response.status_code == 400
 
 def test_learn_decision_creates_learning_task_not_a_loaded_work_set(monkeypatch):
     from training.program import generate_program
