@@ -4,7 +4,7 @@ import sqlite3
 
 from flask import Flask
 
-from coach_routes import coach_bp
+from coach_routes import coach_bp, LEARNING_CONTROL_CRITERIA
 from training.catalogue import load_catalogue
 
 
@@ -141,18 +141,18 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     assert blocked.status_code == 409
     assert blocked.get_json()["blocked"] is True
 
-    assessment = client.put(
-        f"/coach/profile/{profile_id}/movement-assessment",
+    learning = client.put(
+        f"/coach/profile/{profile_id}/learning-progress",
         headers=headers,
         json={
-            "movement_assessment_consent": True,
-            "movement_patterns": {
-                pattern: {"status": "comfortable"}
-                for pattern in __import__("training.movement_coaching", fromlist=["PATTERN_DEFINITIONS"]).PATTERN_DEFINITIONS
+            "patterns": {
+                pattern: {"criteria": {key: True for key in criteria}}
+                for pattern, criteria in LEARNING_CONTROL_CRITERIA.items()
             },
         },
     )
-    assert assessment.status_code == 200
+    assert learning.status_code == 200
+    assert all(item["learning_completed_by_user"] for item in learning.get_json()["learning_progress"]["patterns"].values())
 
     allowed = client.post(
         f"/coach/profile/{profile_id}/program",
@@ -168,9 +168,10 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     assert exported.headers["Cache-Control"] == "no-store, private"
     assert "attachment" in exported.headers["Content-Disposition"]
     export_data = exported.get_json()
-    assert export_data["export_version"] == "1.1"
+    assert export_data["export_version"] == "1.2"
     assert "program_versions" in export_data
     assert "movement_assessment" in export_data
+    assert export_data["learning_progress"] is not None
     assert len(export_data["sessions"]) == 1
     assert export_data["sessions"][0]["session"]["discomfort_reported"] is True
 
@@ -187,6 +188,9 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     assert "discomfort_reported" not in saved_session
     assert saved_session["exercises"]
     assert saved_session["conditioning"]
+    restored_learning = client.get(f"/coach/profile/{profile_id}/learning-progress", headers=headers)
+    assert restored_learning.status_code == 200
+    assert restored_learning.get_json()["learning_progress"] is not None
 
     safe_export = client.get(f"/coach/profile/{profile_id}/export", headers=headers)
     assert safe_export.status_code == 200
