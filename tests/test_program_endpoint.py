@@ -42,6 +42,14 @@ def _complete_learning_progress():
         pattern: {"criteria": {key: True for key in criteria}}
         for pattern, criteria in LEARNING_CONTROL_CRITERIA.items()
     }}
+
+
+
+def _completed_six_pattern_decisions():
+    decisions = _six_pattern_decisions()
+    for record in decisions.values():
+        record["user_report"]["status"] = "learning_completed_by_user"
+    return decisions
 def test_program_endpoint_requires_all_six_guided_learning_checklists_when_payload_is_supplied(monkeypatch):
     client = _client(monkeypatch)
     learning = {"patterns": {
