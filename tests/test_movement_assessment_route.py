@@ -2,6 +2,8 @@ import pytest
 from flask import Flask
 
 from coach_routes import coach_bp
+from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
+from coach_routes import LEARNING_CONTROL_CRITERIA
 
 
 @pytest.fixture
@@ -12,230 +14,139 @@ def client(monkeypatch):
     return app.test_client()
 
 
-def test_movement_assessment_requires_pilot_token(client):
+def _learning_progress(complete=True):
+    return {
+        "patterns": {
+            pattern: {"criteria": {key: complete for key in criteria}}
+            for pattern, criteria in LEARNING_CONTROL_CRITERIA.items()
+        }
+    }
+
+
+def _decisions(status="selected_for_learning"):
+    methods = {
+        "squat": "reaching_counterbalance",
+        "hinge": "wall_hip_hinge",
+        "horizontal_push": "incline_push_up",
+        "horizontal_pull": "scapular_coordination",
+        "vertical_push": "unloaded_overhead_reach",
+        "lunge": "supported_split_squat",
+    }
+    return {
+        pattern: build_movement_decision(
+            pattern, "LEARN",
+            selected_learning_method=methods[pattern],
+            user_report={"status": status},
+            decision_reason="Guided learning task completed; technique mastery is not certified.",
+        )
+        for pattern in PATTERN_DEFINITIONS
+    }
+
+
+def _program_payload():
+    return {
+        "movement_assessment_consent": True,
+        "learning_progress": _learning_progress(),
+        "movement_decisions": _decisions(),
+        "profile": {
+            "goal": "functional", "experience": "beginner",
+            "equipment": ["bodyweight", "dumbbell", "bench", "household_support", "wall"],
+            "sessions_per_week": 2, "session_minutes": 45,
+        },
+    }
+
+
+def test_legacy_standalone_movement_assessment_is_retired(client):
     response = client.post(
         "/coach/movement-assessment",
+        headers={"X-Pilot-Token": "test-only-token"},
         json={"assessment": {"squat": "comfortable"}},
     )
-    assert response.status_code == 403
+    assert response.status_code == 410
+    assert response.get_json()["guided_learning_required"] is True
 
 
-def test_movement_assessment_returns_stateless_conservative_result(client):
-    response = client.post(
-        "/coach/movement-assessment",
-        headers={"X-Pilot-Token": "test-only-token"},
-        json={"assessment": {"squat": "comfortable", "hinge": "needs_support"}},
+def test_legacy_profile_movement_assessment_is_retired(client):
+    response = client.put(
+        "/coach/profile/test-profile/movement-assessment",
+        headers={"X-Profile-Token": "unused"},
+        json={"movement_assessment_consent": True, "movement_patterns": {}},
     )
-    assert response.status_code == 200
-    body = response.get_json()
-    assert body["stored"] is False
-    assert body["source"] == "self_reported_movement_assessment"
-    assert body["assessment"]["automatic_programme_change"] == "none"
-    assert body["assessment"]["coaching_guidance"]["consider_supported_or_simpler_variation"] == ["hinge"]
+    assert response.status_code == 410
+    assert response.get_json()["guided_learning_required"] is True
 
 
-def test_movement_assessment_rejects_invalid_payload(client):
-    response = client.post(
-        "/coach/movement-assessment",
-        headers={"X-Pilot-Token": "test-only-token"},
-        json={"assessment": {"jump": "comfortable"}},
-    )
-    assert response.status_code == 400
-
-
-def test_movement_assessment_preflight_is_available(client):
-    response = client.options("/coach/movement-assessment")
-    assert response.status_code == 204
-
-
-def test_program_route_requires_all_six_pattern_decisions(monkeypatch, client):
+def test_program_route_requires_all_six_guided_learning_tasks(client, monkeypatch):
     import coach_routes
-    from training.movement_coaching import PATTERN_DEFINITIONS
 
     def should_not_run(*args, **kwargs):
-        raise AssertionError("Programme generator must not run before all six patterns are assessed.")
+        raise AssertionError("Programme generation must not run before all six learning tasks.")
 
     monkeypatch.setattr(coach_routes, "generate_program", should_not_run)
+    payload = _program_payload()
+    payload.pop("learning_progress")
     response = client.post(
         "/coach/program",
         headers={"X-Pilot-Token": "test-only-token"},
-        json={
-            "movement_assessment_consent": True,
-            "profile": {"goal": "functional", "experience": "beginner"},
-        },
+        json=payload,
     )
     assert response.status_code == 409
     body = response.get_json()
-    assert body["assessment_required"] is True
+    assert body["learning_required"] is True
     assert set(body["missing_patterns"]) == set(PATTERN_DEFINITIONS)
 
 
-def test_program_route_rejects_legacy_partial_assessment(monkeypatch, client):
+def test_program_route_blocks_incomplete_learning_checklists(client, monkeypatch):
     import coach_routes
 
     def should_not_run(*args, **kwargs):
-        raise AssertionError("Legacy partial assessment must not reach programme generation.")
+        raise AssertionError("Programme generation must wait for all six completed checklists.")
 
     monkeypatch.setattr(coach_routes, "generate_program", should_not_run)
+    payload = _program_payload()
+    payload["learning_progress"] = _learning_progress(complete=False)
     response = client.post(
         "/coach/program",
         headers={"X-Pilot-Token": "test-only-token"},
-        json={
-            "movement_assessment_consent": True,
-            "profile": {"goal": "functional", "experience": "beginner"},
-            "movement_assessment": {"squat": "needs_support", "hinge": "comfortable"},
-        },
+        json=payload,
     )
     assert response.status_code == 409
-    assert response.get_json()["assessment_required"] is True
+    assert response.get_json()["learning_required"] is True
 
 
-def test_program_route_requires_explicit_movement_assessment_consent(client):
-    from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
-
-    decisions = {
-        pattern: build_movement_decision(pattern, "READY")
-        for pattern in PATTERN_DEFINITIONS
-    }
-    response = client.post(
-        "/coach/program",
-        headers={"X-Pilot-Token": "test-only-token"},
-        json={
-            "profile": {
-                "goal": "functional", "experience": "beginner",
-                "equipment": ["bodyweight"], "sessions_per_week": 2,
-                "session_minutes": 45,
-            },
-            "movement_decisions": decisions,
-        },
-    )
-    assert response.status_code == 403
-    assert response.get_json()["consent_required"] is True
-
-
-def test_program_route_blocks_when_all_six_patterns_are_unassessable(monkeypatch, client):
+def test_program_route_never_promotes_user_checklist_to_ready(client, monkeypatch):
     import coach_routes
-    from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
 
     def should_not_run(*args, **kwargs):
-        raise AssertionError("No programme may be generated without at least one assessable pattern.")
+        raise AssertionError("A user checklist cannot certify movement readiness.")
 
     monkeypatch.setattr(coach_routes, "generate_program", should_not_run)
-    decisions = {
-        pattern: build_movement_decision(
-            pattern, "UNASSESSABLE",
-            user_report={"status": "not_assessed"},
-            decision_reason="Naloga ni bila ocenjena.",
-        )
-        for pattern in PATTERN_DEFINITIONS
-    }
-    response = client.post(
-        "/coach/program",
-        headers={"X-Pilot-Token": "test-only-token"},
-        json={
-            "movement_assessment_consent": True,
-            "profile": {
-                "goal": "functional", "experience": "beginner",
-                "equipment": ["bodyweight"], "sessions_per_week": 2,
-                "session_minutes": 45,
-            },
-            "movement_decisions": decisions,
-        },
-    )
-    assert response.status_code == 409
-    assert response.get_json()["assessment_required"] is True
-    assert "vsaj en vzorec varno oceniti" in response.get_json()["message"]
-
-
-def test_program_route_requires_explicit_user_report_for_each_pattern(client):
-    from training.movement_coaching import PATTERN_DEFINITIONS
-
-    decisions = {
-        pattern: {"movement_pattern": pattern, "decision": "READY"}
-        for pattern in PATTERN_DEFINITIONS
-    }
-    response = client.post(
-        "/coach/program",
-        headers={"X-Pilot-Token": "test-only-token"},
-        json={
-            "movement_assessment_consent": True,
-            "profile": {
-                "goal": "functional", "experience": "beginner",
-                "equipment": ["bodyweight"], "sessions_per_week": 2,
-                "session_minutes": 45,
-            },
-            "movement_decisions": decisions,
-        },
-    )
-    assert response.status_code == 400
-    assert set(response.get_json()["invalid_report_patterns"]) == set(PATTERN_DEFINITIONS)
-
-
-def test_program_route_rejects_ready_decision_when_user_report_is_unassessed(client):
-    from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
-
-    decisions = {
-        pattern: build_movement_decision(pattern, "LEARN", user_report={"status": "comfortable"})
-        for pattern in PATTERN_DEFINITIONS
-    }
-    decisions["squat"]["user_report"] = {"status": "not_assessed"}
-    response = client.post(
-        "/coach/program",
-        headers={"X-Pilot-Token": "test-only-token"},
-        json={
-            "movement_assessment_consent": True,
-            "profile": {
-                "goal": "functional", "experience": "beginner",
-                "equipment": ["bodyweight"], "sessions_per_week": 2,
-                "session_minutes": 45,
-            },
-            "movement_decisions": decisions,
-        },
-    )
-    assert response.status_code == 400
-    assert response.get_json()["invalid_report_patterns"] == ["squat"]
-
-
-def test_program_route_rejects_comfortable_self_report_as_ready(client):
-    from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
-
-    decisions = {
-        pattern: build_movement_decision(
-            pattern, "LEARN", user_report={"status": "comfortable"}
-        )
-        for pattern in PATTERN_DEFINITIONS
-    }
-    decisions["squat"] = build_movement_decision(
+    payload = _program_payload()
+    payload["movement_decisions"]["squat"] = build_movement_decision(
         "squat", "READY", user_report={"status": "comfortable"}
     )
-    decisions["squat"]["training_phase"] = "capacity_development"
+    payload["movement_decisions"]["squat"]["training_phase"] = "capacity_development"
     response = client.post(
         "/coach/program",
         headers={"X-Pilot-Token": "test-only-token"},
-        json={
-            "movement_assessment_consent": True,
-            "profile": {
-                "goal": "functional", "experience": "beginner",
-                "equipment": ["bodyweight"], "sessions_per_week": 2,
-                "session_minutes": 45,
-            },
-            "movement_decisions": decisions,
-        },
+        json=payload,
     )
     assert response.status_code == 400
     assert response.get_json()["invalid_report_patterns"] == ["squat"]
 
 
-def test_program_route_accepts_ready_only_with_repeatable_control_checklist(monkeypatch, client):
+def test_program_route_passes_learning_completion_as_non_ready_starter_state(client, monkeypatch):
     import coach_routes
-    from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
+
+    captured = {}
 
     def fake_generate_program(profile, feedback=None, movement_assessment=None, movement_decisions=None, camera_coordination_observed=False):
+        captured["decisions"] = movement_decisions
         return {
             "goal": "functional",
             "sessions": [{"session": 1, "exercises": [], "learning_tasks": []}],
             "movement_adaptation": {
-                "source": "structured_six_pattern_decisions",
+                "source": "guided_six_pattern_learning",
                 "is_diagnosis": False,
                 "events": [],
                 "summary": None,
@@ -243,129 +154,44 @@ def test_program_route_accepts_ready_only_with_repeatable_control_checklist(monk
         }
 
     monkeypatch.setattr(coach_routes, "generate_program", fake_generate_program)
-    decisions = {
-        pattern: build_movement_decision(
-            pattern, "LEARN", user_report={"status": "comfortable"}
-        )
-        for pattern in PATTERN_DEFINITIONS
-    }
-    decisions["squat"] = build_movement_decision(
-        "squat", "READY", user_report={
-            "status": "movement_controlled",
-            "movement_control": {
-                "confirmed_by_user": True, "repeatable": True,
-                "criteria": {
-                    "tempo": True, "balance": True, "knee_hip_foot_control": True,
-                    "lumbopelvic_control": True, "tolerated_rom": True,
-                },
-            },
-        }
-    )
-    decisions["squat"]["training_phase"] = "capacity_development"
     response = client.post(
         "/coach/program",
         headers={"X-Pilot-Token": "test-only-token"},
-        json={
-            "movement_assessment_consent": True,
-            "profile": {
-                "goal": "functional", "experience": "beginner",
-                "equipment": ["bodyweight"], "sessions_per_week": 2,
-                "session_minutes": 45,
-            },
-            "movement_decisions": decisions,
-        },
-    )
-    assert response.status_code == 200
-
-
-def test_program_route_passes_structured_six_pattern_decisions(monkeypatch, client):
-    import coach_routes
-    from training.movement_coaching import build_movement_decision
-
-    called = {}
-
-    def fake_generate_program(profile, feedback=None, movement_assessment=None, movement_decisions=None, camera_coordination_observed=False):
-        called["movement_decisions"] = movement_decisions
-        return {
-            "goal": "hypertrophy",
-            "sessions": [{"session": 1, "exercises": [], "learning_tasks": []}],
-            "movement_adaptation": {
-                "source": "structured_six_pattern_decisions",
-                "is_diagnosis": False,
-                "events": [],
-                "summary": None,
-            },
-        }
-
-    monkeypatch.setattr(coach_routes, "generate_program", fake_generate_program)
-    decisions = {
-        pattern: build_movement_decision(
-            pattern, "LEARN",
-            user_report={"status": "comfortable"},
-            decision_reason="Samoocena je udobna; najprej preveri motorični nadzor.",
-        )
-        for pattern in ("squat", "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge")
-    }
-    response = client.post(
-        "/coach/program",
-        headers={"X-Pilot-Token": "test-only-token"},
-        json={
-            "movement_assessment_consent": True,
-            "profile": {
-                "goal": "hypertrophy", "experience": "beginner",
-                "equipment": ["bodyweight", "dumbbell", "chair", "wall", "household_support"],
-                "sessions_per_week": 2, "session_minutes": 45,
-            },
-            "movement_decisions": decisions,
-        },
+        json=_program_payload(),
     )
     assert response.status_code == 200
     body = response.get_json()
-    assert set(called["movement_decisions"]) == set(decisions)
-    assert called["movement_decisions"]["squat"]["decision"] == "LEARN"
-    assert body["movement_assessment_applied"] is True
-    assert body["movement_decisions_stored"] is False
-    assert body["movement_adaptation"]["source"] == "structured_six_pattern_decisions"
+    assert body["guided_learning_applied"] is True
+    assert body["movement_assessment_applied"] is False
+    assert all(item["decision"] == "LEARN" for item in captured["decisions"].values())
+    assert all(item["user_report"]["status"] == "learning_completed_by_user" for item in captured["decisions"].values())
 
 
-def test_program_route_rejects_squat_capacity_phase_without_lumbopelvic_control(client):
-    from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
+def test_program_route_rejects_old_movement_controlled_status(client, monkeypatch):
+    import coach_routes
 
-    decisions = {
-        pattern: build_movement_decision(pattern, "LEARN", user_report={"status": "comfortable"})
-        for pattern in PATTERN_DEFINITIONS
-    }
-    decisions["squat"] = build_movement_decision(
-        "squat", "READY", user_report={
-            "status": "movement_controlled",
-            "movement_control": {
-                "confirmed_by_user": True,
-                "repeatable": True,
-                "criteria": {
-                    "tempo": True,
-                    "balance": True,
-                    "knee_hip_foot_control": True,
-                    "lumbopelvic_control": False,
-                    "tolerated_rom": True,
-                },
-            },
-        },
-    )
-    decisions["squat"]["training_phase"] = "capacity_development"
+    def should_not_run(*args, **kwargs):
+        raise AssertionError("Legacy movement-control self-report must not reach programme generation.")
+
+    monkeypatch.setattr(coach_routes, "generate_program", should_not_run)
+    payload = _program_payload()
+    payload["movement_decisions"]["squat"]["user_report"] = {"status": "movement_controlled"}
     response = client.post(
         "/coach/program",
         headers={"X-Pilot-Token": "test-only-token"},
-        json={
-            "movement_assessment_consent": True,
-            "profile": {
-                "goal": "hypertrophy",
-                "experience": "beginner",
-                "equipment": ["bodyweight"],
-                "sessions_per_week": 2,
-                "session_minutes": 45,
-            },
-            "movement_decisions": decisions,
-        },
+        json=payload,
     )
     assert response.status_code == 400
     assert response.get_json()["invalid_report_patterns"] == ["squat"]
+
+
+def test_program_route_requires_separate_plan_use_consent(client):
+    payload = _program_payload()
+    payload.pop("movement_assessment_consent")
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-token"},
+        json=payload,
+    )
+    assert response.status_code == 403
+    assert response.get_json()["consent_required"] is True
