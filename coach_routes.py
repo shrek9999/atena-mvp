@@ -2850,15 +2850,7 @@ def coach_program():
             "unknown_patterns": unknown_patterns,
             "message": localize("Za vsak od šestih gibalnih vzorcev izberi naslednji korak. Vzorce, ki se jih ne želiš učiti, preskoči; za individualni program izberi vsaj en vzorec za učenje ali prijavi simptome."),
         }), 409
-    valid_report_statuses = {"selected_for_learning", "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled"}
-    control_criteria = {
-        "squat": {"tempo", "balance", "knee_hip_foot_control", "lumbopelvic_control", "tolerated_rom"},
-        "hinge": {"tempo", "hip_hinge_coordination", "spine_control", "balance", "tolerated_rom"},
-        "horizontal_push": {"tempo", "shoulder_elbow_wrist_control", "trunk_control", "stable_support", "tolerated_rom"},
-        "horizontal_pull": {"tempo", "scapular_arm_control", "trunk_control", "stable_base", "tolerated_rom"},
-        "vertical_push": {"tempo", "overhead_control", "trunk_control", "scapular_control", "tolerated_rom"},
-        "lunge": {"tempo", "balance", "pelvis_hip_knee_foot_control", "hip_extension", "trunk_control", "tolerated_rom"},
-    }
+    valid_report_statuses = {"selected_for_learning", "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed"}
     invalid_report_patterns = []
     for pattern, record in movement_decisions.items():
         report = record.get("user_report") if isinstance(record, dict) else None
@@ -2891,21 +2883,6 @@ def coach_program():
         elif report_status in {"comfortable", "needs_support"} and decision == "READY":
             # A comfortable self-report is not proof of learned, repeatable motor control.
             invalid_report_patterns.append(pattern)
-        elif report_status == "movement_controlled":
-            control = report.get("movement_control") if isinstance(report, dict) else None
-            required = control_criteria.get(pattern, set())
-            criteria = control.get("criteria") if isinstance(control, dict) else None
-            if (
-                decision != "READY"
-                or supplied_phase != "capacity_development"
-                or not isinstance(control, dict)
-                or control.get("confirmed_by_user") is not True
-                or control.get("repeatable") is not True
-                or not isinstance(criteria, dict)
-                or set(criteria) != required
-                or any(criteria.get(key) is not True for key in required)
-            ):
-                invalid_report_patterns.append(pattern)
     if invalid_report_patterns:
         return jsonify({
             "error": localize("Vsak vzorec mora imeti veljavno izbiro ali poročilo o simptomih, odločitev pa mora biti skladna z njim."),
@@ -3869,46 +3846,14 @@ def save_six_pattern_movement_assessment(profile_id):
             allowed_keys = {"status"}
             if status == "symptoms_reported":
                 allowed_keys |= {"regression_test", "selected_exercise_id", "acute_warning_signs"}
-            elif status == "comfortable":
-                allowed_keys.add("movement_control")
             if set(value) - allowed_keys:
                 return jsonify({"error": f"Vzorec {pattern} vsebuje nepričakovana polja."}), 400
             user_report = {"status": status}
             selected_exercise_id = value.get("selected_exercise_id")
             decision = status_to_decision[status]
 
-            # A comfortable self-report remains LEARN. READY is persisted only
-            # after the user explicitly confirms every pattern-specific control
-            # criterion and repeatability; camera proxies are never accepted here.
-            movement_control = value.get("movement_control")
-            if movement_control is not None:
-                required_control = {
-                    "squat": {"tempo", "balance", "knee_hip_foot_control", "lumbopelvic_control", "tolerated_rom"},
-                    "hinge": {"tempo", "hip_hinge_coordination", "spine_control", "balance", "tolerated_rom"},
-                    "horizontal_push": {"tempo", "shoulder_elbow_wrist_control", "trunk_control", "stable_support", "tolerated_rom"},
-                    "horizontal_pull": {"tempo", "scapular_arm_control", "trunk_control", "stable_base", "tolerated_rom"},
-                    "vertical_push": {"tempo", "overhead_control", "trunk_control", "scapular_control", "tolerated_rom"},
-                    "lunge": {"tempo", "balance", "pelvis_hip_knee_foot_control", "hip_extension", "trunk_control", "tolerated_rom"},
-                }[pattern]
-                if (
-                    not isinstance(movement_control, dict)
-                    or set(movement_control) != {"confirmed_by_user", "repeatable", "criteria"}
-                    or not isinstance(movement_control.get("confirmed_by_user"), bool)
-                    or not isinstance(movement_control.get("repeatable"), bool)
-                    or not isinstance(movement_control.get("criteria"), dict)
-                    or set(movement_control["criteria"]) != required_control
-                    or any(not isinstance(flag, bool) for flag in movement_control["criteria"].values())
-                ):
-                    return jsonify({"error": f"Kontrolni kriteriji za {pattern} nimajo veljavne strukture."}), 400
-                user_report["movement_control"] = movement_control
-                if (
-                    movement_control["confirmed_by_user"] is True
-                    and movement_control["repeatable"] is True
-                    and all(movement_control["criteria"].values())
-                ):
-                    user_report["status"] = "movement_controlled"
-                    decision = "READY"
-                    reason = "Po učenju je uporabnik izrecno potrdil vse kriterije vzorca in ponovljivost najmanj dveh zaporednih ponovitev. Vzorec lahko preide v razvoj zmogljivosti; obremenitev se še vedno določa postopno."
+            # A user checklist records learning completion, never objective mastery.
+            # This legacy health-data route therefore cannot promote a pattern to READY.
             if "acute_warning_signs" in value:
                 warning_flags = value["acute_warning_signs"]
                 if (
