@@ -3933,7 +3933,7 @@ def coach_profile_program(profile_id):
                     (item for item in methods if item.get("id") == preferred_methods[pattern]),
                     None,
                 )
-                if method is None or method.get("learning_only") is not True:
+                if method is None:
                     return jsonify({"error": f"Za vzorec {pattern} ni potrjene učne različice."}), 500
                 movement_decisions[pattern] = build_movement_decision(
                     pattern, "LEARN",
