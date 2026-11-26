@@ -1,6 +1,6 @@
 from flask import Flask
 
-from coach_routes import coach_bp
+from coach_routes import coach_bp, LEARNING_CONTROL_CRITERIA
 
 
 def _client(monkeypatch):
@@ -43,6 +43,50 @@ def _six_pattern_decisions():
         for pattern in PATTERN_DEFINITIONS
     }
 
+
+def test_program_endpoint_requires_all_six_guided_learning_checklists_when_payload_is_supplied(monkeypatch):
+    client = _client(monkeypatch)
+    learning = {"patterns": {
+        pattern: {"criteria": {key: True for key in criteria}}
+        for pattern, criteria in LEARNING_CONTROL_CRITERIA.items()
+    }}
+    learning["patterns"]["hinge"]["criteria"]["spine_control"] = False
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-secret"},
+        json={
+            "movement_assessment_consent": True,
+            "learning_progress": learning,
+            "movement_decisions": _six_pattern_decisions(),
+            "goal": "hypertrophy", "experience": "intermediate",
+            "equipment": ["dumbbell", "bench"], "sessions_per_week": 2,
+            "session_minutes": 60,
+        },
+    )
+    assert response.status_code == 409
+    assert response.get_json()["learning_required"] is True
+    assert response.get_json()["missing_patterns"] == ["hinge"]
+
+
+def test_program_endpoint_accepts_six_completed_guided_learning_checklists(monkeypatch):
+    client = _client(monkeypatch)
+    learning = {"patterns": {
+        pattern: {"criteria": {key: True for key in criteria}}
+        for pattern, criteria in LEARNING_CONTROL_CRITERIA.items()
+    }}
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-secret"},
+        json={
+            "movement_assessment_consent": True,
+            "learning_progress": learning,
+            "movement_decisions": _six_pattern_decisions(),
+            "goal": "hypertrophy", "experience": "intermediate",
+            "equipment": ["dumbbell", "bench"], "sessions_per_week": 2,
+            "session_minutes": 60,
+        },
+    )
+    assert response.status_code == 200, response.get_json()
 
 def test_program_endpoint_requires_pilot_token(monkeypatch):
     response = _client(monkeypatch).post("/coach/program", json={
