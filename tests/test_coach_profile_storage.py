@@ -515,7 +515,7 @@ def test_guided_learning_progress_is_saved_and_restored_without_health_consent(m
         headers={"X-Profile-Token": token},
     )
     data = restored.get_json()["learning_progress"]
-    assert data["version"] == "guided-six-pattern-learning-v1"
+    assert data["version"] == "guided-six-pattern-learning-v2"
     assert all(item["learning_completed_by_user"] for item in data["patterns"].values())
 
 
@@ -898,7 +898,7 @@ def test_stateless_program_rejects_checklist_as_proof_of_movement_mastery(monkey
                 "user_report": {"status": "selected_for_learning"},
             }
     learning_progress = {
-        "version": "guided-six-pattern-learning-v1",
+        "version": "guided-six-pattern-learning-v2",
         "patterns": {
             pattern: {"criteria": {key: True for key in criteria}}
             for pattern, criteria in LEARNING_CONTROL_CRITERIA.items()
