@@ -3921,7 +3921,7 @@ def coach_profile_program(profile_id):
             movement_decisions = {}
             preferred_methods = {
                 "squat": "reaching_counterbalance",
-                "hinge": "wall_hip_hinge",
+                "hinge": "dowel_four_point",
                 "horizontal_push": "incline_push_up",
                 "horizontal_pull": "scapular_coordination",
                 "vertical_push": "unloaded_overhead_reach",
