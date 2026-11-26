@@ -189,21 +189,21 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # add a short aerobic/conditioning session rather than more lifting volume.
         return ["locomotion", "lunge", "conditioning"]
     if goal == "functional":
-        # Functional fitness is built from fundamental movement patterns and
-        # locomotion, not generic balance/coordination add-ons.
+        # Functional fitness is built from fundamental movement patterns,
+        # locomotion and measured conditioning, not generic balance add-ons.
         patterns = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
-        # Vertical pull is a required supplementary strength pattern, not a camera-assessment task.
-        if session_index == 0:
-            patterns.append("vertical_pull")
-        # Rotate unilateral knee-dominant work and locomotion across sessions.
-        patterns.append("lunge" if session_index % 2 == 0 else "locomotion")
-        # Rotate conditioning into the later session rather than stacking it
-        # on top of all six strength patterns in one workout. This preserves
-        # vertical pulling across the week and keeps each session <= 6 exercises.
-        if session_minutes > 30 and session_index > 0:
-            patterns.append("conditioning")
+        # Alternate vertical push and pull so both are trained across a two-day week.
+        patterns.append("vertical_push" if session_index % 2 == 0 else "vertical_pull")
         if include_stability:
-            patterns.insert(0, "trunk_stability")
+            # A targeted trunk-control slot replaces the rotating sixth pattern;
+            # keep the session within a practical six-exercise ceiling.
+            patterns.append("trunk_stability")
+        elif session_index % 2 == 0:
+            patterns.append("lunge" if session_index == 0 else "locomotion")
+        elif session_minutes > 30:
+            patterns.append("conditioning")
+        else:
+            patterns.append("lunge")
         # Experience is not a landing-readiness screen: no default jumps.
         return patterns
     if goal == "endurance":
