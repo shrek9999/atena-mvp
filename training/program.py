@@ -657,11 +657,17 @@ def generate_program(
             available_ids = {item["id"] for item in available_options}
             selected_id = record.get("selected_exercise_id")
             method_exercise_id = method.get("exercise_id") if method else None
-            target_id = selected_id or method_exercise_id
-            if target_id and target_id not in available_ids:
+            # An explicit user-selected exercise must be compatible. A method's
+            # default catalogue example is only a preference: if it does not fit
+            # this profile's equipment or experience, choose a compatible starter
+            # variation below rather than rejecting the entire programme.
+            if selected_id and selected_id not in available_ids:
                 raise ProgramValidationError(
-                    f"Vaja {target_id} za {pattern} ni združljiva z opremo ali izkušnjami v profilu."
+                    f"Vaja {selected_id} za {pattern} ni združljiva z opremo ali izkušnjami v profilu."
                 )
+            target_id = selected_id or method_exercise_id
+            if target_id and target_id not in available_ids and not selected_id:
+                target_id = None
             user_report = record.get("user_report", {})
             if not isinstance(user_report, dict):
                 raise ProgramValidationError(f"Uporabnikovo poročilo za {pattern} mora biti objekt.")
