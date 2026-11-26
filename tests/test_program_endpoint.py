@@ -13,7 +13,7 @@ def _client(monkeypatch):
 
 
 def _six_pattern_decisions():
-    from training.movement_coaching import PATTERN_DEFINITIONS
+    from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
 
     methods = {
         "squat": "reaching_counterbalance",
@@ -25,11 +25,13 @@ def _six_pattern_decisions():
     }
     return {
         pattern: {
-            "movement_pattern": pattern,
-            "decision": "LEARN",
+            **build_movement_decision(
+                pattern, "LEARN",
+                selected_learning_method=methods[pattern],
+                user_report={"status": "selected_for_learning"},
+                decision_reason="The guided learning task is complete; this does not certify technique mastery.",
+            ),
             "training_phase": "movement_learning",
-            "selected_learning_method": methods[pattern],
-            "user_report": {"status": "selected_for_learning"},
         }
         for pattern in PATTERN_DEFINITIONS
     }
