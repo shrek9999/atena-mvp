@@ -61,7 +61,7 @@ LEARNING_CONTROL_CRITERIA = {
     "lunge": {"tempo", "balance", "foot_knee_control", "pelvis_control", "trunk_control", "tolerated_rom"},
     "horizontal_push": {"tempo", "trunk_control", "shoulder_elbow_control", "scapular_control", "wrist_hand_support", "tolerated_rom"},
     "horizontal_pull": {"tempo", "base_stability", "trunk_position", "elbow_path", "scapular_arm_control", "tolerated_rom"},
-    "vertical_push": {"tempo", "press_path", "scapular_control", "trunk_control", "wrist_elbow_position", "tolerated_rom"},
+    "vertical_push": {"tempo", "arm_path", "scapular_control", "trunk_control", "bilateral_control", "tolerated_rom"},
 }
 
 LEARNING_EXCLUSION_REASONS = {"pain", "limitation", "uncertain", "deferred"}
@@ -4027,7 +4027,7 @@ def coach_profile_program(profile_id):
                 "hinge": "dowel_four_point",
                 "horizontal_push": "incline_push_up",
                 "horizontal_pull": "scapular_coordination",
-                "vertical_push": "light_implement_press",
+                "vertical_push": "unloaded_overhead_reach",
                 "lunge": "supported_split_squat",
             }
             for pattern in PATTERN_DEFINITIONS:
