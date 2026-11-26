@@ -29,6 +29,12 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         ],
         "learning_methods": [
             {
+                "id": "bodyweight_squat",
+                "label": "Počep z lastno težo",
+                "description": "Najprej vadi osnovni počep z lastno težo v ponovljivi amplitudi. Ohrani stabilna stopala, nadzor kolen ter trupa in medenice. Če ravnotežje ali stabilnost omejujeta izvedbo, uporabi reaching squat kot regresijo: med spuščanjem iztegni obe roki naprej; seganje deluje kot protiutež in lahko olajša ravnotežje ter koordinacijo.",
+                "exercise_id": "air_squat",
+            },
+            {
                 "id": "supported_squat_assistance",
                 "label": "Počep z oporo rok",
                 "description": "Za razbremenitev in ravnotežje uporabi TRX, varno pritrjeno elastiko, fiksiran drog v racku približno v višini prsnega koša ali stabilno nepremično oporo. Z rokami si pomagaj toliko, da lahko noge še vedno nadzorovano izvajajo gib.",
