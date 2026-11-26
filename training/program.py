@@ -193,13 +193,16 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # locomotion and conditioning without stacking seven exercises.
         if session_index % 2 == 0:
             patterns = [
+                *(["trunk_stability"] if include_stability else []),
                 "squat", "hinge", "horizontal_push", "horizontal_pull",
-                "vertical_push", "trunk_stability" if include_stability else "lunge",
+                "vertical_push",
+                *(["lunge"] if not include_stability else []),
             ]
         else:
             patterns = [
+                *(["trunk_stability"] if include_stability else []),
                 "squat", "hinge", "horizontal_push", "vertical_pull",
-                "trunk_stability" if include_stability else "locomotion",
+                *(["locomotion"] if not include_stability else []),
                 "conditioning",
             ]
         # Experience is not a landing-readiness screen: no default jumps.
