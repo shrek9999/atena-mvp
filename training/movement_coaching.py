@@ -43,6 +43,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                 "label": "Reaching squat s protiutežjo",
                 "description": "Izteg rok oziroma lahek kolut pred telesom uporabi kot protiutež za lažje učenje ravnotežja in organizacije počepa.",
                 "exercise_id": "reaching_squat",
+                "starter_exercise_options": ["reaching_squat", "supported_squat"],
             },
             {
                 "id": "target_squat",
@@ -84,6 +85,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                 "label": "Predklon ob steni",
                 "description": "Uči pomik bokov nazaj in nadzorovan predklon z nevtralnim položajem hrbtenice. Pri nelagodju v hrbtu zmanjša amplitudo in obremenitev; začni ob steni, ohrani nadzor trupa in ne sili v globino.",
                 "exercise_id": "wall_hip_hinge",
+                "starter_exercise_options": ["wall_hip_hinge", "bodyweight_hip_hinge"],
             },
         ],
     },
@@ -103,6 +105,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                 "demo_url": "https://youtu.be/fAMAAO21OC0",
                 "description": "Višino stabilne opore izberi tako, da je celotna ponovitev nadzorovana.",
                 "exercise_id": "push_up_incline",
+                "starter_exercise_options": ["push_up_incline"],
             },
         ],
     },
@@ -126,6 +129,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                     "dvigovanja ramen proti ušesom. To je učna naloga, ne obremenjena vaja."
                 ),
                 "exercise_id": None,
+                "starter_exercise_options": ["band_row", "trx_row", "ring_row", "one_arm_row", "kettlebell_one_arm_row"],
             },
             {
                 "id": "light_one_arm_hinge_row",
@@ -169,6 +173,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                 "label": "Dvig rok nad glavo brez bremena",
                 "description": "Vadi počasen dvig in spust rok brez bremena. Ohrani rebra nad medenico, komolca iztegnjena in roki v širini ramen. Dovoli naravno rotacijo lopatic navzgor, vendar ne kompenziraj s pretiranim skomiganjem ali hiperekstenzijo prsno-ledvenega dela. Uporabi največjo nadzorovano fleksijo rame.",
                 "exercise_id": None,
+                "starter_exercise_options": ["band_overhead_press"],
             },
             {
                 "id": "light_implement_press",
@@ -200,6 +205,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                 "demo_url": "https://youtu.be/MYg8xEdmTGk",
                 "description": "Opora je namenjena ravnotežju. Ohraniti je treba stabilno stopalo in koleno, vodoravno in smeri gibanja pravokotno usmerjeno medenico ter nadzorovan naklon trupa; pri vrnitvi izkoristi ekstenzijo kolka brez hiperekstenzije ledvene hrbtenice.",
                 "exercise_id": "supported_split_squat",
+                "starter_exercise_options": ["supported_split_squat", "split_squat"],
             },
             {
                 "id": "static_split_squat",
