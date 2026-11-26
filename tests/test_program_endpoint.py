@@ -619,7 +619,7 @@ def test_learn_decision_creates_learning_task_not_a_loaded_work_set(monkeypatch)
         assert squat_tasks[0]["exercise_id"] in safe_squat_starters
         assert squat_tasks[0]["decision"] == "LEARN"
 
-def test_all_unmastered_patterns_can_form_a_learning_only_program(monkeypatch):
+def test_unavailable_pull_and_overhead_press_are_omitted_without_inventing_equipment():
     from training.program import generate_program
     from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
 
@@ -656,28 +656,25 @@ def test_all_unmastered_patterns_can_form_a_learning_only_program(monkeypatch):
     )
 
     assert len(program["sessions"]) == 2
-    expected_patterns = set(methods)
-    assert len(program["sessions"]) == 2
     for session in program["sessions"]:
-        safe_starter_ids = {"supported_squat", "chair_sit_to_stand", "reaching_squat", "wall_hip_hinge", "push_up_incline", "supported_split_squat"}
+        assert len(session["learning_tasks"]) <= 4
+        assert all(task["movement_pattern"] in {
+            exercise["pattern"] for exercise in session["exercises"]
+        } for task in session["learning_tasks"])
         assert all(
-            exercise["exercise_id"] in safe_starter_ids
+            exercise["pattern"] not in {"horizontal_pull", "vertical_push"}
             for exercise in session["exercises"]
-            if exercise["pattern"] in PATTERN_DEFINITIONS
         )
-        assert len(session["learning_tasks"]) == 6
-        assert {task["movement_pattern"] for task in session["learning_tasks"]} == expected_patterns
-        task_by_pattern = {task["movement_pattern"]: task for task in session["learning_tasks"]}
-        assert task_by_pattern["hinge"]["exercise_id"] == "wall_hip_hinge"
-        assert task_by_pattern["horizontal_pull"]["exercise_id"] is None
-        assert task_by_pattern["vertical_push"]["exercise_id"] is None
-        assert all(task["decision"] == "LEARN" for task in session["learning_tasks"])
-    deferred = [
-        event for event in program["movement_adaptation"]["events"]
-        if event["action"] == "learning_tasks_deferred_to_later_sessions"
-    ]
-    assert not deferred
-
+    assert {"horizontal_pull", "vertical_push"}.issubset(
+        set(program["weekly_summary"]["unfilled_patterns"])
+    )
+    omission_events = {
+        event["pattern"]: event["action"]
+        for event in program["movement_adaptation"]["events"]
+        if event["action"] == "omitted_no_equipment_compatible_learning_variant"
+    }
+    assert omission_events["horizontal_pull"] == "omitted_no_equipment_compatible_learning_variant"
+    assert omission_events["vertical_push"] == "omitted_no_equipment_compatible_learning_variant"
 
 
 
