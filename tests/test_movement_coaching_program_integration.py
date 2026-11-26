@@ -90,12 +90,8 @@ def test_one_ready_pattern_is_not_mislabelled_as_a_full_body_session():
     }
     push = build_movement_decision(
         "horizontal_push", "READY",
-        user_report={"status": "movement_controlled", "movement_control": {
-            "confirmed_by_user": True, "repeatable": True,
-            "criteria": {
-                "tempo": True, "shoulder_elbow_wrist_control": True,
-                "trunk_control": True, "stable_support": True, "tolerated_rom": True,
-            },
+        user_report={"status": "coach_verified", "coach_verification": {
+            "verified_by_coach": True, "source": "coach_observation",
         }},
         decision_reason="Horizontal push control is repeatable.",
     )
@@ -160,12 +156,8 @@ def test_ready_decision_starts_conservatively_without_automatic_progression():
     baseline = generate_program(BASE)
     ready = build_movement_decision(
         "squat", "READY",
-        user_report={"status": "movement_controlled", "movement_control": {
-            "confirmed_by_user": True, "repeatable": True,
-            "criteria": {
-                "tempo": True, "balance": True, "knee_hip_foot_control": True,
-                "lumbopelvic_control": True, "tolerated_rom": True,
-            },
+        user_report={"status": "coach_verified", "coach_verification": {
+            "verified_by_coach": True, "source": "coach_observation",
         }},
         decision_reason="Po učenju je počep ponovljivo nadzorovan.",
     )
@@ -294,12 +286,8 @@ def test_loaded_bent_over_row_learning_requires_hinge_ready():
 def test_loaded_bent_over_row_is_allowed_after_hinge_is_marked_ready():
     hinge = build_movement_decision(
         "hinge", "READY",
-        user_report={"status": "movement_controlled", "movement_control": {
-            "confirmed_by_user": True, "repeatable": True,
-            "criteria": {
-                "tempo": True, "balance": True, "hip_hinge_coordination": True,
-                "spine_control": True, "tolerated_rom": True,
-            },
+        user_report={"status": "coach_verified", "coach_verification": {
+            "verified_by_coach": True, "source": "coach_observation",
         }},
         decision_reason="Predklon je po učenju ponovljivo obvladan.",
     )
@@ -307,12 +295,8 @@ def test_loaded_bent_over_row_is_allowed_after_hinge_is_marked_ready():
     row = build_movement_decision(
         "horizontal_pull", "READY",
         equipment=["dumbbell"],
-        user_report={"status": "movement_controlled", "movement_control": {
-            "confirmed_by_user": True, "repeatable": True,
-            "criteria": {
-                "tempo": True, "scapular_arm_control": True, "trunk_control": True,
-                "stable_base": True, "tolerated_rom": True,
-            },
+        user_report={"status": "coach_verified", "coach_verification": {
+            "verified_by_coach": True, "source": "coach_observation",
         }},
         decision_reason="Horizontalni poteg je po učenju ponovljivo obvladan.",
     )
@@ -400,12 +384,8 @@ def test_kettlebell_only_ready_row_does_not_override_conservative_loading_gate()
     }
     hinge = build_movement_decision(
         "hinge", "READY",
-        user_report={"status": "movement_controlled", "movement_control": {
-            "confirmed_by_user": True, "repeatable": True,
-            "criteria": {
-                "tempo": True, "balance": True, "hip_hinge_coordination": True,
-                "spine_control": True, "tolerated_rom": True,
-            },
+        user_report={"status": "coach_verified", "coach_verification": {
+            "verified_by_coach": True, "source": "coach_observation",
         }},
         decision_reason="Predklon je po učenju ponovljivo obvladan.",
     )
@@ -414,12 +394,8 @@ def test_kettlebell_only_ready_row_does_not_override_conservative_loading_gate()
         "horizontal_pull", "READY",
         equipment=["kettlebell"],
         selected_exercise_id="kettlebell_one_arm_row",
-        user_report={"status": "movement_controlled", "movement_control": {
-            "confirmed_by_user": True, "repeatable": True,
-            "criteria": {
-                "tempo": True, "scapular_arm_control": True, "trunk_control": True,
-                "stable_base": True, "tolerated_rom": True,
-            },
+        user_report={"status": "coach_verified", "coach_verification": {
+            "verified_by_coach": True, "source": "coach_observation",
         }},
         decision_reason="Horizontalni poteg je po učenju ponovljivo obvladan.",
     )
@@ -489,12 +465,8 @@ def test_six_learning_patterns_repeat_in_both_weekly_sessions():
 def test_ready_pattern_keeps_the_same_main_exercise_across_weekly_sessions():
     squat = build_movement_decision(
         "squat", "READY",
-        user_report={"status": "movement_controlled", "movement_control": {
-            "confirmed_by_user": True, "repeatable": True,
-            "criteria": {
-                "tempo": True, "balance": True, "knee_hip_foot_control": True,
-                "lumbopelvic_control": True, "tolerated_rom": True,
-            },
+        user_report={"status": "coach_verified", "coach_verification": {
+            "verified_by_coach": True, "source": "coach_observation",
         }},
         decision_reason="Počep je po učenju ponovljivo nadzorovan.",
     )
