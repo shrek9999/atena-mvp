@@ -12,9 +12,72 @@ from training.movement_assessment import (
 )
 from training.movement_coaching import (
     PATTERN_DEFINITIONS, VALID_DECISIONS, MovementCoachingError, get_exercise_options,
-    validate_symptom_regression_report,
+    validate_symptom_regression_report, get_method_english, get_pattern_english,
 )
 from training.video_demonstrations import get_video_demonstrations
+
+
+
+# Reviewed English coaching copy for deterministic programme explanations.
+_TEMPO_DESCRIPTION_EN = {
+    "Zadrži blag do zmeren razteg, dihaj sproščeno in ne sili v končni položaj.": "Hold a mild to moderate stretch, breathe comfortably and do not force the end position.",
+    "3 s nadzorovan povratek iz končne amplitude · 1 s stabilen nadzor v razpoložljivem končnem položaju · 2 s aktivna vrnitev · brez sunkov ali siljenja.": "3 seconds to return from the end of the range under control · 1 second of stable control in the available end position · 2 seconds for the active return · no bouncing or forcing.",
+    "Aktivno raziskuj razpoložljivo amplitudo brez sunkov in prisiljevanja.": "Actively explore the available range of motion without bouncing or forcing the movement.",
+    "Ohrani enakomeren ritem in intenzivnost, ki ustreza predpisanemu cilju.": "Maintain a steady rhythm and an intensity appropriate to the prescribed goal.",
+    "Nadzorovan začetni položaj; dvig oziroma odriv izvedi hitro in tehnično čisto; med ponovitvami se ponastavi.": "Establish a controlled starting position; lift or push explosively with sound technique; reset between repetitions.",
+    "Najprej kakovost in nadzor; hitrost ali doseg povečuj šele, ko je izvedba ponovljiva.": "Prioritize movement quality and control; increase speed or range only when execution is repeatable.",
+    "2 s izteg oziroma odmik · 1 s nadzor · 2 s vrnitev · 1 s ponastavitev.": "2 seconds to extend or move away · 1 second of control · 2 seconds to return · 1 second to reset.",
+    "Ohrani ponovljiv ritem intervala; intenzivnost prilagodi cilju in kakovosti izvedbe.": "Maintain a repeatable interval rhythm; adjust intensity to the goal and quality of execution.",
+    "Hodi z naravnim, nadzorovanim korakom; ohrani stabilen trup in breme ob telesu.": "Walk with a natural, controlled stride; keep your trunk stable and the load close to your body.",
+    "Nadzorovan spust skozi uporabno amplitudo in aktivna, tekoča vrnitev. Tempo prilagodi vaji; ne sili v počasnost ali hitrost na račun nadzora.": "Lower through a useful range under control and return actively and smoothly. Match the tempo to the exercise; do not force slowness or speed at the expense of control.",
+    "3 s nadzorovan spust · 1 s nadzor v izbranem položaju · 2 s nadzorovana vrnitev · brez sunkov in izgube položaja.": "3 seconds for a controlled lowering phase · 1 second of control in the selected position · 2 seconds for a controlled return · no bouncing or loss of position.",
+    "Počasen, nadzorovan tempo: 4 s spuščanje, 1 s nadzor, 2 s vračanje. Ne pospešuj izvedbe.": "Use a slow, controlled tempo: 4 seconds lowering, 1 second holding control and 2 seconds returning. Do not speed up the movement.",
+}
+_ADJUSTMENT_NOTE_EN = {
+    "Regeneracija je bila slabša, zato je zmanjšan samo del glavnega večsklepnega volumna; ostalo delo ostaja nespremenjeno.": "Recovery was poorer, so only part of the main compound-exercise volume has been reduced; the remaining work is unchanged.",
+    "Ker je bil zadnji trening pretežek oziroma regeneracija slabša, je naslednji vadbeni odmerek konservativno zmanjšan. Ohrani nadzorovano izvedbo.": "Because the previous session felt too hard or recovery was poorer, the next training dose has been conservatively reduced. Keep every repetition controlled.",
+    "Ker je bil zadnji trening prelahek, je delovni interval podaljšan za majhen korak. Ohrani predpisano ciljno intenzivnost.": "Because the previous session felt too easy, the work interval has been increased by a small step. Maintain the prescribed target intensity.",
+    "Ker je bil zadnji trening prelahek, je cilj naslednjič nekoliko višji: dodaj eno kakovostno ponovitev na serijo. Breme povečaj šele, ko večkrat dosežeš zgornjo mejo z ustrezno rezervo in tehniko.": "Because the previous session felt too easy, the next target is slightly higher: add one good-quality repetition per set. Increase the load only after repeatedly reaching the top of the range with the intended reserve and sound technique.",
+}
+_PATTERN_LABELS_EN = {
+    "squat": "squat", "lunge": "lunge", "hinge": "hip hinge",
+    "horizontal_push": "horizontal push", "horizontal_pull": "horizontal pull",
+    "vertical_push": "overhead push", "vertical_pull": "vertical pull",
+    "hip_extension": "hip extension", "carry": "loaded carry",
+    "trunk_stability": "trunk stability", "anti_rotation": "anti-rotation",
+    "balance": "balance", "coordination": "coordination",
+    "conditioning": "conditioning", "locomotion": "locomotion",
+    "mobility": "mobility", "mobility_stretch": "stretching",
+}
+_EVENT_MESSAGE_EN = {
+    "mild_symptom_load_tempo_and_rom_adjustment": "Mild discomfort was reported. The same tested variation is retained with a lighter load, no more than two sets, a controlled 4–1–2–0 tempo and only the tolerated range of motion. Do not progress this exposure. Stop if pain increases, becomes sharp or changes the movement.",
+    "simpler_catalogue_variant_selected": "Based on your movement self-assessment, an easier version of the same movement pattern has been selected. Start with no more than two quality sets and keep at least three repetitions in reserve. Stop if the movement is uncomfortable or cannot be controlled.",
+    "stable_support_cue": "Use stable support within reach. Adjust the range and duration so the movement remains controlled.",
+    "kept_selection_pending_user_clarification": "Your response for this task was uncertain, so ATENA has not changed the exercise based on a guess. Before the first working set, check that the variation is comfortable and controlled. If unsure, ask a coach for an easier option.",
+    "ready_for_light_loaded_start": "The movement pattern has been demonstrated with repeatable control. Begin with a light to moderate load (RIR 3–4). Increase the load only after two well-tolerated exposures.",
+    "learning_tasks_deferred_to_later_sessions": "Learning tasks have been scheduled for later training sessions. They remain separate from loaded exercise in this session.",
+    "learning_or_regression_variant_selected": "A learning or regression variation has been selected for this movement pattern. Follow the listed setup and control requirements before adding load.",
+}
+
+
+def _english_pattern_labels(patterns: list[str]) -> str:
+    return ", ".join(_PATTERN_LABELS_EN.get(item, item.replace("_", " ")) for item in patterns)
+
+
+def _event_message_english(event: dict) -> str | None:
+    """Return reviewed English event copy; never guess-translate safety messages."""
+    action = event.get("action")
+    base = _EVENT_MESSAGE_EN.get(action)
+    if base is None:
+        return None
+    patterns = event.get("patterns") or ([event.get("pattern")] if event.get("pattern") else [])
+    labels = _english_pattern_labels(patterns)
+    if action == "ready_for_light_loaded_start" and labels:
+        return f"Movement patterns confirmed with repeatable control: {labels}. {base}"
+    if action == "learning_tasks_deferred_to_later_sessions" and labels:
+        return f"Learning tasks for {labels} have been scheduled for later sessions. They remain separate from loaded exercise in this session."
+    return base
+
 
 
 def _learning_task_videos(pattern: str, method_id: str | None, exercise_id: str | None) -> list[dict]:
@@ -512,6 +575,7 @@ def _prescription(goal: str, level: str, pattern: str, exercise: dict, session_m
         "tempo_description": tempo_description,
         "tempo_seconds_per_rep": tempo_seconds,
     }
+    prescription["tempo_description_en"] = _TEMPO_DESCRIPTION_EN.get(tempo_description)
     if session_minutes <= 30 and pattern in {
         "squat", "hinge", "lunge", "horizontal_push", "horizontal_pull",
         "vertical_push", "vertical_pull", "hip_extension",
@@ -705,7 +769,7 @@ def generate_program(
             ):
                 preferred_learning_methods = {
                     "squat": "supported_squat_assistance" if report_status == "needs_support" else "reaching_counterbalance",
-                    "hinge": "wall_hip_hinge" if report_status in {"needs_support", "selected_for_learning"} else "dowel_four_point",
+                    "hinge": "wall_hip_hinge" if report_status in {"needs_support", "selected_for_learning", "learning_completed_by_user"} else "dowel_four_point",
                     "horizontal_push": "incline_push_up",
                     "horizontal_pull": "scapular_coordination",
                     "vertical_push": "unloaded_overhead_reach",
@@ -750,13 +814,35 @@ def generate_program(
             if learning_phase:
                 if method is None or method.get("learning_only") is not True:
                     raise ProgramValidationError(
-                        f"Za vzorec {pattern} mora biti izbrana izrecna neobremenjena učna metoda."
+                        f"Za vzorec {pattern} mora biti izbrana izrecna učna metoda."
                     )
                 if selected_id is not None and selected_id != method.get("exercise_id"):
                     raise ProgramValidationError(
                         f"Izbrana učna metoda in različica za {pattern} se ne ujemata."
                     )
                 target_id = None
+                if decision == "LEARN" and report_status == "learning_completed_by_user":
+                    starter_options = list(method.get("starter_exercise_options", []))
+                    if method.get("exercise_id") and method.get("exercise_id") not in starter_options:
+                        starter_options.insert(0, method["exercise_id"])
+                    equipment_set = set(p["equipment"])
+                    for starter_id in starter_options:
+                        if starter_id not in available_ids:
+                            continue
+                        if starter_id in {"band_row", "band_overhead_press"} and not {
+                            "resistance_band", "anchor_point"
+                        }.issubset(equipment_set):
+                            continue
+                        if starter_id in {"trx_row", "ring_row"} and not {
+                            "anchor_point"
+                        }.issubset(equipment_set):
+                            continue
+                        if starter_id in {"one_arm_row", "kettlebell_one_arm_row"} and not (
+                            "bench" in equipment_set or "household_support" in equipment_set
+                        ):
+                            continue
+                        target_id = starter_id
+                        break
             else:
                 target_id = selected_id or (
                     method.get("exercise_id")
@@ -770,7 +856,7 @@ def generate_program(
                 raise ProgramValidationError(
                     f"Regresija vzorca {pattern} nima ustreznega poročila za učno ali simptomatsko prilagoditev."
                 )
-            if decision == "LEARN" and report_status not in {"selected_for_learning", "comfortable", "needs_support", None}:
+            if decision == "LEARN" and report_status not in {"selected_for_learning", "learning_completed_by_user", "comfortable", "needs_support", None}:
                 raise ProgramValidationError(
                     f"Učna faza vzorca {pattern} zahteva udobno samooceno ali potrebo po opori."
                 )
@@ -800,44 +886,31 @@ def generate_program(
                         )
                         method_id = method["id"] if method else None
             if report_status is not None and report_status not in {
-                "selected_for_learning", "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled"
+                "selected_for_learning", "learning_completed_by_user", "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "coach_verified"
             }:
                 raise ProgramValidationError(f"Neveljaven status uporabnikovega poročila za {pattern}.")
             if report_status in {"uncertain", "not_assessed"} and decision != "UNASSESSABLE":
                 raise ProgramValidationError(
                     f"Vzorec {pattern} je označen kot nejasen ali neocenjen, zato ne sme biti označen kot READY."
                 )
-            if decision == "READY" and report_status != "movement_controlled":
+            if decision == "READY" and report_status != "coach_verified":
                 raise ProgramValidationError(
-                    f"Vzorec {pattern} ne more biti READY samo na podlagi udobne samoocene ali manjkajočega poročila; potreben je preverjen seznam motoričnega nadzora."
+                    f"Vzorec {pattern} lahko preide v READY samo po notranji potrditvi trenerja, ne na podlagi uporabnikove kljukice ali kamere."
                 )
             if report_status == "comfortable" and decision == "READY":
                 raise ProgramValidationError(
                     f"Vzorec {pattern} je samoocenjen kot udoben, vendar še nima potrjenega učenja motoričnega nadzora; uporabi LEARN."
                 )
-            if report_status == "movement_controlled":
-                required_control = {
-                    "squat": {"tempo", "balance", "knee_hip_foot_control", "lumbopelvic_control", "tolerated_rom"},
-                    "hinge": {"tempo", "hip_hinge_coordination", "spine_control", "balance", "tolerated_rom"},
-                    "horizontal_push": {"tempo", "shoulder_elbow_wrist_control", "trunk_control", "stable_support", "tolerated_rom"},
-                    "horizontal_pull": {"tempo", "scapular_arm_control", "trunk_control", "stable_base", "tolerated_rom"},
-                    "vertical_push": {"tempo", "overhead_control", "trunk_control", "scapular_control", "tolerated_rom"},
-                    "lunge": {"tempo", "balance", "pelvis_hip_knee_foot_control", "hip_extension", "trunk_control", "tolerated_rom"},
-                }[pattern]
-                control = user_report.get("movement_control")
-                criteria = control.get("criteria") if isinstance(control, dict) else None
+            if report_status == "coach_verified":
+                verification = user_report.get("coach_verification")
                 if (
                     decision != "READY"
-                    or record.get("training_phase") != "capacity_development"
-                    or not isinstance(control, dict)
-                    or control.get("confirmed_by_user") is not True
-                    or control.get("repeatable") is not True
-                    or not isinstance(criteria, dict)
-                    or set(criteria) != required_control
-                    or any(criteria.get(key) is not True for key in required_control)
+                    or not isinstance(verification, dict)
+                    or verification.get("verified_by_coach") is not True
+                    or verification.get("source") != "coach_observation"
                 ):
                     raise ProgramValidationError(
-                        f"Vzorec {pattern} ne more preiti v razvoj moči brez ponovljive potrditve vseh kriterijev motoričnega nadzora."
+                        f"Vzorec {pattern} nima veljavne notranje potrditve trenerja."
                     )
             if report_status == "symptoms_reported":
                 allowed_regressions = SYMPTOM_REGRESSION_VARIANTS.get(pattern, ())
@@ -1128,17 +1201,23 @@ def generate_program(
             camera_coordination_block = {
                 "source": "adequate_positive_camera_proxy",
                 "purpose": "Neobvezna, kratka koordinacijska priprava; ne predstavlja ocene pripravljenosti ali pomanjkljivosti.",
+                "purpose_en": "Optional brief coordination preparation; it is not an assessment of readiness or deficits.",
                 "is_readiness_assessment": False,
                 "exercises": [{
                     "exercise_id": camera_coordination_exercise["id"],
                     "name": camera_coordination_exercise["name"],
+                    "name_en": camera_coordination_exercise.get("name_en"),
                     "component": "koordinacija",
+                    "component_en": "coordination",
                     "sets": 1,
                     "work_seconds": 10,
                     "tempo": "počasi in nadzorovano",
+                    "tempo_en": "slow and controlled",
                     "equipment": camera_coordination_exercise["equipment"],
                     "cues": camera_coordination_exercise["cues"],
+                    "cues_en": camera_coordination_exercise.get("cues_en", []),
                     "warnings": camera_coordination_exercise["warnings"],
+                    "warnings_en": camera_coordination_exercise.get("warnings_en", []),
                 }],
             }
         mobility_block = None
@@ -1170,14 +1249,19 @@ def generate_program(
                 {
                     "exercise_id": item["id"],
                     "name": item["name"],
+                    "name_en": item.get("name_en"),
                     "component": "mobilnost",
+                    "component_en": "mobility",
                     "sets": 1,
                     "reps": 6 if item.get("unilateral") else 8,
                     "reps_per_side": bool(item.get("unilateral") or item.get("reps_per_side")),
                     "tempo": "počasi in nadzorovano",
+                    "tempo_en": "slow and controlled",
                     "equipment": item["equipment"],
                     "cues": item["cues"],
+                    "cues_en": item.get("cues_en", []),
                     "warnings": item["warnings"],
+                    "warnings_en": item.get("warnings_en", []),
                 }
                 for item in selected_mobility
             ]
@@ -1188,14 +1272,19 @@ def generate_program(
                     "exercise_id": selected_skill["id"],
                     "name": selected_skill["name"],
                     "component": "ravnotežje" if is_balance else "koordinacija",
+                    "component_en": "balance" if is_balance else "coordination",
+                    "name_en": selected_skill.get("name_en"),
                     "sets": 1,
                     "reps": 5 if is_balance else f"{work_seconds} s",
                     "work_seconds": work_seconds,
                     "reps_per_side": is_balance,
                     "tempo": "počasi in nadzorovano",
+                    "tempo_en": "slow and controlled",
                     "equipment": selected_skill["equipment"],
                     "cues": selected_skill["cues"],
+                    "cues_en": selected_skill.get("cues_en", []),
                     "warnings": selected_skill["warnings"],
+                    "warnings_en": selected_skill.get("warnings_en", []),
                 })
             selected_stability = None
             if selected_stability is not None:
@@ -1203,18 +1292,25 @@ def generate_program(
                     "exercise_id": selected_stability["id"],
                     "name": selected_stability["name"],
                     "component": "stabilnost",
+                    "component_en": "stability",
+                    "name_en": selected_stability.get("name_en"),
                     "sets": 1,
                     "reps": 6,
                     "reps_per_side": True,
                     "tempo": "počasi in nadzorovano",
+                    "tempo_en": "slow and controlled",
                     "equipment": selected_stability["equipment"],
                     "cues": selected_stability["cues"],
+                    "cues_en": selected_stability.get("cues_en", []),
                     "warnings": selected_stability["warnings"],
+                    "warnings_en": selected_stability.get("warnings_en", []),
                 })
             mobility_block = {
                 "purpose": "Kratka, ciljno izbrana aktivna priprava pred glavnimi vajami.",
+                "purpose_en": "Brief, targeted active preparation before the main exercises.",
                 "estimated_minutes": 1,
                 "amplitude_rule": "Gib izvedi skozi največjo trenutno nadzorovano in tolerirano amplitudo; brez sunkov, izgube ravnotežja ali siljenja.",
+                "amplitude_rule_en": "Move through the greatest range you can currently control and tolerate, without jerking, losing balance or forcing the end position.",
                 "exercises": prep_exercises,
             }
         selected = []
@@ -1350,45 +1446,64 @@ def generate_program(
             structured_decision = movement_decisions_by_pattern.get(pattern)
             if structured_decision and structured_decision["decision"] in {"LEARN", "REGRESS"}:
                 target_id = structured_decision.get("resolved_exercise_id")
+                user_report = structured_decision.get("user_report")
+                report_status = user_report.get("status") if isinstance(user_report, dict) else None
                 method = next(
                     (item for item in PATTERN_DEFINITIONS[pattern]["learning_methods"]
                      if item["id"] == structured_decision.get("selected_learning_method")),
                     None,
                 )
-                if target_id is None and method is not None and method.get("learning_only") is True:
-                    if len(learning_tasks_for_session) < learning_task_limit:
-                        learning_tasks_for_session.append({
-                            "movement_pattern": pattern,
-                            "task_id": PATTERN_DEFINITIONS[pattern]["task_id"],
-                            "method_id": method["id"],
-                            "method": method["label"],
-                            "description": method["description"],
-                            "exercise_id": None,
-                            "demo_url": method.get("demo_url"),
-                            "demonstration_videos": _learning_task_videos(pattern, method["id"], None),
-                            "decision": structured_decision["decision"],
-                            "sets": 2,
-                            "reps": (
-                                "4–6 controlled reps per side" if pattern == "lunge" else
-                                "6–8 controlled reps" if pattern == "horizontal_pull" else
-                                "4–6 controlled reps"
-                            ),
-                            "tempo": "3-1-1",
-                            "rest_seconds": 30,
-                            "estimated_minutes": 2,
-                        })
-                        movement_adaptation_events.append({
-                            "pattern": pattern,
-                            "tasks": affected_tasks,
-                            "action": "unloaded_learning_task_only",
-                            "message": (
-                                f"Vzorec {PATTERN_LABELS.get(pattern, pattern)} ostane brez zunanje obremenitve; "
-                                "najprej ponovi kratko učno nalogo in preveri kriterije nadzora."
-                            ),
-                        })
-                    else:
-                        deferred_learning_patterns.append(pattern)
-                    continue
+                if method is not None and method.get("learning_only") is True:
+                    if report_status != "learning_completed_by_user":
+                        if len(learning_tasks_for_session) < learning_task_limit:
+                            learning_tasks_for_session.append({
+                                "movement_pattern": pattern,
+                                "task_id": PATTERN_DEFINITIONS[pattern]["task_id"],
+                                "pattern_label_en": (get_pattern_english(pattern) or {}).get("label"),
+                                "task_en": (get_pattern_english(pattern) or {}).get("task"),
+                                "method_id": method["id"],
+                                "method": method["label"],
+                                "description": method["description"],
+                                "method_en": (get_method_english(method["id"]) or (None, None))[0],
+                                "description_en": (get_method_english(method["id"]) or (None, None))[1],
+                                "exercise_id": None,
+                                "demo_url": method.get("demo_url"),
+                                "demonstration_videos": _learning_task_videos(pattern, method["id"], None),
+                                "decision": structured_decision["decision"],
+                                "sets": 2,
+                                "reps": (
+                                    "4–6 controlled reps per side" if pattern == "lunge" else
+                                    "6–8 controlled reps" if pattern == "horizontal_pull" else
+                                    "4–6 controlled reps"
+                                ),
+                                "tempo": "3-1-1",
+                                "rest_seconds": 30,
+                                "estimated_minutes": 2,
+                            })
+                        else:
+                            deferred_learning_patterns.append(pattern)
+                    if target_id is None:
+                        if report_status == "learning_completed_by_user":
+                            movement_adaptation_events.append({
+                                "pattern": pattern,
+                                "tasks": affected_tasks,
+                                "action": "no_safe_starter_variant_available",
+                                "message": (
+                                    f"Za vzorec {PATTERN_LABELS.get(pattern, pattern)} trenutno ni varne podprte začetne vaje "
+                                    "z izbrano opremo; vzorec ostane brez obremenitve."
+                                ),
+                            })
+                        elif len(learning_tasks_for_session) > 0:
+                            movement_adaptation_events.append({
+                                "pattern": pattern,
+                                "tasks": affected_tasks,
+                                "action": "unloaded_learning_task_only",
+                                "message": (
+                                    f"Vzorec {PATTERN_LABELS.get(pattern, pattern)} ostane brez zunanje obremenitve; "
+                                    "najprej ponovi kratko učno nalogo in preveri kriterije nadzora."
+                                ),
+                            })
+                        continue
                 target = next((item for item in reference_catalogue if item["id"] == target_id), None)
                 if target is None or target["pattern"] != pattern:
                     raise ProgramValidationError(f"Izbrana učna različica {target_id} za {pattern} ni v potrjenem katalogu.")
@@ -1780,6 +1895,14 @@ def generate_program(
             if movement_note:
                 existing_note = prescription.get("adjustment_note")
                 prescription["adjustment_note"] = movement_note + ((" " + existing_note) if existing_note else "")
+            if prescription.get("adjustment_note"):
+                prescription["adjustment_note_en"] = _ADJUSTMENT_NOTE_EN.get(prescription["adjustment_note"])
+            if movement_note:
+                prescription["movement_adaptation_note_en"] = (
+                    "A movement-specific adjustment has been made based on the assessment. "
+                    "Follow the selected variation, range and control requirements; do not progress "
+                    "until the stated criteria are met."
+                )
             def equipment_priority(item: str) -> tuple[int, str]:
                 if item in {"dumbbell", "kettlebell", "barbell", "resistance_band"}:
                     return (0, item)
@@ -1834,6 +1957,8 @@ def generate_program(
                 "primary_muscles": candidate["primary_muscles"],
                 "equipment": selected_equipment,
                 "cues": candidate["cues"],
+                "cues_en": candidate.get("cues_en"),
+                "warnings_en": candidate.get("warnings_en"),
                 "range_of_motion": (
                     "Ohrani naraven korak in stabilno držo; trajanje ali razdaljo povečuj postopno."
                     if pattern == "carry" else
@@ -1846,6 +1971,15 @@ def generate_program(
                         "Uporabi največjo amplitudo, ki jo lahko izvedeš neboleče in z nadzorom. "
                         "Amplitudo postopno povečuj, ne da bi izgubil stabilnost ali položaj telesa."
                     )
+                ),
+                "range_of_motion_en": (
+                    "Use a natural stride and stable posture; increase duration or distance gradually."
+                    if pattern == "carry" else
+                    "Maintain a repeatable range and rhythm that support good-quality execution; adjust intensity to the goal."
+                    if pattern in {"conditioning", "locomotion"} else
+                    "For loaded exercises, use the greatest range of motion you can currently control and tolerate without sacrificing stability or execution quality. Progress towards full range gradually."
+                    if planning_goal == "functional" else
+                    candidate.get("range_of_motion_en")
                 ),
                 "warnings": candidate["warnings"],
                 "regressions": regressions,
@@ -1880,7 +2014,8 @@ def generate_program(
                 "prescription": prescription,
                 **({"movement_adaptation_note": movement_note} if movement_note else {}),
                 **({
-                    "coaching_note": "Ciljno pripravljalno delo za nadzor trupa, vključeno na podlagi tvoje povratne informacije. Izvedi po splošnem ogrevanju in pred glavnimi vajami."
+                    "coaching_note": "Ciljno pripravljalno delo za nadzor trupa, vključeno na podlagi tvoje povratne informacije. Izvedi po splošnem ogrevanju in pred glavnimi vajami.",
+                    "coaching_note_en": "Targeted trunk-control preparation added in response to your feedback. Perform it after the general warm-up and before the main exercises."
                 } if pattern == "trunk_stability" and include_stability else {}),
             })
             if exercise_category in {"compound", "accessory"}:
@@ -1922,7 +2057,7 @@ def generate_program(
         warm_up_range = "5–7 min" if p["session_minutes"] <= 30 else "5–10 min"
 
         # The session duration is an approximate envelope, not a rigid work/rest split.
-        planning_budget = p["session_minutes"]
+        planning_budget = max(0, p["session_minutes"] - learning_task_minutes)
         # Preserve the main compound patterns; trim optional work first when needed.
         volume_adjustments = []
         while selected and _estimated_minutes(selected, warm_up_minutes) > planning_budget:
@@ -2025,7 +2160,7 @@ def generate_program(
                     for muscle in removed["primary_muscles"]:
                         exposure[muscle] -= removed["prescription"]["sets"]
 
-        estimated = _estimated_minutes(selected, warm_up_minutes)
+        estimated = _estimated_minutes(selected, warm_up_minutes) + learning_task_minutes
         if estimated > p["session_minutes"]:
             raise ProgramValidationError(
                 f"Trening {session_index + 1} za cilj {planning_goal} je ocenjen na {estimated} min, na voljo pa je {p['session_minutes']} min. Skrajšaj vadbo ali izberi daljši termin."
@@ -2047,6 +2182,13 @@ def generate_program(
             if decision.get("decision") == "READY":
                 return True
             report = decision.get("user_report", {})
+            if (
+                decision.get("decision") == "LEARN"
+                and decision.get("resolved_exercise_id")
+                and isinstance(report, dict)
+                and report.get("status") == "learning_completed_by_user"
+            ):
+                return True
             return (
                 decision.get("decision") == "REGRESS"
                 and isinstance(report, dict)
@@ -2071,34 +2213,70 @@ def generate_program(
         else:
             session_focus = "focused"
 
-        if session_focus == "movement_learning":
+        completed_learning_starter = bool(selected) and any(
+            item.get("decision") == "LEARN"
+            and isinstance(item.get("user_report"), dict)
+            and item["user_report"].get("status") == "learning_completed_by_user"
+            for item in movement_decisions_by_pattern.values()
+        )
+        if completed_learning_starter:
+            session_title = f"Trening {session_index + 1} – začetni podprti trening"
+            session_title_en = f"Session {session_index + 1} – Supported Starter Training"
+        elif session_focus == "movement_learning":
             session_title = f"Trening {session_index + 1} – učenje gibalnih vzorcev"
+            session_title_en = f"Session {session_index + 1} – Movement Pattern Learning"
         elif planning_goal == "endurance":
             session_title = f"Trening {session_index + 1} – vzdržljivost"
+            session_title_en = f"Session {session_index + 1} – Endurance"
         elif planning_goal == "mobility":
             session_title = f"Trening {session_index + 1} – mobilnost in gibljivost"
+            session_title_en = f"Session {session_index + 1} – Mobility"
         elif planning_goal == "functional":
             session_title = f"Trening {session_index + 1} – funkcionalna pripravljenost: moč + kondicija"
+            session_title_en = f"Session {session_index + 1} – Functional Fitness: Strength + Conditioning"
         elif planning_goal == "fat_loss" and session_index >= 2:
             session_title = f"Trening {session_index + 1} – aerobna in kondicijska priprava"
+            session_title_en = f"Session {session_index + 1} – Aerobic and Conditioning Work"
         elif session_focus == "full_body":
             session_title = f"Trening {session_index + 1} – celotno telo"
+            session_title_en = f"Session {session_index + 1} – Full Body"
         else:
             focus_labels = [PATTERN_LABELS.get(value, value) for value in covered_patterns]
             focus_name = " + ".join(focus_labels) if focus_labels else "omejen nabor vzorcev"
+            pattern_labels_en = {
+                "squat": "Squat", "lunge": "Lunge", "hinge": "Hip Hinge",
+                "hip_extension": "Hip Extension", "horizontal_push": "Horizontal Push",
+                "horizontal_pull": "Horizontal Pull", "vertical_push": "Vertical Push",
+                "vertical_pull": "Vertical Pull", "carry": "Carry",
+                "anti_rotation": "Anti-Rotation", "trunk_stability": "Trunk Stability",
+                "jump": "Jump", "hinge_power": "Explosive Hip Extension",
+                "accessory": "Accessory", "conditioning": "Conditioning",
+                "locomotion": "Locomotion", "mobility": "Active Mobility",
+                "mobility_stretch": "Stretching", "knee_flexion": "Knee Flexion",
+                "balance": "Balance", "coordination": "Coordination",
+            }
+            focus_name_en = " + ".join(pattern_labels_en.get(value, value.replace("_", " ").title()) for value in covered_patterns) or "Selected Movement Patterns"
             session_title = (
                 f"Trening {session_index + 1} – ciljno delo: {focus_name}"
                 if session_focus == "targeted"
                 else f"Trening {session_index + 1} – usmerjena vadba: {focus_name}"
             )
+            session_title_en = (
+                f"Session {session_index + 1} – Targeted Work: {focus_name_en}"
+                if session_focus == "targeted"
+                else f"Session {session_index + 1} – Focused Training: {focus_name_en}"
+            )
 
         plans.append({
             "session": session_index + 1,
             "title": session_title,
+            "title_en": session_title_en,
             "session_focus": session_focus,
             "covered_patterns": covered_patterns,
             "learning_tasks_estimated_minutes": learning_task_minutes,
-            "session_phase": "movement_learning" if not covered_patterns and learning_tasks_for_session else "mixed_or_capacity",
+            "session_phase": "movement_learning" if any(
+                item.get("decision") == "LEARN" for item in movement_decisions_by_pattern.values()
+            ) else "mixed_or_capacity",
             "warm_up_minutes": warm_up_minutes,
             "warm_up_range": warm_up_range,
             **({"mobility_block": mobility_block} if mobility_block else {}),
@@ -2136,15 +2314,52 @@ def generate_program(
         "program_version": "3.2.0",
         "camera_coordination_add_on_applied": camera_coordination_exercise is not None,
         "goal_framework": CANONICAL_GOALS[canonical_goal],
+        "goal_framework_en": {
+            "id": canonical_goal,
+            "label": {
+                "strength_hypertrophy": "Strength + Muscle Mass",
+                "functional": "Functional Fitness",
+                "fat_loss": "Fat Loss",
+            }[canonical_goal],
+            "description": {
+                "strength_hypertrophy": (
+                    "For less experienced trainees, strength and muscle growth are closely related goals "
+                    "and are developed together through loaded compound exercises. More advanced trainees "
+                    "can choose a separate strength or hypertrophy emphasis."
+                ),
+                "functional": (
+                    "Build practical strength through loaded compound exercises and the greatest controlled "
+                    "range of motion available. Develop mobility primarily through strength across range "
+                    "of motion, and conditioning through intervals, circuits or MetCon."
+                ),
+                "fat_loss": (
+                    "Combine resistance training to preserve muscle mass, conditioning, and a sustainable "
+                    "moderate energy deficit with adequate protein."
+                ),
+            }[canonical_goal],
+            "pillars": list(CANONICAL_GOALS[canonical_goal]["pillars"]),
+        },
         "nutrition_guidance": list(CANONICAL_GOALS[canonical_goal].get("nutrition_guidance", [])),
+        "nutrition_guidance_en": (
+            [
+                "Create a moderate, sustainable energy deficit; avoid aggressive diets.",
+                "Prioritize protein. A practical range is approximately 1.6–2.2 g/kg of target or adjusted body mass per day when there are no relevant medical restrictions.",
+                "Keep regular resistance training to help preserve muscle mass and performance.",
+                "Add conditioning through intervals, MetCon or longer uphill walks; adjust the volume to recovery.",
+                "Track multi-week trends in body mass and waist circumference, and adjust nutrition sustainably.",
+            ] if canonical_goal == "fat_loss" else []
+        ),
         "movement_adaptation": {
             "source": (
-                "structured_six_pattern_decisions"
+                "guided_six_pattern_learning"
                 if movement_decisions_by_pattern else "self_reported_movement_assessment"
             ),
             "is_diagnosis": False,
-            "automatic_progression": "movement_assessment_does_not_trigger_progression",
-            "events": movement_adaptation_events,
+            "automatic_progression": "checklist_completion_does_not_trigger_progression",
+            "events": [
+                {**event, **({"message_en": _event_message_english(event)} if _event_message_english(event) else {})}
+                for event in movement_adaptation_events
+            ],
             "summary": movement_summary,
             "structured_decisions": movement_decisions_by_pattern,
         } if movement_summary is not None or movement_decisions_by_pattern else None,
@@ -2199,6 +2414,29 @@ def generate_program(
             "deload": "Razbremeni ob vztrajnem slabšanju zmogljivosti, regeneracije ali kakovosti izvedbe.",
             "last_session_adjustment": "reduce_sets_increase_reserve" if reduce_load else ("hold_and_progress_by_rule" if response and response["difficulty"] == "easy" else "maintain"),
         },
+        "methodology_en": {
+            "exercise_source": "verified_catalogue_only",
+            "compound_first": True,
+            "single_joint_accessories": p["include_accessories"],
+            "training_emphasis": p["training_emphasis"],
+            "exercise_scaling": "Choose a load and variation that allow repeatable repetitions at the intended RIR. Learning variations are temporary support, not the main training stimulus.",
+            "equipment_policy": "Use only equipment listed in the profile and supports whose stability has been confirmed.",
+            "endurance_policy": (
+                "Functional fitness: use intervals, circuit training or MetCon; longer aerobic work is optional."
+                if planning_goal == "functional" else
+                "Fat loss: combine resistance training with conditioning; choose intervals/MetCon or longer uphill walks."
+                if planning_goal == "fat_loss" else
+                "Develop endurance through aerobic work, intervals or muscular-endurance training according to the goal."
+            ),
+            "mobility_policy": "Develop mobility primarily through loaded exercises across the greatest currently controlled range of motion. Mobility drills are brief preparation.",
+            "functional_policy": "Each session combines loaded multi-joint training through the greatest controlled range of motion with MetCon or intervals. Mobility drills remain a brief warm-up.",
+            "fat_loss_policy": "Three essential elements: resistance training to preserve muscle, conditioning, and a sustainable energy deficit with adequate protein.",
+            "tempo": "Tempo depends on the exercise: control the eccentric phase and perform the concentric phase decisively without compensations. Maintain a repeatable rhythm during intervals.",
+            "range_of_motion": "For loaded exercises, use the greatest range of motion you can currently control and tolerate; develop it gradually without compensations.",
+            "progression": "Change one principal variable at a time. Progress only after repeatable target performance, controlled technique and adequate recovery; use the smallest practical increase.",
+            "deload": "Use a deload when performance, recovery or movement quality show a sustained decline.",
+            "last_session_adjustment": "reduce_sets_increase_reserve" if reduce_load else ("hold_and_progress_by_rule" if response and response["difficulty"] == "easy" else "maintain"),
+        },
         "feedback_applied": response,
         "sessions": plans,
         "weekly_summary": {
@@ -2214,6 +2452,22 @@ def generate_program(
             "pattern_work_sets": dict(pattern_work_sets),
             "unfilled_patterns": sorted(missing_patterns),
         },
+        "limitations_en": [
+            "Session duration is an estimate. Allow approximately 5–10 minutes for warm-up; the remaining time depends on tempo, rest periods and exercise difficulty.",
+            "Stability exercises are not automatic additions to hypertrophy sessions. Include them when feedback identifies a relevant trunk-control need.",
+            "Duration estimates are approximate and depend on execution speed, equipment changes and individual rest periods.",
+            "The exercise catalogue does not assess medical conditions. A coach or appropriate healthcare professional should review relevant limitations and symptoms before exercise selection.",
+            "Weekly muscle-group exposure from multi-joint exercises is not equivalent to the number of direct working sets for each muscle.",
+        ] + (
+            ["The following movement patterns are not included: " + _english_pattern_labels(sorted(missing_patterns)) + ". ATENA has not replaced them with unrelated movements. Their omission may reflect available equipment, movement assessment, profile exclusions or time limits. Review equipment, reassess movement or adjust session duration if you want to include them."]
+            if missing_patterns else []
+        ) + (
+            ["Without suitable equipment, an effective horizontal pull (for example, a row) cannot be guaranteed. The programme does not replace it with unsuitable self-resisted exercises. Add a safe support, resistance band, bar or weight for balanced back development."]
+            if "horizontal_pull" in missing_patterns else []
+        ) + (
+            ["Long-term strength and muscle-mass gains are limited without external resistance. The programme therefore uses more demanding unilateral and tempo variations; additional resistance may eventually be useful for further progression."]
+            if planning_goal in {"strength", "hypertrophy", "strength_hypertrophy", "fat_loss"} and not ({"barbell", "dumbbell", "kettlebell"} & available_equipment) else []
+        ),
         "limitations": [
             "Čas treninga je okviren; ogrevanje traja približno 5–10 minut, preostanek pa se prilagodi tempu, odmorom in zahtevnosti vaj.",
             "Stabilizacijske vaje niso privzeti dodatek k hipertrofiji; vključijo se ciljno, kadar povratna informacija pokaže težavo z nadzorom trupa.",

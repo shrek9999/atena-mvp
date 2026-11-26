@@ -191,6 +191,10 @@ def _init(conn, dialect):
             profile_id TEXT PRIMARY KEY REFERENCES atena_profiles(profile_id) ON DELETE CASCADE,
             assessment_json JSONB NOT NULL,
             updated_at TEXT NOT NULL
+        )""",        """CREATE TABLE IF NOT EXISTS atena_learning_progress (
+            profile_id TEXT PRIMARY KEY REFERENCES atena_profiles(profile_id) ON DELETE CASCADE,
+            progress_json JSONB NOT NULL,
+            updated_at TEXT NOT NULL
         )""",
         """CREATE TABLE IF NOT EXISTS atena_program_versions (
             program_version_id TEXT PRIMARY KEY,
@@ -217,10 +221,12 @@ def _init(conn, dialect):
             "ALTER TABLE atena_profiles ENABLE ROW LEVEL SECURITY",
             "ALTER TABLE atena_training_sessions ENABLE ROW LEVEL SECURITY",
             "ALTER TABLE atena_movement_assessments ENABLE ROW LEVEL SECURITY",
+            "ALTER TABLE atena_learning_progress ENABLE ROW LEVEL SECURITY",
             "ALTER TABLE atena_program_versions ENABLE ROW LEVEL SECURITY",
             "REVOKE ALL PRIVILEGES ON TABLE atena_profiles FROM PUBLIC, anon, authenticated",
             "REVOKE ALL PRIVILEGES ON TABLE atena_training_sessions FROM PUBLIC, anon, authenticated",
             "REVOKE ALL PRIVILEGES ON TABLE atena_movement_assessments FROM PUBLIC, anon, authenticated",
+            "REVOKE ALL PRIVILEGES ON TABLE atena_learning_progress FROM PUBLIC, anon, authenticated",
             "REVOKE ALL PRIVILEGES ON TABLE atena_program_versions FROM PUBLIC, anon, authenticated",
         ]
         for statement in postgres_safety:
@@ -464,6 +470,40 @@ def get_movement_assessment(profile_id: str, token: str):
     finally:
         conn.close()
 
+
+def save_learning_progress(profile_id: str, token: str, progress: dict):
+    """Persist minimal guided-learning completion; no symptoms or health details."""
+    conn, dialect = _connect()
+    try:
+        _init(conn, dialect)
+        _authorized_profile(conn, dialect, profile_id, token)
+        now = _now()
+        _execute(conn, dialect, """INSERT INTO atena_learning_progress
+            (profile_id, progress_json, updated_at) VALUES (%s, %s, %s)
+            ON CONFLICT(profile_id) DO UPDATE SET
+                progress_json = excluded.progress_json,
+                updated_at = excluded.updated_at""",
+            (profile_id, _encode_json(progress, dialect), now))
+        conn.commit()
+        return {"learning_progress": progress, "updated_at": now}
+    finally:
+        conn.close()
+
+
+def get_learning_progress(profile_id: str, token: str):
+    """Restore minimal learning progress independently of health-data consent."""
+    conn, dialect = _connect(require_enabled=False)
+    try:
+        _init(conn, dialect)
+        _authorized_profile(conn, dialect, profile_id, token)
+        row = _execute(conn, dialect,
+            "SELECT progress_json, updated_at FROM atena_learning_progress WHERE profile_id = %s",
+            (profile_id,)).fetchone()
+        if not row:
+            return None
+        return {"learning_progress": _decode_json(row[0]), "updated_at": row[1]}
+    finally:
+        conn.close()
 
 def add_program_version(profile_id: str, token: str, program_version_id: str,
                         program: dict, decision: dict):

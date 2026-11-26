@@ -43,6 +43,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                 "label": "Reaching squat s protiutežjo",
                 "description": "Izteg rok oziroma lahek kolut pred telesom uporabi kot protiutež za lažje učenje ravnotežja in organizacije počepa.",
                 "exercise_id": "reaching_squat",
+                "starter_exercise_options": ["reaching_squat", "supported_squat"],
             },
             {
                 "id": "target_squat",
@@ -84,6 +85,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                 "label": "Predklon ob steni",
                 "description": "Uči pomik bokov nazaj in nadzorovan predklon z nevtralnim položajem hrbtenice. Pri nelagodju v hrbtu zmanjša amplitudo in obremenitev; začni ob steni, ohrani nadzor trupa in ne sili v globino.",
                 "exercise_id": "wall_hip_hinge",
+                "starter_exercise_options": ["wall_hip_hinge", "bodyweight_hip_hinge"],
             },
         ],
     },
@@ -103,6 +105,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                 "demo_url": "https://youtu.be/fAMAAO21OC0",
                 "description": "Višino stabilne opore izberi tako, da je celotna ponovitev nadzorovana.",
                 "exercise_id": "push_up_incline",
+                "starter_exercise_options": ["push_up_incline"],
             },
         ],
     },
@@ -126,6 +129,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                     "dvigovanja ramen proti ušesom. To je učna naloga, ne obremenjena vaja."
                 ),
                 "exercise_id": None,
+                "starter_exercise_options": ["band_row", "trx_row", "ring_row", "one_arm_row", "kettlebell_one_arm_row"],
             },
             {
                 "id": "light_one_arm_hinge_row",
@@ -169,6 +173,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                 "label": "Dvig rok nad glavo brez bremena",
                 "description": "Vadi počasen dvig in spust rok brez bremena. Ohrani rebra nad medenico, komolca iztegnjena in roki v širini ramen. Dovoli naravno rotacijo lopatic navzgor, vendar ne kompenziraj s pretiranim skomiganjem ali hiperekstenzijo prsno-ledvenega dela. Uporabi največjo nadzorovano fleksijo rame.",
                 "exercise_id": None,
+                "starter_exercise_options": ["band_overhead_press"],
             },
             {
                 "id": "light_implement_press",
@@ -200,6 +205,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                 "demo_url": "https://youtu.be/MYg8xEdmTGk",
                 "description": "Opora je namenjena ravnotežju. Ohraniti je treba stabilno stopalo in koleno, vodoravno in smeri gibanja pravokotno usmerjeno medenico ter nadzorovan naklon trupa; pri vrnitvi izkoristi ekstenzijo kolka brez hiperekstenzije ledvene hrbtenice.",
                 "exercise_id": "supported_split_squat",
+                "starter_exercise_options": ["supported_split_squat", "split_squat"],
             },
             {
                 "id": "static_split_squat",
@@ -212,6 +218,47 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         ],
     },
 }
+
+
+# Reviewed English copy for the six foundational movement-learning tasks.
+# Keep the original Slovenian coaching copy intact; English fields are explicit
+# and must preserve the same prerequisites, movement constraints and cautions.
+PATTERN_EN = {
+    "squat": {"label": "Squat", "task": "Perform a controlled squat through an individually appropriate range. Maintain control of the pelvis and lumbopelvic position; avoid an uncontrolled posterior pelvic tuck (butt wink). Do not require a resting-position squat."},
+    "hinge": {"label": "Hip hinge", "task": "Practise the hip hinge with a light dowel. End the range before you lose control of your natural spinal position."},
+    "horizontal_push": {"label": "Horizontal push — push-up", "task": "Use a push-up variation that allows you to control your trunk, shoulder blades, elbows and range of motion."},
+    "horizontal_pull": {"label": "Horizontal pull — row", "task": "First learn to control shoulder-blade and arm movement during an unloaded horizontal pull. Add a loaded bent-over row only after you can reliably control the hip hinge and pulling coordination."},
+    "vertical_push": {"label": "Vertical push — overhead press", "task": "First raise your arms overhead under control without external load. Keep the arms shoulder-width apart and elbows extended, with the ribs stacked over the pelvis and without thoracolumbar hyperextension. Allow natural upward rotation of the shoulder blades without excessive shrugging. Add external resistance only after control and tolerated shoulder flexion have been confirmed."},
+    "lunge": {"label": "Lunge", "task": "Perform a lunge or static split squat through a controlled range. Maintain stable foot and knee support, keep the pelvis level in the frontal plane and facing the direction of travel, use appropriate hip extension and control your trunk angle. Check both sides."},
+}
+
+METHOD_EN = {
+    "supported_squat_assistance": ("Supported squat", "Use a suspension trainer, securely anchored resistance band, fixed rack bar around chest height or another stable, immovable support to reduce balance demands. Use your arms only as much as needed while your legs continue to control the movement."),
+    "reaching_counterbalance": ("Counterbalance squat", "Reach your arms forward or hold a light plate in front of your body. The counterbalance can make it easier to learn squat balance and coordination."),
+    "target_squat": ("Squat to a stable target", "Adjust the target height so you can repeat a controlled descent and stand back up without losing control."),
+    "dowel_four_point": ("Four-point dowel hip hinge", "Keep the dowel in contact with the sacrum, upper back and back of the head. Use one hand to monitor the natural curve of your lower back. The hand position and lumbar curve should remain consistent as you hinge. Preserve your own neutral spinal curve; do not force your back flat."),
+    "wall_hip_hinge": ("Wall-supported hip hinge", "Practise moving your hips backwards while keeping a natural, controlled spinal position. If your back feels uncomfortable, reduce the range and load. Start close to the wall, control your trunk and do not force depth."),
+    "incline_push_up": ("Incline push-up", "Choose a stable support height that lets you control the entire repetition."),
+    "scapular_coordination": ("Unloaded shoulder-blade coordination", "First practise controlled forward and backward movement of the shoulder blades (protraction and retraction) while standing upright, then in a hip-hinged position. Do not shrug your shoulders towards your ears. This is a learning drill, not a loaded exercise."),
+    "light_one_arm_hinge_row": ("Light single-arm bent-over row", "Use a very light dumbbell or kettlebell to practise coordinating the shoulder blade and elbow. Keep your trunk stable. If you cannot yet control the hip-hinged position, use a supported row variation from the exercise catalogue."),
+    "light_barbell_row": ("Light barbell row", "Introduce a light barbell row only after shoulder-blade coordination and the hip-hinged position are reliable. Increase the load only while technique and the controlled return remain consistent."),
+    "band_row": ("Resistance-band row", "Use a lighter band for less resistance. Control the return and shoulder-blade movement; make sure the anchor point is secure."),
+    "unloaded_overhead_reach": ("Unloaded overhead arm raise", "Slowly raise and lower your arms without external load. Keep your ribs stacked over your pelvis, elbows extended and arms shoulder-width apart. Allow the shoulder blades to rotate naturally upwards. Avoid excessive shrugging or thoracolumbar hyperextension. Use the greatest range of shoulder flexion you can control."),
+    "light_implement_press": ("Press with a very light implement", "Use a dowel, light plate, dumbbells or a resistance band. Record the implement and load; these variations are not automatically equivalent to one another."),
+    "band_overhead_press": ("Resistance-band overhead press", "Use very light resistance and only a range that your shoulder tolerates. Move slowly and check that the band is securely anchored."),
+    "supported_split_squat": ("Supported split squat", "Use support for balance. Keep the foot and knee stable, the pelvis level and facing the direction of movement, and the trunk angle controlled. Return by extending the hip without hyperextending the lower back."),
+    "static_split_squat": ("Static split squat", "First establish a stable foot position and control the descent. Only then consider progressing to a dynamic lunge variation."),
+}
+
+
+def get_pattern_english(pattern: str) -> dict | None:
+    """Return reviewed English task text for a movement pattern, if available."""
+    return PATTERN_EN.get(pattern)
+
+
+def get_method_english(method_id: str) -> tuple[str, str] | None:
+    """Return reviewed English label and instructions for a learning method."""
+    return METHOD_EN.get(method_id)
 
 
 class MovementCoachingError(ValueError):

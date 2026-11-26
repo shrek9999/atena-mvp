@@ -43,13 +43,12 @@ def resolve_response_language(messages: list[dict], requested_language: object =
         if isinstance(item, dict) and item.get("role") == "user"
         and isinstance(item.get("content"), str)
     ]
-    # A short reply such as 'no', 'ne', 'yes' or 'ok' has no reliable language
-    # signal. Inherit the latest substantive user turn instead of defaulting to English.
     for turn in reversed(user_turns):
         hint = _language_hint(turn)
         if hint:
             return hint
     return "en"
+
 
 def language_instruction(language: str) -> str:
     """Return a concise, explicit output-language contract for the model."""
@@ -63,7 +62,10 @@ def language_instruction(language: str) -> str:
     return (
         "RESPONSE LANGUAGE: English (en). Reply entirely in natural, clear, "
         "grammatically correct international English. Use standard strength-and-"
-        "conditioning terminology, explain specialist terms briefly when useful. Ignore Slovenian-only grammar and terminology instructions when replying in English; use canonical English exercise names and idiomatic English coaching language. Do not switch languages mid-answer."
+        "conditioning terminology, explain specialist terms briefly when useful. "
+        "Ignore Slovenian-only grammar and terminology instructions when replying "
+        "in English; use canonical English exercise names and idiomatic English "
+        "coaching language. Do not switch languages mid-answer."
     )
 
 
@@ -71,6 +73,7 @@ def localize_guardrail_reply(reply: str, language: str) -> str:
     """Localize high-priority deterministic safety/persistence replies without model calls."""
     if language != "en" or not isinstance(reply, str):
         return reply
+
     lowered = reply.casefold()
     if "ker noge ne moreš normalno obremeniti" in lowered:
         return (
@@ -111,6 +114,60 @@ def localize_guardrail_reply(reply: str, language: str) -> str:
             "loads. Do you currently have any pain, injury, movement limitation, or "
             "medical restriction I should take into account?"
         )
-    # For an unrecognized guardrail, preserve the original deterministic wording.
-    # A generic translation could accidentally remove a clinically important instruction.
+    # Keep unknown safety messages unchanged rather than applying a risky generic translation.
     return reply
+
+
+_CHAT_API_ERRORS_EN = {
+    "Testni dostop še ni nastavljen na strežniku.": "Pilot access has not been configured on the server yet.",
+    "Testni dostopni ključ ni pravilen.": "The pilot access token is invalid.",
+    "Pilot še ni aktiviran: skrbnik mora na strežniku nastaviti GEMINI_API_KEY.": "The pilot is not active yet. The administrator must configure GEMINI_API_KEY on the server.",
+    "Pričakovan je JSON objekt.": "A JSON object is required.",
+    "Pošlji od 1 do 12 sporočil.": "Send between 1 and 12 messages.",
+    "Neveljavna zgodovina pogovora.": "The conversation history is invalid.",
+    "Za uporabo zgodovine treningov sta potrebna ID profila in dostopni ključ.": "A profile ID and access token are required to use training history.",
+    "Podatki za dostop do profila niso veljavni.": "The profile access details are invalid.",
+    "Dostop do profila ni pravilen. Obnovi dostop z ID-jem in ključem.": "Profile access was denied. Restore access using the profile ID and token.",
+    "Model ni vrnil odgovora. Poskusi znova.": "The AI model did not return a response. Please try again.",
+    "Povezava z modelom ni pravilno nastavljena. Skrbnik naj preveri ključ in model.": "The AI service is not configured correctly. The administrator should check the API key and model settings.",
+    "Trenutno je dosežena omejitev uporabe. Poskusi pozneje.": "The service has reached its current usage limit. Please try again later.",
+    "Storitev trenutno ni dosegljiva. Poskusi znova.": "The service is temporarily unavailable. Please try again.",
+    "Odgovor se je predolgo pripravljal ali povezava ni uspela. Poskusi znova.": "The response timed out or the connection failed. Please try again.",
+}
+
+
+def localize_chat_api_error(message: str, language: str) -> str:
+    """Localize known chat endpoint errors without changing their meaning."""
+    if language != "en" or not isinstance(message, str):
+        return message
+    prefix = "Sporočilo je prazno ali predolgo (največ "
+    suffix = " znakov)."
+    if message.startswith(prefix) and message.endswith(suffix):
+        limit = message[len(prefix):-len(suffix)]
+        if limit.isdigit():
+            return f"Message is empty or too long (maximum {limit} characters)."
+    return _CHAT_API_ERRORS_EN.get(message, message)
+
+
+_PROGRAM_API_ERRORS_EN = {
+    "Testni dostop še ni nastavljen na strežniku.": "Pilot access has not been configured on the server yet.",
+    "Testni dostopni ključ ni pravilen.": "The pilot access token is invalid.",
+    "Pričakovan je JSON objekt s profilom vadečega.": "A JSON object containing the trainee profile is required.",
+    "Stara delna samoocena ne zadošča za individualni program. Pred pripravo izpolni vseh šest osnovnih gibalnih vzorcev.": "The older partial self-assessment is not sufficient for an individual programme. Complete all six basic movement patterns before programme generation.",
+    "Pred uporabo odgovorov o gibanju za pripravo programa moraš izrecno potrditi ločeno soglasje.": "You must explicitly confirm separate consent before your movement responses can be used to create a programme.",
+    "Za vsak od šestih gibalnih vzorcev izberi naslednji korak. Vzorce, ki se jih ne želiš učiti, preskoči; za individualni program izberi vsaj en vzorec za učenje ali prijavi simptome.": "Choose a next step for each of the six movement patterns. Skip patterns you do not want to learn; select at least one pattern for learning or report symptoms to create an individual programme.",
+    "Vsak vzorec mora imeti veljavno izbiro ali poročilo o simptomih, odločitev pa mora biti skladna z njim.": "Each pattern must have a valid selection or symptom report, and the decision must be consistent with that report.",
+    "Noben gibalni vzorec ni izbran za učenje ali potrjen po ustreznem ponovnem preizkusu. Izberi vsaj en vzorec za učenje oziroma razjasni prijavljene simptome.": "No movement pattern has been selected for learning or confirmed after an appropriate retest. Select at least one pattern to learn or clarify the reported symptoms.",
+    "Programa trenutno ni mogoče sestaviti iz kataloga.": "The programme cannot currently be generated from the exercise catalogue.",
+    "Ob bolečini ali novem nelagodju ne bom samodejno spreminjal programa. Prekini oziroma prilagodi vadbo; če so simptomi novi, izraziti ali vztrajajo, se posvetuj z ustreznim zdravstvenim strokovnjakom.": "I will not automatically change the programme when pain or new discomfort is reported. Stop or modify the session; if symptoms are new, significant or persistent, consult an appropriate healthcare professional.",
+}
+
+
+def localize_program_api_message(message: str, language: str) -> str:
+    """Localize deterministic programme API messages without changing Slovenian responses."""
+    if language != "en" or not isinstance(message, str):
+        return message
+    return _PROGRAM_API_ERRORS_EN.get(
+        message,
+        "The programme request could not be completed. Please review the profile and movement selections, then try again.",
+    )
