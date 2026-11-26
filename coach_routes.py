@@ -20,6 +20,8 @@ from coach_store import (
     check_database_connection as store_check_database_connection, storage_enabled,
     save_movement_assessment as store_save_movement_assessment,
     get_movement_assessment as store_get_movement_assessment,
+    save_learning_progress as store_save_learning_progress,
+    get_learning_progress as store_get_learning_progress,
     add_program_version as store_add_program_version,
     list_program_versions as store_list_program_versions,
     get_program_version as store_get_program_version,
@@ -3731,6 +3733,67 @@ def save_coach_movement_assessment(profile_id):
         return _profile_auth_error()
     except StorageUnavailable as exc:
         return _storage_error(exc)
+
+LEARNING_CONTROL_CRITERIA = {
+    "squat": {"tempo", "balance", "foot_stability", "knee_control", "trunk_control", "tolerated_rom"},
+    "hinge": {"tempo", "hip_movement", "knee_control", "spine_control", "balance", "tolerated_rom"},
+    "lunge": {"tempo", "balance", "foot_knee_control", "pelvis_control", "trunk_control", "tolerated_rom"},
+    "horizontal_push": {"tempo", "body_line", "shoulder_elbow_control", "scapular_control", "trunk_control", "tolerated_rom"},
+    "horizontal_pull": {"tempo", "base_stability", "hinge_position", "spine_control", "scapular_arm_control", "tolerated_rom"},
+    "vertical_push": {"tempo", "overhead_path", "scapular_control", "trunk_control", "wrist_elbow_position", "tolerated_rom"},
+}
+
+@coach_bp.route("/coach/profile/<profile_id>/learning-progress", methods=["GET", "PUT", "OPTIONS"])
+def coach_profile_learning_progress(profile_id):
+    """Read or save minimal guided-learning progress, separate from health data."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    token = _profile_token()
+    try:
+        if request.method == "GET":
+            saved = store_get_learning_progress(profile_id, token)
+            return jsonify({
+                "learning_progress": saved["learning_progress"] if saved else None,
+                "updated_at": saved["updated_at"] if saved else None,
+                "source": "guided_learning_progress",
+            }), 200
+        payload = request.get_json(silent=True)
+        if not isinstance(payload, dict) or set(payload) != {"patterns"}:
+            return jsonify({"error": "Pošlji samo šest učnih vzorcev."}), 400
+        supplied = payload["patterns"]
+        required = set(LEARNING_CONTROL_CRITERIA)
+        if not isinstance(supplied, dict) or set(supplied) != required:
+            return jsonify({"error": "Učni napredek mora vsebovati vseh šest vzorcev."}), 400
+        normalized = {}
+        for pattern, criteria in LEARNING_CONTROL_CRITERIA.items():
+            item = supplied[pattern]
+            if (not isinstance(item, dict) or set(item) != {"criteria"}
+                    or not isinstance(item["criteria"], dict)
+                    or set(item["criteria"]) != criteria
+                    or any(not isinstance(value, bool) for value in item["criteria"].values())):
+                return jsonify({"error": f"Kontrolni seznam za {pattern} ni veljaven."}), 400
+            checks = dict(item["criteria"])
+            normalized[pattern] = {
+                "criteria_acknowledged": checks,
+                "learning_completed_by_user": all(checks.values()),
+            }
+        record = {
+            "version": "guided-six-pattern-learning-v1",
+            "patterns": normalized,
+            "meaning": "User-confirmed learning completion only; not objective technique verification.",
+        }
+        saved = store_save_learning_progress(profile_id, token, record)
+        return jsonify({
+            "learning_progress": saved["learning_progress"],
+            "updated_at": saved["updated_at"],
+            "stored": True,
+            "source": "guided_learning_progress",
+        }), 200
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
+
 
 @coach_bp.route("/coach/profile/<profile_id>/movement-assessment", methods=["PUT", "OPTIONS"])
 def save_six_pattern_movement_assessment(profile_id):
