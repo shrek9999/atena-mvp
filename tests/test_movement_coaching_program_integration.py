@@ -42,6 +42,20 @@ def test_learn_decision_selects_reaching_squat_and_adds_learning_task():
     assert all(task["method_id"] == "reaching_counterbalance" for task in tasks)
 
 
+def test_standard_bodyweight_squat_is_primary_and_reaching_squat_remains_a_regression():
+    decision = build_movement_decision(
+        "squat", "LEARN",
+        selected_learning_method="bodyweight_squat",
+        decision_reason="Najprej učenje osnovnega počepa z lastno težo.",
+    )
+    plan = generate_program(BASE, movement_decisions={"squat": decision})
+    squats = _pattern_exercises(plan, "squat")
+    assert squats
+    assert all(item["exercise_id"] == "air_squat" for item in squats)
+    tasks = [task for session in plan["sessions"] for task in session["learning_tasks"]]
+    assert any(task["method_id"] == "bodyweight_squat" for task in tasks)
+
+
 def test_dowel_hinge_learning_task_uses_a_catalogue_supported_low_skill_variant():
     decision = build_movement_decision(
         "hinge", "LEARN",
