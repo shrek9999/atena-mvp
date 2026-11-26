@@ -83,7 +83,7 @@ def test_completed_learning_starts_a_supported_variation_without_marking_ready()
     assert exercises
     assert all(item["exercise_id"] == "reaching_squat" for item in exercises)
     assert all(item["prescription"]["sets"] <= 2 for item in exercises)
-    assert all(item["prescription"]["rir_min"] >= 3 for item in exercises)
+    assert all(item["prescription"]["rir"] >= 3 for item in exercises)
     assert all(
         task["movement_pattern"] != "squat"
         for session in plan["sessions"]
