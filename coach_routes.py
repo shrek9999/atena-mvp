@@ -2811,6 +2811,12 @@ def coach_program():
             "message": localize("Pred uporabo odgovorov o gibanju za pripravo programa moraš izrecno potrditi ločeno soglasje."),
         }), 403
     learning_progress = payload.get("learning_progress")
+    if not isinstance(learning_progress, dict):
+        return jsonify({
+            "blocked": True,
+            "learning_required": True,
+            "message": localize("Pred individualnim programom zaključi vseh šest vodenih učnih nalog."),
+        }), 409
     if learning_progress is not None:
         learning_patterns = learning_progress.get("patterns") if isinstance(learning_progress, dict) else None
         expected_learning_patterns = set(LEARNING_CONTROL_CRITERIA)
@@ -4144,25 +4150,12 @@ def coach_profile_program(profile_id):
             guided_learning_applied = True
             learning_progress_version = learning_progress.get("version")
         else:
-            # Backward compatibility for profiles created before guided learning progress existed.
-            # New frontend flows never write this legacy health-data assessment.
-            legacy_record = store_get_movement_assessment(profile_id, token)
-            legacy_assessment = legacy_record.get("assessment") if legacy_record else None
-            movement_decisions = legacy_assessment.get("decisions") if isinstance(legacy_assessment, dict) else None
-            if not isinstance(movement_decisions, dict) or set(movement_decisions) != expected_patterns:
-                return jsonify({
-                    "blocked": True, "learning_required": True, "assessment_required": True,
-                    "missing_patterns": sorted(expected_patterns),
-                    "message": "Pred individualnim programom zaključi vseh šest vodenih učnih nalog.",
-                }), 409
-            if not any(item.get("decision") in {"READY", "LEARN", "REGRESS"} for item in movement_decisions.values() if isinstance(item, dict)):
-                return jsonify({
-                    "blocked": True, "learning_required": True, "assessment_required": True,
-                    "missing_patterns": sorted(expected_patterns),
-                    "message": "Noben gibalni vzorec še ni primeren za vključitev v program.",
-                }), 409
-            guided_learning_applied = False
-            learning_progress_version = None
+            # Legacy self-assessments are not a substitute for the six guided learning tasks.
+            return jsonify({
+                "blocked": True, "learning_required": True, "assessment_required": True,
+                "missing_patterns": sorted(expected_patterns),
+                "message": "Pred individualnim programom zaključi vseh šest vodenih učnih nalog.",
+            }), 409
         result = generate_program(
             profile["profile"],
             movement_decisions=movement_decisions,
