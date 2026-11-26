@@ -4028,12 +4028,14 @@ def export_coach_profile(profile_id):
         profile = store_get_profile(profile_id, token)
         sessions = store_list_sessions(profile_id, token, limit=5000)
         movement_assessment = store_get_movement_assessment(profile_id, token)
+        learning_progress = store_get_learning_progress(profile_id, token)
         program_versions = store_list_program_versions(profile_id, token, limit=5000)
         response = jsonify({
-            "export_version": "1.1",
+            "export_version": "1.2",
             "profile": profile,
             "sessions": sessions,
             "movement_assessment": movement_assessment,
+            "learning_progress": learning_progress,
             "program_versions": program_versions,
             "exported_at": __import__("datetime").datetime.now(
                 __import__("datetime").timezone.utc
