@@ -122,7 +122,7 @@ def test_horizontal_pull_and_overhead_press_learning_stay_low_demand_until_contr
     tasks = [task for session in plan["sessions"] for task in session["learning_tasks"]]
     method_ids = {task["method_id"] for task in tasks}
     assert "scapular_coordination" in method_ids
-    assert "unloaded_overhead_reach" in method_ids
+    assert "light_implement_press" in method_ids
 
 
 def test_unassessable_omits_pattern_until_assessment_is_available():
