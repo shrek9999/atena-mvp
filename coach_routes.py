@@ -2811,6 +2811,7 @@ def coach_program():
         return jsonify({
             "blocked": True,
             "learning_required": True,
+            "missing_patterns": sorted(expected_patterns),
             "message": localize("Pred individualnim programom zaključi vseh šest vodenih učnih nalog."),
         }), 409
     if learning_progress is not None:
