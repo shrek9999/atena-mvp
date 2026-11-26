@@ -34,6 +34,11 @@ def _report(
             "tempo": "slow_controlled",
             "load_adjustment": "bodyweight_or_assisted",
             "range_adjustment": "within_tolerance",
+            "symptom_context": {
+                "familiarity": "familiar_stable",
+                "movement_quality_changed": False,
+                "next_day_response": "same_or_better",
+            },
             "acute_warning_signs": acute_warning_signs or [],
             "support_method": (
                 support_method or "stable_support" if variation == "supported_squat"
@@ -66,6 +71,21 @@ def test_minor_discomfort_up_to_four_is_tolerated_when_modified_and_not_worsened
         (_report(worsened=True, pain=2), "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["squat"]),
     ],
 )
+@pytest.mark.parametrize("context", [
+    {"familiarity": "new_or_worsening", "movement_quality_changed": False, "next_day_response": "same_or_better"},
+    {"familiarity": "familiar_stable", "movement_quality_changed": True, "next_day_response": "same_or_better"},
+    {"familiarity": "familiar_stable", "movement_quality_changed": False, "next_day_response": "worse"},
+])
+def test_regression_requires_familiar_stable_symptoms_and_no_adverse_response(context):
+    report = _report()
+    report["regression_test"]["symptom_context"] = context
+    with pytest.raises(MovementCoachingError):
+        validate_symptom_regression_report(
+            report, "REGRESS", "supported_squat",
+            SYMPTOM_REGRESSION_VARIANTS["squat"],
+        )
+
+
 def test_invalid_or_mismatched_retest_is_rejected(report, decision, exercise, allowed):
     with pytest.raises(MovementCoachingError):
         validate_symptom_regression_report(report, decision, exercise, allowed)
