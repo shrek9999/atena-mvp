@@ -87,10 +87,20 @@ def _validate_learning_progress_patterns(patterns, *, allow_in_progress=False):
         status = item.get("status", inferred_status)
         if status == "excluded":
             reason = item.get("exclusion_reason")
-            if set(item) != {"status", "exclusion_reason"} or reason not in LEARNING_EXCLUSION_REASONS:
+            if set(item) not in ({"status", "exclusion_reason"}, {"status", "exclusion_reason", "criteria"}) or reason not in LEARNING_EXCLUSION_REASONS:
                 incomplete.append(pattern)
                 continue
-            normalized[pattern] = {"status": "excluded", "exclusion_reason": reason}
+            excluded_item = {"status": "excluded", "exclusion_reason": reason}
+            if "criteria" in item:
+                criteria = item["criteria"]
+                if (
+                    not isinstance(criteria, dict) or set(criteria) != required
+                    or any(not isinstance(value, bool) for value in criteria.values())
+                ):
+                    incomplete.append(pattern)
+                    continue
+                excluded_item["criteria"] = dict(criteria)
+            normalized[pattern] = excluded_item
             continue
         if status not in {"completed", "in_progress"} or set(item) not in ({"criteria"}, {"status", "criteria"}):
             incomplete.append(pattern)
@@ -3772,6 +3782,7 @@ def coach_profile_learning_progress(profile_id):
                     "status": "excluded",
                     "exclusion_reason": item["exclusion_reason"],
                     "learning_completed_by_user": False,
+                    **({"criteria_acknowledged": dict(item["criteria"])} if "criteria" in item else {}),
                 }
             else:
                 checks = dict(item["criteria"])
