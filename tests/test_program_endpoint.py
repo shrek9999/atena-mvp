@@ -721,3 +721,51 @@ def test_program_endpoint_allows_one_temporarily_excluded_pattern(monkeypatch):
         for exercise in session["exercises"]
     )
     assert program["movement_adaptation"]["structured_decisions"]["hinge"]["decision"] == "UNASSESSABLE"
+
+
+def test_program_endpoint_allows_a_pain_excluded_pattern_after_a_safe_regression(monkeypatch):
+    client = _client(monkeypatch)
+    learning = _complete_learning_progress()
+    learning["patterns"]["squat"] = {"status": "excluded", "exclusion_reason": "pain"}
+    decisions = _six_pattern_decisions()
+    from training.movement_coaching import build_movement_decision
+    decisions["squat"] = build_movement_decision(
+        "squat", "REGRESS",
+        selected_exercise_id="supported_squat",
+        user_report={
+            "status": "symptoms_reported",
+            "regression_test": {
+                "status": "tolerated",
+                "variation_id": "supported_squat",
+                "pain_during": 2,
+                "worsened": False,
+                "tempo": "slow_controlled",
+                "load_adjustment": "reduced",
+                "range_adjustment": "within_tolerance",
+                "symptom_context": {
+                    "familiarity": "familiar_stable",
+                    "movement_quality_changed": False,
+                    "next_day_response": "same_or_better",
+                },
+                "acute_warning_signs": [],
+                "support_method": "stable_support",
+            },
+        },
+    )
+    decisions["squat"]["training_phase"] = "movement_learning"
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-secret"},
+        json={
+            "movement_assessment_consent": True,
+            "learning_progress": learning,
+            "movement_decisions": decisions,
+            "profile": {
+                "goal": "hypertrophy", "experience": "intermediate",
+                "equipment": ["dumbbell", "bench", "household_support"], "sessions_per_week": 2,
+                "session_minutes": 60,
+            },
+        },
+    )
+    assert response.status_code == 200, response.get_json()
+    assert response.get_json()["program"]["movement_adaptation"]["structured_decisions"]["squat"]["decision"] == "REGRESS"
