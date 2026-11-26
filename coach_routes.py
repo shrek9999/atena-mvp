@@ -3701,38 +3701,14 @@ def _hold_successfully_confirmed_exercises(profile_id, token, sessions, recommen
 
 @coach_bp.route("/coach/profile/<profile_id>/assessment", methods=["PUT", "OPTIONS"])
 def save_coach_movement_assessment(profile_id):
-    """Persist the latest task-specific self-report only with separate health-data consent."""
+    """Retired standalone movement self-assessment; symptoms remain in the safety conversation."""
     if request.method == "OPTIONS":
         return ("", 204)
-    payload = request.get_json(silent=True)
-    if not isinstance(payload, dict) or set(payload) != {"movement_tasks"}:
-        return jsonify({"error": "Pošlji samo strukturirano polje movement_tasks."}), 400
-    movement_tasks = payload.get("movement_tasks")
-    if not isinstance(movement_tasks, dict):
-        return jsonify({"error": "movement_tasks mora biti JSON objekt."}), 400
-    normalized = {}
-    for task, value in movement_tasks.items():
-        if not isinstance(value, dict) or set(value) != {"status"}:
-            return jsonify({"error": "Vsaka gibalna naloga mora vsebovati samo polje status."}), 400
-        normalized[task] = value.get("status")
-    try:
-        assessment = assess_movement_competence(normalized)
-        profile = store_get_profile(profile_id, _profile_token())
-        if not profile["health_data_consent"]:
-            return jsonify({"error": "Za shranjevanje samoocene gibanja je potrebna ločena privolitev za zdravstvene podatke."}), 403
-        saved = store_save_movement_assessment(profile_id, _profile_token(), normalized)
-        return jsonify({
-            "assessment": assessment,
-            "assessment_updated_at": saved["updated_at"],
-            "assessment_stored": True,
-            "source": "authenticated_self_reported_movement_assessment",
-        }), 200
-    except MovementAssessmentError as exc:
-        return jsonify({"error": str(exc)}), 400
-    except ProfileNotFound:
-        return _profile_auth_error()
-    except StorageUnavailable as exc:
-        return _storage_error(exc)
+    return jsonify({
+        "error": "Ločena samoocena gibanja ni več del ATENE. Uporabi šest vodenih učnih nalog.",
+        "guided_learning_required": True,
+    }), 410
+
 
 LEARNING_CONTROL_CRITERIA = {
     "squat": {"tempo", "balance", "foot_stability", "knee_control", "trunk_control", "tolerated_rom"},
