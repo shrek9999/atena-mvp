@@ -4170,7 +4170,7 @@ def coach_profile_program(profile_id):
                 decision_reason="Uporabnik je zaključil vodeno učno nalogo in potrdil kriterije. To ni objektivna potrditev tehnike ali dovoljenje za samodejno povečanje bremena.",
             )
             movement_decisions[pattern]["training_phase"] = "movement_learning"
-                result = generate_program(
+        result = generate_program(
             profile["profile"],
             movement_decisions=movement_decisions,
         )
