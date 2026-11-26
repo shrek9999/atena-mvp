@@ -2351,11 +2351,11 @@ def generate_program(
         ),
         "movement_adaptation": {
             "source": (
-                "structured_six_pattern_decisions"
+                "guided_six_pattern_learning"
                 if movement_decisions_by_pattern else "self_reported_movement_assessment"
             ),
             "is_diagnosis": False,
-            "automatic_progression": "movement_assessment_does_not_trigger_progression",
+            "automatic_progression": "checklist_completion_does_not_trigger_progression",
             "events": [
                 {**event, **({"message_en": _event_message_english(event)} if _event_message_english(event) else {})}
                 for event in movement_adaptation_events
