@@ -219,7 +219,7 @@ def test_ready_decision_starts_conservatively_without_automatic_progression():
     assert [item["exercise_id"] for item in selected] != [
         item["exercise_id"] for item in _pattern_exercises(baseline, "squat")
     ]
-    assert assessed["movement_adaptation"]["automatic_progression"] == "movement_assessment_does_not_trigger_progression"
+    assert assessed["movement_adaptation"]["automatic_progression"] == "checklist_completion_does_not_trigger_progression"
     assert any(
         event["action"] == "ready_for_light_loaded_start"
         for event in assessed["movement_adaptation"]["events"]
