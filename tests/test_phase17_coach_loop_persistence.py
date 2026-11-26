@@ -104,6 +104,47 @@ def test_saved_guided_learning_progress_is_used_when_generating_next_programme(m
     assert response.get_json()["program_stored"] is True
 
 
+def test_saved_profile_programme_advances_only_patterns_with_two_quality_exposures(monkeypatch, tmp_path):
+    import coach_routes
+
+    client, profile_id, token, _ = _client(monkeypatch, tmp_path, health_consent=False)
+    _save_six_pattern_learning_progress(client, profile_id, token)
+    monkeypatch.setattr(
+        coach_routes,
+        "recommend_exercise_progression",
+        lambda _sessions: [{
+            "exercise_id": "squat_goblet",
+            "pattern": "squat",
+            "decision": "add_repetitions",
+            "exposures_recorded": 2,
+            "reason": "Two controlled exposures.",
+        }],
+    )
+    called = {}
+
+    def fake_generate_program(profile, feedback=None, movement_assessment=None, movement_decisions=None):
+        called["movement_decisions"] = movement_decisions
+        return {"goal": profile["goal"], "sessions": [{"session": 1, "exercises": []}]}
+
+    monkeypatch.setattr(coach_routes, "generate_program", fake_generate_program)
+    response = client.post(
+        "/coach/profile/{}/program".format(profile_id),
+        headers={"X-Profile-Token": token},
+        json={"no_current_pain_or_restrictions": True},
+    )
+    assert response.status_code == 200, response.get_json()
+    decisions = called["movement_decisions"]
+    assert decisions["squat"]["decision"] == "READY"
+    assert decisions["squat"]["training_phase"] == "capacity_development"
+    assert decisions["squat"]["user_report"]["status"] == "movement_controlled"
+    assert decisions["squat"]["user_report"]["movement_control"]["repeatable"] is True
+    assert set(response.get_json()["capacity_development_patterns"]) == {"squat"}
+    assert all(
+        record["training_phase"] == "movement_learning"
+        for pattern, record in decisions.items() if pattern != "squat"
+    )
+
+
 def test_saved_profile_programme_can_exclude_one_pattern_and_continue(monkeypatch, tmp_path):
     import coach_routes
 
