@@ -1375,7 +1375,7 @@ def generate_program(
                     completed_learning = (
                         "Učenje koordinacije lopatic je zaključeno. "
                         if method_id == "scapular_coordination"
-                        else "Učenje dejanskega potiska nad glavo z zelo lahkim pripomočkom je zaključeno. "
+                        else "Učenje neobremenjenega dviga rok nad glavo je zaključeno. "
                     )
                     movement_note = (
                         completed_learning
