@@ -30,6 +30,7 @@ def test_profile_export_requires_profile_token_and_disables_caching(monkeypatch)
     monkeypatch.setattr(coach_routes, "store_get_profile", get_profile)
     monkeypatch.setattr(coach_routes, "store_list_sessions", get_sessions)
     monkeypatch.setattr(coach_routes, "store_get_movement_assessment", lambda profile_id, token: None)
+    monkeypatch.setattr(coach_routes, "store_get_learning_progress", lambda profile_id, token: None)
     monkeypatch.setattr(coach_routes, "store_list_program_versions", lambda profile_id, token, limit=10: [])
 
     denied = client.get("/coach/profile/example/export")
