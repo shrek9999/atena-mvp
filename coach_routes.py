@@ -4132,34 +4132,43 @@ def coach_profile_program(profile_id):
         # scope, while the exercise engine applies only independently justified
         # exercise-level rep guidance. A future user-confirmed session-level
         # adjustment can be applied through an explicit programme revision.
-        movement_record = store_get_movement_assessment(profile_id, token)
-        saved_assessment = movement_record.get("assessment") if movement_record else None
+        learning_record = store_get_learning_progress(profile_id, token)
+        learning_progress = learning_record.get("learning_progress") if learning_record else None
+        learning_patterns = learning_progress.get("patterns") if isinstance(learning_progress, dict) else None
         expected_patterns = set(PATTERN_DEFINITIONS)
-        movement_decisions = (
-            saved_assessment.get("decisions")
-            if isinstance(saved_assessment, dict)
-            and saved_assessment.get("assessment_version") == SIX_PATTERN_ASSESSMENT_VERSION
-            else None
+        if not isinstance(learning_patterns, dict) or set(learning_patterns) != expected_patterns:
+            return jsonify({
+                "blocked": True,
+                "learning_required": True,
+                "missing_patterns": sorted(expected_patterns),
+                "message": "Pred programom skupaj predelajva šest osnovnih gibalnih vzorcev. Pri vsakem potrdi šest kratkih učnih kriterijev.",
+            }), 409
+        incomplete_patterns = sorted(
+            pattern for pattern, item in learning_patterns.items()
+            if not isinstance(item, dict) or item.get("learning_completed_by_user") is not True
         )
-        if not isinstance(movement_decisions, dict) or set(movement_decisions) != expected_patterns:
-            missing_patterns = sorted(expected_patterns - set(movement_decisions or {})) if isinstance(movement_decisions, dict) else sorted(expected_patterns)
+        if incomplete_patterns:
             return jsonify({
                 "blocked": True,
-                "assessment_required": True,
-                "missing_patterns": missing_patterns,
-                "message": "Pred individualnim programom morava opraviti vseh šest kratkih gibalnih preverjanj: počep, predklon v kolkih (hip hinge), horizontalni potisk, horizontalni poteg, vertikalni potisk in izpadni korak. Neocenjenega vzorca ne bom obravnaval kot pripravljenega za zahtevnejšo vajo.",
+                "learning_required": True,
+                "missing_patterns": incomplete_patterns,
+                "message": "Učenje še ni zaključeno pri vseh šestih vzorcih. Nadaljujva tam, kjer je ostalo.",
             }), 409
-        assessable_patterns = [
-            pattern for pattern, record in movement_decisions.items()
-            if isinstance(record, dict) and record.get("decision") in {"READY", "LEARN", "REGRESS"}
-        ]
-        if not assessable_patterns:
-            return jsonify({
-                "blocked": True,
-                "assessment_required": True,
-                "message": "Vseh šest vzorcev je trenutno neocenjenih ali nejasnih. Pred shranjenim individualnim programom je treba vsaj en vzorec varno oceniti; sicer program ne bi imel zanesljivega gibalnega izhodišča.",
-            }), 409
-        result = generate_program(
+        # A completed checklist is a user-confirmed learning task, never objective proof of mastery.
+        movement_decisions = {}
+        for pattern in PATTERN_DEFINITIONS:
+            methods = PATTERN_DEFINITIONS[pattern].get("learning_methods", [])
+            method = next((item for item in methods if item.get("learning_only") is True), None)
+            if method is None:
+                return jsonify({"error": f"Za vzorec {pattern} ni potrjene učne različice."}), 500
+            movement_decisions[pattern] = build_movement_decision(
+                pattern, "LEARN",
+                selected_learning_method=method["id"],
+                user_report={"status": "learning_completed_by_user"},
+                decision_reason="Uporabnik je zaključil vodeno učno nalogo in potrdil kriterije. To ni objektivna potrditev tehnike ali dovoljenje za samodejno povečanje bremena.",
+            )
+            movement_decisions[pattern]["training_phase"] = "movement_learning"
+                result = generate_program(
             profile["profile"],
             movement_decisions=movement_decisions,
         )
@@ -4177,8 +4186,9 @@ def coach_profile_program(profile_id):
             "program": result,
             "program_version_id": program_version_id,
             "program_stored": True,
-            "movement_assessment_applied": True,
-            "movement_assessment_version": SIX_PATTERN_ASSESSMENT_VERSION,
+            "guided_learning_applied": True,
+            "learning_progress_version": learning_progress.get("version"),
+            "movement_assessment_applied": False,
             "profile": profile["profile"],
             "adaptation_guidance": adaptation,
             "adaptive_decision": adaptive_decision,
