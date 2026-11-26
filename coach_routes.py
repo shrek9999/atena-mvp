@@ -2960,28 +2960,13 @@ def coach_program():
 
 @coach_bp.route("/coach/movement-assessment", methods=["POST", "OPTIONS"])
 def coach_movement_assessment():
-    """Evaluate self-reported movement-task experience without diagnosis or storage."""
+    """Retired legacy self-assessment endpoint; guided learning is the only intake."""
     if request.method == "OPTIONS":
         return ("", 204)
-    expected_token = os.getenv("AI_COACH_TEST_TOKEN", "").strip()
-    supplied_token = request.headers.get("X-Pilot-Token", "").strip()
-    if not expected_token:
-        return jsonify({"error": "Testni dostop še ni nastavljen na strežniku."}), 503
-    if not supplied_token or not hmac.compare_digest(supplied_token, expected_token):
-        return jsonify({"error": "Testni dostopni ključ ni pravilen."}), 403
-    payload = request.get_json(silent=True)
-    if not isinstance(payload, dict) or not isinstance(payload.get("assessment"), dict):
-        return jsonify({"error": "Pričakovan je objekt assessment z ocenami gibalnih nalog."}), 400
-    try:
-        result = assess_movement_competence(payload["assessment"])
-    except MovementAssessmentError as exc:
-        return jsonify({"error": str(exc)}), 400
     return jsonify({
-        "assessment": result,
-        "stored": False,
-        "source": "self_reported_movement_assessment",
-        "pilot": True,
-    }), 200
+        "error": "Ta samoocena ni več del ATENE. Nadaljuj skozi šest vodenih učnih nalog.",
+        "guided_learning_required": True,
+    }), 410
 
 
 @coach_bp.route("/coach/status", methods=["GET", "OPTIONS"])
@@ -3812,156 +3797,13 @@ def coach_profile_learning_progress(profile_id):
 
 @coach_bp.route("/coach/profile/<profile_id>/movement-assessment", methods=["PUT", "OPTIONS"])
 def save_six_pattern_movement_assessment(profile_id):
-    """Save the six guided movement checks only with separate health-data consent."""
+    """Retired legacy self-assessment endpoint; learning progress is stored separately."""
     if request.method == "OPTIONS":
         return ("", 204)
-    payload = request.get_json(silent=True)
-    if not isinstance(payload, dict):
-        return jsonify({"error": "Telo zahteve ni veljavno."}), 400
-    if payload.get("movement_assessment_consent") is not True:
-        return jsonify({
-            "blocked": True,
-            "consent_required": True,
-            "error": "Za uporabo odgovorov o gibanju pri pripravi programa je potrebna ločena privolitev."
-        }), 403
-    if set(payload) != {"movement_assessment_consent", "movement_patterns"}:
-        return jsonify({"error": "Pošlji samo movement_assessment_consent in movement_patterns."}), 400
-    supplied = payload.get("movement_patterns")
-    required_patterns = set(PATTERN_DEFINITIONS)
-    if not isinstance(supplied, dict) or set(supplied) != required_patterns:
-        missing = sorted(required_patterns - set(supplied or {})) if isinstance(supplied, dict) else sorted(required_patterns)
-        unknown = sorted(set(supplied or {}) - required_patterns) if isinstance(supplied, dict) else []
-        return jsonify({
-            "error": "Gibalna samoocena mora vsebovati vseh šest osnovnih vzorcev.",
-            "missing_patterns": missing,
-            "unknown_patterns": unknown,
-        }), 400
-
-    status_to_decision = {
-        "selected_for_learning": "LEARN",
-        "comfortable": "LEARN",
-        "needs_support": "LEARN",
-        "uncertain": "UNASSESSABLE",
-        "not_assessed": "UNASSESSABLE",
-        "symptoms_reported": "UNASSESSABLE",
-    }
-    decisions = {}
-    try:
-        for pattern in PATTERN_DEFINITIONS:
-            value = supplied[pattern]
-            if not isinstance(value, dict):
-                return jsonify({"error": f"Vzorec {pattern} mora biti objekt."}), 400
-            status = value.get("status")
-            if not isinstance(status, str) or status not in status_to_decision:
-                return jsonify({"error": f"Neveljaven status za vzorec {pattern}."}), 400
-            allowed_keys = {"status"}
-            if status == "symptoms_reported":
-                allowed_keys |= {"regression_test", "selected_exercise_id", "acute_warning_signs"}
-            if set(value) - allowed_keys:
-                return jsonify({"error": f"Vzorec {pattern} vsebuje nepričakovana polja."}), 400
-            user_report = {"status": status}
-            selected_exercise_id = value.get("selected_exercise_id")
-            decision = status_to_decision[status]
-
-            # A user checklist records learning completion, never objective mastery.
-            # This legacy health-data route therefore cannot promote a pattern to READY.
-            if "acute_warning_signs" in value:
-                warning_flags = value["acute_warning_signs"]
-                if (
-                    not isinstance(warning_flags, list)
-                    or any(flag not in ACUTE_WARNING_SIGNS for flag in warning_flags)
-                ):
-                    return jsonify({"error": f"Akutni opozorilni znaki za {pattern} niso veljavni."}), 400
-                user_report["acute_warning_signs"] = warning_flags
-                if warning_flags and (selected_exercise_id is not None or "regression_test" in value):
-                    return jsonify({"error": f"Ob akutnem opozorilnem znaku se vzorec {pattern} ne sme ponovno testirati."}), 400
-            reason = {
-                "selected_for_learning": "Uporabnik je izbral ta vzorec za vodeno učenje; izbira ne potrjuje tehnike ali pripravljenosti za obremenitev.",
-                "comfortable": "Uporabnik poroča, da je osnovno izvedbo opravil udobno in nadzorovano.",
-                "needs_support": "Uporabnik poroča, da pri izvedbi potrebuje podporo ali lažjo različico.",
-                "uncertain": "Uporabnik ni prepričan o kakovosti ali udobju izvedbe.",
-                "not_assessed": "Gibalni vzorec še ni bil ocenjen.",
-                "symptoms_reported": "Pri osnovni različici se je pojavilo nelagodje; ATENA preveri opozorilne znake in toleranco prilagojene različice.",
-            }[status]
-            if status == "symptoms_reported" and selected_exercise_id and "regression_test" not in value:
-                return jsonify({"error": f"Izbrana regresija za {pattern} mora imeti zabeležen ponovni preizkus."}), 400
-            if status == "symptoms_reported" and "regression_test" in value:
-                regression_test = value["regression_test"]
-                if (
-                    not isinstance(regression_test, dict)
-                    or not {
-                        "status", "variation_id", "pain_during", "worsened",
-                        "tempo", "load_adjustment", "range_adjustment", "acute_warning_signs",
-                    }.issubset(regression_test)
-                    or set(regression_test) - {
-                        "status", "variation_id", "pain_during", "worsened",
-                        "tempo", "load_adjustment", "range_adjustment", "acute_warning_signs",
-                        "support_method", "anchor_point_confirmed",
-                    }
-                    or regression_test.get("status") not in {"tolerated", "not_tolerated"}
-                    or isinstance(regression_test.get("pain_during"), bool)
-                    or not isinstance(regression_test.get("pain_during"), (int, float))
-                    or not 0 <= regression_test.get("pain_during") <= 10
-                    or not isinstance(regression_test.get("worsened"), bool)
-                    or not isinstance(regression_test.get("acute_warning_signs"), list)
-                    or ("anchor_point_confirmed" in regression_test and not isinstance(regression_test.get("anchor_point_confirmed"), bool))
-                ):
-                    return jsonify({"error": f"Ponovni preizkus za {pattern} nima veljavne strukture."}), 400
-                allowed_regressions = SYMPTOM_REGRESSION_VARIANTS.get(pattern, ())
-                if regression_test.get("variation_id") not in allowed_regressions:
-                    return jsonify({"error": f"Preizkušena različica ni dovoljena za vzorec {pattern}."}), 400
-                user_report["regression_test"] = regression_test
-                if regression_test["status"] == "tolerated":
-                    decision = "REGRESS"
-                    reason = "Prilagojena različica je bila ponovno preizkušena brez poslabšanja; program uporabi počasnejši tempo, manjše breme in tolerirano amplitudo."
-                else:
-                    if selected_exercise_id is not None:
-                        return jsonify({"error": f"Netolerirana regresija za {pattern} ne sme izbrati vaje."}), 400
-                    decision = "UNASSESSABLE"
-                    reason = "Preizkus ni bil ustrezno toleriran ali so prisotni opozorilni znaki; prizadeto področje ostane izpuščeno iz vadbe."
-            if status == "symptoms_reported":
-                try:
-                    validate_symptom_regression_report(
-                        user_report, decision, selected_exercise_id,
-                        SYMPTOM_REGRESSION_VARIANTS.get(pattern, ()),
-                    )
-                except MovementCoachingError as exc:
-                    return jsonify({"error": str(exc)}), 400
-            decisions[pattern] = build_movement_decision(
-                pattern,
-                decision,
-                user_report=user_report,
-                selected_exercise_id=selected_exercise_id,
-                decision_reason=reason,
-            )
-            if decision == "READY":
-                decisions[pattern]["training_phase"] = "capacity_development"
-        token = _profile_token()
-        profile = store_get_profile(profile_id, token)
-        if not profile["health_data_consent"]:
-            return jsonify({
-                "error": "Za shranjevanje gibalne samoocene je potrebna ločena privolitev za zdravstvene podatke."
-            }), 403
-        record = {
-            "assessment_version": SIX_PATTERN_ASSESSMENT_VERSION,
-            "assessment_type": "guided_six_pattern_self_report",
-            "decisions": decisions,
-            "is_diagnosis": False,
-        }
-        saved = store_save_movement_assessment(profile_id, token, record)
-        return jsonify({
-            "assessment_version": SIX_PATTERN_ASSESSMENT_VERSION,
-            "movement_decisions": decisions,
-            "assessment_updated_at": saved["updated_at"],
-            "assessment_stored": True,
-            "source": "authenticated_six_pattern_self_assessment",
-        }), 200
-    except MovementCoachingError as exc:
-        return jsonify({"error": str(exc)}), 400
-    except ProfileNotFound:
-        return _profile_auth_error()
-    except StorageUnavailable as exc:
-        return _storage_error(exc)
+    return jsonify({
+        "error": "Samostojna samoocena je odstranjena. Napredek shrani prek šestih vodenih učnih nalog.",
+        "guided_learning_required": True,
+    }), 410
 
 
 @coach_bp.route("/coach/profile/<profile_id>/progress", methods=["GET", "OPTIONS"])
