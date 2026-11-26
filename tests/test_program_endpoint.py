@@ -734,15 +734,17 @@ def test_learn_decision_creates_learning_task_not_a_loaded_work_set(monkeypatch)
         movement_decisions=decisions,
     )
 
+    safe_squat_starters = {"supported_squat", "chair_sit_to_stand", "reaching_squat"}
     for session in program["sessions"]:
-        assert all(item["pattern"] != "squat" for item in session["exercises"])
+        squat_exercises = [item for item in session["exercises"] if item["pattern"] == "squat"]
+        assert all(item["exercise_id"] in safe_squat_starters for item in squat_exercises)
         squat_tasks = [
             task for task in session["learning_tasks"]
             if task["movement_pattern"] == "squat"
         ]
         assert len(squat_tasks) == 1
         assert squat_tasks[0]["method_id"] == "reaching_counterbalance"
-        assert squat_tasks[0]["exercise_id"] is None
+        assert squat_tasks[0]["exercise_id"] in safe_squat_starters
         assert squat_tasks[0]["decision"] == "LEARN"
 
 def test_all_unmastered_patterns_can_form_a_learning_only_program(monkeypatch):
@@ -794,7 +796,7 @@ def test_all_unmastered_patterns_can_form_a_learning_only_program(monkeypatch):
         assert len(session["learning_tasks"]) == 6
         assert {task["movement_pattern"] for task in session["learning_tasks"]} == expected_patterns
         task_by_pattern = {task["movement_pattern"]: task for task in session["learning_tasks"]}
-        assert task_by_pattern["hinge"]["exercise_id"] is None
+        assert task_by_pattern["hinge"]["exercise_id"] == "wall_hip_hinge"
         assert task_by_pattern["horizontal_pull"]["exercise_id"] is None
         assert task_by_pattern["vertical_push"]["exercise_id"] is None
         assert all(task["decision"] == "LEARN" for task in session["learning_tasks"])
