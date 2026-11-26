@@ -1371,10 +1371,15 @@ def generate_program(
                     None,
                 )
                 if method and method.get("learning_only") is True:
+                    completed_learning = (
+                        "Učenje koordinacije lopatic je zaključeno. "
+                        if method_id == "scapular_coordination"
+                        else "Učenje dejanskega potiska nad glavo z zelo lahkim pripomočkom je zaključeno. "
+                    )
                     movement_note = (
-                        f"Osnovno učenje koordinacije za vzorec {PATTERN_DEFINITIONS[pattern]['label']} je zaključeno. "
-                        f"Zdaj začni z začetno različico: {candidate['name']}. "
-                        "Izvedi največ dve nadzorovani seriji; zahtevnost povečuj šele po ponovljivih izvedbah."
+                        completed_learning
+                        + f"Zdaj začni z začetno različico: {candidate['name']}. "
+                        + "Izvedi največ dve nadzorovani seriji; zahtevnost povečuj šele po ponovljivih izvedbah."
                     )
                 else:
                     movement_note = (
