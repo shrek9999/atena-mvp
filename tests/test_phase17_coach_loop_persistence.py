@@ -310,7 +310,10 @@ def test_five_persona_saved_profile_training_feedback_cycle(monkeypatch, tmp_pat
         headers = {"X-Profile-Token": token}
 
         saved_learning = _save_six_pattern_learning_progress(client, profile_id, token)
-        assert saved_learning["learning_completed_patterns"] == 6, persona_name
+        assert all(
+            item["learning_completed_by_user"]
+            for item in saved_learning["learning_progress"]["patterns"].values()
+        ), persona_name
         assert set(saved_learning["learning_progress"]["patterns"]) == set(PATTERN_DEFINITIONS), persona_name
 
         first_response = client.post(
