@@ -13,37 +13,33 @@ def _client(monkeypatch):
 
 
 def _six_pattern_decisions():
-    from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
+    from training.movement_coaching import PATTERN_DEFINITIONS
 
-    criteria_by_pattern = {
-        "squat": {"tempo", "balance", "knee_hip_foot_control", "lumbopelvic_control", "tolerated_rom"},
-        "hinge": {"tempo", "hip_hinge_coordination", "spine_control", "balance", "tolerated_rom"},
-        "horizontal_push": {"tempo", "shoulder_elbow_wrist_control", "trunk_control", "stable_support", "tolerated_rom"},
-        "horizontal_pull": {"tempo", "scapular_arm_control", "trunk_control", "stable_base", "tolerated_rom"},
-        "vertical_push": {"tempo", "overhead_control", "trunk_control", "scapular_control", "tolerated_rom"},
-        "lunge": {"tempo", "balance", "pelvis_hip_knee_foot_control", "hip_extension", "trunk_control", "tolerated_rom"},
+    methods = {
+        "squat": "reaching_counterbalance",
+        "hinge": "wall_hip_hinge",
+        "horizontal_push": "incline_push_up",
+        "horizontal_pull": "scapular_coordination",
+        "vertical_push": "unloaded_overhead_reach",
+        "lunge": "supported_split_squat",
     }
     return {
         pattern: {
-            **build_movement_decision(
-                pattern,
-                "READY",
-                user_report={
-                    "status": "movement_controlled",
-                    "movement_control": {
-                        "confirmed_by_user": True,
-                        "repeatable": True,
-                        "criteria": {key: True for key in criteria_by_pattern[pattern]},
-                    },
-                },
-                decision_reason="Vsi kriteriji motoričnega nadzora so ponovljivi in potrjeni.",
-            ),
-            "training_phase": "capacity_development",
+            "movement_pattern": pattern,
+            "decision": "LEARN",
+            "training_phase": "movement_learning",
+            "selected_learning_method": methods[pattern],
+            "user_report": {"status": "selected_for_learning"},
         }
         for pattern in PATTERN_DEFINITIONS
     }
 
 
+def _complete_learning_progress():
+    return {"version": "guided-six-pattern-learning-v1", "patterns": {
+        pattern: {"criteria": {key: True for key in criteria}}
+        for pattern, criteria in LEARNING_CONTROL_CRITERIA.items()
+    }}
 def test_program_endpoint_requires_all_six_guided_learning_checklists_when_payload_is_supplied(monkeypatch):
     client = _client(monkeypatch)
     learning = {"patterns": {
@@ -103,6 +99,7 @@ def test_program_endpoint_returns_catalogue_backed_plan(monkeypatch):
         headers={"X-Pilot-Token": "test-only-secret"},
         json={
             "movement_assessment_consent": True,
+            "learning_progress": _complete_learning_progress(),
             "movement_decisions": _six_pattern_decisions(),
             "goal": "hypertrophy", "experience": "intermediate",
             "equipment": ["dumbbell", "bench"], "sessions_per_week": 2,
@@ -121,6 +118,7 @@ def test_program_endpoint_rejects_invalid_profile(monkeypatch):
         headers={"X-Pilot-Token": "test-only-secret"},
         json={
             "movement_assessment_consent": True,
+            "learning_progress": _complete_learning_progress(),
             "movement_decisions": _six_pattern_decisions(),
             "goal": "miracle", "experience": "beginner",
             "equipment": ["bodyweight"], "sessions_per_week": 2,
@@ -138,6 +136,7 @@ def test_program_endpoint_accepts_nested_profile_and_reduces_hard_feedback(monke
         headers={"X-Pilot-Token": "test-only-secret"},
         json={
             "movement_assessment_consent": True,
+            "learning_progress": _complete_learning_progress(),
             "movement_decisions": _six_pattern_decisions(),
             "profile": {
                 "goal": "hypertrophy", "experience": "intermediate",
@@ -163,6 +162,7 @@ def test_program_endpoint_holds_after_easy_feedback_instead_of_auto_progressing(
         headers={"X-Pilot-Token": "test-only-secret"},
         json={
             "movement_assessment_consent": True,
+            "learning_progress": _complete_learning_progress(),
             "movement_decisions": _six_pattern_decisions(),
             "profile": {
                 "goal": "hypertrophy", "experience": "intermediate",
@@ -194,6 +194,7 @@ def test_program_endpoint_blocks_automatic_adaptation_when_discomfort_reported(m
         headers={"X-Pilot-Token": "test-only-secret"},
         json={
             "movement_assessment_consent": True,
+            "learning_progress": _complete_learning_progress(),
             "movement_decisions": _six_pattern_decisions(),
             "profile": {
                 "goal": "hypertrophy", "experience": "intermediate",
@@ -212,6 +213,7 @@ def test_program_endpoint_returns_camera_observations_as_separate_non_decisional
     client = _client(monkeypatch)
     payload = {
         "movement_assessment_consent": True,
+        "learning_progress": _complete_learning_progress(),
         "movement_decisions": _six_pattern_decisions(),
         "profile": {
             "goal": "functional", "experience": "beginner",
@@ -294,6 +296,7 @@ def test_clear_coordination_proxy_adds_only_a_low_demand_warmup_drill(monkeypatc
     }
     payload = {
         "movement_assessment_consent": True,
+        "learning_progress": _complete_learning_progress(),
         "movement_decisions": _six_pattern_decisions(),
         "profile": {
             "goal": "functional", "experience": "beginner",
@@ -330,6 +333,7 @@ def test_clear_coordination_proxy_adds_only_a_low_demand_warmup_drill(monkeypatc
 def test_program_endpoint_rejects_contradictory_coordination_proxy_status(monkeypatch):
     payload = {
         "movement_assessment_consent": True,
+        "learning_progress": _complete_learning_progress(),
         "movement_decisions": _six_pattern_decisions(),
         "profile": {
             "goal": "functional", "experience": "beginner",
@@ -368,6 +372,7 @@ def test_program_endpoint_rejects_contradictory_coordination_proxy_status(monkey
 def test_program_endpoint_accepts_skipped_coordination_as_uncertain_context(monkeypatch):
     payload = {
         "movement_assessment_consent": True,
+        "learning_progress": _complete_learning_progress(),
         "movement_decisions": _six_pattern_decisions(),
         "profile": {
             "goal": "functional", "experience": "beginner",
@@ -412,6 +417,7 @@ def test_program_endpoint_accepts_skipped_coordination_as_uncertain_context(monk
 def test_insufficient_quality_coordination_proxy_does_not_add_warmup_drill(monkeypatch):
     payload = {
         "movement_assessment_consent": True,
+        "learning_progress": _complete_learning_progress(),
         "movement_decisions": _six_pattern_decisions(),
         "profile": {
             "goal": "functional", "experience": "beginner",
@@ -455,6 +461,7 @@ def test_program_endpoint_accepts_six_pattern_camera_proxy_v2_protocol_v3(monkey
     client = _client(monkeypatch)
     payload = {
         "movement_assessment_consent": True,
+        "learning_progress": _complete_learning_progress(),
         "movement_decisions": _six_pattern_decisions(),
         "profile": {
             "goal": "functional", "experience": "beginner",
@@ -533,6 +540,7 @@ def test_program_endpoint_accepts_six_pattern_camera_proxy_v2_protocol_v3(monkey
 def test_camera_v3_protocol_rejects_wrong_view_count(monkeypatch):
     payload = {
         "movement_assessment_consent": True,
+        "learning_progress": _complete_learning_progress(),
         "movement_decisions": _six_pattern_decisions(),
         "profile": {
             "goal": "functional", "experience": "beginner",
@@ -570,6 +578,7 @@ def test_camera_v3_protocol_rejects_wrong_view_count(monkeypatch):
 def test_camera_v4_protocol_accepts_nine_views_for_frontal_lunge(monkeypatch):
     payload = {
         "movement_assessment_consent": True,
+        "learning_progress": _complete_learning_progress(),
         "movement_decisions": _six_pattern_decisions(),
         "profile": {
             "goal": "functional", "experience": "beginner",
