@@ -118,7 +118,7 @@ def test_saved_profile_programme_blocks_when_all_patterns_are_unassessable(monke
     body = response.get_json()
     assert body["blocked"] is True
     assert body["assessment_required"] is True
-    assert "vsaj en vzorec varno oceniti" in body["message"]
+    assert "Noben gibalni vzorec še ni primeren za vključitev v program." in body["message"]
 
 
 def test_programme_versions_are_listed_and_included_in_export(monkeypatch, tmp_path):
@@ -155,7 +155,7 @@ def test_programme_versions_are_listed_and_included_in_export(monkeypatch, tmp_p
         headers={"X-Profile-Token": token},
     )
     assert exported.status_code == 200
-    assert exported.get_json()["export_version"] == "1.1"
+    assert exported.get_json()["export_version"] == "1.2"
     assert len(exported.get_json()["program_versions"]) == 1
 
 
