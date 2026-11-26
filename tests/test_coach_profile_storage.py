@@ -3,7 +3,7 @@ import sqlite3
 
 from flask import Flask
 
-from coach_routes import coach_bp
+from coach_routes import coach_bp, LEARNING_CONTROL_CRITERIA
 from training.catalogue import load_catalogue
 from training.movement_coaching import PATTERN_DEFINITIONS
 
@@ -44,15 +44,12 @@ def _create(client, *, health_consent=False):
 
 def _save_six_pattern_assessment(client, profile_id, token, *, status="comfortable"):
     response = client.put(
-        f"/coach/profile/{profile_id}/movement-assessment",
+        f"/coach/profile/{profile_id}/learning-progress",
         headers={"X-Profile-Token": token},
-        json={
-            "movement_assessment_consent": True,
-            "movement_patterns": {
-                pattern: {"status": status}
-                for pattern in PATTERN_DEFINITIONS
-            }
-        },
+        json={"patterns": {
+            pattern: {"criteria": {key: True for key in criteria}}
+            for pattern, criteria in LEARNING_CONTROL_CRITERIA.items()
+        }},
     )
     assert response.status_code == 200, response.get_json()
     return response.get_json()
@@ -541,6 +538,53 @@ def test_six_pattern_assessment_rejects_incomplete_pattern_set(monkeypatch, tmp_
     assert response.status_code == 400
     assert response.get_json()["missing_patterns"]
 
+
+def test_guided_learning_progress_is_saved_and_restored_without_health_consent(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client, health_consent=False)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    payload = {"patterns": {
+        pattern: {"criteria": {key: True for key in criteria}}
+        for pattern, criteria in LEARNING_CONTROL_CRITERIA.items()
+    }}
+    saved = client.put(
+        f"/coach/profile/{profile_id}/learning-progress",
+        headers={"X-Profile-Token": token}, json=payload,
+    )
+    assert saved.status_code == 200
+    assert saved.get_json()["stored"] is True
+    restored = client.get(
+        f"/coach/profile/{profile_id}/learning-progress",
+        headers={"X-Profile-Token": token},
+    )
+    data = restored.get_json()["learning_progress"]
+    assert data["version"] == "guided-six-pattern-learning-v1"
+    assert all(item["learning_completed_by_user"] for item in data["patterns"].values())
+
+
+def test_guided_learning_progress_rejects_symptom_or_extra_data(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client, health_consent=False)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    response = client.put(
+        f"/coach/profile/{profile_id}/learning-progress",
+        headers={"X-Profile-Token": token},
+        json={"patterns": {}, "symptoms": "knee pain"},
+    )
+    assert response.status_code == 400
+
+
+def test_guided_learning_progress_isolated_by_profile_token(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client, health_consent=False)
+    profile_id = created["profile"]["profile_id"]
+    response = client.get(
+        f"/coach/profile/{profile_id}/learning-progress",
+        headers={"X-Profile-Token": "wrong-token"},
+    )
+    assert response.status_code == 404
 
 def test_six_pattern_assessment_requires_explicit_movement_use_consent(monkeypatch, tmp_path):
     client = _client(monkeypatch, tmp_path, health_consent=True)
