@@ -814,13 +814,35 @@ def generate_program(
             if learning_phase:
                 if method is None or method.get("learning_only") is not True:
                     raise ProgramValidationError(
-                        f"Za vzorec {pattern} mora biti izbrana izrecna neobremenjena učna metoda."
+                        f"Za vzorec {pattern} mora biti izbrana izrecna učna metoda."
                     )
                 if selected_id is not None and selected_id != method.get("exercise_id"):
                     raise ProgramValidationError(
                         f"Izbrana učna metoda in različica za {pattern} se ne ujemata."
                     )
                 target_id = None
+                if decision == "LEARN" and report_status == "learning_completed_by_user":
+                    starter_options = list(method.get("starter_exercise_options", []))
+                    if method.get("exercise_id") and method.get("exercise_id") not in starter_options:
+                        starter_options.insert(0, method["exercise_id"])
+                    equipment_set = set(p["equipment"])
+                    for starter_id in starter_options:
+                        if starter_id not in available_ids:
+                            continue
+                        if starter_id in {"band_row", "band_overhead_press"} and not {
+                            "resistance_band", "anchor_point"
+                        }.issubset(equipment_set):
+                            continue
+                        if starter_id in {"trx_row", "ring_row"} and not {
+                            "anchor_point"
+                        }.issubset(equipment_set):
+                            continue
+                        if starter_id in {"one_arm_row", "kettlebell_one_arm_row"} and not (
+                            "bench" in equipment_set or "household_support" in equipment_set
+                        ):
+                            continue
+                        target_id = starter_id
+                        break
             else:
                 target_id = selected_id or (
                     method.get("exercise_id")
@@ -834,7 +856,7 @@ def generate_program(
                 raise ProgramValidationError(
                     f"Regresija vzorca {pattern} nima ustreznega poročila za učno ali simptomatsko prilagoditev."
                 )
-            if decision == "LEARN" and report_status not in {"selected_for_learning", "comfortable", "needs_support", None}:
+            if decision == "LEARN" and report_status not in {"selected_for_learning", "learning_completed_by_user", "comfortable", "needs_support", None}:
                 raise ProgramValidationError(
                     f"Učna faza vzorca {pattern} zahteva udobno samooceno ali potrebo po opori."
                 )
@@ -864,44 +886,31 @@ def generate_program(
                         )
                         method_id = method["id"] if method else None
             if report_status is not None and report_status not in {
-                "selected_for_learning", "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled"
+                "selected_for_learning", "learning_completed_by_user", "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "coach_verified"
             }:
                 raise ProgramValidationError(f"Neveljaven status uporabnikovega poročila za {pattern}.")
             if report_status in {"uncertain", "not_assessed"} and decision != "UNASSESSABLE":
                 raise ProgramValidationError(
                     f"Vzorec {pattern} je označen kot nejasen ali neocenjen, zato ne sme biti označen kot READY."
                 )
-            if decision == "READY" and report_status != "movement_controlled":
+            if decision == "READY" and report_status != "coach_verified":
                 raise ProgramValidationError(
-                    f"Vzorec {pattern} ne more biti READY samo na podlagi udobne samoocene ali manjkajočega poročila; potreben je preverjen seznam motoričnega nadzora."
+                    f"Vzorec {pattern} lahko preide v READY samo po notranji potrditvi trenerja, ne na podlagi uporabnikove kljukice ali kamere."
                 )
             if report_status == "comfortable" and decision == "READY":
                 raise ProgramValidationError(
                     f"Vzorec {pattern} je samoocenjen kot udoben, vendar še nima potrjenega učenja motoričnega nadzora; uporabi LEARN."
                 )
-            if report_status == "movement_controlled":
-                required_control = {
-                    "squat": {"tempo", "balance", "knee_hip_foot_control", "lumbopelvic_control", "tolerated_rom"},
-                    "hinge": {"tempo", "hip_hinge_coordination", "spine_control", "balance", "tolerated_rom"},
-                    "horizontal_push": {"tempo", "shoulder_elbow_wrist_control", "trunk_control", "stable_support", "tolerated_rom"},
-                    "horizontal_pull": {"tempo", "scapular_arm_control", "trunk_control", "stable_base", "tolerated_rom"},
-                    "vertical_push": {"tempo", "overhead_control", "trunk_control", "scapular_control", "tolerated_rom"},
-                    "lunge": {"tempo", "balance", "pelvis_hip_knee_foot_control", "hip_extension", "trunk_control", "tolerated_rom"},
-                }[pattern]
-                control = user_report.get("movement_control")
-                criteria = control.get("criteria") if isinstance(control, dict) else None
+            if report_status == "coach_verified":
+                verification = user_report.get("coach_verification")
                 if (
                     decision != "READY"
-                    or record.get("training_phase") != "capacity_development"
-                    or not isinstance(control, dict)
-                    or control.get("confirmed_by_user") is not True
-                    or control.get("repeatable") is not True
-                    or not isinstance(criteria, dict)
-                    or set(criteria) != required_control
-                    or any(criteria.get(key) is not True for key in required_control)
+                    or not isinstance(verification, dict)
+                    or verification.get("verified_by_coach") is not True
+                    or verification.get("source") != "coach_observation"
                 ):
                     raise ProgramValidationError(
-                        f"Vzorec {pattern} ne more preiti v razvoj moči brez ponovljive potrditve vseh kriterijev motoričnega nadzora."
+                        f"Vzorec {pattern} nima veljavne notranje potrditve trenerja."
                     )
             if report_status == "symptoms_reported":
                 allowed_regressions = SYMPTOM_REGRESSION_VARIANTS.get(pattern, ())
@@ -1442,7 +1451,7 @@ def generate_program(
                      if item["id"] == structured_decision.get("selected_learning_method")),
                     None,
                 )
-                if target_id is None and method is not None and method.get("learning_only") is True:
+                if method is not None and method.get("learning_only") is True:
                     if len(learning_tasks_for_session) < learning_task_limit:
                         learning_tasks_for_session.append({
                             "movement_pattern": pattern,
@@ -1468,18 +1477,20 @@ def generate_program(
                             "rest_seconds": 30,
                             "estimated_minutes": 2,
                         })
-                        movement_adaptation_events.append({
-                            "pattern": pattern,
-                            "tasks": affected_tasks,
-                            "action": "unloaded_learning_task_only",
-                            "message": (
-                                f"Vzorec {PATTERN_LABELS.get(pattern, pattern)} ostane brez zunanje obremenitve; "
-                                "najprej ponovi kratko učno nalogo in preveri kriterije nadzora."
-                            ),
-                        })
+                        if target_id is None:
+                            movement_adaptation_events.append({
+                                "pattern": pattern,
+                                "tasks": affected_tasks,
+                                "action": "unloaded_learning_task_only",
+                                "message": (
+                                    f"Vzorec {PATTERN_LABELS.get(pattern, pattern)} ostane brez zunanje obremenitve; "
+                                    "najprej ponovi kratko učno nalogo in preveri kriterije nadzora."
+                                ),
+                            })
                     else:
                         deferred_learning_patterns.append(pattern)
-                    continue
+                    if target_id is None:
+                        continue
                 target = next((item for item in reference_catalogue if item["id"] == target_id), None)
                 if target is None or target["pattern"] != pattern:
                     raise ProgramValidationError(f"Izbrana učna različica {target_id} za {pattern} ni v potrjenem katalogu.")
@@ -2136,7 +2147,7 @@ def generate_program(
                     for muscle in removed["primary_muscles"]:
                         exposure[muscle] -= removed["prescription"]["sets"]
 
-        estimated = _estimated_minutes(selected, warm_up_minutes)
+        estimated = _estimated_minutes(selected, warm_up_minutes) + learning_task_minutes
         if estimated > p["session_minutes"]:
             raise ProgramValidationError(
                 f"Trening {session_index + 1} za cilj {planning_goal} je ocenjen na {estimated} min, na voljo pa je {p['session_minutes']} min. Skrajšaj vadbo ali izberi daljši termin."
@@ -2158,6 +2169,13 @@ def generate_program(
             if decision.get("decision") == "READY":
                 return True
             report = decision.get("user_report", {})
+            if (
+                decision.get("decision") == "LEARN"
+                and decision.get("resolved_exercise_id")
+                and isinstance(report, dict)
+                and report.get("status") == "learning_completed_by_user"
+            ):
+                return True
             return (
                 decision.get("decision") == "REGRESS"
                 and isinstance(report, dict)
@@ -2234,7 +2252,9 @@ def generate_program(
             "session_focus": session_focus,
             "covered_patterns": covered_patterns,
             "learning_tasks_estimated_minutes": learning_task_minutes,
-            "session_phase": "movement_learning" if not covered_patterns and learning_tasks_for_session else "mixed_or_capacity",
+            "session_phase": "movement_learning" if any(
+                item.get("decision") == "LEARN" for item in movement_decisions_by_pattern.values()
+            ) else "mixed_or_capacity",
             "warm_up_minutes": warm_up_minutes,
             "warm_up_range": warm_up_range,
             **({"mobility_block": mobility_block} if mobility_block else {}),
