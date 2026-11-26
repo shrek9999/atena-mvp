@@ -113,7 +113,7 @@ def test_programme_versions_are_listed_and_included_in_export(monkeypatch, tmp_p
     import coach_routes
 
     client, profile_id, token, _ = _client(monkeypatch, tmp_path)
-    _save_six_pattern_assessment(client, profile_id, token)
+    _save_six_pattern_learning_progress(client, profile_id, token)
     monkeypatch.setattr(
         coach_routes, "generate_program",
         lambda profile, feedback=None, movement_assessment=None, movement_decisions=None: {
@@ -309,11 +309,9 @@ def test_five_persona_saved_profile_training_feedback_cycle(monkeypatch, tmp_pat
         )
         headers = {"X-Profile-Token": token}
 
-        saved_assessment = _save_six_pattern_assessment(
-            client, profile_id, token, statuses=scenario["statuses"]
-        )
-        assert saved_assessment["assessment_stored"] is True, persona_name
-        assert set(saved_assessment["movement_decisions"]) == set(PATTERN_DEFINITIONS), persona_name
+        saved_learning = _save_six_pattern_learning_progress(client, profile_id, token)
+        assert saved_learning["learning_completed_patterns"] == 6, persona_name
+        assert set(saved_learning["learning_progress"]["patterns"]) == set(PATTERN_DEFINITIONS), persona_name
 
         first_response = client.post(
             f"/coach/profile/{profile_id}/program",
@@ -324,7 +322,8 @@ def test_five_persona_saved_profile_training_feedback_cycle(monkeypatch, tmp_pat
         first = first_response.get_json()
         first_version = first["program_version_id"]
         assert first["program_stored"] is True, persona_name
-        assert first["movement_assessment_applied"] is True, persona_name
+        assert first["guided_learning_applied"] is True, persona_name
+        assert first["movement_assessment_applied"] is False, persona_name
         sessions = first["program"]["sessions"]
         assert len(sessions) == scenario["profile"]["sessions_per_week"], persona_name
         assert all(len(item["exercises"]) <= 6 for item in sessions), persona_name
