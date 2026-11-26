@@ -152,7 +152,7 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
         },
     )
     assert learning.status_code == 200
-    assert learning.get_json()["learning_completed_patterns"] == 6
+    assert all(item["learning_completed_by_user"] for item in learning.get_json()["learning_progress"]["patterns"].values())
 
     allowed = client.post(
         f"/coach/profile/{profile_id}/program",
