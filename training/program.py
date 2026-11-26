@@ -189,21 +189,19 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # add a short aerobic/conditioning session rather than more lifting volume.
         return ["locomotion", "lunge", "conditioning"]
     if goal == "functional":
-        # Functional fitness is built from fundamental movement patterns,
-        # locomotion and measured conditioning, not generic balance add-ons.
-        patterns = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
-        # Alternate vertical push and pull so both are trained across a two-day week.
-        patterns.append("vertical_push" if session_index % 2 == 0 else "vertical_pull")
-        if include_stability:
-            # A targeted trunk-control slot replaces the rotating sixth pattern;
-            # keep the session within a practical six-exercise ceiling.
-            patterns.append("trunk_stability")
-        elif session_index % 2 == 0:
-            patterns.append("lunge" if session_index == 0 else "locomotion")
-        elif session_minutes > 30:
-            patterns.append("conditioning")
+        # Two balanced full-body templates cover the six learning patterns,
+        # locomotion and conditioning without stacking seven exercises.
+        if session_index % 2 == 0:
+            patterns = [
+                "squat", "hinge", "horizontal_push", "horizontal_pull",
+                "vertical_push", "trunk_stability" if include_stability else "lunge",
+            ]
         else:
-            patterns.append("lunge")
+            patterns = [
+                "squat", "hinge", "horizontal_push", "vertical_pull",
+                "trunk_stability" if include_stability else "locomotion",
+                "conditioning",
+            ]
         # Experience is not a landing-readiness screen: no default jumps.
         return patterns
     if goal == "endurance":
