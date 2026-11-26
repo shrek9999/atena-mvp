@@ -42,7 +42,7 @@ def _create(client, *, health_consent=False):
     return response.get_json()
 
 
-def _save_six_pattern_assessment(client, profile_id, token, *, status="comfortable"):
+def _save_six_pattern_learning_progress(client, profile_id, token):
     response = client.put(
         f"/coach/profile/{profile_id}/learning-progress",
         headers={"X-Profile-Token": token},
@@ -477,7 +477,7 @@ def test_profile_program_requires_current_safety_confirmation(monkeypatch, tmp_p
 
 
 
-def test_profile_program_is_blocked_until_all_six_patterns_are_assessed(monkeypatch, tmp_path):
+def test_profile_program_is_blocked_until_all_six_learning_tasks_are_complete(monkeypatch, tmp_path):
     client = _client(monkeypatch, tmp_path, health_consent=True)
     created = _create(client, health_consent=True)
     profile_id = created["profile"]["profile_id"]
@@ -491,52 +491,8 @@ def test_profile_program_is_blocked_until_all_six_patterns_are_assessed(monkeypa
     assert response.status_code == 409
     data = response.get_json()
     assert data["blocked"] is True
-    assert data["assessment_required"] is True
+    assert data["learning_required"] is True
     assert set(data["missing_patterns"]) == set(PATTERN_DEFINITIONS)
-
-
-def test_six_pattern_assessment_maps_self_report_statuses_conservatively(monkeypatch, tmp_path):
-    client = _client(monkeypatch, tmp_path, health_consent=True)
-    created = _create(client, health_consent=True)
-    profile_id = created["profile"]["profile_id"]
-    token = created["profile_access_token"]
-    statuses = {
-        "squat": "needs_support",
-        "hinge": "comfortable",
-        "horizontal_push": "uncertain",
-        "horizontal_pull": "not_assessed",
-        "vertical_push": "symptoms_reported",
-        "lunge": "comfortable",
-    }
-    response = client.put(
-        f"/coach/profile/{profile_id}/movement-assessment",
-        headers={"X-Profile-Token": token},
-        json={"movement_assessment_consent": True, "movement_patterns": {key: {"status": value} for key, value in statuses.items()}},
-    )
-    assert response.status_code == 200
-    decisions = response.get_json()["movement_decisions"]
-    assert decisions["squat"]["decision"] == "LEARN"
-    assert decisions["hinge"]["decision"] == "LEARN"
-    assert decisions["horizontal_push"]["decision"] == "UNASSESSABLE"
-    assert decisions["horizontal_pull"]["decision"] == "UNASSESSABLE"
-    assert decisions["vertical_push"]["decision"] == "UNASSESSABLE"
-    assert decisions["vertical_push"]["user_report"]["status"] == "symptoms_reported"
-    assert all(item["is_diagnosis"] is False for item in decisions.values())
-
-
-def test_six_pattern_assessment_rejects_incomplete_pattern_set(monkeypatch, tmp_path):
-    client = _client(monkeypatch, tmp_path, health_consent=True)
-    created = _create(client, health_consent=True)
-    profile_id = created["profile"]["profile_id"]
-    token = created["profile_access_token"]
-    patterns = list(PATTERN_DEFINITIONS)[:-1]
-    response = client.put(
-        f"/coach/profile/{profile_id}/movement-assessment",
-        headers={"X-Profile-Token": token},
-        json={"movement_assessment_consent": True, "movement_patterns": {key: {"status": "comfortable"} for key in patterns}},
-    )
-    assert response.status_code == 400
-    assert response.get_json()["missing_patterns"]
 
 
 def test_guided_learning_progress_is_saved_and_restored_without_health_consent(monkeypatch, tmp_path):
@@ -586,7 +542,7 @@ def test_guided_learning_progress_isolated_by_profile_token(monkeypatch, tmp_pat
     )
     assert response.status_code == 404
 
-def test_six_pattern_assessment_requires_explicit_movement_use_consent(monkeypatch, tmp_path):
+def test_legacy_six_pattern_self_assessment_endpoint_is_retired(monkeypatch, tmp_path):
     client = _client(monkeypatch, tmp_path, health_consent=True)
     created = _create(client, health_consent=True)
     profile_id = created["profile"]["profile_id"]
@@ -594,32 +550,20 @@ def test_six_pattern_assessment_requires_explicit_movement_use_consent(monkeypat
     response = client.put(
         f"/coach/profile/{profile_id}/movement-assessment",
         headers={"X-Profile-Token": token},
-        json={"movement_patterns": {
+        json={"movement_assessment_consent": True, "movement_patterns": {
             pattern: {"status": "comfortable"} for pattern in PATTERN_DEFINITIONS
         }},
     )
-    assert response.status_code == 403
-    assert response.get_json()["consent_required"] is True
+    assert response.status_code == 410
+    assert response.get_json()["guided_learning_required"] is True
 
-
-def test_six_pattern_assessment_requires_separate_health_data_consent(monkeypatch, tmp_path):
-    client = _client(monkeypatch, tmp_path)
-    created = _create(client, health_consent=False)
-    profile_id = created["profile"]["profile_id"]
-    token = created["profile_access_token"]
-    response = client.put(
-        f"/coach/profile/{profile_id}/movement-assessment",
-        headers={"X-Profile-Token": token},
-        json={"movement_assessment_consent": True, "movement_patterns": {pattern: {"status": "comfortable"} for pattern in PATTERN_DEFINITIONS}},
-    )
-    assert response.status_code == 403
 
 def test_withdrawing_health_data_consent_keeps_separate_learning_progress(monkeypatch, tmp_path):
     client = _client(monkeypatch, tmp_path)
     created = _create(client, health_consent=True)
     profile_id = created["profile"]["profile_id"]
     token = created["profile_access_token"]
-    _save_six_pattern_assessment(client, profile_id, token)
+    _save_six_pattern_learning_progress(client, profile_id, token)
     withdrawn = client.post(
         f"/coach/profile/{profile_id}/consent",
         headers={"X-Profile-Token": token},
@@ -662,7 +606,7 @@ def test_profile_program_keeps_global_feedback_out_of_generator_and_exposes_adap
     created = _create(client, health_consent=True)
     profile_id = created["profile"]["profile_id"]
     token = created["profile_access_token"]
-    _save_six_pattern_assessment(client, profile_id, token)
+    _save_six_pattern_learning_progress(client, profile_id, token)
     exercise_id = load_catalogue()[0]["id"]
     logged = client.post(
         f"/coach/profile/{profile_id}/sessions",
@@ -715,7 +659,7 @@ def test_profile_program_holds_progression_after_logged_discomfort_and_fresh_saf
     created = _create(client, health_consent=True)
     profile_id = created["profile"]["profile_id"]
     token = created["profile_access_token"]
-    _save_six_pattern_assessment(client, profile_id, token)
+    _save_six_pattern_learning_progress(client, profile_id, token)
     exercise_id = load_catalogue()[0]["id"]
     logged = client.post(
         f"/coach/profile/{profile_id}/sessions",
@@ -902,7 +846,7 @@ def test_profile_program_uses_learning_phase_after_all_six_checklists_without_he
     created = _create(client, health_consent=False)
     profile_id = created["profile"]["profile_id"]
     token = created["profile_access_token"]
-    _save_six_pattern_assessment(client, profile_id, token)
+    _save_six_pattern_learning_progress(client, profile_id, token)
 
     import coach_routes
     captured = {}
@@ -923,7 +867,7 @@ def test_profile_program_uses_learning_phase_after_all_six_checklists_without_he
     assert set(decisions) == set(PATTERN_DEFINITIONS)
     assert all(item["decision"] == "LEARN" for item in decisions.values())
     assert all(item["training_phase"] == "movement_learning" for item in decisions.values())
-    assert all(item["user_report"]["status"] == "selected_for_learning" for item in decisions.values())
+    assert all(item["user_report"]["status"] == "learning_completed_by_user" for item in decisions.values())
 
 
 def test_stateless_program_rejects_checklist_as_proof_of_movement_mastery(monkeypatch, tmp_path):
