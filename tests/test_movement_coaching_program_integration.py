@@ -110,7 +110,7 @@ def test_horizontal_pull_and_unloaded_overhead_learning_use_real_light_catalogue
     )
     overhead = build_movement_decision(
         "vertical_push", "LEARN",
-        selected_learning_method="unloaded_overhead_reach",
+        selected_learning_method="light_overhead_press",
         user_report={"status": "comfortable"},
         decision_reason="Najprej preveri neobremenjen dvig rok nad glavo; to ne potrjuje pripravljenosti za potisk.",
     )
