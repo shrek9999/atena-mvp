@@ -168,7 +168,7 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     assert exported.headers["Cache-Control"] == "no-store, private"
     assert "attachment" in exported.headers["Content-Disposition"]
     export_data = exported.get_json()
-    assert export_data["export_version"] == "1.1"
+    assert export_data["export_version"] == "1.2"
     assert "program_versions" in export_data
     assert "movement_assessment" in export_data
     assert len(export_data["sessions"]) == 1
