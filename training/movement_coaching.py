@@ -36,6 +36,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             },
             {
                 "id": "reaching_counterbalance",
+                "exercise_id": None,
                 "label": "Reaching squat s protiutežjo",
                 "description": "Izteg rok oziroma lahek kolut pred telesom uporabi kot protiutež za lažje učenje ravnotežja in organizacije počepa.",
                 "exercise_id": "reaching_squat",
@@ -59,7 +60,6 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "learning_methods": [
             {
                 "id": "dowel_four_point",
-                "learning_only": True,
                 "label": "Predklon s palico – tri stične in ena kontrolna točka",
                 "description": (
                     "Palica ohranja stik s trtico oziroma križnično-sakralnim predelom, "
@@ -89,6 +89,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "learning_methods": [
             {
                 "id": "incline_push_up",
+                "exercise_id": None,
                 "label": "Skleca na povišani opori",
                 "description": "Višino stabilne opore izberi tako, da je celotna ponovitev nadzorovana.",
                 "exercise_id": "push_up_incline",
@@ -183,6 +184,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "learning_methods": [
             {
                 "id": "supported_split_squat",
+                "exercise_id": None,
                 "label": "Izpadni počep na mestu z oporo",
                 "description": "Opora je namenjena ravnotežju; posameznik se nanjo ne sme sunkovito vleči navzgor.",
                 "exercise_id": "supported_split_squat",
