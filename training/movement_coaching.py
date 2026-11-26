@@ -143,18 +143,18 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         ],
     },
     "vertical_push": {
-        "label": "Vertikalni potisk – potisk nad glavo",
-        "task_id": "overhead_press",
-        "task": "Potisk nad glavo z zelo lahkim, primernim pripomočkom in obsegom, ki ga lahko nadzoruješ. Vzorec vključuje dejanski potisk in kontroliran povratek, ne zgolj dviga rok.",
+        "label": "Dvig rok nad glavo – pregled gibanja",
+        "task_id": "overhead_arm_raise",
+        "task": "Neobremenjen dvig obeh rok nad glavo skozi udoben obseg. To je pregled gibanja rame, ne test moči ali pripravljenosti za vertikalni potisk.",
         "exercise_ids": [
             "band_overhead_press", "overhead_press", "plate_overhead_press", "barbell_overhead_press", "pike_push_up",
         ],
         "learning_methods": [
             {
-                "id": "light_implement_press",
+                "id": "unloaded_overhead_reach",
                 "learning_only": True,
-                "label": "Potisk nad glavo z zelo lahkim pripomočkom",
-                "description": "Izvedi dejanski potisk in kontroliran povratek z zelo lahkim pripomočkom. Izberi izvedbo, ki ustreza tvoji opremi in trenutnim sposobnostim; ne sili v končni položaj in ne povečuj bremena zaradi samega zaključka učne naloge.",
+                "label": "Neobremenjen dvig rok nad glavo",
+                "description": "Dvigni obe iztegnjeni roki nad glavo brez zunanjega bremena. Ohrani nadzor reber in medenice ter uporabi samo udoben, ponovljiv obseg. Ta naloga ne preverja moči ali pripravljenosti za potisk nad glavo.",
                 "exercise_id": None,
             },
             {
