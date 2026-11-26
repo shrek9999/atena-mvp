@@ -3972,6 +3972,8 @@ def coach_profile_program(profile_id):
             if isinstance(item, dict)
             and item.get("pattern") in CAPACITY_CONTROL_CRITERIA
             and item.get("decision") in {"add_repetitions", "increase_load", "progress_variation"}
+            and isinstance(item.get("exposures_recorded"), int)
+            and item["exposures_recorded"] >= 2
         }
         longitudinal_progression = summarize_longitudinal_progression(sessions)
         conditioning_progression = summarize_conditioning_progress(sessions)
