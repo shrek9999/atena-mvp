@@ -54,6 +54,7 @@ def test_two_positive_exposures_progress_only_the_exercise_that_responded_well()
         ]),
     ]
     result = recommend_exercise_progression(sessions)
+    assert decision(result, "squat_goblet")["pattern"] == "squat"
     assert decision(result, "squat_goblet")["decision"] == "add_repetitions"
     assert decision(result, "push_up")["decision"] == "reduce_dose"
 
