@@ -3989,6 +3989,11 @@ def coach_profile_program(profile_id):
                     "missing_patterns": incomplete_patterns,
                     "message": "Učenje še ni zaključeno pri vseh šestih vzorcih. Nadaljujva tam, kjer je ostalo.",
                 }), 409
+            if not any(item.get("status") == "completed" for item in learning_patterns.values()):
+                return jsonify({
+                    "blocked": True, "learning_required": True, "assessment_required": True,
+                    "message": "Za varen začetni program mora vsaj en gibalni vzorec ostati primeren za učenje; trenutno so vsi začasno izločeni.",
+                }), 409
             movement_decisions = {}
             preferred_methods = {
                 "squat": "reaching_counterbalance",
