@@ -678,15 +678,23 @@ def generate_program(
                     f"Za simptomatsko regresijo vzorca {pattern} mora biti izbrana točno preizkušena vaja."
                 )
             if decision in {"LEARN", "REGRESS"} and not target_id and report_status != "symptoms_reported":
-                if method is not None and method.get("learning_only") is True:
-                    # A no-load coordination task is intentionally not replaced by a loaded catalogue exercise.
-                    pass
-                elif not available_options:
-                    # Omit only this pattern when no verified learning variation is available.
+                if not available_options:
+                    # Do not invent a no-equipment press or row. Omit only this pattern
+                    # and explain the equipment gap rather than pretending a drill is
+                    # an effective loaded exercise.
                     decision = "UNASSESSABLE"
                     omission_reason = "no_equipment_compatible_learning_variant"
                 else:
-                    target_id = available_options[0]["id"]
+                    loading_rank = {"low": 0, "moderate": 1, "high": 2}
+                    starter = min(
+                        available_options,
+                        key=lambda item: (
+                            loading_rank.get(item.get("loading_potential", "high"), 2),
+                            LEVEL_RANK.get(item.get("level"), 0),
+                            item["id"],
+                        ),
+                    )
+                    target_id = starter["id"]
                     if method is None:
                         method = next(
                             (item for item in method_options if item.get("exercise_id") == target_id),
@@ -1730,8 +1738,12 @@ def generate_program(
                     "decision": record["decision"],
                 }
                 for pattern_key, record in movement_decisions_by_pattern.items()
-                if record["decision"] in {"LEARN", "REGRESS"}
-                and (record.get("learning_only") is True or any(item["pattern"] == pattern_key for item in selected))
+                if pattern_key in patterns
+                and record["decision"] in {"LEARN", "REGRESS"}
+                and (
+                    record.get("learning_only") is True
+                    or any(item["pattern"] == pattern_key for item in selected)
+                )
             ],
             "exercises": selected,
         })
