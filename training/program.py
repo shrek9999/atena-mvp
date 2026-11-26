@@ -2044,7 +2044,7 @@ def generate_program(
         warm_up_range = "5–7 min" if p["session_minutes"] <= 30 else "5–10 min"
 
         # The session duration is an approximate envelope, not a rigid work/rest split.
-        planning_budget = p["session_minutes"]
+        planning_budget = max(0, p["session_minutes"] - learning_task_minutes)
         # Preserve the main compound patterns; trim optional work first when needed.
         volume_adjustments = []
         while selected and _estimated_minutes(selected, warm_up_minutes) > planning_budget:
