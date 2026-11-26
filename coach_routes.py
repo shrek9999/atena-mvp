@@ -18,7 +18,6 @@ from coach_store import (
     add_session as store_add_session, list_sessions as store_list_sessions,
     delete_profile as store_delete_profile, set_health_data_consent as store_set_health_data_consent,
     check_database_connection as store_check_database_connection, storage_enabled,
-    save_movement_assessment as store_save_movement_assessment,
     get_movement_assessment as store_get_movement_assessment,
     save_learning_progress as store_save_learning_progress,
     get_learning_progress as store_get_learning_progress,
@@ -41,9 +40,7 @@ from training.coaching_protocols import (
     RDL_TECHNIQUE_PROTOCOL, RDL_SUBSTITUTION_ACCURACY,
     RDL_TECHNIQUE_PROTOCOL_EN, RDL_SUBSTITUTION_ACCURACY_EN,
 )
-from training.movement_assessment import (
-    MovementAssessmentError, SYMPTOM_REGRESSION_VARIANTS, assess_movement_competence,
-)
+from training.movement_assessment import SYMPTOM_REGRESSION_VARIANTS
 from training.camera_observations import CameraObservationError, validate_camera_observations
 from training.goals import normalize_goal, public_goal_options
 from training.localization import (
@@ -51,7 +48,6 @@ from training.localization import (
     localize_chat_api_error, localize_program_api_message, normalize_language,
 )
 from training.movement_coaching import (
-    ASSESSMENT_VERSION as SIX_PATTERN_ASSESSMENT_VERSION,
     ACUTE_WARNING_SIGNS, PATTERN_DEFINITIONS, MovementCoachingError, build_movement_decision,
     validate_symptom_regression_report,
 )
