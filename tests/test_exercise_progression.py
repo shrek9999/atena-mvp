@@ -347,6 +347,45 @@ def test_recommendations_are_applied_to_matching_exercises_only():
     assert squat["prescription"]["exercise_progression"]["automatic_load_change"] is False
 
 
+def test_load_increase_recommendation_is_applied_as_guidance_without_inventing_a_new_load():
+    program = {"sessions": [{"exercises": [{
+        "exercise_id": "squat_goblet",
+        "progressions": ["Front-rack squat"],
+        "prescription": {"sets": 3, "reps": "8–12", "rir": 3},
+    }]}]}
+    recommendation = {
+        "exercise_id": "squat_goblet",
+        "decision": "increase_load",
+        "recent_load_kg": 20,
+        "reason": "Two high-quality exposures reached the top of the range.",
+    }
+    apply_exercise_progression(program, [recommendation])
+    prescription = program["sessions"][0]["exercises"][0]["prescription"]
+    assert "20 kg" in prescription["load_guidance"]
+    assert "najmanjši razpoložljivi dvig" in prescription["load_guidance"]
+    assert prescription["sets"] == 3
+    assert prescription["reps"] == "8–12"
+    assert prescription["exercise_progression"]["automatic_load_change"] is False
+
+
+def test_no_load_progression_returns_a_small_variation_step_without_automatic_exercise_swap():
+    program = {"sessions": [{"exercises": [{
+        "exercise_id": "push_up",
+        "progressions": ["Skleca z nižjo oporo"],
+        "prescription": {"sets": 3, "reps": "8–12", "rir": 3},
+    }]}]}
+    recommendation = {
+        "exercise_id": "push_up",
+        "decision": "progress_variation",
+        "reason": "Two high-quality exposures reached the top of the range.",
+    }
+    apply_exercise_progression(program, [recommendation])
+    exercise_item = program["sessions"][0]["exercises"][0]
+    assert exercise_item["exercise_id"] == "push_up"
+    assert "Skleca z nižjo oporo" in exercise_item["prescription"]["variation_progression_guidance"]
+    assert "samo eno glavno spremenljivko" in exercise_item["prescription"]["variation_progression_guidance"]
+
+
 def test_incomplete_sessions_are_not_used_as_progression_exposures():
     sessions = [
         record("2026-11-03", [exercise("squat_goblet")], completed=False),
