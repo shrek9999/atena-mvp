@@ -61,8 +61,23 @@ def test_functional_goal_prioritizes_fundamental_patterns_without_generic_add_on
 
     assert all(session.get("mobility_block", {}).get("exercises") for session in plan["sessions"])
     assert all(session["exercise_count"] <= 6 for session in plan["sessions"])
-    # Vertical pulling is trained, but is not one of the six camera-assessment tasks.
-    assert "vertical_pull" in patterns
+    # Both vertical push and pull are trained across the week; neither is inferred from camera assessment.
+    assert {"vertical_push", "vertical_pull"}.issubset(patterns)
+
+
+def test_three_day_functional_program_rotates_vertical_patterns_and_stays_within_six_exercises():
+    plan = generate_program({
+        "goal": "functional",
+        "experience": "intermediate",
+        "sessions_per_week": 3,
+        "session_minutes": 45,
+        "equipment": all_equipment(),
+        "include_accessories": False,
+    })
+    patterns = {item["pattern"] for session in plan["sessions"] for item in session["exercises"]}
+    assert {"vertical_push", "vertical_pull"}.issubset(patterns)
+    assert all(session["exercise_count"] <= 6 for session in plan["sessions"])
+    assert {"lunge", "locomotion", "conditioning"} & patterns
 
 
 @pytest.mark.parametrize("experience", LEVELS)
