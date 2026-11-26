@@ -4140,16 +4140,27 @@ def coach_profile_program(profile_id):
                 }), 409
             # Completion is a user-confirmed learning task, never objective proof of mastery.
             movement_decisions = {}
+            preferred_methods = {
+                "squat": "reaching_counterbalance",
+                "hinge": "wall_hip_hinge",
+                "horizontal_push": "incline_push_up",
+                "horizontal_pull": "scapular_coordination",
+                "vertical_push": "unloaded_overhead_reach",
+                "lunge": "supported_split_squat",
+            }
             for pattern in PATTERN_DEFINITIONS:
                 methods = PATTERN_DEFINITIONS[pattern].get("learning_methods", [])
-                method = next((item for item in methods if item.get("learning_only") is True), None)
-                if method is None:
+                method = next(
+                    (item for item in methods if item.get("id") == preferred_methods[pattern]),
+                    None,
+                )
+                if method is None or method.get("learning_only") is not True:
                     return jsonify({"error": f"Za vzorec {pattern} ni potrjene učne različice."}), 500
                 movement_decisions[pattern] = build_movement_decision(
                     pattern, "LEARN",
                     selected_learning_method=method["id"],
-                    user_report={"status": "selected_for_learning"},
-                    decision_reason="Uporabnik je zaključil vodeno učno nalogo in potrdil kriterije. To ni objektivna potrditev tehnike ali dovoljenje za samodejno povečanje bremena.",
+                    user_report={"status": "learning_completed_by_user"},
+                    decision_reason="Učna naloga je zaključena. Program začne s podprtimi ali neobremenjenimi različicami; to ni potrditev tehnične obvladanosti ali dovoljenje za samodejno povečanje bremena.",
                 )
                 movement_decisions[pattern]["training_phase"] = "movement_learning"
             guided_learning_applied = True
