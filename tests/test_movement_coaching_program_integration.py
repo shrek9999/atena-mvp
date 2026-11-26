@@ -135,7 +135,7 @@ def test_horizontal_pull_and_light_overhead_press_learning_use_real_catalogue_ex
         for item in pulls
     )
     assert all(
-        "učenje potiska nad glavo z zelo lahkim bremenom" in (
+        "učni korak za vzorec potisk nad glavo" in (
             item.get("movement_adaptation_note", "")
             + " " + item["prescription"].get("adjustment_note", "")
         ).lower()
