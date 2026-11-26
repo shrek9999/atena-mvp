@@ -81,7 +81,7 @@ def test_completed_learning_starts_a_supported_variation_without_marking_ready()
     plan = generate_program(BASE, movement_decisions={"squat": decision})
     exercises = _pattern_exercises(plan, "squat")
     assert exercises
-    assert all(item["id"] == "reaching_squat" for item in exercises)
+    assert all(item["exercise_id"] == "reaching_squat" for item in exercises)
     assert all(item["prescription"]["sets"] <= 2 for item in exercises)
     assert all(item["prescription"]["rir_min"] >= 3 for item in exercises)
     assert all(
@@ -116,7 +116,7 @@ def test_completed_learning_can_start_a_band_row_only_with_a_confirmed_anchor():
     plan = generate_program(profile, movement_decisions={"horizontal_pull": decision})
     exercises = _pattern_exercises(plan, "horizontal_pull")
     assert exercises
-    assert all(item["id"] == "band_row" for item in exercises)
+    assert all(item["exercise_id"] == "band_row" for item in exercises)
     assert all(item["prescription"]["sets"] <= 2 for item in exercises)
 
 
@@ -156,8 +156,9 @@ def test_one_ready_pattern_is_not_mislabelled_as_a_full_body_session():
         assert "celotno telo" not in session["title"]
         assert session["warm_up_minutes"] == 7
         assert session["learning_tasks_estimated_minutes"] == 10
-        assert session["estimated_minutes"] == _estimated_minutes(
-            session["exercises"], session["warm_up_minutes"]
+        assert session["estimated_minutes"] == (
+            _estimated_minutes(session["exercises"], session["warm_up_minutes"])
+            + session["learning_tasks_estimated_minutes"]
         )
         assert all(item["pattern"] == "horizontal_push" for item in session["exercises"])
         assert all(item["exercise_id"] == "push_up" for item in session["exercises"])
