@@ -2892,6 +2892,12 @@ def coach_program():
             "error": localize("Vsak vzorec mora imeti veljavno izbiro ali poročilo o simptomih, odločitev pa mora biti skladna z njim."),
             "invalid_report_patterns": sorted(invalid_report_patterns),
         }), 400
+    # The server promotes a completed learning task only to a conservative
+    # starter-practice state. It never promotes a user checkbox to READY.
+    for record in movement_decisions.values():
+        report = record.get("user_report") if isinstance(record, dict) else None
+        if isinstance(report, dict) and report.get("status") == "selected_for_learning":
+            report["status"] = "learning_completed_by_user"
     assessable_patterns = [
         pattern for pattern, record in movement_decisions.items()
         if isinstance(record, dict) and record.get("decision") in {"LEARN", "REGRESS"}
@@ -2900,7 +2906,7 @@ def coach_program():
         return jsonify({
             "blocked": True,
             "assessment_required": True,
-            "message": localize("Noben gibalni vzorec ni izbran za učenje ali potrjen po ustreznem ponovnem preizkusu. Izberi vsaj en vzorec za učenje oziroma razjasni prijavljene simptome."),
+            "message": localize("Pred individualnim programom zaključi vseh šest vodenih učnih nalog."),
         }), 409
     coordination_record = (camera_observations or {}).get("coordination", {})
     coordination_values = coordination_record.get("observations", {}) if isinstance(coordination_record, dict) else {}
@@ -2931,10 +2937,11 @@ def coach_program():
     response = {"program": result, "source": "curated_exercise_catalogue", "pilot": True}
     if result.get("movement_adaptation") is not None:
         response["movement_adaptation"] = result["movement_adaptation"]
-    # All six explicit self-reports are required above. This stateless endpoint
-    # uses them for this programme only and does not persist movement/health data.
-    response["movement_assessment_applied"] = True
-    response["movement_assessment_stored"] = False
+    # The six learning checklists are used for this programme only. They are not
+    # stored here and do not certify technique mastery.
+    response["guided_learning_applied"] = True
+    response["guided_learning_stored"] = False
+    response["movement_assessment_applied"] = False
     response["movement_decisions_stored"] = False
     if camera_observations is not None:
         # Only a clear, adequate positive coordination proxy can add one
