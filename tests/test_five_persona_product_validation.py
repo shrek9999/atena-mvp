@@ -131,7 +131,7 @@ def test_mobility_limited_user_gets_supported_variants_and_no_automatic_progress
     assert by_pattern["lunge"]
     assert all(item["exercise_id"] == "supported_split_squat" for item in by_pattern["lunge"])
     assert plan["movement_adaptation"]["automatic_progression"] == (
-        "movement_assessment_does_not_trigger_progression"
+        "checklist_completion_does_not_trigger_progression"
     )
 
 
