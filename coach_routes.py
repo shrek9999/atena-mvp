@@ -76,7 +76,12 @@ def _validate_learning_progress_patterns(patterns, *, allow_in_progress=False):
         if not isinstance(item, dict):
             incomplete.append(pattern)
             continue
-        status = item.get("status", "completed")
+        criteria_value = item.get("criteria")
+        inferred_status = (
+            "completed" if isinstance(criteria_value, dict) and all(value is True for value in criteria_value.values())
+            else "in_progress"
+        )
+        status = item.get("status", inferred_status)
         if status == "excluded":
             reason = item.get("exclusion_reason")
             if set(item) != {"status", "exclusion_reason"} or reason not in LEARNING_EXCLUSION_REASONS:
