@@ -301,6 +301,7 @@ def recommend_exercise_progression(sessions):
         latest = history[0]
         recommendations.append({
             "exercise_id": exercise_id,
+            "pattern": latest.get("pattern"),
             "decision": decision,
             "exposures_recorded": len(observations),
             "recent_rir_min": min(latest["rirs"]) if latest["rirs"] else None,
