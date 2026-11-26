@@ -690,7 +690,7 @@ def generate_program(
                         available_options,
                         key=lambda item: (
                             loading_rank.get(item.get("loading_potential", "high"), 2),
-                            LEVEL_RANK.get(item.get("level"), 0),
+                            {"beginner": 0, "intermediate": 1, "advanced": 2}.get(item.get("level"), 0),
                             item["id"],
                         ),
                     )
