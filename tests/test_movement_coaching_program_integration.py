@@ -128,9 +128,18 @@ def test_horizontal_pull_and_overhead_press_learning_use_real_light_catalogue_ex
     assert "scapular_coordination" not in method_ids
     assert "light_implement_press" not in method_ids
     assert all(
-        "učenje koordinacije" in item.get("movement_adaptation_note", "").lower()
-        or "učenje koordinacije" in item["prescription"].get("adjustment_note", "").lower()
-        for item in pulls + presses
+        "učenje koordinacije lopatic" in (
+            item.get("movement_adaptation_note", "")
+            + " " + item["prescription"].get("adjustment_note", "")
+        ).lower()
+        for item in pulls
+    )
+    assert all(
+        "učenje dejanskega potiska nad glavo" in (
+            item.get("movement_adaptation_note", "")
+            + " " + item["prescription"].get("adjustment_note", "")
+        ).lower()
+        for item in presses
     )
     assert all(
         {task["movement_pattern"] for task in session["learning_tasks"]}.issubset(
