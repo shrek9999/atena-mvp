@@ -125,8 +125,13 @@ def test_horizontal_pull_and_overhead_press_learning_use_real_light_catalogue_ex
     assert all(item["prescription"]["rir"] >= 3 for item in pulls + presses)
     tasks = [task for session in plan["sessions"] for task in session["learning_tasks"]]
     method_ids = {task["method_id"] for task in tasks}
-    assert "scapular_coordination" in method_ids
-    assert "light_implement_press" in method_ids
+    assert "scapular_coordination" not in method_ids
+    assert "light_implement_press" not in method_ids
+    assert all(
+        "učenje koordinacije" in item.get("movement_adaptation_note", "").lower()
+        or "učenje koordinacije" in item["prescription"].get("adjustment_note", "").lower()
+        for item in pulls + presses
+    )
     assert all(
         {task["movement_pattern"] for task in session["learning_tasks"]}.issubset(
             {pattern for pattern in ["squat", "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge"]}
