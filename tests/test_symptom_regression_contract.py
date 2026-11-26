@@ -204,3 +204,8 @@ def test_symptomatic_pattern_is_omitted_after_failed_retest():
         if exercise["pattern"] == "squat"
     ]
     assert not squats
+
+
+def test_overhead_arm_raise_symptoms_do_not_trigger_a_loaded_regression():
+    from training.movement_assessment import SYMPTOM_REGRESSION_VARIANTS
+    assert SYMPTOM_REGRESSION_VARIANTS["vertical_push"] == ()
