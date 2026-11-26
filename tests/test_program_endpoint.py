@@ -20,7 +20,7 @@ def _six_pattern_decisions():
         "hinge": "dowel_four_point",
         "horizontal_push": "incline_push_up",
         "horizontal_pull": "scapular_coordination",
-        "vertical_push": "light_implement_press",
+        "vertical_push": "unloaded_overhead_reach",
         "lunge": "supported_split_squat",
     }
     return {
@@ -628,7 +628,7 @@ def test_unavailable_pull_and_overhead_press_are_omitted_without_inventing_equip
         "hinge": "dowel_four_point",
         "horizontal_push": "incline_push_up",
         "horizontal_pull": "scapular_coordination",
-        "vertical_push": "light_implement_press",
+        "vertical_push": "unloaded_overhead_reach",
         "lunge": "supported_split_squat",
     }
     decisions = {
