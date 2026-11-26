@@ -21,7 +21,7 @@ SCALAR_KEYS = {
     "pelvis_level_difference_proxy", "stance_width_proxy",
     "left_knee_tracking_proxy", "right_knee_tracking_proxy",
     "knee_angle_asymmetry_proxy_deg", "hip_vertical_excursion_proxy",
-    "pelvic_control", "hip_angle_excursion_proxy_deg", "knee_position_change_proxy_deg",
+    "pelvic_control", "heel_contact_check", "hip_angle_excursion_proxy_deg", "knee_position_change_proxy_deg",
     "range_of_motion_proxy", "repetitions_detected", "scapular_control",
     "shoulder_elevation", "rib_trunk_control", "observed_camera_side",
     "visible_side", "hip_extension_excursion_proxy_deg",
