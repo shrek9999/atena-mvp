@@ -2810,6 +2810,33 @@ def coach_program():
             "consent_required": True,
             "message": localize("Pred uporabo odgovorov o gibanju za pripravo programa moraš izrecno potrditi ločeno soglasje."),
         }), 403
+    learning_progress = payload.get("learning_progress")
+    if learning_progress is not None:
+        learning_patterns = learning_progress.get("patterns") if isinstance(learning_progress, dict) else None
+        expected_learning_patterns = set(LEARNING_CONTROL_CRITERIA)
+        if not isinstance(learning_patterns, dict) or set(learning_patterns) != expected_learning_patterns:
+            return jsonify({
+                "blocked": True,
+                "learning_required": True,
+                "missing_patterns": sorted(expected_learning_patterns - set(learning_patterns or {})) if isinstance(learning_patterns, dict) else sorted(expected_learning_patterns),
+                "message": localize("Pred individualnim programom zaključi vseh šest vodenih učnih nalog."),
+            }), 409
+        incomplete = []
+        for pattern, required_criteria in LEARNING_CONTROL_CRITERIA.items():
+            item = learning_patterns.get(pattern)
+            criteria = item.get("criteria") if isinstance(item, dict) else None
+            if (not isinstance(item, dict) or set(item) != {"criteria"}
+                    or not isinstance(criteria, dict) or set(criteria) != required_criteria
+                    or any(value is not True for value in criteria.values())):
+                incomplete.append(pattern)
+        if incomplete:
+            return jsonify({
+                "blocked": True,
+                "learning_required": True,
+                "missing_patterns": incomplete,
+                "message": localize("Učne naloge še niso zaključene pri vseh šestih vzorcih."),
+            }), 409
+
     expected_patterns = set(PATTERN_DEFINITIONS)
     movement_decisions = payload.get("movement_decisions")
     if not isinstance(movement_decisions, dict) or set(movement_decisions) != expected_patterns:
