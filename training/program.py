@@ -686,12 +686,14 @@ def generate_program(
                     omission_reason = "no_equipment_compatible_learning_variant"
                 else:
                     loading_rank = {"low": 0, "moderate": 1, "high": 2}
+                    option_order = {
+                        item["id"]: index for index, item in enumerate(available_options)
+                    }
                     starter = min(
                         available_options,
                         key=lambda item: (
                             loading_rank.get(item.get("loading_potential", "high"), 2),
-                            {"beginner": 0, "intermediate": 1, "advanced": 2}.get(item.get("level"), 0),
-                            item["id"],
+                            option_order[item["id"]],
                         ),
                     )
                     target_id = starter["id"]
