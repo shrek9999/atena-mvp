@@ -67,8 +67,11 @@ LEARNING_CONTROL_CRITERIA = {
 LEARNING_EXCLUSION_REASONS = {"pain", "limitation", "uncertain", "deferred"}
 
 def _validate_learning_progress_patterns(patterns, *, allow_in_progress=False):
-    if not isinstance(patterns, dict) or set(patterns) != set(LEARNING_CONTROL_CRITERIA):
-        return None, sorted(set(LEARNING_CONTROL_CRITERIA) - set(patterns or {})) if isinstance(patterns, dict) else sorted(LEARNING_CONTROL_CRITERIA)
+    required_patterns = set(LEARNING_CONTROL_CRITERIA)
+    if not isinstance(patterns, dict) or set(patterns) != required_patterns:
+        if not isinstance(patterns, dict):
+            return None, sorted(required_patterns)
+        return None, sorted((required_patterns - set(patterns)) | (set(patterns) - required_patterns))
     normalized = {}
     incomplete = []
     for pattern, required in LEARNING_CONTROL_CRITERIA.items():
@@ -2845,7 +2848,7 @@ def coach_program():
             "blocked": True,
             "learning_required": True,
             "missing_patterns": sorted(LEARNING_CONTROL_CRITERIA),
-            "message": "Pred individualnim programom zaključi vseh šest vodenih učnih nalog.",
+            "message": "Pred individualnim programom zaključi učenje ali začasno izloči vsak vzorec z razlogom.",
         }), 409
     learning_patterns, incomplete_learning = _validate_learning_progress_patterns(
         learning_progress.get("patterns")
@@ -2931,7 +2934,7 @@ def coach_program():
         return jsonify({
             "blocked": True,
             "assessment_required": True,
-            "message": "Pred individualnim programom zaključi vseh šest vodenih učnih nalog.",
+            "message": "Pred individualnim programom zaključi učenje ali začasno izloči vsak vzorec z razlogom.",
         }), 409
     coordination_record = (camera_observations or {}).get("coordination", {})
     coordination_values = coordination_record.get("observations", {}) if isinstance(coordination_record, dict) else {}
@@ -3958,7 +3961,7 @@ def coach_profile_program(profile_id):
                 return jsonify({
                     "blocked": True, "learning_required": True, "assessment_required": True,
                     "missing_patterns": sorted(expected_patterns),
-                    "message": "Pred programom skupaj predelajva šest osnovnih gibalnih vzorcev. Pri vsakem potrdi šest kratkih učnih kriterijev.",
+                    "message": "Pred programom skupaj predelajva šest osnovnih gibalnih vzorcev ali začasno izloči neprimerne vzorce.",
                 }), 409
             incomplete_patterns = sorted(
                 pattern for pattern, item in learning_patterns.items()
