@@ -56,21 +56,6 @@ def test_minor_discomfort_up_to_four_is_tolerated_when_modified_and_not_worsened
     )
 
 
-@pytest.mark.parametrize(
-    "report,decision,exercise,allowed",
-    [
-        (_report(pain=5), "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["squat"]),
-        (_report(worsened=True), "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["squat"]),
-        (_report(variation="chair_sit_to_stand"), "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["squat"]),
-        ({"status": "symptoms_reported"}, "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["squat"]),
-        (_report(variation="unknown_exercise"), "REGRESS", "unknown_exercise", SYMPTOM_REGRESSION_VARIANTS["squat"]),
-        (_report(variation="supported_squat"), "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["lunge"]),
-        (_report(pain=True), "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["squat"]),
-        (_report(acute_warning_signs=["new_swelling"]), "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["squat"]),
-        (_report(acute_warning_signs=["muscle_spasm"]), "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["squat"]),
-        (_report(worsened=True, pain=2), "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["squat"]),
-    ],
-)
 @pytest.mark.parametrize("context", [
     {"familiarity": "new_or_worsening", "movement_quality_changed": False, "next_day_response": "same_or_better"},
     {"familiarity": "familiar_stable", "movement_quality_changed": True, "next_day_response": "same_or_better"},
@@ -86,6 +71,21 @@ def test_regression_requires_familiar_stable_symptoms_and_no_adverse_response(co
         )
 
 
+@pytest.mark.parametrize(
+    "report,decision,exercise,allowed",
+    [
+        (_report(pain=5), "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["squat"]),
+        (_report(worsened=True), "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["squat"]),
+        (_report(variation="chair_sit_to_stand"), "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["squat"]),
+        ({"status": "symptoms_reported"}, "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["squat"]),
+        (_report(variation="unknown_exercise"), "REGRESS", "unknown_exercise", SYMPTOM_REGRESSION_VARIANTS["squat"]),
+        (_report(variation="supported_squat"), "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["lunge"]),
+        (_report(pain=True), "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["squat"]),
+        (_report(acute_warning_signs=["new_swelling"]), "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["squat"]),
+        (_report(acute_warning_signs=["muscle_spasm"]), "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["squat"]),
+        (_report(worsened=True, pain=2), "REGRESS", "supported_squat", SYMPTOM_REGRESSION_VARIANTS["squat"]),
+    ],
+)
 def test_invalid_or_mismatched_retest_is_rejected(report, decision, exercise, allowed):
     with pytest.raises(MovementCoachingError):
         validate_symptom_regression_report(report, decision, exercise, allowed)
