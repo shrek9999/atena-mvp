@@ -141,6 +141,28 @@ def test_saved_profile_programme_can_exclude_one_pattern_and_continue(monkeypatc
     )
 
 
+def test_saved_profile_programme_blocks_when_all_patterns_are_excluded(monkeypatch, tmp_path):
+    client, profile_id, token, _ = _client(monkeypatch, tmp_path, health_consent=False)
+    patterns = {
+        pattern: {"status": "excluded", "exclusion_reason": "deferred"}
+        for pattern in LEARNING_CONTROL_CRITERIA
+    }
+    saved = client.put(
+        "/coach/profile/{}/learning-progress".format(profile_id),
+        headers={"X-Profile-Token": token},
+        json={"patterns": patterns},
+    )
+    assert saved.status_code == 200, saved.get_json()
+    response = client.post(
+        "/coach/profile/{}/program".format(profile_id),
+        headers={"X-Profile-Token": token},
+        json={"no_current_pain_or_restrictions": True},
+    )
+    assert response.status_code == 409
+    assert response.get_json()["blocked"] is True
+    assert "vsi začasno izločeni" in response.get_json()["message"]
+
+
 def test_saved_profile_programme_blocks_when_one_learning_module_is_incomplete(monkeypatch, tmp_path):
     client, profile_id, token, _ = _client(monkeypatch, tmp_path, health_consent=False)
     _save_six_pattern_learning_progress(
