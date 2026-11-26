@@ -208,7 +208,7 @@ def test_program_endpoint_holds_after_easy_feedback_instead_of_auto_progressing(
             "equipment": ["dumbbell", "bench"], "sessions_per_week": 2,
             "session_minutes": 60,
         },
-        movement_decisions=_six_pattern_decisions(),
+        movement_decisions=_completed_six_pattern_decisions(),
     )
     assert program["sessions"][0]["exercises"][0]["prescription"]["sets"] == baseline["sessions"][0]["exercises"][0]["prescription"]["sets"]
 
