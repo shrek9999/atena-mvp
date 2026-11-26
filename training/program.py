@@ -1400,7 +1400,7 @@ def generate_program(
                 movement_adaptation_events.append({
                     "pattern": pattern,
                     "action": "ready_for_conservative_starting_variation",
-                    "message": "Samoocena potrjuje udobje pri osnovnem gibalnem vzorcu, ne pa tolerance na veliko breme. Program zato začne s konservativno različico; večje obremenitve zahtevajo ločeno, ponovljivo izvedbo in zabeleženo povratno informacijo.",
+                    "message": "Dve zabeleženi kakovostni izpostavitvi potrjujeta ponovljiv začetni nadzor, ne pa tolerance na veliko breme. Program zato začne s konservativno različico; večje obremenitve zahtevajo nadaljnjo progresijo z zabeleženimi ponovitvami, RIR in odzivom na regeneracijo.",
                 })
             if symptom_tolerated:
                 # Mild, stable discomfort is not an automatic exclusion. Keep the
@@ -1791,7 +1791,7 @@ def generate_program(
                 if movement_decisions_by_pattern else "self_reported_movement_assessment"
             ),
             "is_diagnosis": False,
-            "automatic_progression": "movement_assessment_does_not_trigger_progression",
+            "automatic_progression": "learning_checklist_alone_does_not_trigger_capacity_development",
             "events": movement_adaptation_events,
             "summary": movement_summary,
             "structured_decisions": movement_decisions_by_pattern,
