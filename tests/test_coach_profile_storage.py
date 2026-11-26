@@ -614,6 +614,30 @@ def test_six_pattern_assessment_requires_separate_health_data_consent(monkeypatc
     )
     assert response.status_code == 403
 
+def test_profile_program_waits_for_all_six_learning_tasks_without_health_consent(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client, health_consent=False)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    patterns = {
+        pattern: {"criteria": {key: True for key in criteria}}
+        for pattern, criteria in LEARNING_CONTROL_CRITERIA.items()
+    }
+    patterns["hinge"]["criteria"]["spine_control"] = False
+    saved = client.put(
+        f"/coach/profile/{profile_id}/learning-progress",
+        headers={"X-Profile-Token": token}, json={"patterns": patterns},
+    )
+    assert saved.status_code == 200
+    response = client.post(
+        f"/coach/profile/{profile_id}/program",
+        headers={"X-Profile-Token": token},
+        json={"no_current_pain_or_restrictions": True},
+    )
+    assert response.status_code == 409
+    assert response.get_json()["learning_required"] is True
+    assert response.get_json()["missing_patterns"] == ["hinge"]
+
 def test_profile_program_keeps_global_feedback_out_of_generator_and_exposes_adaptive_decision(monkeypatch, tmp_path):
     client = _client(monkeypatch, tmp_path, health_consent=True)
     created = _create(client, health_consent=True)
