@@ -101,7 +101,7 @@ def test_ready_decision_starts_conservatively_without_automatic_progression():
     )
 
 
-def test_horizontal_pull_and_unloaded_overhead_learning_use_real_light_catalogue_exercises_when_equipment_exists():
+def test_horizontal_pull_and_light_overhead_press_learning_use_real_catalogue_exercises_when_equipment_exists():
     pull = build_movement_decision(
         "horizontal_pull", "LEARN",
         selected_learning_method="scapular_coordination",
@@ -112,7 +112,7 @@ def test_horizontal_pull_and_unloaded_overhead_learning_use_real_light_catalogue
         "vertical_push", "LEARN",
         selected_learning_method="light_overhead_press",
         user_report={"status": "comfortable"},
-        decision_reason="Najprej preveri neobremenjen dvig rok nad glavo; to ne potrjuje pripravljenosti za potisk.",
+        decision_reason="Uči se dejanskega potiska nad glavo z zelo lahkim bremenom in nadzorovano amplitudo.",
     )
     plan = generate_program(BASE, movement_decisions={
         "horizontal_pull": pull, "vertical_push": overhead,
@@ -126,7 +126,7 @@ def test_horizontal_pull_and_unloaded_overhead_learning_use_real_light_catalogue
     tasks = [task for session in plan["sessions"] for task in session["learning_tasks"]]
     method_ids = {task["method_id"] for task in tasks}
     assert "scapular_coordination" not in method_ids
-    assert "light_implement_press" not in method_ids
+    assert "light_overhead_press" in method_ids
     assert all(
         "učenje koordinacije lopatic" in (
             item.get("movement_adaptation_note", "")
@@ -135,7 +135,7 @@ def test_horizontal_pull_and_unloaded_overhead_learning_use_real_light_catalogue
         for item in pulls
     )
     assert all(
-        "učenje neobremenjenega dviga rok nad glavo" in (
+        "učenje potiska nad glavo z zelo lahkim bremenom" in (
             item.get("movement_adaptation_note", "")
             + " " + item["prescription"].get("adjustment_note", "")
         ).lower()
