@@ -1370,11 +1370,18 @@ def generate_program(
                     (item for item in PATTERN_DEFINITIONS[pattern]["learning_methods"] if item["id"] == method_id),
                     None,
                 )
-                movement_note = (
-                    f"Učni korak za vzorec {PATTERN_DEFINITIONS[pattern]['label']}: "
-                    f"{method['label'] if method else candidate['name']}. "
-                    "Začni z največ dvema nadzorovanima serijama; zahtevnost povečuj šele po ponovljivi izvedbi."
-                )
+                if method and method.get("learning_only") is True:
+                    movement_note = (
+                        f"Osnovno učenje koordinacije za vzorec {PATTERN_DEFINITIONS[pattern]['label']} je zaključeno. "
+                        f"Zdaj začni z začetno različico: {candidate['name']}. "
+                        "Izvedi največ dve nadzorovani seriji; zahtevnost povečuj šele po ponovljivih izvedbah."
+                    )
+                else:
+                    movement_note = (
+                        f"Učni korak za vzorec {PATTERN_DEFINITIONS[pattern]['label']}: "
+                        f"{method['label'] if method else candidate['name']}. "
+                        "Začni z največ dvema nadzorovanima serijama; zahtevnost povečuj šele po ponovljivi izvedbi."
+                    )
                 movement_adaptation_events.append({
                     "pattern": pattern,
                     "action": "learning_or_regression_variant_selected",
@@ -1742,10 +1749,8 @@ def generate_program(
                 for pattern_key, record in movement_decisions_by_pattern.items()
                 if pattern_key in patterns
                 and record["decision"] in {"LEARN", "REGRESS"}
-                and (
-                    record.get("learning_only") is True
-                    or any(item["pattern"] == pattern_key for item in selected)
-                )
+                and not record.get("learning_only", False)
+                and any(item["pattern"] == pattern_key for item in selected)
             ],
             "exercises": selected,
         })
