@@ -132,7 +132,7 @@ def test_program_endpoint_returns_catalogue_backed_plan(monkeypatch):
             "session_minutes": 60,
         },
     )
-    assert response.status_code == 200
+    assert response.status_code == 200, response.get_json()
     body = response.get_json()
     assert body["source"] == "curated_exercise_catalogue"
     assert len(body["program"]["sessions"]) == 2
