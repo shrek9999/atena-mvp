@@ -59,6 +59,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         "learning_methods": [
             {
                 "id": "dowel_four_point",
+                "learning_only": True,
                 "label": "Predklon s palico – tri stične in ena kontrolna točka",
                 "description": (
                     "Palica ohranja stik s trtico oziroma križnično-sakralnim predelom, "
