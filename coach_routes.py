@@ -4125,106 +4125,122 @@ def coach_profile_program(profile_id):
         learning_record = store_get_learning_progress(profile_id, token)
         learning_progress = learning_record.get("learning_progress") if learning_record else None
         learning_patterns = learning_progress.get("patterns") if isinstance(learning_progress, dict) else None
-        expected_patterns = set(PATTERN_DEFINITIONS)
-        if learning_record is not None:
-            if not isinstance(learning_patterns, dict) or set(learning_patterns) != expected_patterns:
-                return jsonify({
-                    "blocked": True, "learning_required": True, "assessment_required": True,
-                    "missing_patterns": sorted(expected_patterns),
-                    "message": "Pred programom skupaj predelajva šest osnovnih gibalnih vzorcev ali začasno izloči neprimerne vzorce.",
-                }), 409
-            incomplete_patterns = sorted(
-                pattern for pattern, item in learning_patterns.items()
-                if not isinstance(item, dict) or not (
-                    item.get("status") == "excluded"
-                    and item.get("exclusion_reason") in LEARNING_EXCLUSION_REASONS
-                    or item.get("status") == "completed"
-                    and item.get("learning_completed_by_user") is True
-                )
-            )
-            if incomplete_patterns:
-                return jsonify({
-                    "blocked": True, "learning_required": True, "assessment_required": True,
-                    "missing_patterns": incomplete_patterns,
-                    "message": "Učenje še ni zaključeno pri vseh šestih vzorcih. Nadaljujva tam, kjer je ostalo.",
-                    "learning_tasks": _build_guided_learning_tasks(incomplete_patterns),
-                }), 409
-            if not any(item.get("status") == "completed" for item in learning_patterns.values()):
-                return jsonify({
-                    "blocked": True, "learning_required": True, "assessment_required": True,
-                    "message": "Za varen začetni program mora vsaj en gibalni vzorec ostati primeren za učenje; trenutno so vsi začasno izločeni.",
-                }), 409
-            movement_decisions = {}
-            preferred_methods = DEFAULT_LEARNING_METHODS
-            for pattern in PATTERN_DEFINITIONS:
-                methods = PATTERN_DEFINITIONS[pattern].get("learning_methods", [])
-                method = next(
-                    (item for item in methods if item.get("id") == preferred_methods[pattern]),
-                    None,
-                )
-                if method is None:
-                    return jsonify({"error": f"Za vzorec {pattern} ni potrjene učne različice."}), 500
-                learning_item = learning_patterns[pattern]
-                if learning_item.get("status") == "excluded":
-                    exclusion_status = {
-                        "pain": "symptoms_reported",
-                        "limitation": "not_assessed",
-                        "uncertain": "uncertain",
-                        "deferred": "not_assessed",
-                    }[learning_item["exclusion_reason"]]
-                    movement_decisions[pattern] = build_movement_decision(
-                        pattern, "UNASSESSABLE",
-                        user_report={"status": exclusion_status},
-                        decision_reason="Vzorec je uporabnik začasno izločil. ATENA ga ne nadomesti z zahtevnejšo vajo in ga ne vključi v program.",
-                    )
-                    movement_decisions[pattern]["training_phase"] = "excluded"
-                else:
-                    if pattern in capacity_ready_patterns:
-                        movement_control = {
-                            "confirmed_by_user": True,
-                            "repeatable": True,
-                            "criteria": {
-                                key: True for key in CAPACITY_CONTROL_CRITERIA[pattern]
-                            },
-                        }
-                        movement_decisions[pattern] = build_movement_decision(
-                            pattern, "READY",
-                            selected_learning_method=method["id"],
-                            user_report={
-                                "status": "movement_controlled",
-                                "movement_control": movement_control,
-                            },
-                            decision_reason=(
-                                "Prehod iz učenja v razvoj osnovne zmogljivosti: uporabnik je zaključil "
-                                "učno nalogo in zabeležil najmanj dve primerljivi, dokončani izpostavitvi "
-                                "iste vaje z nadzorovano izvedbo, upoštevanim tempom, popolnimi serijami, "
-                                "vsaj 3 RIR in ustrezno regeneracijo. To potrjuje ponovljiv začetni nadzor, "
-                                "ne pa pripravljenosti za maksimalne obremenitve."
-                            ),
-                        )
-                        movement_decisions[pattern]["training_phase"] = "capacity_development"
-                    else:
-                        movement_decisions[pattern] = build_movement_decision(
-                            pattern, "LEARN",
-                            selected_learning_method=method["id"],
-                            user_report={"status": "learning_completed_by_user"},
-                            decision_reason=(
-                                "Učna naloga je zaključena po uporabnikovi potrditvi. To ni dokaz "
-                                "objektivne tehnične obvladanosti. Vzorec ostane v začetni fazi, "
-                                "dokler dve primerljivi vadbeni izpostavitvi ne potrdita ponovljive "
-                                "izvedbe, tempa, rezerve in ustrezne regeneracije."
-                            ),
-                        )
-                        movement_decisions[pattern]["training_phase"] = "movement_learning"
-            guided_learning_applied = True
-            learning_progress_version = learning_progress.get("version")
-        else:
+        known_patterns = set(PATTERN_DEFINITIONS)
+        if learning_record is None or not isinstance(learning_patterns, dict):
             return jsonify({
                 "blocked": True, "learning_required": True, "assessment_required": True,
-                "missing_patterns": sorted(expected_patterns),
-                "message": "Pred individualnim programom zaključi vseh šest vodenih učnih nalog.",
+                "missing_patterns": sorted(known_patterns),
+                "message": "Izberi in zaključi vsaj en gibalni vzorec. Ostali lahko počakajo.",
                 "learning_tasks": _build_guided_learning_tasks(),
             }), 409
+        unknown_patterns = sorted(set(learning_patterns) - known_patterns)
+        if unknown_patterns:
+            return jsonify({
+                "blocked": True, "learning_required": True,
+                "missing_patterns": unknown_patterns,
+                "message": "Shranjeni učni napredek vsebuje neznan gibalni vzorec.",
+            }), 409
+
+        completed_patterns = {}
+        excluded_patterns = {}
+        in_progress_patterns = []
+        invalid_patterns = []
+        for pattern, item in learning_patterns.items():
+            if not isinstance(item, dict):
+                invalid_patterns.append(pattern)
+            elif item.get("status") == "completed" and item.get("learning_completed_by_user") is True:
+                completed_patterns[pattern] = item
+            elif item.get("status") == "excluded" and item.get("exclusion_reason") in LEARNING_EXCLUSION_REASONS:
+                excluded_patterns[pattern] = item
+            elif item.get("status") == "in_progress":
+                in_progress_patterns.append(pattern)
+            else:
+                invalid_patterns.append(pattern)
+        if invalid_patterns:
+            return jsonify({
+                "blocked": True, "learning_required": True,
+                "missing_patterns": sorted(invalid_patterns),
+                "message": "Preveri shranjeni napredek izbranih gibalnih vzorcev.",
+            }), 409
+        if not completed_patterns:
+            pending = sorted(in_progress_patterns)
+            return jsonify({
+                "blocked": True, "learning_required": True, "assessment_required": True,
+                "missing_patterns": pending,
+                "message": "Za program zaključi vsaj en izbran gibalni vzorec. Nedokončani in neizbrani vzorci lahko počakajo.",
+                "learning_tasks": _build_guided_learning_tasks(pending) if pending else [],
+            }), 409
+
+        # Only completed and explicitly excluded patterns enter this programme.
+        # Untouched and in-progress patterns remain saved but are not forced into
+        # the current plan or converted into synthetic not_started records.
+        capacity_ready_patterns = capacity_ready_patterns.intersection(completed_patterns)
+        movement_decisions = {}
+        preferred_methods = DEFAULT_LEARNING_METHODS
+        for pattern in PATTERN_DEFINITIONS:
+            if pattern in excluded_patterns:
+                learning_item = excluded_patterns[pattern]
+                exclusion_status = {
+                    "pain": "symptoms_reported",
+                    "limitation": "not_assessed",
+                    "uncertain": "uncertain",
+                    "deferred": "not_assessed",
+                }[learning_item["exclusion_reason"]]
+                movement_decisions[pattern] = build_movement_decision(
+                    pattern, "UNASSESSABLE",
+                    user_report={"status": exclusion_status},
+                    decision_reason="Vzorec je uporabnik začasno izločil. ATENA ga ne nadomesti z zahtevnejšo vajo in ga ne vključi v program.",
+                )
+                movement_decisions[pattern]["training_phase"] = "excluded"
+                continue
+            if pattern not in completed_patterns:
+                continue
+            methods = PATTERN_DEFINITIONS[pattern].get("learning_methods", [])
+            method = next(
+                (item for item in methods if item.get("id") == preferred_methods[pattern]),
+                None,
+            )
+            if method is None:
+                return jsonify({"error": f"Za vzorec {pattern} ni potrjene učne različice."}), 500
+            if pattern in capacity_ready_patterns:
+                movement_control = {
+                    "confirmed_by_user": True,
+                    "repeatable": True,
+                    "criteria": {
+                        key: True for key in CAPACITY_CONTROL_CRITERIA[pattern]
+                    },
+                }
+                movement_decisions[pattern] = build_movement_decision(
+                    pattern, "READY",
+                    selected_learning_method=method["id"],
+                    user_report={
+                        "status": "movement_controlled",
+                        "movement_control": movement_control,
+                    },
+                    decision_reason=(
+                        "Prehod iz učenja v razvoj osnovne zmogljivosti: uporabnik je zaključil "
+                        "učno nalogo in zabeležil najmanj dve primerljivi, dokončani izpostavitvi "
+                        "iste vaje z nadzorovano izvedbo, upoštevanim tempom, popolnimi serijami, "
+                        "vsaj 3 RIR in ustrezno regeneracijo. To potrjuje ponovljiv začetni nadzor, "
+                        "ne pa pripravljenosti za maksimalne obremenitve."
+                    ),
+                )
+                movement_decisions[pattern]["training_phase"] = "capacity_development"
+            else:
+                movement_decisions[pattern] = build_movement_decision(
+                    pattern, "LEARN",
+                    selected_learning_method=method["id"],
+                    user_report={"status": "learning_completed_by_user"},
+                    decision_reason=(
+                        "Učna naloga je zaključena po uporabnikovi potrditvi. To ni dokaz "
+                        "objektivne tehnične obvladanosti. Vzorec ostane v začetni fazi, "
+                        "dokler dve primerljivi vadbeni izpostavitvi ne potrdita ponovljive "
+                        "izvedbe, tempa, rezerve in ustrezne regeneracije."
+                    ),
+                )
+                movement_decisions[pattern]["training_phase"] = "movement_learning"
+        guided_learning_applied = True
+        learning_progress_version = learning_progress.get("version")
         result = generate_program(
             profile["profile"],
             movement_decisions=movement_decisions,
