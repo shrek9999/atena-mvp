@@ -95,7 +95,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                 "exercise_id": "supported_squat",
             },
             {
-                "id": "reaching_counterbalance",
+                "id": "air_squat_counterweight",
                 "label": "Počep z lahko protiutežjo (po potrebi)",
                 "description": "Roke so pri air squatu vedno v predročenju. Če je potrebna dodatna pomoč pri ravnotežju, vadeči v predročenju drži lahko utež (npr. ročko ali kolut 1–4 kg), ki deluje kot protiutež.",
                 "exercise_id": "air_squat",
