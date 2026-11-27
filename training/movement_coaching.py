@@ -205,24 +205,17 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         ],
     },
     "vertical_push": {
-        "label": "Dvig rok nad glavo",
+        "label": "Potisk nad glavo",
         "task_id": "overhead_press",
-        "task": "Najprej nadzorovan dvig rok nad glavo brez bremena. Zunanji upor se uvede pozneje, ko sta pot rok in nadzor trupa ponovljiva.",
+        "task": "Potisk nad glavo z zelo lahkim bremenom, primernim za razpoložljivo opremo. Izvedi nekaj ponovitev v udobni amplitudi in nadzorovanem tempu. To je učna vaja in preizkus izvedbe, ne test maksimalne moči.",
         "exercise_ids": [
             "overhead_press", "band_overhead_press", "plate_overhead_press", "barbell_overhead_press",
         ],
         "learning_methods": [
             {
-                "id": "unloaded_overhead_reach",
-                "learning_only": True,
-                "label": "Dvig rok nad glavo brez bremena",
-                "description": "V stoji počasi dvigni obe roki nad glavo in ju nadzorovano spusti. Ohrani rebra in medenico pod nadzorom; ne sili v amplitudo in ne kompenziraj z izrazitim usločenjem hrbta. Uporabi samo udoben obseg.",
-                "exercise_id": None,
-            },
-            {
                 "id": "light_overhead_press",
-                "label": "Nadaljevanje: lahek potisk nad glavo",
-                "description": "Ko je neobremenjen dvig rok ponovljiv in udoben, izberi zelo lahek, opremi primeren pripomoček. Potisk izvedi počasi, z nadzorom reber, medenice in lopatic. To je začetna obremenitev, ne test moči. Ob bolečini, občutku nestabilnosti ali izgubi nadzora prekini.",
+                "label": "Zelo lahek potisk nad glavo",
+                "description": "Izberi zelo lahko breme, ki ustreza razpoložljivi opremi. Iz stoječega položaja potisni breme nad glavo po udobni poti; zapestja naj bodo približno nad komolci. Lopatice se med dvigom naravno rotirajo navzgor. Ohrani nadzor reber in medenice; ne kompenziraj z usločenjem križa. Uporabi ponovljivo amplitudo. To ni test maksimalne moči. Ob bolečini, nestabilnosti ali izgubi nadzora prekini.",
                 "exercise_id": None,
             },
         ],
