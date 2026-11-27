@@ -27,6 +27,16 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             "tempo": "3–1–1",
             "tempo_seconds": {"lowering": 3, "bottom_pause": 1, "rising": 1},
             "instruction": "Izvedi pet ponovitev: 3 sekunde spuščanja, 1 sekunda mirne pavze in 1 sekunda vstajanja.",
+            "how_to_perform": [
+                "Stopali postavi v udoben položaj in ohranjaj oporo prek celotnega stopala.",
+                "Sočasno upogibaj kolena in kolke ter se nadzorovano spuščaj. Kolena naj sledijo smeri stopal, trup pa ohranjaj čim bolj pokončen, kolikor dopuščata telesna zgradba in udobna amplituda.",
+                "Po enosekundni pavzi tekoče vstani, brez odboja in brez izgube ravnotežja."
+            ],
+            "adaptations": {
+                "heel_lift": "Če se pete dvigujejo, poskusi stabilno podporo pod petama. To je prilagoditev izvedbe, ne diagnoza vzroka.",
+                "balance": "Če je ravnotežje oteženo, iztegni obe roki naprej kot protiutež.",
+                "range": "Če izgubljaš nadzor, zmanjša globino počepa."
+            },
             "criteria": [
                 {
                     "id": "tempo",
@@ -75,7 +85,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "bodyweight_squat",
                 "label": "Počep z lastno težo",
-                "description": "Izvedi pet nadzorovanih ponovitev s tempom 3 sekunde spuščanja, 1 sekunda pavze in 1 sekunda vstajanja. Trup ohranjaj čim bolj pokončen, kolikor dopuščata telesna zgradba in udobna amplituda. Če ravnotežje otežuje izvedbo, iztegni obe roki naprej kot protiutež. Če se pete dvigujejo, poskusi stabilno podporo pod petama; če izgubljaš nadzor, zmanjša globino počepa.",
+                "description": "Izvedi pet ponovitev v tempu 3–1–1. Nato preveri šest kontrolnih točk in po potrebi uporabi pripadajočo prilagoditev.",
                 "exercise_id": "air_squat",
             },
             {
