@@ -3730,13 +3730,18 @@ def save_six_pattern_movement_assessment(profile_id):
         return jsonify({"error": "Pošlji samo movement_assessment_consent in movement_patterns."}), 400
     supplied = payload.get("movement_patterns")
     required_patterns = set(PATTERN_DEFINITIONS)
-    if not isinstance(supplied, dict) or set(supplied) != required_patterns:
-        missing = sorted(required_patterns - set(supplied or {})) if isinstance(supplied, dict) else sorted(required_patterns)
-        unknown = sorted(set(supplied or {}) - required_patterns) if isinstance(supplied, dict) else []
+    if not isinstance(supplied, dict) or not supplied:
         return jsonify({
-            "error": "Gibalna samoocena mora vsebovati vseh šest osnovnih vzorcev.",
-            "missing_patterns": missing,
-            "unknown_patterns": unknown,
+            "error": "Pošlji vsaj en veljaven gibalni vzorec.",
+            "missing_patterns": sorted(required_patterns),
+            "unknown_patterns": [],
+        }), 400
+    unknown_patterns = sorted(set(supplied) - required_patterns)
+    if unknown_patterns:
+        return jsonify({
+            "error": "Gibalna samoocena vsebuje neznane vzorce.",
+            "missing_patterns": sorted(required_patterns - set(supplied)),
+            "unknown_patterns": unknown_patterns,
         }), 400
 
     status_to_decision = {
@@ -3748,8 +3753,7 @@ def save_six_pattern_movement_assessment(profile_id):
     }
     decisions = {}
     try:
-        for pattern in PATTERN_DEFINITIONS:
-            value = supplied[pattern]
+        for pattern, value in supplied.items():
             if not isinstance(value, dict):
                 return jsonify({"error": f"Vzorec {pattern} mora biti objekt."}), 400
             status = value.get("status")
@@ -3874,6 +3878,18 @@ def save_six_pattern_movement_assessment(profile_id):
             return jsonify({
                 "error": "Za shranjevanje gibalne samoocene je potrebna ločena privolitev za zdravstvene podatke."
             }), 403
+        # Pattern checks are independent. Preserve earlier results when the
+        # user completes or retests one pattern in a later interaction.
+        existing = store_get_movement_assessment(profile_id, token)
+        existing_assessment = existing.get("assessment") if isinstance(existing, dict) else None
+        existing_decisions = (
+            existing_assessment.get("decisions")
+            if isinstance(existing_assessment, dict)
+            and existing_assessment.get("assessment_version") == SIX_PATTERN_ASSESSMENT_VERSION
+            and isinstance(existing_assessment.get("decisions"), dict)
+            else {}
+        )
+        decisions = {**existing_decisions, **decisions}
         record = {
             "assessment_version": SIX_PATTERN_ASSESSMENT_VERSION,
             "assessment_type": "guided_six_pattern_self_report",
@@ -3884,6 +3900,7 @@ def save_six_pattern_movement_assessment(profile_id):
         return jsonify({
             "assessment_version": SIX_PATTERN_ASSESSMENT_VERSION,
             "movement_decisions": decisions,
+            "missing_patterns": sorted(required_patterns - set(decisions)),
             "assessment_updated_at": saved["updated_at"],
             "assessment_stored": True,
             "source": "authenticated_six_pattern_self_assessment",
@@ -4056,14 +4073,19 @@ def coach_profile_program(profile_id):
             and saved_assessment.get("assessment_version") == SIX_PATTERN_ASSESSMENT_VERSION
             else None
         )
-        if not isinstance(movement_decisions, dict) or set(movement_decisions) != expected_patterns:
-            missing_patterns = sorted(expected_patterns - set(movement_decisions or {})) if isinstance(movement_decisions, dict) else sorted(expected_patterns)
+        if not isinstance(movement_decisions, dict) or not movement_decisions:
             return jsonify({
                 "blocked": True,
                 "assessment_required": True,
-                "missing_patterns": missing_patterns,
-                "message": "Pred individualnim programom morava opraviti vseh šest kratkih gibalnih preverjanj: počep, predklon v kolkih (hip hinge), horizontalni potisk, horizontalni poteg, vertikalni potisk in izpadni korak. Neocenjenega vzorca ne bom obravnaval kot pripravljenega za zahtevnejšo vajo.",
+                "missing_patterns": sorted(expected_patterns),
+                "message": "Pred pripravo programa morava varno oceniti vsaj en gibalni vzorec. Ostali vzorci lahko ostanejo neocenjeni in bodo izpuščeni, dokler jih ne preveriva.",
             }), 409
+        unknown_patterns = sorted(set(movement_decisions) - expected_patterns)
+        if unknown_patterns:
+            return jsonify({
+                "error": "Shranjena ocena vsebuje neznane gibalne vzorce.",
+                "unknown_patterns": unknown_patterns,
+            }), 400
         assessable_patterns = [
             pattern for pattern, record in movement_decisions.items()
             if isinstance(record, dict) and record.get("decision") in {"READY", "LEARN", "REGRESS"}
