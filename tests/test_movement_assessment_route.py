@@ -104,6 +104,7 @@ def test_program_route_requires_current_safety_confirmation(client):
         headers={"X-Pilot-Token": "test-only-token"},
         json={
             "movement_assessment_consent": True,
+            "training_restrictions_reported": True,
             "profile": {
                 "goal": "functional", "experience": "beginner",
                 "equipment": ["bodyweight"], "sessions_per_week": 2,
