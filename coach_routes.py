@@ -2798,17 +2798,21 @@ def coach_program():
         }), 403
     expected_patterns = set(PATTERN_DEFINITIONS)
     movement_decisions = payload.get("movement_decisions")
-    if not isinstance(movement_decisions, dict) or set(movement_decisions) != expected_patterns:
-        supplied_patterns = set(movement_decisions) if isinstance(movement_decisions, dict) else set()
-        missing_patterns = sorted(expected_patterns - supplied_patterns)
-        unknown_patterns = sorted(supplied_patterns - expected_patterns)
+    if not isinstance(movement_decisions, dict) or not movement_decisions:
         return jsonify({
             "blocked": True,
             "assessment_required": True,
-            "missing_patterns": missing_patterns,
-            "unknown_patterns": unknown_patterns,
-            "message": "Pred individualnim programom odgovori na vseh šest osnovnih gibalnih vzorcev. Če naloge ne moreš ali ne želiš oceniti, izberi »Neocenjeno – preskoči«; ta vzorec bo izpuščen iz programa.",
+            "missing_patterns": sorted(expected_patterns),
+            "unknown_patterns": [],
+            "message": "Izberi vsaj en gibalni vzorec za učenje ali ga ponovno preveri. Ostali vzorci lahko počakajo in bodo izpuščeni iz tega programa.",
         }), 409
+    supplied_patterns = set(movement_decisions)
+    unknown_patterns = sorted(supplied_patterns - expected_patterns)
+    if unknown_patterns:
+        return jsonify({
+            "error": "Gibalne odločitve vsebujejo neznane vzorce.",
+            "unknown_patterns": unknown_patterns,
+        }), 400
     valid_report_statuses = {"comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled"}
     control_criteria = {
         "squat": {"tempo", "balance", "knee_hip_foot_control", "lumbopelvic_control", "tolerated_rom"},
@@ -2872,7 +2876,7 @@ def coach_program():
         return jsonify({
             "blocked": True,
             "assessment_required": True,
-            "message": "Vseh šest vzorcev je trenutno neocenjenih ali nejasnih. Pred individualnim programom je treba vsaj en vzorec varno oceniti; sicer program ne bi imel zanesljivega gibalnega izhodišča.",
+            "message": "Trenutno ni nobenega dovolj jasno ocenjenega vzorca. Pred programom izberi vsaj en vzorec za varno učenje.",
         }), 409
     coordination_record = (camera_observations or {}).get("coordination", {})
     coordination_values = coordination_record.get("observations", {}) if isinstance(coordination_record, dict) else {}
@@ -2903,8 +2907,8 @@ def coach_program():
     response = {"program": result, "source": "curated_exercise_catalogue", "pilot": True}
     if result.get("movement_adaptation") is not None:
         response["movement_adaptation"] = result["movement_adaptation"]
-    # All six explicit self-reports are required above. This stateless endpoint
-    # uses them for this programme only and does not persist movement/health data.
+    # Only explicitly supplied patterns are used for this programme. Missing
+    # patterns remain out of scope and no movement/health data is persisted.
     response["movement_assessment_applied"] = True
     response["movement_assessment_stored"] = False
     response["movement_decisions_stored"] = False
