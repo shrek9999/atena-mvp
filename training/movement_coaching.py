@@ -21,23 +21,23 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
     "squat": {
         "label": "Počep",
         "task_id": "controlled_squat",
-        "task": "Nadzorovan počep z lastno težo. Trup naj bo čim bolj pokončen, kolikor dopuščata telesna zgradba in udobna amplituda; gibanja ne sili v pokončen položaj.",
+        "task": "Pet nadzorovanih počepov z lastno težo v tempu 3–1–1. Roke ves čas v predročenju.",
         "learning_protocol": {
             "repetitions": 5,
             "tempo": "3–1–1",
             "tempo_seconds": {"lowering": 3, "bottom_pause": 1, "rising": 1},
-            "instruction": "Pri vseh ponovitvah imej roke v predročenju. Ohranjaj pritisk prek trikotnika stopala (peta, baza palca, baza mezinca). Trup naj bo čim bolj pokončen, vendar ne na račun ravnotežja ali opore celotnega stopala; dovoli naraven predklon. Izvedi pet ponovitev v tempu 3–1–1.",
+            "instruction": "Izvedi 5 počepov v tempu 3–1–1. Roke ves čas v predročenju. Trup naj bo nadzorovan in razmeroma pokončen; ne sili v navpičen položaj. Ohranjaj stik pete, baze palca in baze mezinca.",
             "how_to_perform": [
-                "Stopali postavi v udoben položaj, roke iztegni v predročenje in ohranjaj stik trikotnika stopala: pete, baze palca in baze mezinca.",
-                "Sočasno upogibaj kolena in kolke ter se nadzorovano spuščaj. Kolena naj sledijo smeri stopal. Trup ohranjaj nadzorovan in razmeroma pokončen, vendar ne sili v navpičen položaj, če se s tem dvigujejo prsti ali teža uhaja nazaj.",
-                "Po enosekundni pavzi tekoče vstani, brez odboja in brez izgube ravnotežja. Če se dvigujejo pete, zmanjša globino in preveri dorzalno fleksijo; če se dvigujejo prsti, ne podlagaj pet, temveč dovoli naraven predklon ali uporabi protiutež pred telesom."
+                "Stopali postavi v udoben položaj. Roke iztegni v predročenje in jih tam ohrani. Pritisk razporedi prek pete, baze palca in baze mezinca.",
+                "Sočasno upogibaj kolena in kolke. Kolena naj sledijo smeri stopal. Dovoli naraven predklon trupa, da ohraniš ravnotežje in stik celotnega stopala.",
+                "Spuščaj se 3 sekunde, miruj 1 sekundo in v 1 sekundi vstani. Če se dvignejo pete, zmanjša globino; če se dvignejo prsti, ne podlagaj pet – dovoli predklon ali uporabi protiutež."
             ],
             "adaptations": {
-                "heel_lift": "Če se dviguje peta, najprej zmanjša globino in preveri dorzalno fleksijo gležnja. Stabilna podpora pod petama je lahko začasna prilagoditev, vendar le, če izboljša ravnotežje in ohrani stik celotnega stopala. Dvig pete sam po sebi ne dokazuje vzroka.",
-                "forefoot_lift": "Če se dvigujejo prsti oziroma sprednji del stopala, ne dviguj pet. Ne sili v navpičen trup: dovoli naraven, nadzorovan predklon trupa, zmanjša globino ali uporabi lahko protiutež 1–4 kg v predročenju. To je opažanje ravnotežja, ne diagnoza omejene dorzalne fleksije.",
+                "heel_lift": "Ob dvigu pete zmanjša globino in preveri dorzalno fleksijo gležnja. Podpora pod petama je začasna možnost le, če ohrani stik celotnega stopala. Dvig pete sam ne potrjuje vzroka.",
+                "forefoot_lift": "Ob dvigu prstov ne podlagaj pet. Dovoli naraven predklon, zmanjša globino ali uporabi protiutež 1–4 kg pred telesom. To je znak izgube ravnotežja, ne diagnoza omejene gibljivosti gležnja.",
                 "excessive_forward_lean": "Če je predklon pretiran ali se hrbtenica zaokroži, zmanjša globino in se vrni k učenju predklona z nevtralno hrbtenico. Po potrebi uporabi počep do stabilne tarče.",
-                "balance": "Roke ostanejo v predročenju. Če ravnotežje kljub temu otežuje izvedbo, uporabi lahko protiutež (npr. ročko ali kolut 1–4 kg) pred telesom. Če to ne zadošča, uporabi stabilno oporo rok (trakovi ali fiksen drog) in vadi počep ob opori.",
-                "range": "Če izgubljaš nadzor, zmanjša globino in uporabi stabilno tarčo (npr. škatlo ali stol), da postopno osvojiš nadzor amplitude."
+                "balance": "Roke ohrani v predročenju. Po potrebi dodaj protiutež 1–4 kg; če ravnotežje še ni stabilno, uporabi TRX ali fiksen drog kot oporo.",
+                "range": "Zmanjšaj globino in uporabi stabilno tarčo, na primer škatlo ali stol."
             },
             "criteria": [
                 {
