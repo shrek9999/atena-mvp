@@ -2228,7 +2228,7 @@ def _coaching_guardrail_reply(messages):
                 "Prizadeti vzorec bova do razjasnitve pustila izven programa."
             )
         contradiction = bool(re.search(
-            r"(začetnik|začetniški).{0,80}(deset let|dolgoletn|napreden)|
+            r"(začetnik|začetniški).{0,80}(deset let|dolgoletn|napreden)|"
             r"(deset let|dolgoletn|napreden).{0,80}(začetnik|začetniški)",
             history_lower,
         ))
