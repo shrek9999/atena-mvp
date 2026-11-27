@@ -4094,7 +4094,7 @@ def coach_profile_program(profile_id):
             return jsonify({
                 "blocked": True,
                 "assessment_required": True,
-                "message": "Vseh šest vzorcev je trenutno neocenjenih ali nejasnih. Pred shranjenim individualnim programom je treba vsaj en vzorec varno oceniti; sicer program ne bi imel zanesljivega gibalnega izhodišča.",
+                "message": "Trenutno še ni nobenega dovolj jasno ocenjenega vzorca. Pred pripravo programa morava varno preveriti vsaj en vzorec.",
             }), 409
         result = generate_program(
             profile["profile"],
@@ -4116,6 +4116,7 @@ def coach_profile_program(profile_id):
             "program_stored": True,
             "movement_assessment_applied": True,
             "movement_assessment_version": SIX_PATTERN_ASSESSMENT_VERSION,
+            "movement_assessment_missing_patterns": sorted(expected_patterns - set(movement_decisions)),
             "profile": profile["profile"],
             "adaptation_guidance": adaptation,
             "adaptive_decision": adaptive_decision,
