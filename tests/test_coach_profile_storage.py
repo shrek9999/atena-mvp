@@ -551,6 +551,28 @@ def test_six_pattern_assessment_accepts_partial_pattern_set(monkeypatch, tmp_pat
     }
 
 
+def test_six_pattern_assessment_rejects_unregistered_learning_method(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    response = client.put(
+        f"/coach/profile/{profile_id}/movement-assessment",
+        headers={"X-Profile-Token": token},
+        json={
+            "movement_assessment_consent": True,
+            "movement_patterns": {
+                "squat": {
+                    "status": "comfortable",
+                    "selected_learning_method": "bodyweight_squat",
+                }
+            },
+        },
+    )
+    assert response.status_code == 400
+    assert "Neveljavna učna metoda" in response.get_json()["error"]
+
+
 def test_six_pattern_assessment_rejects_unknown_pattern(monkeypatch, tmp_path):
     client = _client(monkeypatch, tmp_path, health_consent=True)
     created = _create(client, health_consent=True)
