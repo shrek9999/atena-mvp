@@ -1746,7 +1746,7 @@ def generate_program(
                     ),
                     **(
                         {"learning_protocol": PATTERN_DEFINITIONS[pattern_key]["learning_protocol"]}
-                        if pattern_key == "squat" and record.get("selected_learning_method") == "bodyweight_squat"
+                        if pattern_key == "squat"
                         else {}
                     ),
                     "exercise_id": record.get("resolved_exercise_id"),
