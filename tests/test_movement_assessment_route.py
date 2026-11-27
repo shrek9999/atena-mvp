@@ -585,3 +585,68 @@ def test_saved_movement_assessment_rejects_unknown_pattern_without_requiring_all
     )
     assert response.status_code == 400
     assert response.get_json()["unknown_patterns"] == ["not_a_pattern"]
+
+
+
+def test_profile_program_accepts_partial_saved_assessment_and_reports_remaining_patterns(monkeypatch, client):
+    import coach_routes
+    from training.movement_coaching import build_movement_decision
+
+    profile = {
+        "profile": {
+            "goal": "hypertrophy",
+            "experience": "beginner",
+            "equipment": ["bodyweight", "wall", "household_support"],
+            "sessions_per_week": 2,
+            "session_minutes": 45,
+        }
+    }
+    squat = build_movement_decision(
+        "squat", "LEARN",
+        selected_learning_method="reaching_counterbalance",
+        user_report={"status": "comfortable"},
+        decision_reason="Learn squat control first.",
+    )
+    captured = {}
+    monkeypatch.setattr(coach_routes, "storage_enabled", lambda: True)
+    monkeypatch.setattr(coach_routes, "_profile_token", lambda: "profile-token")
+    monkeypatch.setattr(coach_routes, "store_get_profile", lambda profile_id, token: profile)
+    monkeypatch.setattr(coach_routes, "store_list_sessions", lambda profile_id, token, limit=50: [])
+    monkeypatch.setattr(coach_routes, "_build_profile_adaptation", lambda sessions: (None, {}))
+    monkeypatch.setattr(coach_routes, "recommend_exercise_progression", lambda sessions: [])
+    monkeypatch.setattr(coach_routes, "_hold_successfully_confirmed_exercises", lambda *args: [])
+    monkeypatch.setattr(coach_routes, "summarize_longitudinal_progression", lambda sessions: {})
+    monkeypatch.setattr(coach_routes, "summarize_conditioning_progress", lambda sessions: {})
+    monkeypatch.setattr(coach_routes, "_build_adaptive_decision", lambda *args: {})
+    monkeypatch.setattr(coach_routes, "summarize_training_cycle", lambda *args: {})
+    monkeypatch.setattr(
+        coach_routes, "store_get_movement_assessment",
+        lambda profile_id, token: {
+            "assessment": {
+                "assessment_version": "six-pattern-coaching-v1",
+                "decisions": {"squat": squat},
+            }
+        },
+    )
+
+    def fake_generate_program(profile_arg, movement_decisions=None):
+        captured["decisions"] = movement_decisions
+        return {"sessions": [], "movement_adaptation": {"events": []}}
+
+    monkeypatch.setattr(coach_routes, "generate_program", fake_generate_program)
+    monkeypatch.setattr(coach_routes, "apply_exercise_progression", lambda program, progressions: program)
+    monkeypatch.setattr(coach_routes, "store_add_program_version", lambda *args: None)
+
+    response = client.post(
+        "/coach/profile/test-profile/program",
+        headers={"X-Profile-Token": "profile-token"},
+        json={"no_current_pain_or_restrictions": True},
+    )
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert set(captured["decisions"]) == {"squat"}
+    assert body["movement_assessment_applied"] is True
+    assert set(body["movement_assessment_missing_patterns"]) == {
+        "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge"
+    }
