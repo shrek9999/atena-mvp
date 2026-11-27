@@ -1180,3 +1180,11 @@ def test_short_two_day_strength_plan_does_not_add_hip_extension_volume():
 
     assert all("hip_extension" not in patterns for patterns in patterns_by_session)
     assert all("lunge" in patterns for patterns in patterns_by_session)
+
+
+def test_generated_exercises_include_reviewed_english_names():
+    plan = generate_program(BASE)
+    exercises = [exercise for session in plan["sessions"] for exercise in session["exercises"]]
+    assert exercises
+    assert all(exercise["name_en"].strip() for exercise in exercises)
+    assert all(exercise["name_en"] != exercise["name"] or exercise["name"].isascii() for exercise in exercises)
