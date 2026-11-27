@@ -42,6 +42,8 @@ Never confuse:
 
 **Horizontal pull:** follow the manual's sequence: (1) unloaded scapular protraction/retraction coordination upright and in a hinge; (2) one-arm row in a hinge with a light load; (3) light barbell row after hinge control and scapular coordination are reliable. Avoid shoulder shrugging. If hinge control is insufficient, use supported row rather than forcing a bent-over position.
 
+**Vertical push:** the learning task and movement test is the **actual overhead press with a very light, equipment-appropriate load**. Assess the press path, natural upward scapular rotation, trunk control, coordinated arm action, and tolerated load/range. This is not a maximal-strength test. An unloaded overhead arm raise belongs only to the optional camera-observation flow; it must never replace the overhead press or be treated as clearance for loaded pressing.
+
 **Vertical pull:** include suitable foot-assisted vertical pull-up, band-assisted pull-up and pull-up options. Equipment and bar/anchor must genuinely be available and safe. Do not call a horizontal row an equivalent vertical pull. Foot-assisted pull-up keeps an upright torso.
 
 **Squat/lunge:** use suitable support, counterbalance, target height, stance and range. Reaching squat is both a teaching method and valid variation. Do not demand maximal depth or a resting squat from everyone.
