@@ -898,7 +898,10 @@ def generate_program(
                 "learning_only": bool(method and method.get("learning_only") is True),
                 **({"omission_reason": omission_reason} if omission_reason else {}),
             }
-    strict_six_pattern_mode = set(movement_decisions_by_pattern) == set(PATTERN_DEFINITIONS)
+    # Any structured assessment activates strict pattern scope: only patterns
+    # explicitly assessed in this record may contribute exercises or learning tasks.
+    # Missing patterns are never inferred READY from goals, experience or equipment.
+    strict_six_pattern_mode = bool(movement_decisions_by_pattern)
     reduce_load = bool(response and (
         response["difficulty"] == "hard" or not response["completed"] or response["recovery"] == "poor"
     ))
