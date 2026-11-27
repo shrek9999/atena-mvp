@@ -48,7 +48,9 @@ A pain-related regression is accepted only through the existing pattern-specific
 - The save endpoint accepts a sparse subset of patterns and preserves partial `in_progress` progress.
 - The programme endpoint accepts only completed or explicitly excluded patterns; unfinished patterns are not sent as programme inputs.
 - Profile learning progress is distinct from optional health-data storage/consent. Keep existing profile authentication and consent gates.
-- The current JSON persistence structure is sufficient; do not add a database migration or table for this behaviour.
+- Learning progress is stored under the reserved internal key `_atena_learning_progress` inside `atena_profiles.profile_json`; profile reads strip this key from the public profile payload.
+- Profile updates preserve the internal learning-progress value. Health-data consent withdrawal does not erase it; profile deletion does.
+- No separate learning-progress table or production migration is required. PostgreSQL request handlers perform no DDL; hosted schema changes remain migration-managed.
 - English remains the default product language; Slovenian remains the pilot language via `?lang=sl`.
 
 ## 5. Required cross-stack alignment
