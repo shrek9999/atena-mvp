@@ -388,6 +388,10 @@ def test_bodyweight_squat_learning_task_exposes_five_reps_tempo_and_six_binary_c
     assert protocol["tempo_seconds"] == {
         "lowering": 3, "bottom_pause": 1, "rising": 1,
     }
+    assert len(protocol["how_to_perform"]) == 3
+    assert "sočasno upogibaj kolena in kolke" in protocol["how_to_perform"][1]
+    assert "podporo pod petama" in protocol["adaptations"]["heel_lift"]
+    assert "protiutež" in protocol["adaptations"]["balance"]
     criteria = protocol["criteria"]
     assert [item["id"] for item in criteria] == [
         "tempo", "balance", "foot_stability", "knee_control",
