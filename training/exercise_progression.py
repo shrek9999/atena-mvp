@@ -301,6 +301,7 @@ def recommend_exercise_progression(sessions):
         latest = history[0]
         recommendations.append({
             "exercise_id": exercise_id,
+            "pattern": latest.get("pattern"),
             "decision": decision,
             "exposures_recorded": len(observations),
             "recent_rir_min": min(latest["rirs"]) if latest["rirs"] else None,
@@ -408,9 +409,38 @@ def apply_exercise_progression(program, recommendations):
                 current_seconds = prescription["work_seconds"]
                 increment = max(5, int(round(current_seconds * 0.05)))
                 prescription["work_seconds"] = min(1800, current_seconds + increment)
+            elif decision == "increase_load":
+                current_load = recommendation.get("recent_load_kg")
+                load_text = (
+                    f"Zgornjo mejo ponovitev si dosegel/-la v dveh zaporednih kakovostnih izpostavitvah pri približno {current_load:g} kg. "
+                    if isinstance(current_load, (int, float)) and not isinstance(current_load, bool)
+                    else "Zgornjo mejo ponovitev si dosegel/-la v dveh zaporednih kakovostnih izpostavitvah. "
+                )
+                prescription["load_guidance"] = (
+                    load_text
+                    + "Naslednjič poskusi najmanjši razpoložljivi dvig bremena, serije in ciljne ponovitve ohrani. "
+                    + "Če je najmanjši skok prevelik ali poruši vsaj 3 RIR, obdrži trenutno breme. ATENA kilogramov ne spreminja samodejno."
+                )
+                prescription["adjustment_note"] = (
+                    (prescription.get("adjustment_note", "") + " ") + prescription["load_guidance"]
+                ).strip()
+            elif decision == "progress_variation":
+                next_step = next(
+                    (value for value in exercise.get("progressions", []) if isinstance(value, str) and value.strip()),
+                    None,
+                )
+                prescription["variation_progression_guidance"] = (
+                    "Dve zaporedni kakovostni izpostavitvi potrjujeta zgornjo mejo ponovitev. "
+                    + (f"Naslednji majhen korak je lahko: {next_step}. " if next_step else "Izberi majhen, preverjen korak zahtevnosti iz kataloga. ")
+                    + "Spremeni samo eno glavno spremenljivko in ohrani nadzor, tempo ter vsaj 3 RIR. ATENA različice ne zamenja samodejno."
+                )
+                prescription["adjustment_note"] = (
+                    (prescription.get("adjustment_note", "") + " ") + prescription["variation_progression_guidance"]
+                ).strip()
             prescription["exercise_progression"] = {
                 "decision": decision,
                 "reason": note,
+                "recent_load_kg": recommendation.get("recent_load_kg"),
                 "automatic_load_change": False,
             }
             if note:

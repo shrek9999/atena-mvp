@@ -17,13 +17,13 @@ def test_all_six_patterns_and_catalogue_links_are_valid():
     assert result["exercise_links_checked"] >= 30
 
 
-def test_squat_reaching_squat_is_a_learning_method_not_a_mandatory_first_step():
+def test_squat_air_squat_is_a_learning_method_not_a_mandatory_first_step():
     squat = get_pattern_coaching("squat")
-    method = next(item for item in squat["learning_methods"] if item["id"] == "reaching_counterbalance")
-    assert method["exercise_id"] == "reaching_squat"
+    method = next(item for item in squat["learning_methods"] if item["id"] == "air_squat_counterweight")
+    assert method["exercise_id"] == "air_squat"
     assert "protiutež" in method["description"]
     options = {item["id"] for item in squat["exercise_options"]}
-    assert {"reaching_squat", "squat_goblet", "loaded_deep_squat", "back_squat", "front_squat"} <= options
+    assert {"air_squat", "squat_goblet", "loaded_deep_squat", "back_squat", "front_squat"} <= options
 
 
 def test_squat_options_are_filtered_by_experience_and_available_equipment():

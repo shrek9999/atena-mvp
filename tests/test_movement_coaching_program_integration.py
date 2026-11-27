@@ -25,21 +25,51 @@ def _pattern_exercises(plan, pattern):
     ]
 
 
-def test_learn_decision_selects_reaching_squat_and_adds_learning_task():
+def test_learn_decision_selects_air_squat_and_adds_learning_task():
     decision = build_movement_decision(
         "squat", "LEARN",
-        selected_learning_method="reaching_counterbalance",
+        selected_learning_method="air_squat_counterweight",
         decision_reason="Najprej utrdi osnovno koordinacijo in ravnotežje.",
     )
     plan = generate_program(BASE, movement_decisions={"squat": decision})
     squats = _pattern_exercises(plan, "squat")
     assert squats
-    assert all(item["exercise_id"] == "reaching_squat" for item in squats)
+    assert all(item["exercise_id"] == "air_squat" for item in squats)
     assert all(item["prescription"]["sets"] <= 2 for item in squats)
     assert all(item["prescription"]["rir"] >= 3 for item in squats)
     tasks = [task for session in plan["sessions"] for task in session["learning_tasks"]]
     assert tasks
-    assert all(task["method_id"] == "reaching_counterbalance" for task in tasks)
+    assert all(task["method_id"] == "air_squat_counterweight" for task in tasks)
+
+
+def test_unselected_core_patterns_remain_unassessed_and_are_omitted_from_the_programme():
+    squat = build_movement_decision(
+        "squat", "LEARN",
+        selected_learning_method="bodyweight_squat",
+        decision_reason="The user selected squat learning only.",
+    )
+    plan = generate_program(BASE, movement_decisions={"squat": squat})
+
+    assert _pattern_exercises(plan, "squat")
+    for pattern in ("hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge"):
+        assert not _pattern_exercises(plan, pattern), pattern
+        decision = plan["movement_adaptation"]["structured_decisions"][pattern]
+        assert decision["decision"] == "UNASSESSABLE"
+        assert decision["omission_reason"] == "not_selected_for_current_programme"
+
+
+def test_standard_bodyweight_squat_is_primary_and_air_squat_remains_a_regression():
+    decision = build_movement_decision(
+        "squat", "LEARN",
+        selected_learning_method="bodyweight_squat",
+        decision_reason="Najprej učenje osnovnega počepa z lastno težo.",
+    )
+    plan = generate_program(BASE, movement_decisions={"squat": decision})
+    squats = _pattern_exercises(plan, "squat")
+    assert squats
+    assert all(item["exercise_id"] == "air_squat" for item in squats)
+    tasks = [task for session in plan["sessions"] for task in session["learning_tasks"]]
+    assert any(task["method_id"] == "bodyweight_squat" for task in tasks)
 
 
 def test_dowel_hinge_learning_task_uses_a_catalogue_supported_low_skill_variant():
@@ -94,35 +124,59 @@ def test_ready_decision_starts_conservatively_without_automatic_progression():
     assert [item["exercise_id"] for item in selected] != [
         item["exercise_id"] for item in _pattern_exercises(baseline, "squat")
     ]
-    assert assessed["movement_adaptation"]["automatic_progression"] == "movement_assessment_does_not_trigger_progression"
+    assert assessed["movement_adaptation"]["automatic_progression"] == "learning_checklist_alone_does_not_trigger_capacity_development"
     assert any(
         event["action"] == "ready_for_conservative_starting_variation"
         for event in assessed["movement_adaptation"]["events"]
     )
 
 
-def test_horizontal_pull_and_overhead_learning_stay_unloaded_until_control_is_verified():
+def test_horizontal_pull_and_light_overhead_press_learning_use_real_catalogue_exercises_when_equipment_exists():
     pull = build_movement_decision(
         "horizontal_pull", "LEARN",
         selected_learning_method="scapular_coordination",
         user_report={"status": "comfortable"},
-        decision_reason="Najprej vadi gibanje lopatic brez bremena.",
+        decision_reason="Najprej utrdi koordinacijo lopatic, nato uporabi ustrezno veslanje.",
     )
     overhead = build_movement_decision(
         "vertical_push", "LEARN",
-        selected_learning_method="unloaded_overhead_reach",
+        selected_learning_method="light_overhead_press",
         user_report={"status": "comfortable"},
-        decision_reason="Najprej vadi pot rok nad glavo brez bremena.",
+        decision_reason="Uči se dejanskega potiska nad glavo z zelo lahkim bremenom in nadzorovano amplitudo.",
     )
     plan = generate_program(BASE, movement_decisions={
         "horizontal_pull": pull, "vertical_push": overhead,
     })
-    assert _pattern_exercises(plan, "horizontal_pull") == []
-    assert _pattern_exercises(plan, "vertical_push") == []
+    pulls = _pattern_exercises(plan, "horizontal_pull")
+    presses = _pattern_exercises(plan, "vertical_push")
+    assert pulls and all(item["exercise_id"] in {"band_row", "trx_row", "ring_row", "one_arm_row"} for item in pulls)
+    assert presses and all(item["exercise_id"] in {"band_overhead_press", "plate_overhead_press", "overhead_press"} for item in presses)
+    assert all(item["prescription"]["sets"] <= 2 for item in pulls + presses)
+    assert all(item["prescription"]["rir"] >= 3 for item in pulls + presses)
     tasks = [task for session in plan["sessions"] for task in session["learning_tasks"]]
     method_ids = {task["method_id"] for task in tasks}
-    assert "scapular_coordination" in method_ids
-    assert "unloaded_overhead_reach" in method_ids
+    assert "scapular_coordination" not in method_ids
+    assert "light_overhead_press" in method_ids
+    assert all(
+        "učenje koordinacije lopatic" in (
+            item.get("movement_adaptation_note", "")
+            + " " + item["prescription"].get("adjustment_note", "")
+        ).lower()
+        for item in pulls
+    )
+    assert all(
+        "učni korak za vzorec potisk nad glavo" in (
+            item.get("movement_adaptation_note", "")
+            + " " + item["prescription"].get("adjustment_note", "")
+        ).lower()
+        for item in presses
+    )
+    assert all(
+        {task["movement_pattern"] for task in session["learning_tasks"]}.issubset(
+            {pattern for pattern in ["squat", "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge"]}
+        )
+        for session in plan["sessions"]
+    )
 
 
 def test_unassessable_omits_pattern_until_assessment_is_available():
@@ -330,3 +384,50 @@ def test_kettlebell_only_hinge_row_uses_the_kettlebell_catalogue_variant():
     assert rows
     assert all(item["exercise_id"] == "kettlebell_one_arm_row" for item in rows)
 
+
+
+def test_bodyweight_squat_learning_task_exposes_five_reps_tempo_and_six_binary_criteria():
+    decision = build_movement_decision(
+        "squat", "LEARN",
+        selected_learning_method="bodyweight_squat",
+        decision_reason="Učenje počepa z lastno težo po potrjenem protokolu.",
+    )
+    plan = generate_program(BASE, movement_decisions={"squat": decision})
+    tasks = [
+        task for session in plan["sessions"] for task in session["learning_tasks"]
+        if task["movement_pattern"] == "squat"
+    ]
+    assert tasks
+    protocol = tasks[0]["learning_protocol"]
+    assert protocol["repetitions"] == 5
+    assert protocol["tempo"] == "3–1–1"
+    assert "roke naj se gibljejo naravno" in protocol["instruction"].lower()
+    assert "roke sproščeno visijo ob trupu" in protocol["how_to_perform"][0].lower()
+    assert "roke naravno pomaknejo v predročenje" in protocol["how_to_perform"][1].lower()
+    assert "roke naravno vrnejo ob trup" in protocol["how_to_perform"][2].lower()
+    assert "roke ves čas v predročenju" not in " ".join(protocol["how_to_perform"]).lower()
+    assert protocol["tempo_seconds"] == {
+        "lowering": 3, "bottom_pause": 1, "rising": 1,
+    }
+    assert len(protocol["how_to_perform"]) == 3
+    assert "sočasno upogibaj kolena in kolke" in protocol["how_to_perform"][1].lower()
+    assert "dorzalno fleksijo" in protocol["adaptations"]["heel_lift"]
+    assert "ne dokazuje vzroka" in protocol["adaptations"]["heel_lift"]
+    assert "ne podlagaj pet" in protocol["adaptations"]["forefoot_lift"]
+    assert "ne diagnoza omejene gibljivosti gležnja" in protocol["adaptations"]["forefoot_lift"]
+    assert "nevtralno hrbtenico" in protocol["adaptations"]["excessive_forward_lean"]
+    assert "protiutež" in protocol["adaptations"]["balance"]
+    assert "1–4 kg" in protocol["adaptations"]["balance"]
+    assert "počep ob opori" in protocol["adaptations"]["balance"]
+    assert "škatlo ali stol" in protocol["adaptations"]["range"]
+    criteria = protocol["criteria"]
+    assert [item["id"] for item in criteria] == [
+        "tempo", "balance", "foot_stability", "knee_control",
+        "trunk_control", "tolerated_rom",
+    ]
+    assert all(item["label"] and item["success"] and item["adjustment"] for item in criteria)
+    foot = next(item for item in criteria if item["id"] == "foot_stability")
+    assert "podpora pod petama" in foot["adjustment"]
+    assert "klin" not in foot["adjustment"].lower()
+    trunk = next(item for item in criteria if item["id"] == "trunk_control")
+    assert "čim bolj pokončen" in trunk["success"]

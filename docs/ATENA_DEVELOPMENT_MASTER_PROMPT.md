@@ -35,12 +35,22 @@ Never confuse:
 - Foot-assisted vertical pull-up: torso upright/vertical under a low bar, hips and knees flexed, feet on floor slightly forward as if seated; feet assist the vertical pull. Never call or demonstrate it as an inverted row.
 - Band-assisted pull-up: a separate vertical-pull variation.
 
+## Selective guided learning and programme gate
+
+- All six foundational learning tasks are available, but a user may begin with any one or any selected subset. Do not require the user to click “skip” on untouched patterns.
+- A pattern is eligible for the current programme only after its six user-confirmed learning criteria are complete, or when the user explicitly excludes a pattern. A partly completed pattern remains in progress and is not used in the current programme.
+- The first programme may contain only the completed selected patterns. Patterns absent from the request remain unassessed and must be omitted from exercise selection; never fill them from a generic goal template.
+- The frontend sends matching sparse `learning_progress.patterns` and `movement_decisions` keys. The backend rejects mismatched keys and internally treats absent foundational patterns as unassessed.
+- Saved learning progress may be partial and is separate from optional health-data storage. A checklist is user-confirmed learning only, never objective technique certification or automatic READY status.
+
 ## Non-negotiable coaching details
 **Hinge:** teach with a dowel: three contacts (back of head, thoracic spine, sacral/tailbone region) plus a fourth hand/control point at the lumbar curve. Preserve the individual's natural neutral lumbar curve; do not force the back flat. Camera cannot verify actual dowel contact.
 
 **Horizontal push:** where appropriate, teach front-plank/support control, then incline push-up on a stable raised support, then floor push-up and earned progressions. Wall push-ups are excluded. A stable chair/table/bench is permitted only if safe and compatible with the stated environment. Parallettes may increase range of motion when appropriate.
 
 **Horizontal pull:** follow the manual's sequence: (1) unloaded scapular protraction/retraction coordination upright and in a hinge; (2) one-arm row in a hinge with a light load; (3) light barbell row after hinge control and scapular coordination are reliable. Avoid shoulder shrugging. If hinge control is insufficient, use supported row rather than forcing a bent-over position.
+
+**Vertical push:** the learning task and movement test is the **actual overhead press with a very light, equipment-appropriate load**. Assess the press path, natural upward scapular rotation, trunk control, coordinated arm action, and tolerated load/range. This is not a maximal-strength test. An unloaded overhead arm raise belongs only to the optional camera-observation flow; it must never replace the overhead press or be treated as clearance for loaded pressing.
 
 **Vertical pull:** include suitable foot-assisted vertical pull-up, band-assisted pull-up and pull-up options. Equipment and bar/anchor must genuinely be available and safe. Do not call a horizontal row an equivalent vertical pull. Foot-assisted pull-up keeps an upright torso.
 

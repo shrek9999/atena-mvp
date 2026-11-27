@@ -189,21 +189,22 @@ def _session_patterns(session_index: int, sessions: int, goal: str, include_acce
         # add a short aerobic/conditioning session rather than more lifting volume.
         return ["locomotion", "lunge", "conditioning"]
     if goal == "functional":
-        # Functional fitness is built from fundamental movement patterns and
-        # locomotion, not generic balance/coordination add-ons.
-        patterns = ["squat", "hinge", "horizontal_push", "horizontal_pull"]
-        # Vertical pull is a required supplementary strength pattern, not a camera-assessment task.
-        if session_index == 0:
-            patterns.append("vertical_pull")
-        # Rotate unilateral knee-dominant work and locomotion across sessions.
-        patterns.append("lunge" if session_index % 2 == 0 else "locomotion")
-        # Rotate conditioning into the later session rather than stacking it
-        # on top of all six strength patterns in one workout. This preserves
-        # vertical pulling across the week and keeps each session <= 6 exercises.
-        if session_minutes > 30 and session_index > 0:
-            patterns.append("conditioning")
-        if include_stability:
-            patterns.insert(0, "trunk_stability")
+        # Two balanced full-body templates cover the six learning patterns,
+        # locomotion and conditioning without stacking seven exercises.
+        if session_index % 2 == 0:
+            patterns = [
+                *(["trunk_stability"] if include_stability else []),
+                "squat", "hinge", "horizontal_push", "horizontal_pull",
+                "vertical_push",
+                *(["lunge"] if not include_stability else []),
+            ]
+        else:
+            patterns = [
+                *(["trunk_stability"] if include_stability else []),
+                "squat", "hinge", "horizontal_push", "vertical_pull",
+                *(["locomotion"] if not include_stability else []),
+                "conditioning",
+            ]
         # Experience is not a landing-readiness screen: no default jumps.
         return patterns
     if goal == "endurance":
@@ -657,11 +658,17 @@ def generate_program(
             available_ids = {item["id"] for item in available_options}
             selected_id = record.get("selected_exercise_id")
             method_exercise_id = method.get("exercise_id") if method else None
-            target_id = selected_id or method_exercise_id
-            if target_id and target_id not in available_ids:
+            # An explicit user-selected exercise must be compatible. A method's
+            # default catalogue example is only a preference: if it does not fit
+            # this profile's equipment or experience, choose a compatible starter
+            # variation below rather than rejecting the entire programme.
+            if selected_id and selected_id not in available_ids:
                 raise ProgramValidationError(
-                    f"Vaja {target_id} za {pattern} ni združljiva z opremo ali izkušnjami v profilu."
+                    f"Vaja {selected_id} za {pattern} ni združljiva z opremo ali izkušnjami v profilu."
                 )
+            target_id = selected_id or method_exercise_id
+            if target_id and target_id not in available_ids and not selected_id:
+                target_id = None
             user_report = record.get("user_report", {})
             if not isinstance(user_report, dict):
                 raise ProgramValidationError(f"Uporabnikovo poročilo za {pattern} mora biti objekt.")
@@ -672,15 +679,25 @@ def generate_program(
                     f"Za simptomatsko regresijo vzorca {pattern} mora biti izbrana točno preizkušena vaja."
                 )
             if decision in {"LEARN", "REGRESS"} and not target_id and report_status != "symptoms_reported":
-                if method is not None and method.get("learning_only") is True:
-                    # A no-load coordination task is intentionally not replaced by a loaded catalogue exercise.
-                    pass
-                elif not available_options:
-                    # Omit only this pattern when no verified learning variation is available.
+                if not available_options:
+                    # Do not invent a no-equipment press or row. Omit only this pattern
+                    # and explain the equipment gap rather than pretending a drill is
+                    # an effective loaded exercise.
                     decision = "UNASSESSABLE"
                     omission_reason = "no_equipment_compatible_learning_variant"
                 else:
-                    target_id = available_options[0]["id"]
+                    loading_rank = {"low": 0, "moderate": 1, "high": 2}
+                    option_order = {
+                        item["id"]: index for index, item in enumerate(available_options)
+                    }
+                    starter = min(
+                        available_options,
+                        key=lambda item: (
+                            loading_rank.get(item.get("loading_potential", "high"), 2),
+                            option_order[item["id"]],
+                        ),
+                    )
+                    target_id = starter["id"]
                     if method is None:
                         method = next(
                             (item for item in method_options if item.get("exercise_id") == target_id),
@@ -688,7 +705,7 @@ def generate_program(
                         )
                         method_id = method["id"] if method else None
             if report_status is not None and report_status not in {
-                "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled"
+                "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled", "learning_completed_by_user"
             }:
                 raise ProgramValidationError(f"Neveljaven status uporabnikovega poročila za {pattern}.")
             if report_status in {"uncertain", "not_assessed"} and decision != "UNASSESSABLE":
@@ -785,6 +802,24 @@ def generate_program(
                 "resolved_exercise_id": target_id,
                 "learning_only": bool(method and method.get("learning_only") is True),
                 **({"omission_reason": omission_reason} if omission_reason else {}),
+            }
+    if movement_decisions is not None:
+        for pattern in PATTERN_DEFINITIONS:
+            if pattern in movement_decisions_by_pattern:
+                continue
+            movement_decisions_by_pattern[pattern] = {
+                "movement_pattern": pattern,
+                "decision": "UNASSESSABLE",
+                "selected_learning_method": None,
+                "resolved_exercise_id": None,
+                "learning_only": False,
+                "user_report": {"status": "not_assessed"},
+                "confidence": "not_assessed",
+                "capture_quality": "not_applicable",
+                "observations": {"source": "not_selected_for_current_programme", "status": "not_assessed"},
+                "decision_reason": "The user did not select this pattern for the current programme.",
+                "omission_reason": "not_selected_for_current_programme",
+                "is_diagnosis": False,
             }
     reduce_load = bool(response and (
         response["difficulty"] == "hard" or not response["completed"] or response["recovery"] == "poor"
@@ -1062,6 +1097,12 @@ def generate_program(
             movement_status = movement_status_by_pattern.get(pattern)
             affected_tasks = movement_tasks_by_pattern.get(pattern, [])
             structured_decision = movement_decisions_by_pattern.get(pattern)
+            if (
+                structured_decision
+                and structured_decision.get("omission_reason") == "not_selected_for_current_programme"
+            ):
+                # An untouched pattern is deliberately absent, not a negative movement finding.
+                continue
             early_symptom_report = (
                 structured_decision.get("user_report", {})
                 if structured_decision and isinstance(structured_decision.get("user_report"), dict)
@@ -1354,11 +1395,23 @@ def generate_program(
                     (item for item in PATTERN_DEFINITIONS[pattern]["learning_methods"] if item["id"] == method_id),
                     None,
                 )
-                movement_note = (
-                    f"Učni korak za vzorec {PATTERN_DEFINITIONS[pattern]['label']}: "
-                    f"{method['label'] if method else candidate['name']}. "
-                    "Začni z največ dvema nadzorovanima serijama; zahtevnost povečuj šele po ponovljivi izvedbi."
-                )
+                if method and method.get("learning_only") is True:
+                    completed_learning = (
+                        "Učenje koordinacije lopatic je zaključeno. "
+                        if method_id == "scapular_coordination"
+                        else "Učenje neobremenjenega dviga rok nad glavo je zaključeno. "
+                    )
+                    movement_note = (
+                        completed_learning
+                        + f"Zdaj začni z začetno različico: {candidate['name']}. "
+                        + "Izvedi največ dve nadzorovani seriji; zahtevnost povečuj šele po ponovljivih izvedbah."
+                    )
+                else:
+                    movement_note = (
+                        f"Učni korak za vzorec {PATTERN_DEFINITIONS[pattern]['label']}: "
+                        f"{method['label'] if method else candidate['name']}. "
+                        "Začni z največ dvema nadzorovanima serijama; zahtevnost povečuj šele po ponovljivi izvedbi."
+                    )
                 movement_adaptation_events.append({
                     "pattern": pattern,
                     "action": "learning_or_regression_variant_selected",
@@ -1372,7 +1425,7 @@ def generate_program(
                 movement_adaptation_events.append({
                     "pattern": pattern,
                     "action": "ready_for_conservative_starting_variation",
-                    "message": "Samoocena potrjuje udobje pri osnovnem gibalnem vzorcu, ne pa tolerance na veliko breme. Program zato začne s konservativno različico; večje obremenitve zahtevajo ločeno, ponovljivo izvedbo in zabeleženo povratno informacijo.",
+                    "message": "Dve zabeleženi kakovostni izpostavitvi potrjujeta ponovljiv začetni nadzor, ne pa tolerance na veliko breme. Program zato začne s konservativno različico; večje obremenitve zahtevajo nadaljnjo progresijo z zabeleženimi ponovitvami, RIR in odzivom na regeneracijo.",
                 })
             if symptom_tolerated:
                 # Mild, stable discomfort is not an automatic exclusion. Keep the
@@ -1715,6 +1768,11 @@ def generate_program(
                          if item["id"] == record.get("selected_learning_method")),
                         "",
                     ),
+                    **(
+                        {"learning_protocol": PATTERN_DEFINITIONS[pattern_key]["learning_protocol"]}
+                        if pattern_key == "squat"
+                        else {}
+                    ),
                     "exercise_id": record.get("resolved_exercise_id"),
                     "demonstration_videos": _learning_task_videos(
                         pattern_key,
@@ -1724,8 +1782,10 @@ def generate_program(
                     "decision": record["decision"],
                 }
                 for pattern_key, record in movement_decisions_by_pattern.items()
-                if record["decision"] in {"LEARN", "REGRESS"}
-                and (record.get("learning_only") is True or any(item["pattern"] == pattern_key for item in selected))
+                if pattern_key in patterns
+                and record["decision"] in {"LEARN", "REGRESS"}
+                and not record.get("learning_only", False)
+                and any(item["pattern"] == pattern_key for item in selected)
             ],
             "exercises": selected,
         })
@@ -1761,7 +1821,7 @@ def generate_program(
                 if movement_decisions_by_pattern else "self_reported_movement_assessment"
             ),
             "is_diagnosis": False,
-            "automatic_progression": "movement_assessment_does_not_trigger_progression",
+            "automatic_progression": "learning_checklist_alone_does_not_trigger_capacity_development",
             "events": movement_adaptation_events,
             "summary": movement_summary,
             "structured_decisions": movement_decisions_by_pattern,

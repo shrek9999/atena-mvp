@@ -69,7 +69,7 @@ SYMPTOM_REGRESSION_VARIANTS = {
     "squat": ("supported_squat", "chair_sit_to_stand", "reaching_squat", "air_squat"),
     "hinge": ("wall_hip_hinge", "bodyweight_hip_hinge"),
     "horizontal_push": ("push_up_incline",),
-    "vertical_push": ("band_overhead_press",),
+    "vertical_push": (),
     "horizontal_pull": ("band_row", "trx_row"),
     "lunge": ("supported_split_squat",),
 }

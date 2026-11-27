@@ -7,6 +7,7 @@ on:
     paths:
       - "app.py"
       - "coach_routes.py"
+      - "coach_store.py"
       - "training/**"
       - "tests/**"
       - "requirements.txt"

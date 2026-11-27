@@ -21,7 +21,63 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
     "squat": {
         "label": "Počep",
         "task_id": "controlled_squat",
-        "task": "Kontroliran počep v osebno ustrezni amplitudi; ohrani nadzor medenice in ledveno-medeničnega položaja brez nenadzorovanega podvijanja medenice (butt-wink); ne zahtevaj položaja počitka.",
+        "task": "Pet nadzorovanih počepov z lastno težo v tempu 3–1–1. Roke se gibljejo naravno: v stoji ob trupu, med spuščanjem v predročenje in med vstajanjem nazaj ob trup.",
+        "learning_protocol": {
+            "repetitions": 5,
+            "tempo": "3–1–1",
+            "tempo_seconds": {"lowering": 3, "bottom_pause": 1, "rising": 1},
+            "instruction": "Izvedi 5 počepov z lastno težo v tempu 3–1–1. Trup ohranjaj čim bolj pokončen, vendar ne sili v povsem navpičen položaj. Roke naj se gibljejo naravno: v stoji ob trupu, med spuščanjem v predročenje. Ohranjaj stik pete, baze palca in baze mezinca.",
+            "how_to_perform": [
+                "Stopali postavi v udoben položaj. V zgornjem položaju naj roke sproščeno visijo ob trupu. Pritisk razporedi prek pete, baze palca in baze mezinca.",
+                "Sočasno upogibaj kolena in kolke. Trup ohranjaj čim bolj pokončen, vendar ne sili v povsem navpičen položaj; dovoli naraven nagib, ki ga zahtevata telesna zgradba in ravnotežje. Med spuščanjem se roke naravno pomaknejo v predročenje. Kolena naj sledijo smeri stopal.",
+                "Spuščaj se 3 sekunde, miruj 1 sekundo in v 1 sekundi vstani. Med vstajanjem naj se roke naravno vrnejo ob trup. Ohranjaj stik celotnega stopala s podlago in nadzorovan položaj trupa."
+            ],
+            "adaptations": {
+                "heel_lift": "Ob dvigu pete zmanjša globino in preveri dorzalno fleksijo gležnja. Podpora pod petama je začasna možnost le, če ohrani stik celotnega stopala. Dvig pete sam po sebi ne dokazuje vzroka.",
+                "forefoot_lift": "Ob dvigu prstov ne podlagaj pet. Dovoli naraven predklon, zmanjša globino ali uporabi protiutež 1–4 kg pred telesom. To je znak izgube ravnotežja, ne diagnoza omejene gibljivosti gležnja.",
+                "excessive_forward_lean": "Če je predklon pretiran ali se hrbtenica zaokroži, zmanjša globino in se vrni k učenju predklona z nevtralno hrbtenico. Po potrebi uporabi počep do stabilne tarče.",
+                "balance": "Če ravnotežje ni stabilno, zmanjša globino. Po potrebi uporabi protiutež 1–4 kg pred telesom; če to ne zadošča, uporabi TRX ali fiksen drog kot oporo za roke in vadi počep ob opori.",
+                "range": "Zmanjšaj globino in uporabi stabilno tarčo, na primer škatlo ali stol."
+            },
+            "criteria": [
+                {
+                    "id": "tempo",
+                    "label": "Nadzorovan tempo",
+                    "success": "Vseh pet ponovitev izvedem tekoče v tempu 3–1–1, brez padanja ali odboja.",
+                    "adjustment": "Zmanjšaj globino in ponovi pet počasnih ponovitev. Osredotoči se na enakomeren spust, mirno pavzo in nadzorovano vstajanje."
+                },
+                {
+                    "id": "balance",
+                    "label": "Ravnotežje",
+                    "success": "Ravnotežje ohranjam nad celotnim stopalom, brez nenadzorovanega prevesa naprej ali nazaj.",
+                    "adjustment": "Če je ravnotežje oteženo, zmanjša globino. Po potrebi uporabi lahko protiutež 1–4 kg pred telesom ali stabilno oporo za roke, na primer TRX oziroma fiksen drog; vadi počep ob opori."
+                },
+                {
+                    "id": "foot_stability",
+                    "label": "Stabilnost stopal",
+                    "success": "Ohranjam stik pete, baze palca in baze mezinca s podlago; stopalni lok ostaja nadzorovan.",
+                    "adjustment": "Najprej ugotovi, kateri del stopala izgublja stik. Če se dviguje peta, zmanjša globino in preveri dorzalno fleksijo gležnja. Stabilna podpora pod petama je začasna možnost le, če ponovno vzpostavi stik celotnega stopala; dvig pete sam po sebi ne dokazuje vzroka. Če se dvigujejo prsti ali sprednji del stopala, pet ne podlagaj. Dovoli naraven nagib trupa, zmanjša globino ali uporabi lahko protiutež 1–4 kg pred telesom. To ni diagnoza omejene dorzalne fleksije."
+                },
+                {
+                    "id": "knee_control",
+                    "label": "Stabilnost kolen",
+                    "success": "Koleni ostajata stabilni in sledita smeri stopal, brez nenadzorovanega uhajanja navznoter.",
+                    "adjustment": "Zmanjšaj globino in usmeri pozornost na stabilno gibanje kolen v smeri stopal."
+                },
+                {
+                    "id": "trunk_control",
+                    "label": "Nadzor trupa",
+                    "success": "Trup ohranjam čim bolj pokončen glede na svojo telesno zgradbo; gibanje trupa in medenice ostaja nadzorovano.",
+                    "adjustment": "Ne nagibaj se naprej namenoma. Če se trup pretirano nagiba ali izgubiš nevtralni položaj hrbtenice, zmanjša globino in ponovi učenje kolčnega pregiba. Po potrebi uporabi stabilno tarčo."
+                },
+                {
+                    "id": "tolerated_rom",
+                    "label": "Nadzor amplitude",
+                    "success": "Dosegam ponovljivo globino, pri kateri ohranjam nadzor stopal, kolen in trupa, brez siljenja v amplitudo.",
+                    "adjustment": "Začasno uporabi manjšo, udobno globino in jo postopno povečuj šele, ko ohranjaš nadzor."
+                }
+            ]
+        },
         "exercise_ids": [
             "supported_squat", "chair_sit_to_stand", "reaching_squat", "air_squat", "squat_goblet", "loaded_deep_squat",
             "two_dumbbell_squat", "dumbbell_squat_side",
@@ -29,16 +85,22 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         ],
         "learning_methods": [
             {
+                "id": "bodyweight_squat",
+                "label": "Počep z lastno težo",
+                "description": "Izvedi pet ponovitev v tempu 3–1–1. Roke se gibljejo naravno: v stoji ob trupu, med spuščanjem v predročenje in med vstajanjem nazaj ob trup. Nato preveri šest kontrolnih točk in po potrebi uporabi ustrezno prilagoditev.",
+                "exercise_id": "air_squat",
+            },
+            {
                 "id": "supported_squat_assistance",
                 "label": "Počep z oporo rok",
                 "description": "Za razbremenitev in ravnotežje uporabi TRX, varno pritrjeno elastiko, fiksiran drog v racku približno v višini prsnega koša ali stabilno nepremično oporo. Z rokami si pomagaj toliko, da lahko noge še vedno nadzorovano izvajajo gib.",
                 "exercise_id": "supported_squat",
             },
             {
-                "id": "reaching_counterbalance",
-                "label": "Reaching squat s protiutežjo",
-                "description": "Izteg rok oziroma lahek kolut pred telesom uporabi kot protiutež za lažje učenje ravnotežja in organizacije počepa.",
-                "exercise_id": "reaching_squat",
+                "id": "air_squat_counterweight",
+                "label": "Počep z lahko protiutežjo (po potrebi)",
+                "description": "Roke se pri počepu z lastno težo naravno premikajo. Če je za ravnotežje potrebna dodatna pomoč, vadeči pred telesom drži lahko utež (na primer ročko ali kolut 1–4 kg), ki deluje kot protiutež.",
+                "exercise_id": "air_squat",
             },
             {
                 "id": "target_squat",
@@ -143,31 +205,18 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         ],
     },
     "vertical_push": {
-        "label": "Vertikalni potisk – potisk nad glavo",
+        "label": "Potisk nad glavo",
         "task_id": "overhead_press",
-        "task": "Najprej nadzorovan dvig rok nad glavo brez bremena; zunanji upor se uvede šele po potrjenem nadzoru poti rok, trupa in tolerirane amplitude.",
+        "task": "Potisk nad glavo z zelo lahkim bremenom, primernim za razpoložljivo opremo. Izvedi nekaj ponovitev v udobni amplitudi in nadzorovanem tempu. To je učna vaja in preizkus izvedbe, ne test maksimalne moči.",
         "exercise_ids": [
-            "band_overhead_press", "overhead_press", "plate_overhead_press", "barbell_overhead_press", "pike_push_up",
+            "overhead_press", "band_overhead_press", "plate_overhead_press", "barbell_overhead_press",
         ],
         "learning_methods": [
             {
-                "id": "unloaded_overhead_reach",
-                "learning_only": True,
-                "label": "Dvig rok nad glavo brez bremena",
-                "description": "Vadi počasen dvig in spust rok brez zunanjega bremena. Ohrani nadzor trupa in reber ter se ustavi v amplitudi, ki jo lahko ponoviš brez kompenzacije.",
+                "id": "light_overhead_press",
+                "label": "Zelo lahek potisk nad glavo",
+                "description": "Izberi zelo lahko breme, ki ustreza razpoložljivi opremi. Iz stoječega položaja potisni breme nad glavo po udobni poti; zapestja naj bodo približno nad komolci. Lopatice se med dvigom naravno rotirajo navzgor. Ohrani nadzor reber in medenice; ne kompenziraj z usločenjem križa. Uporabi ponovljivo amplitudo. To ni test maksimalne moči. Ob bolečini, nestabilnosti ali izgubi nadzora prekini.",
                 "exercise_id": None,
-            },
-            {
-                "id": "light_implement_press",
-                "label": "Potisk z zelo lahkim pripomočkom",
-                "description": "Uporabi palico, lahko ploščo, ročki ali elastiko. Pripomoček in breme zabeleži; različne izvedbe niso samodejno enakovredne.",
-                "exercise_id": None,
-            },
-            {
-                "id": "band_overhead_press",
-                "label": "Potisk nad glavo z elastiko",
-                "description": "Za ramo izberi zelo lahek upor in samo tolerirano amplitudo; gib izvedi počasi, elastiko pa varno pritrdi in preveri.",
-                "exercise_id": "band_overhead_press",
             },
         ],
     },
@@ -233,6 +282,15 @@ def validate_symptom_regression_report(
         if test is not None:
             if not isinstance(test, dict):
                 raise MovementCoachingError("Ponovni preizkus mora biti objekt.")
+            context = test.get("symptom_context")
+            if context is not None and (
+                not isinstance(context, dict)
+                or set(context) != {"familiarity", "movement_quality_changed", "next_day_response"}
+                or context.get("familiarity") not in {"familiar_stable", "new_or_worsening"}
+                or not isinstance(context.get("movement_quality_changed"), bool)
+                or context.get("next_day_response") not in {"same_or_better", "worse"}
+            ):
+                raise MovementCoachingError("Kontekst simptomov pri ponovnem preizkusu ni veljaven.")
             pain = test.get("pain_during")
             flags = test.get("acute_warning_signs", [])
             if (
@@ -255,6 +313,7 @@ def validate_symptom_regression_report(
         raise MovementCoachingError("Za vključitev simptomatskega vzorca je potreben zabeležen ponovni preizkus.")
     pain = test.get("pain_during")
     flags = test.get("acute_warning_signs", [])
+    context = test.get("symptom_context")
     support_method = test.get("support_method")
     valid_support_methods = {"trx", "band", "fixed_bar", "stable_support"}
     if support_method is not None and support_method not in valid_support_methods:
@@ -283,6 +342,11 @@ def validate_symptom_regression_report(
         or test.get("tempo") != "slow_controlled"
         or test.get("load_adjustment") not in {"reduced", "bodyweight_or_assisted"}
         or test.get("range_adjustment") != "within_tolerance"
+        or not isinstance(context, dict)
+        or set(context) != {"familiarity", "movement_quality_changed", "next_day_response"}
+        or context.get("familiarity") != "familiar_stable"
+        or context.get("movement_quality_changed") is not False
+        or context.get("next_day_response") != "same_or_better"
     ):
         raise MovementCoachingError(
             "Blago nelagodje do 4/10 je mogoče tolerirati le, če se ne stopnjuje, "
