@@ -368,3 +368,34 @@ def test_kettlebell_only_hinge_row_uses_the_kettlebell_catalogue_variant():
     assert rows
     assert all(item["exercise_id"] == "kettlebell_one_arm_row" for item in rows)
 
+
+
+def test_bodyweight_squat_learning_task_exposes_five_reps_tempo_and_six_binary_criteria():
+    decision = build_movement_decision(
+        "squat", "LEARN",
+        selected_learning_method="bodyweight_squat",
+        decision_reason="Učenje počepa z lastno težo po potrjenem protokolu.",
+    )
+    plan = generate_program(BASE, movement_decisions={"squat": decision})
+    tasks = [
+        task for session in plan["sessions"] for task in session["learning_tasks"]
+        if task["movement_pattern"] == "squat"
+    ]
+    assert tasks
+    protocol = tasks[0]["learning_protocol"]
+    assert protocol["repetitions"] == 5
+    assert protocol["tempo"] == "3–1–1"
+    assert protocol["tempo_seconds"] == {
+        "lowering": 3, "bottom_pause": 1, "rising": 1,
+    }
+    criteria = protocol["criteria"]
+    assert [item["id"] for item in criteria] == [
+        "tempo", "balance", "foot_stability", "knee_control",
+        "trunk_control", "tolerated_rom",
+    ]
+    assert all(item["label"] and item["success"] and item["adjustment"] for item in criteria)
+    foot = next(item for item in criteria if item["id"] == "foot_stability")
+    assert "podporo pod petama" in foot["adjustment"]
+    assert "klin" not in foot["adjustment"].lower()
+    trunk = next(item for item in criteria if item["id"] == "trunk_control")
+    assert "čim bolj pokončen" in trunk["success"]
