@@ -2788,7 +2788,7 @@ def coach_program():
         return jsonify({
             "blocked": True,
             "assessment_required": True,
-            "message": "Stara delna samoocena ne zadošča za individualni program. Pred pripravo izpolni vseh šest osnovnih gibalnih vzorcev.",
+            "message": "Stara delna samoocena ni več podprta. Uporabi vodene učne naloge in pošlji odločitve le za vzorce, ki jih želiš vključiti; ostali lahko počakajo.",
         }), 409
     if payload.get("movement_assessment_consent") is not True:
         return jsonify({
@@ -2796,6 +2796,12 @@ def coach_program():
             "consent_required": True,
             "message": "Pred uporabo odgovorov o gibanju za pripravo programa moraš izrecno potrditi ločeno soglasje.",
         }), 403
+    if payload.get("current_safety_confirmation") is not True:
+        return jsonify({
+            "blocked": True,
+            "safety_confirmation_required": True,
+            "message": "Pred pripravo programa potrdi, da nimaš novih, hudih, slabšajočih se ali nepojasnjenih simptomov, sveže poškodbe ali pomembne omejitve, ki zahteva strokovno zdravstveno presojo.",
+        }), 409
     expected_patterns = set(PATTERN_DEFINITIONS)
     movement_decisions = payload.get("movement_decisions")
     if not isinstance(movement_decisions, dict) or not movement_decisions:
