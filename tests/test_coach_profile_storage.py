@@ -596,16 +596,17 @@ def test_withdrawing_health_data_consent_keeps_separate_learning_progress(monkey
     assert restored.status_code == 200
     assert all(item["learning_completed_by_user"] for item in restored.get_json()["learning_progress"]["patterns"].values())
 
-def test_profile_program_waits_for_all_six_learning_tasks_without_health_consent(monkeypatch, tmp_path):
+def test_profile_program_can_start_with_one_completed_pattern_while_others_wait(monkeypatch, tmp_path):
     client = _client(monkeypatch, tmp_path)
     created = _create(client, health_consent=False)
     profile_id = created["profile"]["profile_id"]
     token = created["profile_access_token"]
     patterns = {
-        pattern: {"criteria": {key: True for key in criteria}}
-        for pattern, criteria in LEARNING_CONTROL_CRITERIA.items()
+        "squat": {"criteria": {key: True for key in LEARNING_CONTROL_CRITERIA["squat"]}},
+        "hinge": {"criteria": {
+            key: key != "spine_control" for key in LEARNING_CONTROL_CRITERIA["hinge"]
+        }},
     }
-    patterns["hinge"]["criteria"]["spine_control"] = False
     saved = client.put(
         f"/coach/profile/{profile_id}/learning-progress",
         headers={"X-Profile-Token": token}, json={"patterns": patterns},
@@ -616,9 +617,26 @@ def test_profile_program_waits_for_all_six_learning_tasks_without_health_consent
         headers={"X-Profile-Token": token},
         json={"no_current_pain_or_restrictions": True},
     )
-    assert response.status_code == 409
-    assert response.get_json()["learning_required"] is True
-    assert response.get_json()["missing_patterns"] == ["hinge"]
+    assert response.status_code == 200, response.get_json()
+    data = response.get_json()
+    assert data["guided_learning_applied"] is True
+    assert data["movement_training_phases"] == {"squat": "movement_learning"}
+    unselected_patterns = {"hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge"}
+    exercises = [
+        exercise
+        for session in data["program"]["sessions"]
+        for exercise in session["exercises"]
+    ]
+    assert exercises
+    assert all(exercise["pattern"] not in unselected_patterns for exercise in exercises)
+
+    restored = client.get(
+        f"/coach/profile/{profile_id}/learning-progress",
+        headers={"X-Profile-Token": token},
+    ).get_json()["learning_progress"]["patterns"]
+    assert restored["squat"]["status"] == "completed"
+    assert restored["hinge"]["status"] == "in_progress"
+    assert "horizontal_push" not in restored
 
 def test_profile_program_keeps_global_feedback_out_of_generator_and_exposes_adaptive_decision(monkeypatch, tmp_path):
     client = _client(monkeypatch, tmp_path, health_consent=True)
