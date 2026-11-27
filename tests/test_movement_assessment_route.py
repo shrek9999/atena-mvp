@@ -397,6 +397,10 @@ def test_saved_six_pattern_assessment_unlocks_only_explicitly_confirmed_pattern(
         coach_routes, "store_get_profile",
         lambda profile_id, token: {"health_data_consent": True},
     )
+    monkeypatch.setattr(
+        coach_routes, "store_get_movement_assessment",
+        lambda profile_id, token: None,
+    )
 
     def save_assessment(profile_id, token, record):
         captured["record"] = record
@@ -437,6 +441,10 @@ def test_saved_six_pattern_assessment_keeps_incomplete_control_in_learning(monke
         lambda profile_id, token: {"health_data_consent": True},
     )
     monkeypatch.setattr(
+        coach_routes, "store_get_movement_assessment",
+        lambda profile_id, token: None,
+    )
+    monkeypatch.setattr(
         coach_routes, "store_save_movement_assessment",
         lambda profile_id, token, record: {"updated_at": "2026-11-14T17:00:00Z"},
     )
@@ -470,6 +478,10 @@ def test_saved_six_pattern_assessment_rejects_malformed_control_criteria(monkeyp
     monkeypatch.setattr(
         coach_routes, "store_get_profile",
         lambda profile_id, token: {"health_data_consent": True},
+    )
+    monkeypatch.setattr(
+        coach_routes, "store_get_movement_assessment",
+        lambda profile_id, token: None,
     )
     patterns = {
         pattern: {"status": "uncertain"}
@@ -508,6 +520,10 @@ def test_saved_movement_assessment_accepts_one_pattern_and_preserves_previous_re
     monkeypatch.setattr(
         coach_routes, "store_get_profile",
         lambda profile_id, token: {"health_data_consent": True},
+    )
+    monkeypatch.setattr(
+        coach_routes, "store_get_movement_assessment",
+        lambda profile_id, token: None,
     )
     monkeypatch.setattr(
         coach_routes, "store_get_movement_assessment",
@@ -554,6 +570,10 @@ def test_saved_movement_assessment_rejects_unknown_pattern_without_requiring_all
     monkeypatch.setattr(
         coach_routes, "store_get_profile",
         lambda profile_id, token: {"health_data_consent": True},
+    )
+    monkeypatch.setattr(
+        coach_routes, "store_get_movement_assessment",
+        lambda profile_id, token: None,
     )
     response = client.put(
         "/coach/profile/test-profile/movement-assessment",
