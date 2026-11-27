@@ -532,7 +532,10 @@ def test_six_pattern_assessment_accepts_partial_pattern_set(monkeypatch, tmp_pat
     created = _create(client, health_consent=True)
     profile_id = created["profile"]["profile_id"]
     token = created["profile_access_token"]
-    patterns = {"squat": {"status": "comfortable"}, "hinge": {"status": "needs_support"}}
+    patterns = {
+        "squat": {"status": "comfortable", "selected_learning_method": "reaching_counterbalance"},
+        "hinge": {"status": "needs_support", "selected_learning_method": "wall_hip_hinge"},
+    }
     response = client.put(
         f"/coach/profile/{profile_id}/movement-assessment",
         headers={"X-Profile-Token": token},
@@ -541,6 +544,8 @@ def test_six_pattern_assessment_accepts_partial_pattern_set(monkeypatch, tmp_pat
     assert response.status_code == 200
     body = response.get_json()
     assert set(body["movement_decisions"]) == {"squat", "hinge"}
+    assert body["movement_decisions"]["squat"]["selected_learning_method"] == "reaching_counterbalance"
+    assert body["movement_decisions"]["hinge"]["selected_learning_method"] == "wall_hip_hinge"
     assert set(body["missing_patterns"]) == {
         "horizontal_push", "horizontal_pull", "vertical_push", "lunge"
     }
