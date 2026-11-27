@@ -136,7 +136,7 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     blocked = client.post(
         f"/coach/profile/{profile_id}/program",
         headers=headers,
-        json={"no_current_pain_or_restrictions": False},
+        json={"current_safety_confirmation": False},
     )
     assert blocked.status_code == 409
     assert blocked.get_json()["blocked"] is True
@@ -157,7 +157,7 @@ def test_complete_profile_lifecycle_create_update_log_review_export_withdraw_del
     allowed = client.post(
         f"/coach/profile/{profile_id}/program",
         headers=headers,
-        json={"no_current_pain_or_restrictions": True},
+        json={"current_safety_confirmation": True},
     )
     assert allowed.status_code == 200
     assert allowed.get_json()["source"] == "saved_profile_and_exercise_level_training_feedback"

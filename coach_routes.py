@@ -20,6 +20,8 @@ from coach_store import (
     check_database_connection as store_check_database_connection, storage_enabled,
     save_movement_assessment as store_save_movement_assessment,
     get_movement_assessment as store_get_movement_assessment,
+    get_learning_progress as store_get_learning_progress,
+    save_learning_progress as store_save_learning_progress,
     add_program_version as store_add_program_version,
     list_program_versions as store_list_program_versions,
     get_program_version as store_get_program_version,
@@ -2786,7 +2788,7 @@ def coach_program():
         return jsonify({
             "blocked": True,
             "assessment_required": True,
-            "message": "Stara delna samoocena ne zadošča za individualni program. Pred pripravo izpolni vseh šest osnovnih gibalnih vzorcev.",
+            "message": "Stara delna samoocena ni več podprta. Uporabi vodene učne naloge in pošlji odločitve le za vzorce, ki jih želiš vključiti; ostali lahko počakajo.",
         }), 409
     if payload.get("movement_assessment_consent") is not True:
         return jsonify({
@@ -2794,20 +2796,30 @@ def coach_program():
             "consent_required": True,
             "message": "Pred uporabo odgovorov o gibanju za pripravo programa moraš izrecno potrditi ločeno soglasje.",
         }), 403
+    if payload.get("training_restrictions_reported") is True and payload.get("current_safety_confirmation") is not True:
+        return jsonify({
+            "blocked": True,
+            "safety_confirmation_required": True,
+            "message": "Pred pripravo programa potrdi, da nimaš novih, hudih, slabšajočih se ali nepojasnjenih simptomov, sveže poškodbe ali pomembne omejitve, ki zahteva strokovno zdravstveno presojo.",
+        }), 409
     expected_patterns = set(PATTERN_DEFINITIONS)
     movement_decisions = payload.get("movement_decisions")
-    if not isinstance(movement_decisions, dict) or set(movement_decisions) != expected_patterns:
-        supplied_patterns = set(movement_decisions) if isinstance(movement_decisions, dict) else set()
-        missing_patterns = sorted(expected_patterns - supplied_patterns)
-        unknown_patterns = sorted(supplied_patterns - expected_patterns)
+    if not isinstance(movement_decisions, dict) or not movement_decisions:
         return jsonify({
             "blocked": True,
             "assessment_required": True,
-            "missing_patterns": missing_patterns,
-            "unknown_patterns": unknown_patterns,
-            "message": "Pred individualnim programom odgovori na vseh šest osnovnih gibalnih vzorcev. Če naloge ne moreš ali ne želiš oceniti, izberi »Neocenjeno – preskoči«; ta vzorec bo izpuščen iz programa.",
+            "missing_patterns": sorted(expected_patterns),
+            "unknown_patterns": [],
+            "message": "Izberi vsaj en gibalni vzorec za učenje ali ga ponovno preveri. Ostali vzorci lahko počakajo in bodo izpuščeni iz tega programa.",
         }), 409
-    valid_report_statuses = {"comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled"}
+    supplied_patterns = set(movement_decisions)
+    unknown_patterns = sorted(supplied_patterns - expected_patterns)
+    if unknown_patterns:
+        return jsonify({
+            "error": "Gibalne odločitve vsebujejo neznane vzorce.",
+            "unknown_patterns": unknown_patterns,
+        }), 400
+    valid_report_statuses = {"selected_for_learning", "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled"}
     control_criteria = {
         "squat": {"tempo", "balance", "knee_hip_foot_control", "lumbopelvic_control", "tolerated_rom"},
         "hinge": {"tempo", "hip_hinge_coordination", "spine_control", "balance", "tolerated_rom"},
@@ -2828,6 +2840,8 @@ def coach_program():
         if report_status not in valid_report_statuses:
             invalid_report_patterns.append(pattern)
         elif supplied_phase is not None and supplied_phase != expected_phase:
+            invalid_report_patterns.append(pattern)
+        elif report_status == "selected_for_learning" and decision != "LEARN":
             invalid_report_patterns.append(pattern)
         elif report_status in {"uncertain", "not_assessed"} and decision != "UNASSESSABLE":
             invalid_report_patterns.append(pattern)
@@ -2870,7 +2884,7 @@ def coach_program():
         return jsonify({
             "blocked": True,
             "assessment_required": True,
-            "message": "Vseh šest vzorcev je trenutno neocenjenih ali nejasnih. Pred individualnim programom je treba vsaj en vzorec varno oceniti; sicer program ne bi imel zanesljivega gibalnega izhodišča.",
+            "message": "Trenutno ni nobenega dovolj jasno ocenjenega vzorca. Pred programom izberi vsaj en vzorec za varno učenje.",
         }), 409
     coordination_record = (camera_observations or {}).get("coordination", {})
     coordination_values = coordination_record.get("observations", {}) if isinstance(coordination_record, dict) else {}
@@ -2901,8 +2915,8 @@ def coach_program():
     response = {"program": result, "source": "curated_exercise_catalogue", "pilot": True}
     if result.get("movement_adaptation") is not None:
         response["movement_adaptation"] = result["movement_adaptation"]
-    # All six explicit self-reports are required above. This stateless endpoint
-    # uses them for this programme only and does not persist movement/health data.
+    # Only explicitly supplied patterns are used for this programme. Missing
+    # patterns remain out of scope and no movement/health data is persisted.
     response["movement_assessment_applied"] = True
     response["movement_assessment_stored"] = False
     response["movement_decisions_stored"] = False
@@ -3714,7 +3728,7 @@ def save_coach_movement_assessment(profile_id):
 
 @coach_bp.route("/coach/profile/<profile_id>/movement-assessment", methods=["PUT", "OPTIONS"])
 def save_six_pattern_movement_assessment(profile_id):
-    """Save the six guided movement checks only with separate health-data consent."""
+    """Save only selected guided movement patterns with separate health-data consent."""
     if request.method == "OPTIONS":
         return ("", 204)
     payload = request.get_json(silent=True)
@@ -3763,11 +3777,18 @@ def save_six_pattern_movement_assessment(profile_id):
             if status == "symptoms_reported":
                 allowed_keys |= {"regression_test", "selected_exercise_id", "acute_warning_signs"}
             elif status == "comfortable":
-                allowed_keys.add("movement_control")
+                allowed_keys |= {"movement_control", "selected_learning_method"}
+            elif status == "needs_support":
+                allowed_keys.add("selected_learning_method")
             if set(value) - allowed_keys:
                 return jsonify({"error": f"Vzorec {pattern} vsebuje nepričakovana polja."}), 400
             user_report = {"status": status}
             selected_exercise_id = value.get("selected_exercise_id")
+            selected_learning_method = value.get("selected_learning_method")
+            if selected_learning_method is not None and selected_learning_method not in {
+                method["id"] for method in PATTERN_DEFINITIONS[pattern]["learning_methods"]
+            }:
+                return jsonify({"error": f"Neveljavna učna metoda za vzorec {pattern}."}), 400
             decision = status_to_decision[status]
 
             # A comfortable self-report remains LEARN. READY is persisted only
@@ -3828,11 +3849,12 @@ def save_six_pattern_movement_assessment(profile_id):
                     or not {
                         "status", "variation_id", "pain_during", "worsened",
                         "tempo", "load_adjustment", "range_adjustment", "acute_warning_signs",
+                        "symptom_context",
                     }.issubset(regression_test)
                     or set(regression_test) - {
                         "status", "variation_id", "pain_during", "worsened",
                         "tempo", "load_adjustment", "range_adjustment", "acute_warning_signs",
-                        "support_method", "anchor_point_confirmed",
+                        "support_method", "anchor_point_confirmed", "symptom_context",
                     }
                     or regression_test.get("status") not in {"tolerated", "not_tolerated"}
                     or isinstance(regression_test.get("pain_during"), bool)
@@ -3867,6 +3889,7 @@ def save_six_pattern_movement_assessment(profile_id):
                 pattern,
                 decision,
                 user_report=user_report,
+                selected_learning_method=selected_learning_method,
                 selected_exercise_id=selected_exercise_id,
                 decision_reason=reason,
             )
@@ -3907,6 +3930,95 @@ def save_six_pattern_movement_assessment(profile_id):
         }), 200
     except MovementCoachingError as exc:
         return jsonify({"error": str(exc)}), 400
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
+
+
+LEARNING_PROGRESS_VERSION = "guided-six-pattern-learning-v2"
+LEARNING_PROGRESS_CRITERIA = {
+    "squat": {"tempo", "balance", "foot_stability", "knee_control", "trunk_control", "tolerated_rom"},
+    "hinge": {"tempo", "hip_movement", "knee_control", "spine_control", "balance", "tolerated_rom"},
+    "lunge": {"tempo", "balance", "foot_knee_control", "pelvis_control", "trunk_control", "tolerated_rom"},
+    "horizontal_push": {"tempo", "trunk_control", "shoulder_elbow_control", "scapular_control", "wrist_hand_support", "tolerated_rom"},
+    "horizontal_pull": {"tempo", "base_stability", "trunk_position", "elbow_path", "scapular_arm_control", "tolerated_rom"},
+    "vertical_push": {"tempo", "press_path", "scapular_control", "trunk_control", "bilateral_control", "tolerated_load_rom"},
+}
+
+
+def _normalize_learning_progress(payload):
+    if not isinstance(payload, dict) or set(payload) != {"patterns"}:
+        raise ValueError("Pošlji samo objekt patterns.")
+    supplied = payload.get("patterns")
+    if not isinstance(supplied, dict) or not supplied:
+        raise ValueError("Označi vsaj en gibalni vzorec ali začasno izloči vzorec.")
+    unknown = sorted(set(supplied) - set(LEARNING_PROGRESS_CRITERIA))
+    if unknown:
+        raise ValueError("Učni napredek vsebuje neznane vzorce: " + ", ".join(unknown))
+    normalized = {}
+    for pattern, item in supplied.items():
+        if not isinstance(item, dict):
+            raise ValueError("Učni napredek za " + pattern + " ni veljaven.")
+        criteria_keys = LEARNING_PROGRESS_CRITERIA[pattern]
+        criteria = item.get("criteria")
+        if (
+            not isinstance(criteria, dict)
+            or set(criteria) != criteria_keys
+            or any(not isinstance(flag, bool) for flag in criteria.values())
+        ):
+            raise ValueError("Kontrolni seznam za " + pattern + " nima veljavne strukture.")
+        status = item.get("status")
+        if status == "excluded":
+            if (
+                set(item) != {"status", "exclusion_reason", "criteria"}
+                or item.get("exclusion_reason") not in {"pain", "limitation", "uncertain", "deferred"}
+            ):
+                raise ValueError("Razlog za izločitev vzorca " + pattern + " ni veljaven.")
+            normalized[pattern] = {
+                "status": "excluded",
+                "exclusion_reason": item["exclusion_reason"],
+                "criteria": criteria,
+            }
+        elif status in {"in_progress", "completed"}:
+            if set(item) != {"status", "criteria"}:
+                raise ValueError("Učni napredek za " + pattern + " vsebuje nepričakovana polja.")
+            if status == "completed" and not all(criteria.values()):
+                raise ValueError("Vzorec " + pattern + " ni dokončan: vsa merila morajo biti potrjena.")
+            normalized[pattern] = {"status": status, "criteria": criteria}
+        else:
+            raise ValueError("Neveljaven status učnega napredka za " + pattern + ".")
+    return normalized
+
+
+@coach_bp.route("/coach/profile/<profile_id>/learning-progress", methods=["GET", "PUT", "OPTIONS"])
+def coach_profile_learning_progress(profile_id):
+    """Persist non-health movement-learning checklists under the user's profile consent."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    if not storage_enabled():
+        return jsonify({"error": "Shranjevanje profila trenutno ni omogočeno."}), 503
+    token = _profile_token()
+    try:
+        if request.method == "GET":
+            saved = store_get_learning_progress(profile_id, token)
+            response = jsonify({"learning_progress": saved})
+            response.headers["Cache-Control"] = "no-store, private"
+            return response, 200
+
+        payload = request.get_json(silent=True)
+        try:
+            submitted = _normalize_learning_progress(payload)
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        existing = store_get_learning_progress(profile_id, token)
+        existing_patterns = existing.get("patterns", {}) if isinstance(existing, dict) else {}
+        merged = {**existing_patterns, **submitted}
+        record = {"version": LEARNING_PROGRESS_VERSION, "patterns": merged}
+        saved = store_save_learning_progress(profile_id, token, record)
+        response = jsonify({"learning_progress": saved["learning_progress"]})
+        response.headers["Cache-Control"] = "no-store, private"
+        return response, 200
     except ProfileNotFound:
         return _profile_auth_error()
     except StorageUnavailable as exc:
@@ -4033,9 +4145,9 @@ def coach_profile_program(profile_id):
     if not storage_enabled():
         return _storage_error(StorageUnavailable("Profile storage is not enabled or approved."))
     payload = request.get_json(silent=True)
-    if not isinstance(payload, dict) or set(payload) != {"no_current_pain_or_restrictions"}:
+    if not isinstance(payload, dict) or set(payload) != {"current_safety_confirmation"}:
         return jsonify({"error": "Potrjena mora biti samo trenutna varnostna izjava."}), 400
-    if payload.get("no_current_pain_or_restrictions") is not True:
+    if payload.get("current_safety_confirmation") is not True:
         return jsonify({
             "blocked": True,
             "message": "Programa nisem ustvaril. Ob novi, hudi, slabšajoči se ali nepojasnjeni bolečini, sveži poškodbi ali pomembni zdravstveni omejitvi je najprej potrebna presoja ustreznega zdravstvenega strokovnjaka. Blago, znano nelagodje samo po sebi ne pomeni prepovedi vse vadbe; prizadeti gibalni vzorec je treba posebej razjasniti in prilagoditi.",

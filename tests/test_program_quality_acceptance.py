@@ -205,9 +205,8 @@ def test_reported_discomfort_blocks_programme_adaptation():
 
 
 
-def test_mobility_limited_persona_adapts_only_the_assessed_squat_pattern():
+def test_mobility_limited_persona_keeps_unassessed_patterns_out_of_the_programme():
     profile = PERSONAS["mobility_limited"]
-    baseline = generate_program(profile)
 
     squat_decision = build_movement_decision(
         "squat",
@@ -219,22 +218,14 @@ def test_mobility_limited_persona_adapts_only_the_assessed_squat_pattern():
     )
     adapted = generate_program(profile, movement_decisions={"squat": squat_decision})
 
-    def exercise_ids_by_pattern(plan):
-        result = {}
-        for exercise in _all_exercises(plan):
-            result.setdefault(exercise["pattern"], set()).add(exercise["exercise_id"])
-        return result
+    assert _all_exercises(adapted) == []
+    assert {
+        task["movement_pattern"]
+        for session in adapted["sessions"]
+        for task in session["learning_tasks"]
+    } == {"squat"}
 
-    baseline_patterns = exercise_ids_by_pattern(baseline)
-    adapted_patterns = exercise_ids_by_pattern(adapted)
-
-    assert "squat" not in adapted_patterns
-    for pattern, exercise_ids in baseline_patterns.items():
-        if pattern != "squat":
-            assert adapted_patterns.get(pattern) == exercise_ids, pattern
-    assert any(pattern != "squat" for pattern in adapted_patterns)
-
-    events = adapted["movement_adaptation"]["events"]
+    events = adapted["movement_adaptation"]["events"];
     assert any(
         event["pattern"] == "squat"
         and event["action"] == "unloaded_learning_task_only"

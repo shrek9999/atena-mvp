@@ -472,7 +472,7 @@ def test_profile_program_requires_current_safety_confirmation(monkeypatch, tmp_p
     response = client.post(
         f"/coach/profile/{profile_id}/program",
         headers={"X-Profile-Token": token},
-        json={"no_current_pain_or_restrictions": False},
+        json={"current_safety_confirmation": False},
     )
     assert response.status_code == 409
     assert response.get_json()["blocked"] is True
@@ -480,7 +480,7 @@ def test_profile_program_requires_current_safety_confirmation(monkeypatch, tmp_p
 
 
 
-def test_profile_program_is_blocked_until_all_six_patterns_are_assessed(monkeypatch, tmp_path):
+def test_profile_program_is_blocked_until_at_least_one_pattern_is_assessable(monkeypatch, tmp_path):
     client = _client(monkeypatch, tmp_path, health_consent=True)
     created = _create(client, health_consent=True)
     profile_id = created["profile"]["profile_id"]
@@ -489,7 +489,7 @@ def test_profile_program_is_blocked_until_all_six_patterns_are_assessed(monkeypa
     response = client.post(
         f"/coach/profile/{profile_id}/program",
         headers={"X-Profile-Token": token},
-        json={"no_current_pain_or_restrictions": True},
+        json={"current_safety_confirmation": True},
     )
     assert response.status_code == 409
     data = response.get_json()
@@ -527,19 +527,100 @@ def test_six_pattern_assessment_maps_self_report_statuses_conservatively(monkeyp
     assert all(item["is_diagnosis"] is False for item in decisions.values())
 
 
-def test_six_pattern_assessment_rejects_incomplete_pattern_set(monkeypatch, tmp_path):
+def test_six_pattern_assessment_accepts_partial_pattern_set(monkeypatch, tmp_path):
     client = _client(monkeypatch, tmp_path, health_consent=True)
     created = _create(client, health_consent=True)
     profile_id = created["profile"]["profile_id"]
     token = created["profile_access_token"]
-    patterns = list(PATTERN_DEFINITIONS)[:-1]
+    patterns = {
+        "squat": {"status": "comfortable", "selected_learning_method": "reaching_counterbalance"},
+        "hinge": {"status": "needs_support", "selected_learning_method": "wall_hip_hinge"},
+    }
     response = client.put(
         f"/coach/profile/{profile_id}/movement-assessment",
         headers={"X-Profile-Token": token},
-        json={"movement_assessment_consent": True, "movement_patterns": {key: {"status": "comfortable"} for key in patterns}},
+        json={"movement_assessment_consent": True, "movement_patterns": patterns},
+    )
+    assert response.status_code == 200
+    body = response.get_json()
+    assert set(body["movement_decisions"]) == {"squat", "hinge"}
+    assert body["movement_decisions"]["squat"]["selected_learning_method"] == "reaching_counterbalance"
+    assert body["movement_decisions"]["hinge"]["selected_learning_method"] == "wall_hip_hinge"
+    assert set(body["missing_patterns"]) == {
+        "horizontal_push", "horizontal_pull", "vertical_push", "lunge"
+    }
+
+
+def test_six_pattern_assessment_rejects_unregistered_learning_method(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    response = client.put(
+        f"/coach/profile/{profile_id}/movement-assessment",
+        headers={"X-Profile-Token": token},
+        json={
+            "movement_assessment_consent": True,
+            "movement_patterns": {
+                "squat": {
+                    "status": "comfortable",
+                    "selected_learning_method": "bodyweight_squat",
+                }
+            },
+        },
     )
     assert response.status_code == 400
-    assert response.get_json()["missing_patterns"]
+    assert "Neveljavna učna metoda" in response.get_json()["error"]
+
+
+def test_six_pattern_assessment_rejects_unknown_pattern(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path, health_consent=True)
+    created = _create(client, health_consent=True)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    response = client.put(
+        f"/coach/profile/{profile_id}/movement-assessment",
+        headers={"X-Profile-Token": token},
+        json={"movement_assessment_consent": True, "movement_patterns": {"jumping": {"status": "comfortable"}}},
+    )
+    assert response.status_code == 400
+    assert response.get_json()["unknown_patterns"] == ["jumping"]
+
+
+def test_learning_progress_persists_partial_checklists_without_health_data_consent(monkeypatch, tmp_path):
+    client = _client(monkeypatch, tmp_path, health_consent=False)
+    created = _create(client, health_consent=False)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    squat_criteria = {
+        "tempo": True, "balance": False, "foot_stability": False,
+        "knee_control": False, "trunk_control": False, "tolerated_rom": False,
+    }
+    hinge_criteria = {
+        "tempo": True, "hip_movement": True, "knee_control": True,
+        "spine_control": True, "balance": True, "tolerated_rom": True,
+    }
+    first = client.put(
+        f"/coach/profile/{profile_id}/learning-progress",
+        headers={"X-Profile-Token": token},
+        json={"patterns": {"squat": {"status": "in_progress", "criteria": squat_criteria}}},
+    )
+    assert first.status_code == 200, first.get_json()
+    second = client.put(
+        f"/coach/profile/{profile_id}/learning-progress",
+        headers={"X-Profile-Token": token},
+        json={"patterns": {"hinge": {"status": "completed", "criteria": hinge_criteria}}},
+    )
+    assert second.status_code == 200, second.get_json()
+    saved = client.get(
+        f"/coach/profile/{profile_id}/learning-progress",
+        headers={"X-Profile-Token": token},
+    )
+    assert saved.status_code == 200
+    progress = saved.get_json()["learning_progress"]
+    assert set(progress["patterns"]) == {"squat", "hinge"}
+    assert progress["patterns"]["squat"]["status"] == "in_progress"
+    assert progress["patterns"]["hinge"]["status"] == "completed"
 
 
 def test_six_pattern_assessment_requires_explicit_movement_use_consent(monkeypatch, tmp_path):
@@ -607,7 +688,7 @@ def test_profile_program_keeps_global_feedback_out_of_generator_and_exposes_adap
     response = client.post(
         f"/coach/profile/{profile_id}/program",
         headers={"X-Profile-Token": token},
-        json={"no_current_pain_or_restrictions": True},
+        json={"current_safety_confirmation": True},
     )
     assert response.status_code == 200
     assert captured["profile"]["goal"] == "hypertrophy"
@@ -649,7 +730,7 @@ def test_profile_program_holds_progression_after_logged_discomfort_and_fresh_saf
     response = client.post(
         f"/coach/profile/{profile_id}/program",
         headers={"X-Profile-Token": token},
-        json={"no_current_pain_or_restrictions": True},
+        json={"current_safety_confirmation": True},
     )
     assert response.status_code == 200
     data = response.get_json()
@@ -805,6 +886,6 @@ def test_profile_next_program_is_blocked_when_storage_is_paused(monkeypatch, tmp
     response = client.post(
         f"/coach/profile/{profile_id}/program",
         headers={"X-Profile-Token": token},
-        json={"no_current_pain_or_restrictions": True},
+        json={"current_safety_confirmation": True},
     )
     assert response.status_code == 503

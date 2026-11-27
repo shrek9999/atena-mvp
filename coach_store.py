@@ -325,12 +325,49 @@ def update_profile(profile_id: str, token: str, profile: dict):
     conn, dialect = _connect()
     try:
         _init(conn, dialect)
-        _authorized_profile(conn, dialect, profile_id, token)
+        existing = _authorized_profile(conn, dialect, profile_id, token)
+        # Keep non-health learning progress when ordinary profile fields change.
+        existing_learning = (existing.get("profile") or {}).get("learning_progress")
+        if "learning_progress" not in profile and existing_learning is not None:
+            profile = {**profile, "learning_progress": existing_learning}
         now = _now()
         _execute(conn, dialect, "UPDATE atena_profiles SET profile_json = %s, updated_at = %s WHERE profile_id = %s",
                  (_encode_json(profile, dialect), now, profile_id))
         conn.commit()
         return _authorized_profile(conn, dialect, profile_id, token)
+    finally:
+        conn.close()
+
+
+def get_learning_progress(profile_id: str, token: str):
+    """Read non-health movement-learning checklist progress from the profile JSON."""
+    profile = get_profile(profile_id, token)
+    saved = (profile.get("profile") or {}).get("learning_progress")
+    if isinstance(saved, dict) and isinstance(saved.get("patterns"), dict):
+        return saved
+    return {"version": "guided-six-pattern-learning-v2", "patterns": {}}
+
+
+def save_learning_progress(profile_id: str, token: str, learning_progress: dict):
+    """Save non-health movement-learning progress without requiring health-data consent."""
+    conn, dialect = _connect()
+    try:
+        _init(conn, dialect)
+        current = _authorized_profile(conn, dialect, profile_id, token)
+        profile = current.get("profile") or {}
+        profile["learning_progress"] = learning_progress
+        now = _now()
+        _execute(
+            conn, dialect,
+            "UPDATE atena_profiles SET profile_json = %s, updated_at = %s WHERE profile_id = %s",
+            (_encode_json(profile, dialect), now, profile_id),
+        )
+        conn.commit()
+        return {
+            "profile_id": profile_id,
+            "learning_progress": learning_progress,
+            "updated_at": now,
+        }
     finally:
         conn.close()
 
