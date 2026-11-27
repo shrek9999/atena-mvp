@@ -660,7 +660,7 @@ def test_program_route_accepts_one_explicitly_selected_learning_pattern(monkeypa
     decision = build_movement_decision(
         "squat", "LEARN",
         user_report={"status": "selected_for_learning", "intent": "learn_this_pattern"},
-        selected_learning_method="bodyweight_squat",
+        selected_learning_method="reaching_counterbalance",
         decision_reason="The user selected squat learning.",
     )
     captured = {}
