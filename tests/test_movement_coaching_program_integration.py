@@ -397,8 +397,8 @@ def test_bodyweight_squat_learning_task_exposes_five_reps_tempo_and_six_binary_c
     assert "sočasno upogibaj kolena in kolke" in protocol["how_to_perform"][1].lower()
     assert "dorzalno fleksijo" in protocol["adaptations"]["heel_lift"]
     assert "ne dokazuje vzroka" in protocol["adaptations"]["heel_lift"]
-    assert "ne dviguj pet" in protocol["adaptations"]["forefoot_lift"]
-    assert "ne diagnoza omejene dorzalne fleksije" in protocol["adaptations"]["forefoot_lift"]
+    assert "ne podlagaj pet" in protocol["adaptations"]["forefoot_lift"]
+    assert "ne diagnoza omejene gibljivosti gležnja" in protocol["adaptations"]["forefoot_lift"]
     assert "nevtralno hrbtenico" in protocol["adaptations"]["excessive_forward_lean"]
     assert "protiutež" in protocol["adaptations"]["balance"]
     assert "1–4 kg" in protocol["adaptations"]["balance"]
