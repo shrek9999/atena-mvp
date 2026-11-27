@@ -1,6 +1,9 @@
 from flask import Flask
 
-from coach_routes import coach_bp, LEARNING_CONTROL_CRITERIA, LEARNING_CONTROL_CRITERIA
+from coach_routes import (
+    coach_bp, LEARNING_CONTROL_CRITERIA, DEFAULT_LEARNING_METHODS,
+    _build_guided_learning_tasks,
+)
 
 
 def _client(monkeypatch):
@@ -766,3 +769,17 @@ def test_program_endpoint_allows_a_pain_excluded_pattern_after_a_safe_regression
     )
     assert response.status_code == 200, response.get_json()
     assert response.get_json()["program"]["movement_adaptation"]["structured_decisions"]["squat"]["decision"] == "REGRESS"
+
+
+
+def test_initial_guided_learning_payload_uses_bodyweight_squat_and_exposes_coaching_protocol():
+    assert DEFAULT_LEARNING_METHODS["squat"] == "bodyweight_squat"
+    tasks = _build_guided_learning_tasks(["squat"])
+    assert len(tasks) == 1
+    squat = tasks[0]
+    assert squat["method_id"] == "bodyweight_squat"
+    assert squat["method"] == "Počep z lastno težo"
+    assert squat["learning_protocol"]["repetitions"] == 5
+    assert squat["learning_protocol"]["tempo"] == "3–1–1"
+    assert len(squat["learning_protocol"]["criteria"]) == 6
+    assert "Status učenja" not in squat
