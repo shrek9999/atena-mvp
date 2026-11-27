@@ -205,17 +205,24 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
         ],
     },
     "vertical_push": {
-        "label": "Potisk nad glavo",
+        "label": "Dvig rok nad glavo",
         "task_id": "overhead_press",
-        "task": "Potisk nad glavo z zelo lahkim, opremi primernim bremenom. Cilj je učenje poti potiska, nadzora trupa in koordinacije lopatic, ne test moči.",
+        "task": "Najprej nadzorovan dvig rok nad glavo brez bremena. Zunanji upor se uvede pozneje, ko sta pot rok in nadzor trupa ponovljiva.",
         "exercise_ids": [
             "overhead_press", "band_overhead_press", "plate_overhead_press", "barbell_overhead_press",
         ],
         "learning_methods": [
             {
+                "id": "unloaded_overhead_reach",
+                "learning_only": True,
+                "label": "Dvig rok nad glavo brez bremena",
+                "description": "V stoji počasi dvigni obe roki nad glavo in ju nadzorovano spusti. Ohrani rebra in medenico pod nadzorom; ne sili v amplitudo in ne kompenziraj z izrazitim usločenjem hrbta. Uporabi samo udoben obseg.",
+                "exercise_id": None,
+            },
+            {
                 "id": "light_overhead_press",
-                "label": "Potisk nad glavo z zelo lahkim bremenom",
-                "description": "Izberi zelo lahek pripomoček, ki je na voljo (ročki, lahek drog, lahek kolut ali varno pritrjena elastika). Potisk izvedi počasi, v udobni amplitudi, z nadzorom reber, medenice in lopatic. To je učenje giba, ne test moči. Ob bolečini, občutku nestabilnosti ali izgubi nadzora prekini.",
+                "label": "Nadaljevanje: lahek potisk nad glavo",
+                "description": "Ko je neobremenjen dvig rok ponovljiv in udoben, izberi zelo lahek, opremi primeren pripomoček. Potisk izvedi počasi, z nadzorom reber, medenice in lopatic. To je začetna obremenitev, ne test moči. Ob bolečini, občutku nestabilnosti ali izgubi nadzora prekini.",
                 "exercise_id": None,
             },
         ],
