@@ -26,15 +26,15 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             "repetitions": 5,
             "tempo": "3–1–1",
             "tempo_seconds": {"lowering": 3, "bottom_pause": 1, "rising": 1},
-            "instruction": "Izvedi pet ponovitev: 3 sekunde spuščanja, 1 sekunda mirne pavze in 1 sekunda vstajanja.",
+            "instruction": "Pri vseh ponovitvah imej roke v predročenju. Izvedi pet ponovitev: 3 sekunde spuščanja, 1 sekunda mirne pavze in 1 sekunda vstajanja.",
             "how_to_perform": [
-                "Stopali postavi v udoben položaj in ohranjaj oporo prek celotnega stopala.",
+                "Stopali postavi v udoben položaj, roke iztegni v predročenje in ohranjaj oporo prek celotnega stopala.",
                 "Sočasno upogibaj kolena in kolke ter se nadzorovano spuščaj. Kolena naj sledijo smeri stopal, trup pa ohranjaj čim bolj pokončen, kolikor dopuščata telesna zgradba in udobna amplituda.",
                 "Po enosekundni pavzi tekoče vstani, brez odboja in brez izgube ravnotežja."
             ],
             "adaptations": {
                 "heel_lift": "Če se pete dvigujejo, poskusi stabilno podporo pod petama. To je prilagoditev izvedbe, ne diagnoza vzroka.",
-                "balance": "Če je ravnotežje oteženo, iztegni obe roki naprej kot protiutež.",
+                "balance": "Roke ostanejo v predročenju. Če ravnotežje kljub temu otežuje izvedbo, uporabi lahko protiutež (npr. ročko ali kolut 1–4 kg) pred telesom.",
                 "range": "Če izgubljaš nadzor, zmanjša globino počepa."
             },
             "criteria": [
@@ -48,7 +48,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                     "id": "balance",
                     "label": "Ravnotežje",
                     "success": "Ravnotežje ohranjam nad celotnim stopalom, brez nenadzorovanega prevesa naprej ali nazaj.",
-                    "adjustment": "Iztegni obe roki naprej kot protiutež in po potrebi zmanjša globino počepa."
+                    "adjustment": "Roke ohrani v predročenju. Če ravnotežje še vedno otežuje izvedbo, uporabi lahko protiutež (npr. ročko ali kolut 1–4 kg) pred telesom in po potrebi zmanjša globino počepa."
                 },
                 {
                     "id": "foot_stability",
@@ -96,8 +96,8 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             },
             {
                 "id": "reaching_counterbalance",
-                "label": "Reaching squat s protiutežjo",
-                "description": "Izteg rok oziroma lahek kolut pred telesom uporabi kot protiutež za lažje učenje ravnotežja in organizacije počepa.",
+                "label": "Počep z lahko protiutežjo (po potrebi)",
+                "description": "Roke so pri air squatu vedno v predročenju. Če je potrebna dodatna pomoč pri ravnotežju, vadeči v predročenju drži lahko utež (npr. ročko ali kolut 1–4 kg), ki deluje kot protiutež.",
                 "exercise_id": "reaching_squat",
             },
             {
