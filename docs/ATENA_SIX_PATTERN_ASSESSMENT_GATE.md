@@ -19,7 +19,7 @@ A pull-up / zgib is a **vertical pull**, not a horizontal row. Vertical pull rem
 
 ## Consent and persistence
 
-The six-pattern result is health-related movement information. It is persisted only when the profile has separate `health_data_consent=true`. With consent withdrawn, the existing storage layer erases the movement assessment and programme decision history.
+The movement assessment is health-related information. It is persisted only when the profile has separate `health_data_consent=true`. With consent withdrawn, the storage layer erases the movement assessment and programme decision history. The six-item learning checklist is non-health skill progress and is stored separately under ordinary profile storage consent; it remains available if health-data consent is withdrawn.
 
 ## Save endpoint
 
@@ -51,6 +51,15 @@ Allowed statuses and deterministic mapping:
 
 The service accepts a non-empty subset of known patterns and rejects unknown keys. It preserves earlier decisions when one pattern is retested. It does not infer readiness from experience level, goals, equipment or conversation history. A comfortable basic check remains LEARN until the user confirms all pattern-specific control criteria and repeatability. READY is still capped at a conservative low/moderate-loading starting variation; exercise-specific progression requires recorded training evidence. The response includes `missing_patterns` so the interface can show what remains optional.
 
+## Learning-progress endpoint
+
+- `GET /coach/profile/{profile_id}/learning-progress` returns the saved checklist.
+- `PUT /coach/profile/{profile_id}/learning-progress` accepts a non-empty subset of patterns, validates each pattern's six criteria, and merges the submitted patterns with earlier progress.
+- Checklist progress is stored inside the authenticated profile JSON. It does not require `health_data_consent`, and profile edits preserve it.
+- An `in_progress` pattern may contain any subset of checked criteria. `completed` requires all six criteria; `excluded` requires an explicit reason.
+
+This keeps the learning task distinct from movement assessment: ticking checklist items records practice progress, not proven technique mastery and not readiness for loaded exercise.
+
 ## Programme gate
 
 `POST /coach/profile/{profile_id}/program` still requires the current safety confirmation. It requires at least one saved, assessable pattern in the current schema version. Missing patterns are not a blocker: they are omitted from the programme until assessed. If no pattern is assessable, the endpoint returns HTTP 409 with `assessment_required=true`.
@@ -65,4 +74,4 @@ This is not a coordination score or a general movement-quality finding. It does 
 
 ## Current implementation boundary
 
-The backend contract now supports independent pattern assessment, cumulative persistence and strict per-pattern programme inclusion. The Cloudflare Pages interface must present each check independently, submit only the pattern being assessed, show the remaining optional checks, and allow retesting without erasing prior results. The profile-program action should be available once at least one pattern has a valid assessable decision.
+The backend contract supports independent pattern assessment, cumulative persistence, separate learning-progress storage and strict per-pattern programme inclusion. The Cloudflare Pages interface presents the six learning modules, saves checklist progress independently, submits only selected movement patterns, shows remaining patterns as optional, and allows retesting without erasing prior results. The profile-program action is available once at least one pattern has a valid assessable decision.
