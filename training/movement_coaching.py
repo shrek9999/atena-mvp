@@ -21,22 +21,22 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
     "squat": {
         "label": "Počep",
         "task_id": "controlled_squat",
-        "task": "Pet nadzorovanih počepov z lastno težo v tempu 3–1–1. Roke ves čas v predročenju.",
+        "task": "Pet nadzorovanih počepov z lastno težo v tempu 3–1–1. Roke se gibljejo naravno: v stoji ob trupu, med spuščanjem v predročenje in med vstajanjem nazaj ob trup.",
         "learning_protocol": {
             "repetitions": 5,
             "tempo": "3–1–1",
             "tempo_seconds": {"lowering": 3, "bottom_pause": 1, "rising": 1},
-            "instruction": "Izvedi 5 počepov v tempu 3–1–1. Roke ves čas v predročenju. Trup naj bo nadzorovan in razmeroma pokončen; ne sili v navpičen položaj. Ohranjaj stik pete, baze palca in baze mezinca.",
+            "instruction": "Izvedi 5 počepov z lastno težo v tempu 3–1–1. Trup ohranjaj čim bolj pokončen, vendar ne sili v povsem navpičen položaj. Roke naj se gibljejo naravno: v stoji ob trupu, med spuščanjem v predročenje. Ohranjaj stik pete, baze palca in baze mezinca.",
             "how_to_perform": [
-                "Stopali postavi v udoben položaj. Roke iztegni v predročenje in jih tam ohrani. Pritisk razporedi prek pete, baze palca in baze mezinca.",
-                "Sočasno upogibaj kolena in kolke. Kolena naj sledijo smeri stopal. Dovoli naraven predklon trupa, da ohraniš ravnotežje in stik celotnega stopala.",
-                "Spuščaj se 3 sekunde, miruj 1 sekundo in v 1 sekundi vstani. Če se dvignejo pete, zmanjša globino; če se dvignejo prsti, ne podlagaj pet – dovoli predklon ali uporabi protiutež."
+                "Stopali postavi v udoben položaj. V zgornjem položaju naj roke sproščeno visijo ob trupu. Pritisk razporedi prek pete, baze palca in baze mezinca.",
+                "Sočasno upogibaj kolena in kolke. Trup ohranjaj čim bolj pokončen, vendar ne sili v povsem navpičen položaj; dovoli naraven nagib, ki ga zahtevata telesna zgradba in ravnotežje. Med spuščanjem se roke naravno pomaknejo v predročenje. Kolena naj sledijo smeri stopal.",
+                "Spuščaj se 3 sekunde, miruj 1 sekundo in v 1 sekundi vstani. Med vstajanjem naj se roke naravno vrnejo ob trup. Ohranjaj stik celotnega stopala s podlago in nadzorovan položaj trupa."
             ],
             "adaptations": {
                 "heel_lift": "Ob dvigu pete zmanjša globino in preveri dorzalno fleksijo gležnja. Podpora pod petama je začasna možnost le, če ohrani stik celotnega stopala. Dvig pete sam ne potrjuje vzroka.",
                 "forefoot_lift": "Ob dvigu prstov ne podlagaj pet. Dovoli naraven predklon, zmanjša globino ali uporabi protiutež 1–4 kg pred telesom. To je znak izgube ravnotežja, ne diagnoza omejene gibljivosti gležnja.",
                 "excessive_forward_lean": "Če je predklon pretiran ali se hrbtenica zaokroži, zmanjša globino in se vrni k učenju predklona z nevtralno hrbtenico. Po potrebi uporabi počep do stabilne tarče.",
-                "balance": "Roke ohrani v predročenju. Po potrebi dodaj protiutež 1–4 kg; če ravnotežje še ni stabilno, uporabi TRX ali fiksen drog kot oporo.",
+                "balance": "Če ravnotežje ni stabilno, zmanjša globino. Po potrebi uporabi protiutež 1–4 kg pred telesom; če to ne zadošča, uporabi TRX ali fiksen drog kot oporo za roke.",
                 "range": "Zmanjšaj globino in uporabi stabilno tarčo, na primer škatlo ali stol."
             },
             "criteria": [
@@ -50,13 +50,13 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                     "id": "balance",
                     "label": "Ravnotežje",
                     "success": "Ravnotežje ohranjam nad celotnim stopalom, brez nenadzorovanega prevesa naprej ali nazaj.",
-                    "adjustment": "Če se dvigujejo prsti oziroma sprednji del stopala, ne dviguj pet in ne sili v navpičen trup. Dovoli naraven, nadzorovan predklon, zmanjša globino ali uporabi lahko protiutež 1–4 kg v predročenju. Roke ostanejo pred telesom."
+                    "adjustment": "Če je ravnotežje oteženo, zmanjša globino. Po potrebi uporabi lahko protiutež 1–4 kg pred telesom ali stabilno oporo za roke, na primer TRX oziroma fiksen drog; vadi počep ob opori."
                 },
                 {
                     "id": "foot_stability",
                     "label": "Stabilnost stopal",
-                    "success": "Stopali ostajata stabilni; peta in sprednji del stopala sta podprta, stopalni lok pa se ne seseda izrazito.",
-                    "adjustment": "Najprej ugotovi, kateri del stopala izgublja stik. Če se dviguje peta, zmanjša globino in preveri dorzalno fleksijo; začasna podpora pod petama je možnost le, če izboljša polno oporo. Če se dvigujejo prsti, pet ne podlagaj: dovoli naraven predklon trupa, zmanjša globino ali uporabi lahko protiutež pred telesom."
+                    "success": "Ohranjam stik pete, baze palca in baze mezinca s podlago; stopalni lok ostaja nadzorovan.",
+                    "adjustment": "Najprej ugotovi, kateri del stopala izgublja stik. Če se dviguje peta, zmanjša globino in preveri dorzalno fleksijo gležnja. Stabilna podpora pod petama je začasna možnost le, če ponovno vzpostavi stik celotnega stopala; dvig pete sam po sebi ne dokazuje vzroka. Če se dvigujejo prsti ali sprednji del stopala, pet ne podlagaj. Dovoli naraven nagib trupa, zmanjša globino ali uporabi lahko protiutež 1–4 kg pred telesom. To ni diagnoza omejene dorzalne fleksije."
                 },
                 {
                     "id": "knee_control",
@@ -68,7 +68,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                     "id": "trunk_control",
                     "label": "Nadzor trupa",
                     "success": "Trup ohranjam čim bolj pokončen glede na svojo telesno zgradbo; gibanje trupa in medenice ostaja nadzorovano.",
-                    "adjustment": "Ne sili v povsem navpičen trup. Dovoli nadzorovan predklon, ki omogoča ohraniti ravnotežje in oporo celotnega stopala. Če je predklon pretiran ali se hrbtenica zaokroži, zmanjša globino in se vrni k učenju predklona z nevtralno hrbtenico oziroma uporabi stabilno tarčo."
+                    "adjustment": "Ne nagibaj se naprej namenoma. Če se trup pretirano nagiba ali izgubiš nevtralni položaj hrbtenice, zmanjša globino in ponovi učenje kolčnega pregiba. Po potrebi uporabi stabilno tarčo."
                 },
                 {
                     "id": "tolerated_rom",
@@ -87,7 +87,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "bodyweight_squat",
                 "label": "Počep z lastno težo",
-                "description": "Pri vseh ponovitvah imej roke v predročenju. Izvedi pet ponovitev v tempu 3–1–1. Nato preveri šest kontrolnih točk in po potrebi uporabi pripadajočo prilagoditev.",
+                "description": "Izvedi pet ponovitev v tempu 3–1–1. Roke se gibljejo naravno: v stoji ob trupu, med spuščanjem v predročenje in med vstajanjem nazaj ob trup. Nato preveri šest kontrolnih točk in po potrebi uporabi ustrezno prilagoditev.",
                 "exercise_id": "air_squat",
             },
             {
@@ -99,7 +99,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "air_squat_counterweight",
                 "label": "Počep z lahko protiutežjo (po potrebi)",
-                "description": "Roke so pri air squatu vedno v predročenju. Če je potrebna dodatna pomoč pri ravnotežju, vadeči v predročenju drži lahko utež (npr. ročko ali kolut 1–4 kg), ki deluje kot protiutež.",
+                "description": "Roke se pri počepu z lastno težo naravno premikajo. Če je za ravnotežje potrebna dodatna pomoč, vadeči pred telesom drži lahko utež (na primer ročko ali kolut 1–4 kg), ki deluje kot protiutež.",
                 "exercise_id": "air_squat",
             },
             {
