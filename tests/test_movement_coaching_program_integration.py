@@ -398,7 +398,9 @@ def test_bodyweight_squat_learning_task_exposes_five_reps_tempo_and_six_binary_c
     assert "ne diagnoza omejene dorzalne fleksije" in protocol["adaptations"]["forefoot_lift"]
     assert "nevtralno hrbtenico" in protocol["adaptations"]["excessive_forward_lean"]
     assert "protiutež" in protocol["adaptations"]["balance"]
-    assert "1–4 kg" in protocol["adaptations"]["balance"]\n    assert "počep ob opori" in protocol["adaptations"]["balance"]\n    assert "škatlo ali stol" in protocol["adaptations"]["range"]
+    assert "1–4 kg" in protocol["adaptations"]["balance"]
+    assert "počep ob opori" in protocol["adaptations"]["balance"]
+    assert "škatlo ali stol" in protocol["adaptations"]["range"]
     criteria = protocol["criteria"]
     assert [item["id"] for item in criteria] == [
         "tempo", "balance", "foot_stability", "knee_control",
