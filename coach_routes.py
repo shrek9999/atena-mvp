@@ -401,6 +401,21 @@ def _has_safety_clearance(messages):
     )
 
 
+def _has_answered_initial_safety_intake(messages):
+    """Detect that the frontend's one-time onboarding safety question was already answered."""
+    user_history = "\n".join(
+        item.get("content", "")
+        for item in messages
+        if isinstance(item, dict) and item.get("role") == "user"
+        and isinstance(item.get("content"), str)
+    )
+    return bool(re.search(
+        r"initial onboarding safety question has already been answered",
+        user_history,
+        re.IGNORECASE,
+    ))
+
+
 def _has_localized_symptom_report(text):
     """Recognize a localized symptom as an answered intake item, never as medical clearance."""
     value = str(text or "")
@@ -1977,6 +1992,7 @@ def _coaching_guardrail_reply(messages):
         assistant_asked_setup
         and not assistant_asked_safety
         and not _has_safety_clearance(messages)
+        and not _has_answered_initial_safety_intake(messages)
         and fitness_intent
     ):
         return (
@@ -2126,6 +2142,12 @@ def _coaching_guardrail_reply(messages):
             substitution_intent_texts.append(text_value)
     if substitution_intent_texts:
         if not _has_safety_clearance(messages):
+            if _has_answered_initial_safety_intake(messages):
+                return (
+                    "Zabeležil sem, da si na začetku že odgovoril glede omejitev. "
+                    "Kateri gibalni vzorec ali vaja je povezana z navedeno omejitvijo? "
+                    "Prizadeti vzorec bova do razjasnitve pustila izven programa."
+                )
             return (
                 "Preden predlagam zamenjavo vaje, moram preveriti varnost: ali imaš trenutno "
                 + INITIAL_SAFETY_QUESTION_SL
@@ -2199,8 +2221,14 @@ def _coaching_guardrail_reply(messages):
                 "ni diagnoza in ne pomeni samodejne prepovedi vse neboleče aktivnosti. "
                 + question
             )
+        if _has_answered_initial_safety_intake(messages):
+            return (
+                "Zabeležil sem, da si na začetku že odgovoril glede omejitev. "
+                "Kateri gibalni vzorec ali vaja je povezana z navedeno omejitvijo? "
+                "Prizadeti vzorec bova do razjasnitve pustila izven programa."
+            )
         contradiction = bool(re.search(
-            r"(začetnik|začetniški).{0,80}(deset let|dolgoletn|napreden)|"
+            r"(začetnik|začetniški).{0,80}(deset let|dolgoletn|napreden)|
             r"(deset let|dolgoletn|napreden).{0,80}(začetnik|začetniški)",
             history_lower,
         ))

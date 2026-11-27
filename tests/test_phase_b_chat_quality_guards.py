@@ -283,6 +283,25 @@ def test_structured_profile_form_negative_safety_answer_allows_next_step():
     assert reply is None
 
 
+def test_answered_stable_restriction_does_not_repeat_the_broad_safety_question():
+    profile = (
+        "Moj vadbeni profil:\n"
+        "Safety: the initial onboarding safety question has already been answered. "
+        "The user reports a known restriction or discomfort. Do not repeat the broad intake question."
+    )
+    assert not coach_routes._has_safety_clearance(_user_messages(profile))
+    assert coach_routes._has_answered_initial_safety_intake(_user_messages(profile))
+
+    reply = coach_routes._coaching_guardrail_reply(_user_messages(
+        profile,
+        "Moje vprašanje: Pripravi mi individualni trening.",
+    ))
+
+    assert reply is not None
+    assert "Kateri gibalni vzorec ali vaja" in reply
+    assert "Ali imaš trenutno kakršno koli bolečino" not in reply
+
+
 def test_unknown_profile_safety_answer_still_requires_clarification():
     profile = (
         "Moj vadbeni profil:\\n"
