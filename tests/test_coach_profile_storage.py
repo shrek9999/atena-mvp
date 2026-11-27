@@ -421,7 +421,7 @@ def test_saved_profile_limits_match_program_generator():
             _validate_profile(invalid)
 
 
-def test_postgres_profile_tables_enable_rls_and_revoke_public_access(monkeypatch):
+def test_postgres_request_initialization_never_executes_schema_ddl(monkeypatch):
     import coach_store
 
     statements = []
@@ -432,11 +432,7 @@ def test_postgres_profile_tables_enable_rls_and_revoke_public_access(monkeypatch
     )
     coach_store._init(object(), "postgres")
 
-    assert statements[0] == "SELECT pg_advisory_xact_lock(4707463712915539010)"
-    assert "ALTER TABLE atena_profiles ENABLE ROW LEVEL SECURITY" in statements
-    assert "ALTER TABLE atena_training_sessions ENABLE ROW LEVEL SECURITY" in statements
-    assert any("atena_profiles FROM PUBLIC, anon, authenticated" in sql for sql in statements)
-    assert any("atena_training_sessions FROM PUBLIC, anon, authenticated" in sql for sql in statements)
+    assert statements == []
 
 
 
@@ -541,6 +537,29 @@ def test_guided_learning_progress_isolated_by_profile_token(monkeypatch, tmp_pat
         headers={"X-Profile-Token": "wrong-token"},
     )
     assert response.status_code == 404
+
+
+def test_learning_progress_survives_profile_update_without_leaking_into_public_profile(monkeypatch, tmp_path):
+    import coach_store
+
+    client = _client(monkeypatch, tmp_path)
+    created = _create(client, health_consent=False)
+    profile_id = created["profile"]["profile_id"]
+    token = created["profile_access_token"]
+    _save_six_pattern_learning_progress(client, profile_id, token)
+
+    profile = coach_store.get_profile(profile_id, token)
+    assert "_atena_learning_progress" not in profile["profile"]
+    updated_profile = dict(profile["profile"])
+    updated_profile["session_minutes"] = 45
+    coach_store.update_profile(profile_id, token, updated_profile)
+
+    restored = coach_store.get_learning_progress(profile_id, token)
+    assert restored is not None
+    assert restored["learning_progress"]["patterns"]
+    after_update = coach_store.get_profile(profile_id, token)
+    assert after_update["profile"]["session_minutes"] == 45
+    assert "_atena_learning_progress" not in after_update["profile"]
 
 def test_legacy_six_pattern_self_assessment_endpoint_is_retired(monkeypatch, tmp_path):
     client = _client(monkeypatch, tmp_path, health_consent=True)
