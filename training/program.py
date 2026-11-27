@@ -1744,6 +1744,11 @@ def generate_program(
                          if item["id"] == record.get("selected_learning_method")),
                         "",
                     ),
+                    **(
+                        {"learning_protocol": PATTERN_DEFINITIONS[pattern_key]["learning_protocol"]}
+                        if pattern_key == "squat" and record.get("selected_learning_method") == "bodyweight_squat"
+                        else {}
+                    ),
                     "exercise_id": record.get("resolved_exercise_id"),
                     "demonstration_videos": _learning_task_videos(
                         pattern_key,
