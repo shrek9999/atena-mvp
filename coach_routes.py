@@ -3722,7 +3722,7 @@ def save_coach_movement_assessment(profile_id):
 
 @coach_bp.route("/coach/profile/<profile_id>/movement-assessment", methods=["PUT", "OPTIONS"])
 def save_six_pattern_movement_assessment(profile_id):
-    """Save the six guided movement checks only with separate health-data consent."""
+    """Save only selected guided movement patterns with separate health-data consent."""
     if request.method == "OPTIONS":
         return ("", 204)
     payload = request.get_json(silent=True)
