@@ -3,7 +3,7 @@ from flask import Flask
 
 from coach_routes import coach_bp
 from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
-from coach_routes import LEARNING_CONTROL_CRITERIA
+from coach_routes import LEARNING_CONTROL_CRITERIA, _build_guided_learning_tasks
 
 
 @pytest.fixture
@@ -195,3 +195,14 @@ def test_program_route_requires_separate_plan_use_consent(client):
     )
     assert response.status_code == 403
     assert response.get_json()["consent_required"] is True
+
+
+def test_all_six_guided_learning_tasks_expose_their_six_control_criteria():
+    tasks = _build_guided_learning_tasks()
+    assert {task["movement_pattern"] for task in tasks} == set(LEARNING_CONTROL_CRITERIA)
+
+    for task in tasks:
+        criteria = task["control_criteria"]
+        assert len(criteria) == 6
+        assert {item["id"] for item in criteria} == LEARNING_CONTROL_CRITERIA[task["movement_pattern"]]
+        assert all(item["label"].strip() and item["check"].strip() for item in criteria)
