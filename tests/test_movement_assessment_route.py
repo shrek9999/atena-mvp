@@ -185,6 +185,32 @@ def test_profile_learning_progress_saves_only_the_patterns_the_user_started(clie
     assert captured["progress"]["patterns"]["squat"]["learning_completed_by_user"] is False
 
 
+def test_program_route_rejects_a_partially_completed_selected_pattern(client, monkeypatch):
+    import coach_routes
+
+    def should_not_run(*args, **kwargs):
+        raise AssertionError("An in-progress pattern cannot enter programme generation.")
+
+    monkeypatch.setattr(coach_routes, "generate_program", should_not_run)
+    payload = _program_payload()
+    criteria = {key: False for key in LEARNING_CONTROL_CRITERIA["squat"]}
+    criteria["tempo"] = True
+    payload["learning_progress"] = {
+        "patterns": {"squat": {"status": "in_progress", "criteria": criteria}}
+    }
+    payload["movement_decisions"] = {"squat": _decisions()["squat"]}
+
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-token"},
+        json=payload,
+    )
+
+    assert response.status_code == 409
+    assert response.get_json()["learning_required"] is True
+    assert response.get_json()["missing_patterns"] == ["squat"]
+
+
 def test_program_route_blocks_incomplete_learning_checklists(client, monkeypatch):
     import coach_routes
 
