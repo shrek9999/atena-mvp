@@ -1,3 +1,4 @@
+import json
 import sqlite3
 
 from flask import Flask
@@ -327,16 +328,17 @@ def test_health_data_consent_withdrawal_keeps_learning_and_erases_heart_rate(mon
     )
     assert withdrawn.status_code == 200
     conn = sqlite3.connect(database)
-    learning_count = conn.execute(
-        "SELECT COUNT(*) FROM atena_learning_progress WHERE profile_id = ?",
+    profile_json = conn.execute(
+        "SELECT profile_json FROM atena_profiles WHERE profile_id = ?",
         (profile_id,),
     ).fetchone()[0]
+    learning_progress = json.loads(profile_json).get("_atena_learning_progress")
     session_json = conn.execute(
         "SELECT session_json FROM atena_training_sessions WHERE profile_id = ?",
         (profile_id,),
     ).fetchone()[0]
     conn.close()
-    assert learning_count == 1
+    assert learning_progress is not None
     assert "average_heart_rate" not in session_json
     restored = client.get(
         "/coach/profile/{}/learning-progress".format(profile_id), headers=headers
