@@ -206,3 +206,7 @@ def test_all_six_guided_learning_tasks_expose_their_six_control_criteria():
         assert len(criteria) == 6
         assert {item["id"] for item in criteria} == LEARNING_CONTROL_CRITERIA[task["movement_pattern"]]
         assert all(item["label"].strip() and item["check"].strip() for item in criteria)
+
+    overhead = next(task for task in tasks if task["movement_pattern"] == "vertical_push")
+    assert overhead["method_id"] == "unloaded_overhead_reach"
+    assert "brez bremena" in overhead["description"]
