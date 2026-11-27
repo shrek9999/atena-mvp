@@ -36,8 +36,8 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                 "heel_lift": "Če se dviguje peta, najprej zmanjša globino in preveri dorzalno fleksijo gležnja. Stabilna podpora pod petama je lahko začasna prilagoditev, vendar le, če izboljša ravnotežje in ohrani stik celotnega stopala. Dvig pete sam po sebi ne dokazuje vzroka.",
                 "forefoot_lift": "Če se dvigujejo prsti oziroma sprednji del stopala, ne dviguj pet. Ne sili v navpičen trup: dovoli naraven, nadzorovan predklon trupa, zmanjša globino ali uporabi lahko protiutež 1–4 kg v predročenju. To je opažanje ravnotežja, ne diagnoza omejene dorzalne fleksije.",
                 "excessive_forward_lean": "Če je predklon pretiran ali se hrbtenica zaokroži, zmanjša globino in se vrni k učenju predklona z nevtralno hrbtenico. Po potrebi uporabi počep do stabilne tarče.",
-                "balance": "Roke ostanejo v predročenju. Če ravnotežje kljub temu otežuje izvedbo, uporabi lahko protiutež (npr. ročko ali kolut 1–4 kg) pred telesom.",
-                "range": "Če izgubljaš nadzor, zmanjša globino počepa."
+                "balance": "Roke ostanejo v predročenju. Če ravnotežje kljub temu otežuje izvedbo, uporabi lahko protiutež (npr. ročko ali kolut 1–4 kg) pred telesom. Če to ne zadošča, uporabi stabilno oporo rok (trakovi ali fiksen drog) in vadi počep ob opori.",
+                "range": "Če izgubljaš nadzor, zmanjša globino in uporabi stabilno tarčo (npr. škatlo ali stol), da postopno osvojiš nadzor amplitude."
             },
             "criteria": [
                 {
