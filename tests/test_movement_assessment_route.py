@@ -48,7 +48,7 @@ def test_movement_assessment_preflight_is_available(client):
     assert response.status_code == 204
 
 
-def test_program_route_requires_all_six_pattern_decisions(monkeypatch, client):
+def test_program_route_requires_at_least_one_pattern_decision(monkeypatch, client):
     import coach_routes
     from training.movement_coaching import PATTERN_DEFINITIONS
 
@@ -650,3 +650,42 @@ def test_profile_program_accepts_partial_saved_assessment_and_reports_remaining_
     assert set(body["movement_assessment_missing_patterns"]) == {
         "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge"
     }
+
+
+
+def test_program_route_accepts_one_explicitly_selected_learning_pattern(monkeypatch, client):
+    import coach_routes
+    from training.movement_coaching import build_movement_decision
+
+    decision = build_movement_decision(
+        "squat", "LEARN",
+        user_report={"status": "selected_for_learning", "intent": "learn_this_pattern"},
+        selected_learning_method="bodyweight_squat",
+        decision_reason="The user selected squat learning.",
+    )
+    captured = {}
+
+    def generate(profile, feedback=None, movement_decisions=None, camera_coordination_observed=False):
+        captured["decisions"] = movement_decisions
+        return {"sessions": [], "movement_adaptation": {"events": []}}
+
+    monkeypatch.setattr(coach_routes, "generate_program", generate)
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-token"},
+        json={
+            "movement_assessment_consent": True,
+            "profile": {
+                "goal": "functional", "experience": "beginner",
+                "equipment": ["bodyweight"], "sessions_per_week": 2,
+                "session_minutes": 45,
+            },
+            "movement_decisions": {"squat": decision},
+        },
+    )
+
+    assert response.status_code == 200
+    assert set(captured["decisions"]) == {"squat"}
+    body = response.get_json()
+    assert body["movement_assessment_applied"] is True
+    assert body["movement_assessment_stored"] is False
