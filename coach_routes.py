@@ -20,6 +20,8 @@ from coach_store import (
     check_database_connection as store_check_database_connection, storage_enabled,
     save_movement_assessment as store_save_movement_assessment,
     get_movement_assessment as store_get_movement_assessment,
+    get_learning_progress as store_get_learning_progress,
+    save_learning_progress as store_save_learning_progress,
     add_program_version as store_add_program_version,
     list_program_versions as store_list_program_versions,
     get_program_version as store_get_program_version,
@@ -3907,6 +3909,95 @@ def save_six_pattern_movement_assessment(profile_id):
         }), 200
     except MovementCoachingError as exc:
         return jsonify({"error": str(exc)}), 400
+    except ProfileNotFound:
+        return _profile_auth_error()
+    except StorageUnavailable as exc:
+        return _storage_error(exc)
+
+
+LEARNING_PROGRESS_VERSION = "guided-six-pattern-learning-v2"
+LEARNING_PROGRESS_CRITERIA = {
+    "squat": {"tempo", "balance", "foot_stability", "knee_control", "trunk_control", "tolerated_rom"},
+    "hinge": {"tempo", "hip_movement", "knee_control", "spine_control", "balance", "tolerated_rom"},
+    "lunge": {"tempo", "balance", "foot_knee_control", "pelvis_control", "trunk_control", "tolerated_rom"},
+    "horizontal_push": {"tempo", "trunk_control", "shoulder_elbow_control", "scapular_control", "wrist_hand_support", "tolerated_rom"},
+    "horizontal_pull": {"tempo", "base_stability", "trunk_position", "elbow_path", "scapular_arm_control", "tolerated_rom"},
+    "vertical_push": {"tempo", "press_path", "scapular_control", "trunk_control", "bilateral_control", "tolerated_load_rom"},
+}
+
+
+def _normalize_learning_progress(payload):
+    if not isinstance(payload, dict) or set(payload) != {"patterns"}:
+        raise ValueError("Pošlji samo objekt patterns.")
+    supplied = payload.get("patterns")
+    if not isinstance(supplied, dict) or not supplied:
+        raise ValueError("Označi vsaj en gibalni vzorec ali začasno izloči vzorec.")
+    unknown = sorted(set(supplied) - set(LEARNING_PROGRESS_CRITERIA))
+    if unknown:
+        raise ValueError("Učni napredek vsebuje neznane vzorce: " + ", ".join(unknown))
+    normalized = {}
+    for pattern, item in supplied.items():
+        if not isinstance(item, dict):
+            raise ValueError("Učni napredek za " + pattern + " ni veljaven.")
+        criteria_keys = LEARNING_PROGRESS_CRITERIA[pattern]
+        criteria = item.get("criteria")
+        if (
+            not isinstance(criteria, dict)
+            or set(criteria) != criteria_keys
+            or any(not isinstance(flag, bool) for flag in criteria.values())
+        ):
+            raise ValueError("Kontrolni seznam za " + pattern + " nima veljavne strukture.")
+        status = item.get("status")
+        if status == "excluded":
+            if (
+                set(item) != {"status", "exclusion_reason", "criteria"}
+                or item.get("exclusion_reason") not in {"pain", "limitation", "uncertain", "deferred"}
+            ):
+                raise ValueError("Razlog za izločitev vzorca " + pattern + " ni veljaven.")
+            normalized[pattern] = {
+                "status": "excluded",
+                "exclusion_reason": item["exclusion_reason"],
+                "criteria": criteria,
+            }
+        elif status in {"in_progress", "completed"}:
+            if set(item) != {"status", "criteria"}:
+                raise ValueError("Učni napredek za " + pattern + " vsebuje nepričakovana polja.")
+            if status == "completed" and not all(criteria.values()):
+                raise ValueError("Vzorec " + pattern + " ni dokončan: vsa merila morajo biti potrjena.")
+            normalized[pattern] = {"status": status, "criteria": criteria}
+        else:
+            raise ValueError("Neveljaven status učnega napredka za " + pattern + ".")
+    return normalized
+
+
+@coach_bp.route("/coach/profile/<profile_id>/learning-progress", methods=["GET", "PUT", "OPTIONS"])
+def coach_profile_learning_progress(profile_id):
+    """Persist non-health movement-learning checklists under the user's profile consent."""
+    if request.method == "OPTIONS":
+        return ("", 204)
+    if not storage_enabled():
+        return jsonify({"error": "Shranjevanje profila trenutno ni omogočeno."}), 503
+    token = _profile_token()
+    try:
+        if request.method == "GET":
+            saved = store_get_learning_progress(profile_id, token)
+            response = jsonify({"learning_progress": saved})
+            response.headers["Cache-Control"] = "no-store, private"
+            return response, 200
+
+        payload = request.get_json(silent=True)
+        try:
+            submitted = _normalize_learning_progress(payload)
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        existing = store_get_learning_progress(profile_id, token)
+        existing_patterns = existing.get("patterns", {}) if isinstance(existing, dict) else {}
+        merged = {**existing_patterns, **submitted}
+        record = {"version": LEARNING_PROGRESS_VERSION, "patterns": merged}
+        saved = store_save_learning_progress(profile_id, token, record)
+        response = jsonify({"learning_progress": saved["learning_progress"]})
+        response.headers["Cache-Control"] = "no-store, private"
+        return response, 200
     except ProfileNotFound:
         return _profile_auth_error()
     except StorageUnavailable as exc:
