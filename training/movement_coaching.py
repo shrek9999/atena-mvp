@@ -85,7 +85,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "bodyweight_squat",
                 "label": "Počep z lastno težo",
-                "description": "Izvedi pet ponovitev v tempu 3–1–1. Nato preveri šest kontrolnih točk in po potrebi uporabi pripadajočo prilagoditev.",
+                "description": "Pri vseh ponovitvah imej roke v predročenju. Izvedi pet ponovitev v tempu 3–1–1. Nato preveri šest kontrolnih točk in po potrebi uporabi pripadajočo prilagoditev.",
                 "exercise_id": "air_squat",
             },
             {
