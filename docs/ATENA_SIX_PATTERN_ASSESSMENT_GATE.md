@@ -33,8 +33,8 @@ Body must contain `movement_assessment_consent: true` and at least one known pat
 {
   "movement_assessment_consent": true,
   "movement_patterns": {
-    "squat": {"status": "comfortable"},
-    "hinge": {"status": "needs_support"}
+    "squat": {"status": "comfortable", "selected_learning_method": "reaching_counterbalance"},
+    "hinge": {"status": "needs_support", "selected_learning_method": "wall_hip_hinge"}
   }
 }
 ```
@@ -49,7 +49,7 @@ Allowed statuses and deterministic mapping:
 | `not_assessed` | `UNASSESSABLE` | Omit the pattern pending reassessment |
 | `symptoms_reported` | `UNASSESSABLE` | Omit only the affected pattern pending clarification |
 
-The service accepts a non-empty subset of known patterns and rejects unknown keys. It preserves earlier decisions when one pattern is retested. It does not infer readiness from experience level, goals, equipment or conversation history. A comfortable basic check remains LEARN until the user confirms all pattern-specific control criteria and repeatability. READY is still capped at a conservative low/moderate-loading starting variation; exercise-specific progression requires recorded training evidence. The response includes `missing_patterns` so the interface can show what remains optional.
+The service accepts a non-empty subset of known patterns and rejects unknown keys. For `comfortable` and `needs_support`, the optional `selected_learning_method` is validated against that pattern's registered methods and preserved in the saved decision. It preserves earlier decisions when one pattern is retested. It does not infer readiness from experience level, goals, equipment or conversation history. A comfortable basic check remains LEARN until the user confirms all pattern-specific control criteria and repeatability. READY is still capped at a conservative low/moderate-loading starting variation; exercise-specific progression requires recorded training evidence. The response includes `missing_patterns` so the interface can show what remains optional.
 
 ## Learning-progress endpoint
 
