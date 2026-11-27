@@ -33,7 +33,9 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                 "Po enosekundni pavzi tekoče vstani, brez odboja in brez izgube ravnotežja."
             ],
             "adaptations": {
-                "heel_lift": "Če se pete dvigujejo, poskusi stabilno podporo pod petama. To je prilagoditev izvedbe, ne diagnoza vzroka.",
+                "heel_lift": "Če se dviguje peta, najprej zmanjša globino in preveri dorzalno fleksijo gležnja. Stabilna podpora pod petama je lahko začasna prilagoditev, vendar le, če izboljša ravnotežje in ohrani oporo celotnega stopala.",
+                "forefoot_lift": "Če se dvigujejo prsti oziroma sprednji del stopala, ne dviguj pet. Ne sili v navpičen trup: dovoli naraven, nadzorovan predklon trupa, zmanjša globino ali uporabi lahko protiutež 1–4 kg v predročenju.",
+                "excessive_forward_lean": "Če je predklon pretiran ali se hrbtenica zaokroži, zmanjša globino in se vrni k učenju predklona z nevtralno hrbtenico. Po potrebi uporabi počep do stabilne tarče.",
                 "balance": "Roke ostanejo v predročenju. Če ravnotežje kljub temu otežuje izvedbo, uporabi lahko protiutež (npr. ročko ali kolut 1–4 kg) pred telesom.",
                 "range": "Če izgubljaš nadzor, zmanjša globino počepa."
             },
@@ -48,13 +50,13 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                     "id": "balance",
                     "label": "Ravnotežje",
                     "success": "Ravnotežje ohranjam nad celotnim stopalom, brez nenadzorovanega prevesa naprej ali nazaj.",
-                    "adjustment": "Roke ohrani v predročenju. Če ravnotežje še vedno otežuje izvedbo, uporabi lahko protiutež (npr. ročko ali kolut 1–4 kg) pred telesom in po potrebi zmanjša globino počepa."
+                    "adjustment": "Če se dvigujejo prsti oziroma sprednji del stopala, ne dviguj pet in ne sili v navpičen trup. Dovoli naraven, nadzorovan predklon, zmanjša globino ali uporabi lahko protiutež 1–4 kg v predročenju. Roke ostanejo pred telesom."
                 },
                 {
                     "id": "foot_stability",
                     "label": "Stabilnost stopal",
                     "success": "Stopali ostajata stabilni; peta in sprednji del stopala sta podprta, stopalni lok pa se ne seseda izrazito.",
-                    "adjustment": "Preveri udoben položaj stopal. Če se pete dvigujejo, poskusi stabilno podporo pod petama; po potrebi zmanjša globino."
+                    "adjustment": "Najprej ugotovi, kateri del stopala izgublja stik. Če se dviguje peta, zmanjša globino in preveri dorzalno fleksijo; začasna podpora pod petama je možnost le, če izboljša polno oporo. Če se dvigujejo prsti, pet ne podlagaj: dovoli naraven predklon trupa, zmanjša globino ali uporabi lahko protiutež pred telesom."
                 },
                 {
                     "id": "knee_control",
@@ -66,7 +68,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                     "id": "trunk_control",
                     "label": "Nadzor trupa",
                     "success": "Trup ohranjam čim bolj pokončen glede na svojo telesno zgradbo; gibanje trupa in medenice ostaja nadzorovano.",
-                    "adjustment": "Zmanjšaj globino. Poišči položaj, v katerem lahko ohranjaš bolj pokončen trup brez siljenja ali izgube ravnotežja."
+                    "adjustment": "Ne sili v povsem navpičen trup. Dovoli nadzorovan predklon, ki omogoča ohraniti ravnotežje in oporo celotnega stopala. Če je predklon pretiran ali se hrbtenica zaokroži, zmanjša globino in se vrni k učenju predklona z nevtralno hrbtenico oziroma uporabi stabilno tarčo."
                 },
                 {
                     "id": "tolerated_rom",
