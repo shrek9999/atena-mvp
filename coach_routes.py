@@ -66,6 +66,45 @@ LEARNING_CONTROL_CRITERIA = {
 
 LEARNING_EXCLUSION_REASONS = {"pain", "limitation", "uncertain", "deferred"}
 
+DEFAULT_LEARNING_METHODS = {
+    "squat": "bodyweight_squat",
+    "hinge": "dowel_four_point",
+    "horizontal_push": "incline_push_up",
+    "horizontal_pull": "scapular_coordination",
+    "vertical_push": "light_overhead_press",
+    "lunge": "supported_split_squat",
+}
+
+
+def _build_guided_learning_tasks(patterns=None):
+    """Return concise, frontend-ready guidance for the requested movement patterns."""
+    selected = set(patterns) if patterns is not None else set(PATTERN_DEFINITIONS)
+    tasks = []
+    for pattern, definition in PATTERN_DEFINITIONS.items():
+        if pattern not in selected:
+            continue
+        method_id = DEFAULT_LEARNING_METHODS[pattern]
+        method = next(
+            (item for item in definition.get("learning_methods", []) if item.get("id") == method_id),
+            None,
+        )
+        if method is None:
+            continue
+        task = {
+            "movement_pattern": pattern,
+            "task_id": definition["task_id"],
+            "label": definition["label"],
+            "task": definition["task"],
+            "method_id": method_id,
+            "method": method["label"],
+            "description": method["description"],
+        }
+        if pattern == "squat":
+            task["learning_protocol"] = definition["learning_protocol"]
+        tasks.append(task)
+    return tasks
+
+
 CAPACITY_CONTROL_CRITERIA = {
     "squat": {"tempo", "balance", "knee_hip_foot_control", "lumbopelvic_control", "tolerated_rom"},
     "hinge": {"tempo", "hip_hinge_coordination", "spine_control", "balance", "tolerated_rom"},
@@ -4015,6 +4054,7 @@ def coach_profile_program(profile_id):
                     "blocked": True, "learning_required": True, "assessment_required": True,
                     "missing_patterns": incomplete_patterns,
                     "message": "Učenje še ni zaključeno pri vseh šestih vzorcih. Nadaljujva tam, kjer je ostalo.",
+                    "learning_tasks": _build_guided_learning_tasks(incomplete_patterns),
                 }), 409
             if not any(item.get("status") == "completed" for item in learning_patterns.values()):
                 return jsonify({
@@ -4022,14 +4062,7 @@ def coach_profile_program(profile_id):
                     "message": "Za varen začetni program mora vsaj en gibalni vzorec ostati primeren za učenje; trenutno so vsi začasno izločeni.",
                 }), 409
             movement_decisions = {}
-            preferred_methods = {
-                "squat": "reaching_counterbalance",
-                "hinge": "dowel_four_point",
-                "horizontal_push": "incline_push_up",
-                "horizontal_pull": "scapular_coordination",
-                "vertical_push": "light_overhead_press",
-                "lunge": "supported_split_squat",
-            }
+            preferred_methods = DEFAULT_LEARNING_METHODS
             for pattern in PATTERN_DEFINITIONS:
                 methods = PATTERN_DEFINITIONS[pattern].get("learning_methods", [])
                 method = next(
@@ -4097,6 +4130,7 @@ def coach_profile_program(profile_id):
                 "blocked": True, "learning_required": True, "assessment_required": True,
                 "missing_patterns": sorted(expected_patterns),
                 "message": "Pred individualnim programom zaključi vseh šest vodenih učnih nalog.",
+                "learning_tasks": _build_guided_learning_tasks(),
             }), 409
         result = generate_program(
             profile["profile"],
