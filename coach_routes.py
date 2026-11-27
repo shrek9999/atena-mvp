@@ -2796,7 +2796,7 @@ def coach_program():
             "consent_required": True,
             "message": "Pred uporabo odgovorov o gibanju za pripravo programa moraš izrecno potrditi ločeno soglasje.",
         }), 403
-    if payload.get("current_safety_confirmation") is not True:
+    if payload.get("training_restrictions_reported") is True and payload.get("current_safety_confirmation") is not True:
         return jsonify({
             "blocked": True,
             "safety_confirmation_required": True,
