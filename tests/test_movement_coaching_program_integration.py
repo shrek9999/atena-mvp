@@ -144,6 +144,8 @@ def test_horizontal_pull_and_light_overhead_press_learning_use_real_catalogue_ex
         user_report={"status": "comfortable"},
         decision_reason="Uči se dejanskega potiska nad glavo z zelo lahkim bremenom in nadzorovano amplitudo.",
     )
+    # Simulate the currently deployed Pages mapper's legacy method ID.
+    overhead["selected_learning_method"] = "light_implement_press"
     plan = generate_program(BASE, movement_decisions={
         "horizontal_pull": pull, "vertical_push": overhead,
     })
