@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A profile-based individual programme must not be generated from training goals, experience and equipment alone. The user must first complete the six short guided movement checks. This is a coaching self-report, not a clinical screen, diagnosis or proof of objective movement quality.
+A profile-based individual programme must not be generated from training goals, experience and equipment alone. The user can complete the six short guided movement checks independently, in any order. A programme may use the patterns already assessed; it must omit patterns that are missing, unclear or not ready. This is a coaching self-report, not a clinical screen, diagnosis or proof of objective movement quality.
 
 ## Six foundational checks
 
@@ -27,18 +27,14 @@ The six-pattern result is health-related movement information. It is persisted o
 
 Header: `X-Profile-Token: <profile access token>`
 
-Body must contain `movement_assessment_consent: true` and all six pattern keys, each with one status:
+Body must contain `movement_assessment_consent: true` and at least one known pattern key. Send only the pattern being assessed or retested. The API merges it with previously saved decisions, so earlier results are preserved:
 
 ```json
 {
   "movement_assessment_consent": true,
   "movement_patterns": {
     "squat": {"status": "comfortable"},
-    "hinge": {"status": "needs_support"},
-    "horizontal_push": {"status": "uncertain"},
-    "horizontal_pull": {"status": "not_assessed"},
-    "vertical_push": {"status": "symptoms_reported"},
-    "lunge": {"status": "comfortable"}
+    "hinge": {"status": "needs_support"}
   }
 }
 ```
@@ -47,19 +43,19 @@ Allowed statuses and deterministic mapping:
 
 | User report | Structured decision | Programme behaviour |
 |---|---|---|
-| `comfortable` | `READY` | Conservative low/moderate-loading start; high-load variants require exercise-specific evidence |
+| `comfortable` | `LEARN` | Confirm repeatable pattern-specific control before a READY decision |
 | `needs_support` | `LEARN` | Select a verified learning / easier variation |
 | `uncertain` | `UNASSESSABLE` | Omit the pattern pending reassessment |
 | `not_assessed` | `UNASSESSABLE` | Omit the pattern pending reassessment |
 | `symptoms_reported` | `UNASSESSABLE` | Omit only the affected pattern pending clarification |
 
-The service rejects incomplete or unknown pattern sets. It does not infer readiness from experience level, goals, equipment or conversation history. A comfortable basic pattern check is not treated as proof of tolerance for heavy loading: READY is capped at a conservative low/moderate-loading starting variation, and exercise-specific progression still requires recorded training evidence.
+The service accepts a non-empty subset of known patterns and rejects unknown keys. It preserves earlier decisions when one pattern is retested. It does not infer readiness from experience level, goals, equipment or conversation history. A comfortable basic check remains LEARN until the user confirms all pattern-specific control criteria and repeatability. READY is still capped at a conservative low/moderate-loading starting variation; exercise-specific progression requires recorded training evidence. The response includes `missing_patterns` so the interface can show what remains optional.
 
 ## Programme gate
 
-`POST /coach/profile/{profile_id}/program` still requires the current safety confirmation. It additionally requires a saved assessment with the current six-pattern schema version and all six pattern decisions. Otherwise it returns HTTP 409 with `assessment_required=true` and the missing pattern keys.
+`POST /coach/profile/{profile_id}/program` still requires the current safety confirmation. It requires at least one saved, assessable pattern in the current schema version. Missing patterns are not a blocker: they are omitted from the programme until assessed. If no pattern is assessable, the endpoint returns HTTP 409 with `assessment_required=true`.
 
-The deterministic programme engine also omits any `UNASSESSABLE`, `uncertain` or `not_assessed` pattern. A missing assessment is never treated as READY. Symptoms are kept distinct from movement-quality observations; ATENA does not diagnose or automatically substitute a different exercise.
+Whenever structured movement decisions are supplied, the deterministic programme engine uses strict pattern scope: only explicitly assessed patterns can contribute exercises or learning tasks. `UNASSESSABLE`, `uncertain`, `not_assessed`, and entirely missing patterns are omitted. A missing assessment is never treated as READY. Symptoms are kept distinct from movement-quality observations; ATENA does not diagnose or automatically substitute a different exercise.
 
 ## Optional camera coordination contribution
 
@@ -69,4 +65,4 @@ This is not a coordination score or a general movement-quality finding. It does 
 
 ## Current implementation boundary
 
-This commit establishes and tests the backend contract and programme gate. The separate Cloudflare Pages onboarding interface still needs to present the six guided checks, submit this endpoint, and show users how to retry or skip a check. Do not expose the profile-program button as ready until that UI flow is connected and tested end to end.
+The backend contract now supports independent pattern assessment, cumulative persistence and strict per-pattern programme inclusion. The Cloudflare Pages interface must present each check independently, submit only the pattern being assessed, show the remaining optional checks, and allow retesting without erasing prior results. The profile-program action should be available once at least one pattern has a valid assessable decision.

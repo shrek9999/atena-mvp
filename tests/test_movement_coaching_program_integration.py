@@ -240,7 +240,12 @@ def test_structured_symptom_report_omits_only_affected_pattern_pending_review():
     )
     plan = generate_program(BASE, movement_decisions={"squat": decision})
     assert not _pattern_exercises(plan, "squat")
-    assert _pattern_exercises(plan, "hinge")
+    assert not _pattern_exercises(plan, "hinge")
+    assert all(
+        item["pattern"] == "squat"
+        for session in plan["sessions"]
+        for item in session["exercises"]
+    )
     event = next(event for event in plan["movement_adaptation"]["events"] if event["pattern"] == "squat")
     assert event["action"] == "omitted_pending_symptom_review"
 
@@ -504,3 +509,31 @@ def test_ready_pattern_keeps_the_same_main_exercise_across_weekly_sessions():
     ]
     assert all(len(ids) == 1 for ids in squat_ids_by_session)
     assert squat_ids_by_session[0] == squat_ids_by_session[1]
+
+
+
+def test_partial_structured_assessment_never_prescribes_unassessed_patterns():
+    ready = build_movement_decision(
+        "squat", "READY",
+        user_report={"status": "movement_controlled", "movement_control": {
+            "confirmed_by_user": True, "repeatable": True,
+            "criteria": {
+                "tempo": True, "balance": True, "knee_hip_foot_control": True,
+                "lumbopelvic_control": True, "tolerated_rom": True,
+            },
+        }},
+        decision_reason="Squat control is repeatable.",
+    )
+    ready["training_phase"] = "capacity_development"
+    plan = generate_program(BASE, movement_decisions={"squat": ready})
+
+    exercises = [
+        item for session in plan["sessions"] for item in session["exercises"]
+    ]
+    assert exercises
+    assert {item["pattern"] for item in exercises} == {"squat"}
+    assert not _pattern_exercises(plan, "hinge")
+    assert not _pattern_exercises(plan, "horizontal_push")
+    assert not _pattern_exercises(plan, "horizontal_pull")
+    assert not _pattern_exercises(plan, "vertical_push")
+    assert not _pattern_exercises(plan, "lunge")
