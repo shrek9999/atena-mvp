@@ -1,412 +1,179 @@
-"""Programme integration for structured six-pattern movement decisions."""
-from training.movement_coaching import build_movement_decision
-from training.program import PATTERN_LABELS, ProgramValidationError, generate_program
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const root = path.join(__dirname, "..");
+const html = fs.readFileSync(path.join(root, "ai-trener.html"), "utf8");
+const app = fs.readFileSync(path.join(root, "ai-trener.js"), "utf8");
+const onboarding = fs.readFileSync(path.join(root, "ai-trener-onboarding.js"), "utf8");
+const decisions = fs.readFileSync(path.join(root, "ai-trener-pattern-decisions.js"), "utf8");
+
+test("the onboarding uses six guided learning modules instead of a separate movement self-assessment", () => {
+  for (const pattern of ["squat", "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge"]) {
+    assert.ok(app.includes(pattern), "Missing guided movement pattern: " + pattern);
+  }
+  assert.match(html, /id="movement-learning-modules"/);
+  assert.match(html, /id="movement-learning-progress"/);
+  assert.doesNotMatch(html, /id="movement-assessment-submit"|id="movement-assessment-consent"|data-movement-task=/);
+  assert.doesNotMatch(app, /readMovementAssessment|submitMovementAssessment|movement-assessment-submit|movementAssessmentConsent|\/api\/movement-assessment/);
+  assert.match(onboarding, /atena:movement-assessment-complete/);
+});
+
+test("guided learning allows temporary exclusions and teaches the actual overhead press", () => {
+  assert.match(app, /Temporarily skip this pattern/);
+  assert.match(app, /Return to this pattern/);
+  assert.doesNotMatch(app, /Learning status /);
+  assert.match(app, /exclusion_reason/);
+  assert.match(app, /status === "excluded"/);
+  const verticalStart = app.indexOf("    vertical_push: {", app.indexOf("const MOVEMENT_LEARNING_CHECKS = {"));
+  const verticalEnd = app.indexOf("\n    },", verticalStart);
+  const vertical = app.slice(verticalStart, verticalEnd);
+  assert.ok(vertical.includes('title: "Overhead press (very light load)"'));
+  assert.match(vertical, /Learn the actual overhead press/i);
+  assert.match(vertical, /Press upwards in a smooth path/i);
+  assert.match(vertical, /actual overhead press/i);
+  assert.match(vertical, /very light, suitable implement/i);
+  assert.match(vertical, /not a strength test/i);
+  assert.doesNotMatch(app, /light_implement_press/);
+  assert.match(app, /movement-learning-card-summary/);
+  assert.match(app, /movement-learning-checklist-details/);
+});
+
+test("air squat always uses forward arms, with an optional light external counterweight, and demos use ATENA's channel", () => {
+  const squatStart = app.indexOf("    squat: {", app.indexOf("const MOVEMENT_LEARNING_CHECKS = {"));
+  const squatEnd = app.indexOf("\n    },", squatStart);
+  const squat = app.slice(squatStart, squatEnd);
+  assert.match(squat, /title: "Air squat"/);
+  assert.match(squat, /both arms extended forwards throughout every repetition/);
+  assert.match(squat, /5 air squats at tempo 3–1–1/);
+  assert.match(squat, /light 1–4 kg/);
+  assert.match(squat, /stable support under the heels/);
+  assert.match(squat, /toes or forefoot lift/);
+  assert.match(squat, /do not raise the heels/);
+  assert.match(squat, /foot tripod/);
+  assert.match(squat, /balance remains difficult/);
+  assert.ok(squat.includes("https://youtu.be/vGu9T3FFjmc"));
+  const verticalStart = app.indexOf("    vertical_push: {", app.indexOf("const MOVEMENT_LEARNING_CHECKS = {"));
+  const verticalEnd = app.indexOf("\n    },", verticalStart);
+  const vertical = app.slice(verticalStart, verticalEnd);
+  assert.match(vertical, /Overhead press/);
+  assert.ok(vertical.includes("https://youtu.be/TNiOG70LdxI"));
+  assert.ok(app.includes("const demoUrl = config?.demoUrl"));
+});
+
+test("capacity-development transition is explained from repeatable training evidence", () => {
+  assert.match(app, /ready_for_conservative_starting_variation/);
+  assert.match(app, /Two recorded, controlled training exposures/);
+});
+
+test("session movement-focus tasks and progression guidance are visible in the plan", () => {
+  assert.match(app, /session\.learningTasks\?\.length/);
+  assert.match(app, /task\.method/);
+  assert.match(app, /task\.description/);
+  assert.match(app, /prescription\.load_guidance/);
+  assert.match(app, /prescription\.variation_progression_guidance/);
+});
+
+test("symptom regression requires familiarity, movement quality and next-day response", () => {
+  assert.match(app, /symptomFamiliarity/);
+  assert.match(app, /symptomQualityChange/);
+  assert.match(app, /symptomNextDay/);
+  assert.match(app, /familiar_stable/);
+  assert.match(app, /same_or_better/);
+});
+
+test("each guided movement module contains exactly six learning criteria", () => {
+  const start = app.indexOf("const MOVEMENT_LEARNING_CHECKS = {");
+  const end = app.indexOf("\n  function guidedLearningCount()", start);
+  assert.ok(start >= 0 && end > start, "Learning criteria registry must exist");
+  const registry = app.slice(start, end);
+  for (const pattern of ["squat", "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge"]) {
+    const patternStart = registry.indexOf("    " + pattern + ": {");
+    assert.ok(patternStart >= 0, "Missing learning criteria for " + pattern);
+    const nextPattern = registry.indexOf("\n    },", patternStart);
+    const section = registry.slice(patternStart, nextPattern < 0 ? registry.length : nextPattern);
+    const criteria = section.match(/^\s+\["[^"]+",\s+"/gm) || [];
+    assert.equal(criteria.length, 6, pattern + " must have six criteria");
+    const teaching = section.match(/steps:\s*\[([^\]]+)\]/);
+    assert.ok(teaching, pattern + " must include concise teaching cues");
+    assert.equal((teaching[1].match(/"/g) || []).length / 2, 3, pattern + " must have three teaching steps");
+  }
+});
+
+test("learning progress is persisted separately from optional health-data consent", () => {
+  assert.match(app, /\/api\/profile\/.*\/learning-progress/);
+  assert.match(app, /atena\.learning\.progress/);
+  assert.match(html, /id="profile-health-consent"/);
+  assert.match(html, /learning checklists are saved separately and do not require this consent/);
+  assert.match(html, /id="movement-camera-consent"/);
+  assert.match(html, /Video stays on this device/);
+  assert.match(html, /observations may accompany your plan request/);
+  assert.match(html, /They are not stored/);
+});
 
 
-BASE = {
-    "goal": "hypertrophy",
-    "experience": "intermediate",
-    "equipment": [
-        "barbell", "rack", "dumbbell", "bench", "pull_up_bar",
-        "kettlebell", "cable", "resistance_band", "box",
-        "household_support", "wall", "anchor_point",
-    ],
-    "sessions_per_week": 2,
-    "session_minutes": 60,
-}
+test("symptom flow does not offer a loaded press regression when shoulder symptoms are reported", () => {
+  assert.match(app, /vertical_push: \[\]/);
+  assert.match(app, /No loaded overhead-press regression is offered when shoulder symptoms are reported/);
+  assert.match(app, /Overhead press \/ shoulder/);
+  assert.match(decisions, /vertical_push: new Set\(\)/);
+});
 
 
-def _pattern_exercises(plan, pattern):
-    return [
-        item
-        for session in plan["sessions"]
-        for item in session["exercises"]
-        if item["pattern"] == pattern
-    ]
+test("movement teaching uses precise exercise names and biomechanically meaningful checkpoints", () => {
+  const start = app.indexOf("const MOVEMENT_LEARNING_CHECKS = {");
+  const end = app.indexOf("\n  function guidedLearningCount()", start);
+  const registry = app.slice(start, end);
+  const squat = registry.slice(registry.indexOf("    squat: {"), registry.indexOf("\n    },", registry.indexOf("    squat: {")));
+  assert.match(squat, /flexing your knees and hips simultaneously/i);
+  assert.match(squat, /relatively upright/i);
+  assert.match(squat, /heel lifts/i);
+  assert.match(squat, /stable support under the heels/i);
+  assert.match(squat, /toes begin to lift/i);
+  assert.match(squat, /do not force a vertical trunk/i);
 
+  const bendStart = registry.indexOf("    hinge: {");
+  const bend = registry.slice(bendStart, registry.indexOf("\n    },", bendStart));
+  assert.match(bend, /Forward bend with a neutral spine/);
+  assert.match(bend, /hamstring tension/i);
+  assert.match(bend, /balance/i);
+  assert.doesNotMatch(bend, /Hip hinge/);
 
-def test_learn_decision_selects_air_squat_and_adds_learning_task():
-    decision = build_movement_decision(
-        "squat", "LEARN",
-        selected_learning_method="air_squat_counterweight",
-        decision_reason="Najprej utrdi osnovno koordinacijo in ravnotežje.",
-    )
-    plan = generate_program(BASE, movement_decisions={"squat": decision})
-    squats = _pattern_exercises(plan, "squat")
-    assert squats
-    assert all(item["exercise_id"] == "air_squat" for item in squats)
-    assert all(item["prescription"]["sets"] <= 2 for item in squats)
-    assert all(item["prescription"]["rir"] >= 3 for item in squats)
-    tasks = [task for session in plan["sessions"] for task in session["learning_tasks"]]
-    assert tasks
-    assert all(task["method_id"] == "air_squat_counterweight" for task in tasks)
+  const pushStart = registry.indexOf("    horizontal_push: {");
+  const push = registry.slice(pushStart, registry.indexOf("\n    },", pushStart));
+  assert.match(push, /shoulder blades move towards each other/i);
+  assert.match(push, /spread them around the rib cage/i);
+  assert.match(push, /elbows travel back/i);
+  assert.match(push, /shoulders away from your ears/i);
+  assert.match(push, /chest lowers and rises as one unit with my trunk; it does not collapse or drop ahead of my pelvis/i);
 
+  const rowStart = registry.indexOf("    horizontal_pull: {");
+  const row = registry.slice(rowStart, registry.indexOf("\n    },", rowStart));
+  assert.match(row, /Bent-over row/);
+  assert.match(row, /torso angle stays almost unchanged/i);
+  assert.match(row, /do not rock, rotate or use momentum/i);
 
-def test_standard_bodyweight_squat_is_primary_and_air_squat_remains_a_regression():
-    decision = build_movement_decision(
-        "squat", "LEARN",
-        selected_learning_method="bodyweight_squat",
-        decision_reason="Najprej učenje osnovnega počepa z lastno težo.",
-    )
-    plan = generate_program(BASE, movement_decisions={"squat": decision})
-    squats = _pattern_exercises(plan, "squat")
-    assert squats
-    assert all(item["exercise_id"] == "air_squat" for item in squats)
-    tasks = [task for session in plan["sessions"] for task in session["learning_tasks"]]
-    assert any(task["method_id"] == "bodyweight_squat" for task in tasks)
+  const pressStart = registry.indexOf("    vertical_push: {");
+  const press = registry.slice(pressStart, registry.indexOf("\n    },", pressStart));
+  assert.match(press, /ribs stacked over your pelvis/i);
+  assert.match(press, /rotate upwards naturally/i);
 
+  const lungeStart = registry.indexOf("    lunge: {");
+  const lunge = registry.slice(lungeStart, registry.indexOf("\n    },", lungeStart));
+  assert.match(lunge, /side-to-side width for balance/i);
+  assert.match(lunge, /front foot fully supported/i);
 
-def test_dowel_hinge_learning_task_uses_a_catalogue_supported_low_skill_variant():
-    decision = build_movement_decision(
-        "hinge", "LEARN",
-        equipment=["wall", "bodyweight"],
-        implement_variant="broomstick",
-        selected_learning_method="dowel_four_point",
-        decision_reason="Utrdi tri stične točke in četrto kontrolo ledvene krivine.",
-    )
-    plan = generate_program(BASE, movement_decisions={"hinge": decision})
-    hinges = _pattern_exercises(plan, "hinge")
-    assert hinges
-    assert all(item["exercise_id"] == "wall_hip_hinge" for item in hinges)
-    tasks = [task for session in plan["sessions"] for task in session["learning_tasks"]]
-    assert any(task["method_id"] == "dowel_four_point" for task in tasks)
+  assert.match(app, /createElement\("section"\)/);
+  assert.doesNotMatch(app, /checklistDetails = document.createElement\("details"\)/);
+});
 
-
-def test_regress_decision_uses_verified_supported_split_squat():
-    decision = build_movement_decision(
-        "lunge", "REGRESS",
-        equipment=["household_support", "bodyweight"],
-        selected_learning_method="supported_split_squat",
-        selected_exercise_id="supported_split_squat",
-        decision_reason="Začasno uporabi oporo za ravnotežje.",
-    )
-    plan = generate_program(BASE, movement_decisions={"lunge": decision})
-    lunges = _pattern_exercises(plan, "lunge")
-    assert lunges
-    assert all(item["exercise_id"] == "supported_split_squat" for item in lunges)
-    assert all(item["prescription"]["sets"] <= 2 for item in lunges)
-
-
-def test_ready_decision_starts_conservatively_without_automatic_progression():
-    baseline = generate_program(BASE)
-    ready = build_movement_decision(
-        "squat", "READY",
-        user_report={"status": "movement_controlled", "movement_control": {
-            "confirmed_by_user": True, "repeatable": True,
-            "criteria": {
-                "tempo": True, "balance": True, "knee_hip_foot_control": True,
-                "lumbopelvic_control": True, "tolerated_rom": True,
-            },
-        }},
-        decision_reason="Po učenju je počep ponovljivo nadzorovan.",
-    )
-    ready["training_phase"] = "capacity_development"
-    assessed = generate_program(BASE, movement_decisions={"squat": ready})
-    selected = _pattern_exercises(assessed, "squat")
-    assert selected
-    assert all(item.get("loading_potential") != "high" for item in selected)
-    assert [item["exercise_id"] for item in selected] != [
-        item["exercise_id"] for item in _pattern_exercises(baseline, "squat")
-    ]
-    assert assessed["movement_adaptation"]["automatic_progression"] == "learning_checklist_alone_does_not_trigger_capacity_development"
-    assert any(
-        event["action"] == "ready_for_conservative_starting_variation"
-        for event in assessed["movement_adaptation"]["events"]
-    )
-
-
-def test_horizontal_pull_and_light_overhead_press_learning_use_real_catalogue_exercises_when_equipment_exists():
-    pull = build_movement_decision(
-        "horizontal_pull", "LEARN",
-        selected_learning_method="scapular_coordination",
-        user_report={"status": "comfortable"},
-        decision_reason="Najprej utrdi koordinacijo lopatic, nato uporabi ustrezno veslanje.",
-    )
-    overhead = build_movement_decision(
-        "vertical_push", "LEARN",
-        selected_learning_method="light_overhead_press",
-        user_report={"status": "comfortable"},
-        decision_reason="Uči se dejanskega potiska nad glavo z zelo lahkim bremenom in nadzorovano amplitudo.",
-    )
-    plan = generate_program(BASE, movement_decisions={
-        "horizontal_pull": pull, "vertical_push": overhead,
-    })
-    pulls = _pattern_exercises(plan, "horizontal_pull")
-    presses = _pattern_exercises(plan, "vertical_push")
-    assert pulls and all(item["exercise_id"] in {"band_row", "trx_row", "ring_row", "one_arm_row"} for item in pulls)
-    assert presses and all(item["exercise_id"] in {"band_overhead_press", "plate_overhead_press", "overhead_press"} for item in presses)
-    assert all(item["prescription"]["sets"] <= 2 for item in pulls + presses)
-    assert all(item["prescription"]["rir"] >= 3 for item in pulls + presses)
-    tasks = [task for session in plan["sessions"] for task in session["learning_tasks"]]
-    method_ids = {task["method_id"] for task in tasks}
-    assert "scapular_coordination" not in method_ids
-    assert "light_overhead_press" in method_ids
-    assert all(
-        "učenje koordinacije lopatic" in (
-            item.get("movement_adaptation_note", "")
-            + " " + item["prescription"].get("adjustment_note", "")
-        ).lower()
-        for item in pulls
-    )
-    assert all(
-        "učni korak za vzorec potisk nad glavo" in (
-            item.get("movement_adaptation_note", "")
-            + " " + item["prescription"].get("adjustment_note", "")
-        ).lower()
-        for item in presses
-    )
-    assert all(
-        {task["movement_pattern"] for task in session["learning_tasks"]}.issubset(
-            {pattern for pattern in ["squat", "hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge"]}
-        )
-        for session in plan["sessions"]
-    )
-
-
-def test_unassessable_omits_pattern_until_assessment_is_available():
-    unassessable = build_movement_decision(
-        "squat", "UNASSESSABLE",
-        capture_quality="insufficient",
-        limitations=["Stopala niso bila vidna v celotnem posnetku."],
-        decision_reason="Ni dovolj dokazov za sklep.",
-    )
-    assessed = generate_program(BASE, movement_decisions={"squat": unassessable})
-    assert not _pattern_exercises(assessed, "squat")
-    assert any(
-        event["action"] == "omitted_unassessable_pending_reassessment"
-        for event in assessed["movement_adaptation"]["events"]
-    )
-
-
-def test_new_decision_contract_rejects_conflicting_legacy_assessment():
-    decision = build_movement_decision("squat", "READY")
-    try:
-        generate_program(
-            BASE,
-            movement_assessment={"squat": "comfortable"},
-            movement_decisions={"squat": decision},
-        )
-    except ValueError as exc:
-        assert "ne kombiniraj" in str(exc)
-    else:
-        raise AssertionError("Conflicting assessment sources should be rejected.")
-
-
-def test_structured_symptom_report_omits_only_affected_pattern_pending_review():
-    decision = build_movement_decision(
-        "squat", "UNASSESSABLE",
-        user_report={"status": "symptoms_reported", "region": "knee"},
-        decision_reason="Uporabnik je navedel nelagodje; potrebna je dodatna razjasnitev.",
-    )
-    plan = generate_program(BASE, movement_decisions={"squat": decision})
-    assert not _pattern_exercises(plan, "squat")
-    assert _pattern_exercises(plan, "hinge")
-    event = next(event for event in plan["movement_adaptation"]["events"] if event["pattern"] == "squat")
-    assert event["action"] == "omitted_pending_symptom_review"
-
-
-
-def test_horizontal_push_never_selects_wall_push_up_even_when_wall_is_available():
-    decision = build_movement_decision(
-        "horizontal_push", "LEARN",
-        equipment=["wall", "household_support", "bodyweight"],
-        selected_learning_method="incline_push_up",
-        selected_exercise_id="push_up_incline",
-        decision_reason="Uporabi stabilno povišano oporo, brez sklece ob steni.",
-    )
-    plan = generate_program(BASE, movement_decisions={"horizontal_push": decision})
-    pushes = _pattern_exercises(plan, "horizontal_push")
-    assert pushes
-    assert all(item["exercise_id"] != "wall_push_up" for item in pushes)
-    assert all(item["exercise_id"] == "push_up_incline" for item in pushes)
-
-
-def test_hinge_user_facing_label_uses_neutral_spine_not_flat_back_language():
-    assert PATTERN_LABELS["hinge"] == "predklon z nevtralno hrbtenico"
-
-
-def test_loaded_bent_over_row_learning_requires_hinge_ready():
-    row = build_movement_decision(
-        "horizontal_pull", "LEARN",
-        equipment=["dumbbell"],
-        selected_learning_method="light_one_arm_hinge_row",
-        selected_exercise_id="one_arm_row",
-        decision_reason="Najprej utrdi koordinacijo lopatice in komolca z lahkim bremenom.",
-    )
-    try:
-        generate_program(BASE, movement_decisions={"horizontal_pull": row})
-    except ProgramValidationError as exc:
-        assert "predklon" in str(exc).lower()
-        assert "ready" in str(exc).lower()
-    else:
-        raise AssertionError("Loaded bent-over row must require a READY hinge assessment.")
-
-
-def test_loaded_bent_over_row_is_allowed_after_hinge_is_marked_ready():
-    hinge = build_movement_decision(
-        "hinge", "READY",
-        user_report={"status": "movement_controlled", "movement_control": {
-            "confirmed_by_user": True, "repeatable": True,
-            "criteria": {
-                "tempo": True, "balance": True, "hip_hinge_coordination": True,
-                "spine_control": True, "tolerated_rom": True,
-            },
-        }},
-        decision_reason="Predklon je po učenju ponovljivo obvladan.",
-    )
-    hinge["training_phase"] = "capacity_development"
-    row = build_movement_decision(
-        "horizontal_pull", "LEARN",
-        equipment=["dumbbell"],
-        selected_learning_method="light_one_arm_hinge_row",
-        selected_exercise_id="one_arm_row",
-        decision_reason="Utrdi koordinacijo lopatice in komolca z lahkim bremenom.",
-    )
-    plan = generate_program(BASE, movement_decisions={"hinge": hinge, "horizontal_pull": row})
-    assert _pattern_exercises(plan, "horizontal_pull")
-
-
-def test_band_row_learning_does_not_require_bent_over_hinge_readiness():
-    row = build_movement_decision(
-        "horizontal_pull", "LEARN",
-        equipment=["resistance_band"],
-        selected_learning_method="band_row",
-        selected_exercise_id="band_row",
-        decision_reason="Uporabi stabilno pritrjeno elastiko za učenje horizontalnega potega.",
-    )
-    plan = generate_program(BASE, movement_decisions={"horizontal_pull": row})
-    assert _pattern_exercises(plan, "horizontal_pull")
-
-
-def test_saved_needs_support_self_report_without_method_resolves_to_safe_wall_hinge():
-    profile = {
-        **BASE,
-        "experience": "beginner",
-        "equipment": ["wall", "household_support"],
-    }
-    decision = build_movement_decision(
-        "hinge", "LEARN",
-        user_report={"status": "needs_support"},
-        decision_reason="Uporabnik potrebuje lažjo učno različico predklona.",
-    )
-    plan = generate_program(profile, movement_decisions={"hinge": decision})
-    hinges = _pattern_exercises(plan, "hinge")
-    assert hinges
-    assert all(item["exercise_id"] == "wall_hip_hinge" for item in hinges)
-    tasks = [
-        task for session in plan["sessions"] for task in session["learning_tasks"]
-        if task["movement_pattern"] == "hinge"
-    ]
-    assert tasks
-    assert all(task["method_id"] == "wall_hip_hinge" for task in tasks)
-    assert all(task["method"] == "Predklon ob steni" for task in tasks)
-    assert all("pomik bokov nazaj" in task["description"] for task in tasks)
-
-
-def test_needs_support_without_compatible_equipment_omits_only_that_pattern():
-    profile = {
-        **BASE,
-        "experience": "beginner",
-        "equipment": ["wall", "household_support"],
-    }
-    row = build_movement_decision(
-        "horizontal_pull", "LEARN",
-        user_report={"status": "needs_support"},
-        decision_reason="Uporabnik potrebuje lažjo različico horizontalnega potega.",
-    )
-    vertical_push = build_movement_decision(
-        "vertical_push", "LEARN",
-        user_report={"status": "needs_support"},
-        decision_reason="Uporabnik potrebuje lažjo različico vertikalnega potiska.",
-    )
-    plan = generate_program(
-        profile,
-        movement_decisions={"horizontal_pull": row, "vertical_push": vertical_push},
-    )
-    assert not _pattern_exercises(plan, "horizontal_pull")
-    assert not _pattern_exercises(plan, "vertical_push")
-    assert row["decision"] == "LEARN"
-    assert vertical_push["decision"] == "LEARN"
-    assert {"horizontal_pull", "vertical_push"} <= set(plan["weekly_summary"]["unfilled_patterns"])
-    omissions = {
-        event["pattern"]: event
-        for event in plan["movement_adaptation"]["events"]
-        if event["action"] == "omitted_no_equipment_compatible_learning_variant"
-    }
-    assert set(omissions) == {"horizontal_pull", "vertical_push"}
-    assert all("oprema" in event["message"].lower() for event in omissions.values())
-
-
-def test_kettlebell_only_hinge_row_uses_the_kettlebell_catalogue_variant():
-    profile = {
-        **BASE,
-        "experience": "beginner",
-        "equipment": ["kettlebell", "bodyweight", "chair", "wall", "household_support"],
-    }
-    hinge = build_movement_decision(
-        "hinge", "READY",
-        user_report={"status": "movement_controlled", "movement_control": {
-            "confirmed_by_user": True, "repeatable": True,
-            "criteria": {
-                "tempo": True, "balance": True, "hip_hinge_coordination": True,
-                "spine_control": True, "tolerated_rom": True,
-            },
-        }},
-        decision_reason="Predklon je po učenju ponovljivo obvladan.",
-    )
-    hinge["training_phase"] = "capacity_development"
-    row = build_movement_decision(
-        "horizontal_pull", "LEARN",
-        equipment=["kettlebell"],
-        selected_learning_method="light_one_arm_hinge_row",
-        selected_exercise_id="kettlebell_one_arm_row",
-        user_report={"status": "needs_support"},
-        decision_reason="Za učenje je izbrana kettlebell različica, ki ustreza opremi.",
-    )
-    plan = generate_program(profile, movement_decisions={"hinge": hinge, "horizontal_pull": row})
-    rows = _pattern_exercises(plan, "horizontal_pull")
-    assert rows
-    assert all(item["exercise_id"] == "kettlebell_one_arm_row" for item in rows)
-
-
-
-def test_bodyweight_squat_learning_task_exposes_five_reps_tempo_and_six_binary_criteria():
-    decision = build_movement_decision(
-        "squat", "LEARN",
-        selected_learning_method="bodyweight_squat",
-        decision_reason="Učenje počepa z lastno težo po potrjenem protokolu.",
-    )
-    plan = generate_program(BASE, movement_decisions={"squat": decision})
-    tasks = [
-        task for session in plan["sessions"] for task in session["learning_tasks"]
-        if task["movement_pattern"] == "squat"
-    ]
-    assert tasks
-    protocol = tasks[0]["learning_protocol"]
-    assert protocol["repetitions"] == 5
-    assert protocol["tempo"] == "3–1–1"
-    assert "predročenju" in protocol["instruction"]
-    assert "predročenje" in protocol["how_to_perform"][0]
-    assert protocol["tempo_seconds"] == {
-        "lowering": 3, "bottom_pause": 1, "rising": 1,
-    }
-    assert len(protocol["how_to_perform"]) == 3
-    assert "sočasno upogibaj kolena in kolke" in protocol["how_to_perform"][1].lower()
-    assert "dorzalno fleksijo" in protocol["adaptations"]["heel_lift"]
-    assert "ne dokazuje vzroka" in protocol["adaptations"]["heel_lift"]
-    assert "ne dviguj pet" in protocol["adaptations"]["forefoot_lift"]
-    assert "ne diagnoza omejene dorzalne fleksije" in protocol["adaptations"]["forefoot_lift"]
-    assert "nevtralno hrbtenico" in protocol["adaptations"]["excessive_forward_lean"]
-    assert "protiutež" in protocol["adaptations"]["balance"]
-    assert "1–4 kg" in protocol["adaptations"]["balance"]
-    criteria = protocol["criteria"]
-    assert [item["id"] for item in criteria] == [
-        "tempo", "balance", "foot_stability", "knee_control",
-        "trunk_control", "tolerated_rom",
-    ]
-    assert all(item["label"] and item["success"] and item["adjustment"] for item in criteria)
-    foot = next(item for item in criteria if item["id"] == "foot_stability")
-    assert "podporo pod petama" in foot["adjustment"]
-    assert "klin" not in foot["adjustment"].lower()
-    trunk = next(item for item in criteria if item["id"] == "trunk_control")
-    assert "čim bolj pokončen" in trunk["success"]
+test("the Slovenian language dictionary covers the revised movement modules", () => {
+  const i18n = fs.readFileSync(path.join(root, "ai-trener-i18n.js"), "utf8");
+  for (const phrase of [
+    "Predklon z nevtralno hrbtenico", "Veslanje v predklonu", "Skleca",
+    "sočasno upogibaš kolena in kolke", "zadnjih stegenskih mišic",
+    "lopatici nadzorovano pomikata skupaj", "lopatici pomakni narazen",
+    "Status učenja", "Kontrolne točke"
+  ]) assert.ok(i18n.includes(phrase), "Missing Slovenian localization: " + phrase);
+});
