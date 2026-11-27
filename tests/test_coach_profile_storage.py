@@ -472,7 +472,7 @@ def test_profile_program_requires_current_safety_confirmation(monkeypatch, tmp_p
     response = client.post(
         f"/coach/profile/{profile_id}/program",
         headers={"X-Profile-Token": token},
-        json={"no_current_pain_or_restrictions": False},
+        json={"current_safety_confirmation": False},
     )
     assert response.status_code == 409
     assert response.get_json()["blocked"] is True
@@ -489,7 +489,7 @@ def test_profile_program_is_blocked_until_at_least_one_pattern_is_assessable(mon
     response = client.post(
         f"/coach/profile/{profile_id}/program",
         headers={"X-Profile-Token": token},
-        json={"no_current_pain_or_restrictions": True},
+        json={"current_safety_confirmation": True},
     )
     assert response.status_code == 409
     data = response.get_json()
@@ -688,7 +688,7 @@ def test_profile_program_keeps_global_feedback_out_of_generator_and_exposes_adap
     response = client.post(
         f"/coach/profile/{profile_id}/program",
         headers={"X-Profile-Token": token},
-        json={"no_current_pain_or_restrictions": True},
+        json={"current_safety_confirmation": True},
     )
     assert response.status_code == 200
     assert captured["profile"]["goal"] == "hypertrophy"
@@ -730,7 +730,7 @@ def test_profile_program_holds_progression_after_logged_discomfort_and_fresh_saf
     response = client.post(
         f"/coach/profile/{profile_id}/program",
         headers={"X-Profile-Token": token},
-        json={"no_current_pain_or_restrictions": True},
+        json={"current_safety_confirmation": True},
     )
     assert response.status_code == 200
     data = response.get_json()
@@ -886,6 +886,6 @@ def test_profile_next_program_is_blocked_when_storage_is_paused(monkeypatch, tmp
     response = client.post(
         f"/coach/profile/{profile_id}/program",
         headers={"X-Profile-Token": token},
-        json={"no_current_pain_or_restrictions": True},
+        json={"current_safety_confirmation": True},
     )
     assert response.status_code == 503
