@@ -779,6 +779,7 @@ def test_initial_guided_learning_payload_uses_bodyweight_squat_and_exposes_coach
     squat = tasks[0]
     assert squat["method_id"] == "bodyweight_squat"
     assert squat["method"] == "Počep z lastno težo"
+    assert "predročenju" in squat["description"]
     assert squat["learning_protocol"]["repetitions"] == 5
     assert squat["learning_protocol"]["tempo"] == "3–1–1"
     assert len(squat["learning_protocol"]["criteria"]) == 6
