@@ -3771,11 +3771,18 @@ def save_six_pattern_movement_assessment(profile_id):
             if status == "symptoms_reported":
                 allowed_keys |= {"regression_test", "selected_exercise_id", "acute_warning_signs"}
             elif status == "comfortable":
-                allowed_keys.add("movement_control")
+                allowed_keys |= {"movement_control", "selected_learning_method"}
+            elif status == "needs_support":
+                allowed_keys.add("selected_learning_method")
             if set(value) - allowed_keys:
                 return jsonify({"error": f"Vzorec {pattern} vsebuje nepričakovana polja."}), 400
             user_report = {"status": status}
             selected_exercise_id = value.get("selected_exercise_id")
+            selected_learning_method = value.get("selected_learning_method")
+            if selected_learning_method is not None and selected_learning_method not in {
+                method["id"] for method in PATTERN_DEFINITIONS[pattern]["learning_methods"]
+            }:
+                return jsonify({"error": f"Neveljavna učna metoda za vzorec {pattern}."}), 400
             decision = status_to_decision[status]
 
             # A comfortable self-report remains LEARN. READY is persisted only
@@ -3876,6 +3883,7 @@ def save_six_pattern_movement_assessment(profile_id):
                 pattern,
                 decision,
                 user_report=user_report,
+                selected_learning_method=selected_learning_method,
                 selected_exercise_id=selected_exercise_id,
                 decision_reason=reason,
             )
