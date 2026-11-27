@@ -1,72 +1,90 @@
-# ATENA – six-pattern assessment gate (pilot API)
+# ATENA — six guided movement patterns and selective programme gate
 
 ## Purpose
 
-A profile-based individual programme must not be generated from training goals, experience and equipment alone. The user must first complete the six short guided movement checks. This is a coaching self-report, not a clinical screen, diagnosis or proof of objective movement quality.
+ATENA offers six foundational movement-learning tasks before prescribing loaded work for those patterns. The user does **not** have to complete all six before receiving a first programme. They may begin with one pattern or any selected subset; untouched patterns wait.
 
-## Six foundational checks
+A user-confirmed checklist records completion of the learning task. It does not certify objective technique mastery or automatically mark a pattern READY for high-load training.
 
-| API pattern key | User-facing movement |
+## Six available learning tasks
+
+| API pattern key | Learning / movement test |
 |---|---|
-| `squat` | Počep |
-| `hinge` | Predklon v kolkih (hip hinge) |
-| `horizontal_push` | Horizontalni potisk |
-| `horizontal_pull` | Horizontalni poteg / veslanje |
-| `vertical_push` | Vertikalni potisk |
-| `lunge` | Izpadni korak |
+| \`squat\` | Air squat |
+| \`hinge\` | Hip hinge with dowel |
+| \`horizontal_push\` | Incline or floor push-up, as appropriate |
+| \`horizontal_pull\` | Bent-over row / scapular coordination |
+| \`vertical_push\` | Actual overhead press with a very light, equipment-appropriate load |
+| \`lunge\` | Supported reverse lunge / split squat |
 
-A pull-up / zgib is a **vertical pull**, not a horizontal row. Vertical pull remains a supplementary programming pattern and is not one of these six assessment checks.
+Vertical pull remains a separate supplementary training pattern, not one of the six learning or camera tasks.
 
-## Consent and persistence
+**Vertical push:** the learning task and movement test is the actual overhead press with a very light load. The unloaded overhead arm raise is only an optional camera observation and never replaces the press task.
 
-The six-pattern result is health-related movement information. It is persisted only when the profile has separate `health_data_consent=true`. With consent withdrawn, the existing storage layer erases the movement assessment and programme decision history.
+## Selective learning contract
 
-## Save endpoint
+- Each task contains six pattern-specific control criteria.
+- Progress can be saved for a subset of patterns. Untouched patterns are omitted from the saved progress object.
+- A partially completed checklist remains \`in_progress\`; it can be saved and resumed but is not yet eligible for the current programme.
+- A completed checklist (\`completed\`) can be included in a programme.
+- A user may explicitly mark a started pattern as temporarily excluded (\`excluded\` with a reason).
+- The first programme requires at least one completed selected pattern. It includes only completed selected patterns; explicitly excluded patterns are omitted.
+- Any foundational pattern absent from the request remains unassessed. The backend treats it as \`UNASSESSABLE\` for this programme and never selects its exercises from a generic goal template.
+- The keys in \`learning_progress.patterns\` and \`movement_decisions\` must match exactly. Unknown or mismatched keys are rejected.
 
-`PUT /coach/profile/{profile_id}/movement-assessment`
+## Endpoints
 
-Header: `X-Profile-Token: <profile access token>`
+### Save or restore learning progress
 
-Body must contain `movement_assessment_consent: true` and all six pattern keys, each with one status:
+\`GET /coach/profile/{profile_id}/learning-progress\`
 
-```json
+\`PUT /coach/profile/{profile_id}/learning-progress\`
+
+Header: \`X-Profile-Token: <profile access token>\`
+
+The body contains only the patterns the user has started or explicitly excluded:
+
+\`\`\`json
 {
-  "movement_assessment_consent": true,
-  "movement_patterns": {
-    "squat": {"status": "comfortable"},
-    "hinge": {"status": "needs_support"},
-    "horizontal_push": {"status": "uncertain"},
-    "horizontal_pull": {"status": "not_assessed"},
-    "vertical_push": {"status": "symptoms_reported"},
-    "lunge": {"status": "comfortable"}
+  "patterns": {
+    "squat": {
+      "status": "in_progress",
+      "criteria": {
+        "tempo": true,
+        "balance": false
+      }
+    }
   }
 }
-```
+\`\`\`
 
-Allowed statuses and deterministic mapping:
+The example is illustrative: the actual criteria object must contain all six criterion IDs for that movement pattern, each with a boolean value. Partial progress is valid for saving. The storage endpoint stores only the supplied patterns and does not require optional health-data consent.
 
-| User report | Structured decision | Programme behaviour |
-|---|---|---|
-| `comfortable` | `READY` | Conservative low/moderate-loading start; high-load variants require exercise-specific evidence |
-| `needs_support` | `LEARN` | Select a verified learning / easier variation |
-| `uncertain` | `UNASSESSABLE` | Omit the pattern pending reassessment |
-| `not_assessed` | `UNASSESSABLE` | Omit the pattern pending reassessment |
-| `symptoms_reported` | `UNASSESSABLE` | Omit only the affected pattern pending clarification |
+### Generate programme
 
-The service rejects incomplete or unknown pattern sets. It does not infer readiness from experience level, goals, equipment or conversation history. A comfortable basic pattern check is not treated as proof of tolerance for heavy loading: READY is capped at a conservative low/moderate-loading starting variation, and exercise-specific progression still requires recorded training evidence.
+\`POST /coach/program\`
 
-## Programme gate
+The request includes:
+- the structured training profile;
+- the existing current-safety confirmation and explicit programme-use consent;
+- \`learning_progress.patterns\` containing only completed or explicitly excluded selected patterns;
+- \`movement_decisions\` with exactly the same pattern keys;
+- optional camera observations, separately consented.
 
-`POST /coach/profile/{profile_id}/program` still requires the current safety confirmation. It additionally requires a saved assessment with the current six-pattern schema version and all six pattern decisions. Otherwise it returns HTTP 409 with `assessment_required=true` and the missing pattern keys.
+At least one selected pattern must be completed and eligible for learning / a conservative starting variation. In-progress and untouched patterns are not included in this request. If no eligible pattern exists, the backend returns a clear validation response.
 
-The deterministic programme engine also omits any `UNASSESSABLE`, `uncertain` or `not_assessed` pattern. A missing assessment is never treated as READY. Symptoms are kept distinct from movement-quality observations; ATENA does not diagnose or automatically substitute a different exercise.
+## Decision and loading boundaries
 
-## Optional camera coordination contribution
+- A completed checklist remains a user confirmation, not objective evidence of mastery.
+- Selected patterns begin with verified learning or conservative starter variations.
+- A camera observation cannot determine safety, diagnose, certify mastery, or grant permission for external load.
+- New or worsening symptoms remain a separate safety concern and are not converted into automatic progression.
+- Never replace an unsuitable pattern with a harder exercise from a different pattern.
 
-The browser camera may contribute only a positive, low-dose skill emphasis. The backend accepts the coordination proxy as usable for this purpose only when status is `observed`, quality is `adequate`, at least six frames are valid, both cross-body directions are represented, and at least two alternating transitions are observed. When all conditions are met, the programme may add one 10-second set of the beginner-level, bodyweight **controlled lateral step** to the warm-up.
+## Optional camera observation
 
-This is not a coordination score or a general movement-quality finding. It does not establish readiness, safety, absence of symptoms, or competence in other tasks. It never changes main exercise selection, load, progression, or the six self-reported movement decisions. If the task is skipped, unclear, insufficient-quality or not observed, no camera-based change is made and no deficit is inferred. Camera data remains transient and is not stored or uploaded.
+The camera may observe broad features from nine views across six tests. Video and frames remain on the device; transmitted observations are transient technical context only. The camera cannot replace a learning task, including the overhead press.
 
-## Current implementation boundary
+## Retired contract
 
-This commit establishes and tests the backend contract and programme gate. The separate Cloudflare Pages onboarding interface still needs to present the six guided checks, submit this endpoint, and show users how to retry or skip a check. Do not expose the profile-program button as ready until that UI flow is connected and tested end to end.
+The standalone \`/coach/movement-assessment\` and profile \`/coach/profile/{profile_id}/movement-assessment\` routes are retired. Use the guided \`learning-progress\` route for learning progress and send current movement decisions only with the programme request.

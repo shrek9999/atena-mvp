@@ -803,6 +803,24 @@ def generate_program(
                 "learning_only": bool(method and method.get("learning_only") is True),
                 **({"omission_reason": omission_reason} if omission_reason else {}),
             }
+    if movement_decisions is not None:
+        for pattern in PATTERN_DEFINITIONS:
+            if pattern in movement_decisions_by_pattern:
+                continue
+            movement_decisions_by_pattern[pattern] = {
+                "movement_pattern": pattern,
+                "decision": "UNASSESSABLE",
+                "selected_learning_method": None,
+                "resolved_exercise_id": None,
+                "learning_only": False,
+                "user_report": {"status": "not_assessed"},
+                "confidence": "not_assessed",
+                "capture_quality": "not_applicable",
+                "observations": {"source": "not_selected_for_current_programme", "status": "not_assessed"},
+                "decision_reason": "The user did not select this pattern for the current programme.",
+                "omission_reason": "not_selected_for_current_programme",
+                "is_diagnosis": False,
+            }
     reduce_load = bool(response and (
         response["difficulty"] == "hard" or not response["completed"] or response["recovery"] == "poor"
     ))
@@ -1079,6 +1097,12 @@ def generate_program(
             movement_status = movement_status_by_pattern.get(pattern)
             affected_tasks = movement_tasks_by_pattern.get(pattern, [])
             structured_decision = movement_decisions_by_pattern.get(pattern)
+            if (
+                structured_decision
+                and structured_decision.get("omission_reason") == "not_selected_for_current_programme"
+            ):
+                # An untouched pattern is deliberately absent, not a negative movement finding.
+                continue
             early_symptom_report = (
                 structured_decision.get("user_report", {})
                 if structured_decision and isinstance(structured_decision.get("user_report"), dict)

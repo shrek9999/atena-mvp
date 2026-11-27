@@ -172,15 +172,23 @@ CAPACITY_CONTROL_CRITERIA = {
     "lunge": {"tempo", "balance", "pelvis_hip_knee_foot_control", "trunk_control", "tolerated_rom"},
 }
 
-def _validate_learning_progress_patterns(patterns, *, allow_in_progress=False):
+def _validate_learning_progress_patterns(
+    patterns, *, allow_in_progress=False, allow_partial=False
+):
+    """Validate only supplied patterns; absent patterns remain unassessed."""
     required_patterns = set(LEARNING_CONTROL_CRITERIA)
-    if not isinstance(patterns, dict) or set(patterns) != required_patterns:
-        if not isinstance(patterns, dict):
-            return None, sorted(required_patterns)
-        return None, sorted((required_patterns - set(patterns)) | (set(patterns) - required_patterns))
+    if not isinstance(patterns, dict):
+        return None, sorted(required_patterns)
+    supplied_patterns = set(patterns)
+    unknown_patterns = supplied_patterns - required_patterns
+    missing_patterns = required_patterns - supplied_patterns
+    if unknown_patterns or (missing_patterns and not allow_partial):
+        return None, sorted(unknown_patterns | missing_patterns)
+
     normalized = {}
     incomplete = []
-    for pattern, required in LEARNING_CONTROL_CRITERIA.items():
+    for pattern in sorted(supplied_patterns):
+        required = LEARNING_CONTROL_CRITERIA[pattern]
         item = patterns[pattern]
         if not isinstance(item, dict):
             incomplete.append(pattern)
@@ -227,7 +235,6 @@ def _validate_learning_progress_patterns(patterns, *, allow_in_progress=False):
             "criteria": dict(criteria),
         }
     return (normalized if not incomplete else None), incomplete
-
 
 INITIAL_SAFETY_QUESTION_SL = (
     "Ali imaš trenutno kakršno koli bolečino, poškodbo, gibalno omejitev ali "
@@ -2967,7 +2974,7 @@ def coach_program():
             "message": "Pred individualnim programom zaključi učenje ali začasno izloči vsak vzorec z razlogom.",
         }), 409
     learning_patterns, incomplete_learning = _validate_learning_progress_patterns(
-        learning_progress.get("patterns")
+        learning_progress.get("patterns"), allow_partial=True
     )
     if incomplete_learning:
         return jsonify({
@@ -2977,7 +2984,7 @@ def coach_program():
             "message": "Pri vsakem vzorcu zaključi učenje ali ga začasno izloči z navedbo razloga.",
         }), 409
     learning_progress = {**learning_progress, "patterns": learning_patterns}
-    expected_patterns = set(PATTERN_DEFINITIONS)
+    expected_patterns = set(learning_patterns)
     movement_decisions = payload.get("movement_decisions")
     if not isinstance(movement_decisions, dict) or set(movement_decisions) != expected_patterns:
         supplied_patterns = set(movement_decisions) if isinstance(movement_decisions, dict) else set()
@@ -2988,7 +2995,7 @@ def coach_program():
             "assessment_required": True,
             "missing_patterns": missing_patterns,
             "unknown_patterns": unknown_patterns,
-            "message": "Pred individualnim programom odgovori na vseh šest osnovnih gibalnih vzorcev. Če naloge ne moreš ali ne želiš oceniti, izberi »Neocenjeno – preskoči«; ta vzorec bo izpuščen iz programa.",
+            "message": "Odločitve morajo ustrezati izbranim vzorcem v učnem napredku. Neizbrani vzorci ostanejo neocenjeni in niso vključeni v program.",
         }), 409
     valid_report_statuses = {"selected_for_learning", "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed"}
     invalid_report_patterns = []
@@ -3877,9 +3884,9 @@ def coach_profile_learning_progress(profile_id):
             }), 200
         payload = request.get_json(silent=True)
         if not isinstance(payload, dict) or set(payload) != {"patterns"}:
-            return jsonify({"error": "Pošlji šest učnih vzorcev."}), 400
+            return jsonify({"error": "Pošlji veljaven napredek učnih vzorcev."}), 400
         normalized_patterns, invalid_patterns = _validate_learning_progress_patterns(
-            payload["patterns"], allow_in_progress=True
+            payload["patterns"], allow_in_progress=True, allow_partial=True
         )
         if invalid_patterns:
             return jsonify({

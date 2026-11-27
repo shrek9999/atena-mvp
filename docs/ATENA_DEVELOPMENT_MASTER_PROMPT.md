@@ -35,6 +35,14 @@ Never confuse:
 - Foot-assisted vertical pull-up: torso upright/vertical under a low bar, hips and knees flexed, feet on floor slightly forward as if seated; feet assist the vertical pull. Never call or demonstrate it as an inverted row.
 - Band-assisted pull-up: a separate vertical-pull variation.
 
+## Selective guided learning and programme gate
+
+- All six foundational learning tasks are available, but a user may begin with any one or any selected subset. Do not require the user to click “skip” on untouched patterns.
+- A pattern is eligible for the current programme only after its six user-confirmed learning criteria are complete, or when the user explicitly excludes a pattern. A partly completed pattern remains in progress and is not used in the current programme.
+- The first programme may contain only the completed selected patterns. Patterns absent from the request remain unassessed and must be omitted from exercise selection; never fill them from a generic goal template.
+- The frontend sends matching sparse `learning_progress.patterns` and `movement_decisions` keys. The backend rejects mismatched keys and internally treats absent foundational patterns as unassessed.
+- Saved learning progress may be partial and is separate from optional health-data storage. A checklist is user-confirmed learning only, never objective technique certification or automatic READY status.
+
 ## Non-negotiable coaching details
 **Hinge:** teach with a dowel: three contacts (back of head, thoracic spine, sacral/tailbone region) plus a fourth hand/control point at the lumbar curve. Preserve the individual's natural neutral lumbar curve; do not force the back flat. Camera cannot verify actual dowel contact.
 

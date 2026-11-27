@@ -96,6 +96,95 @@ def test_program_route_requires_all_six_guided_learning_tasks(client, monkeypatc
     assert set(body["missing_patterns"]) == set(PATTERN_DEFINITIONS)
 
 
+def test_program_route_accepts_only_selected_completed_patterns(client, monkeypatch):
+    import coach_routes
+
+    captured = {}
+
+    def fake_generate_program(profile, feedback=None, movement_assessment=None, movement_decisions=None, camera_coordination_observed=False):
+        captured["decisions"] = movement_decisions
+        return {
+            "goal": "functional",
+            "sessions": [{"session": 1, "exercises": [], "learning_tasks": []}],
+            "movement_adaptation": {
+                "source": "guided_six_pattern_learning",
+                "is_diagnosis": False,
+                "events": [],
+                "summary": None,
+            },
+        }
+
+    monkeypatch.setattr(coach_routes, "generate_program", fake_generate_program)
+    payload = _program_payload()
+    squat_criteria = {key: True for key in LEARNING_CONTROL_CRITERIA["squat"]}
+    payload["learning_progress"] = {"patterns": {"squat": {"criteria": squat_criteria}}}
+    payload["movement_decisions"] = {"squat": _decisions()["squat"]}
+
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-token"},
+        json=payload,
+    )
+
+    assert response.status_code == 200
+    assert set(captured["decisions"]) == {"squat"}
+    assert response.get_json()["guided_learning_applied"] is True
+
+
+def test_program_route_requires_learning_decisions_to_match_selected_patterns(client, monkeypatch):
+    import coach_routes
+
+    def should_not_run(*args, **kwargs):
+        raise AssertionError("Mismatched learning and decision patterns must be rejected.")
+
+    monkeypatch.setattr(coach_routes, "generate_program", should_not_run)
+    payload = _program_payload()
+    payload["learning_progress"] = {
+        "patterns": {
+            "squat": {"criteria": {key: True for key in LEARNING_CONTROL_CRITERIA["squat"]}}
+        }
+    }
+    payload["movement_decisions"] = {"hinge": _decisions()["hinge"]}
+
+    response = client.post(
+        "/coach/program",
+        headers={"X-Pilot-Token": "test-only-token"},
+        json=payload,
+    )
+
+    assert response.status_code == 409
+    body = response.get_json()
+    assert body["missing_patterns"] == ["squat"]
+    assert body["unknown_patterns"] == ["hinge"]
+
+
+def test_profile_learning_progress_saves_only_the_patterns_the_user_started(client, monkeypatch):
+    import coach_routes
+
+    captured = {}
+
+    def fake_save(profile_id, token, progress):
+        captured["profile_id"] = profile_id
+        captured["token"] = token
+        captured["progress"] = progress
+        return {"learning_progress": progress, "updated_at": "2026-11-27T00:00:00Z"}
+
+    monkeypatch.setattr(coach_routes, "store_save_learning_progress", fake_save)
+    criteria = {key: False for key in LEARNING_CONTROL_CRITERIA["squat"]}
+    criteria["tempo"] = True
+    response = client.put(
+        "/coach/profile/test-profile/learning-progress",
+        headers={"X-Profile-Token": "test-only-profile-token"},
+        json={"patterns": {"squat": {"status": "in_progress", "criteria": criteria}}},
+    )
+
+    assert response.status_code == 200
+    assert set(captured["progress"]["patterns"]) == {"squat"}
+    assert captured["progress"]["patterns"]["squat"]["status"] == "in_progress"
+    assert captured["progress"]["patterns"]["squat"]["criteria_acknowledged"]["tempo"] is True
+    assert captured["progress"]["patterns"]["squat"]["learning_completed_by_user"] is False
+
+
 def test_program_route_blocks_incomplete_learning_checklists(client, monkeypatch):
     import coach_routes
 

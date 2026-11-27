@@ -42,6 +42,22 @@ def test_learn_decision_selects_air_squat_and_adds_learning_task():
     assert all(task["method_id"] == "air_squat_counterweight" for task in tasks)
 
 
+def test_unselected_core_patterns_remain_unassessed_and_are_omitted_from_the_programme():
+    squat = build_movement_decision(
+        "squat", "LEARN",
+        selected_learning_method="bodyweight_squat",
+        decision_reason="The user selected squat learning only.",
+    )
+    plan = generate_program(BASE, movement_decisions={"squat": squat})
+
+    assert _pattern_exercises(plan, "squat")
+    for pattern in ("hinge", "horizontal_push", "horizontal_pull", "vertical_push", "lunge"):
+        assert not _pattern_exercises(plan, pattern), pattern
+        decision = plan["movement_adaptation"]["structured_decisions"][pattern]
+        assert decision["decision"] == "UNASSESSABLE"
+        assert decision["omission_reason"] == "not_selected_for_current_programme"
+
+
 def test_standard_bodyweight_squat_is_primary_and_air_squat_remains_a_regression():
     decision = build_movement_decision(
         "squat", "LEARN",
