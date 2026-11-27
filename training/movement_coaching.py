@@ -26,7 +26,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             "repetitions": 5,
             "tempo": "3–1–1",
             "tempo_seconds": {"lowering": 3, "bottom_pause": 1, "rising": 1},
-            "instruction": "Pri vseh ponovitvah imej roke v predročenju. Ohranij pritisk prek trikotnika stopala (peta, baza palca, baza mezinca). Trup naj bo čim bolj pokončen, vendar ne na račun ravnotežja ali opore celotnega stopala; dovoli naraven predklon. Izvedi pet ponovitev v tempu 3–1–1.",
+            "instruction": "Pri vseh ponovitvah imej roke v predročenju. Ohranjaj pritisk prek trikotnika stopala (peta, baza palca, baza mezinca). Trup naj bo čim bolj pokončen, vendar ne na račun ravnotežja ali opore celotnega stopala; dovoli naraven predklon. Izvedi pet ponovitev v tempu 3–1–1.",
             "how_to_perform": [
                 "Stopali postavi v udoben položaj, roke iztegni v predročenje in ohranjaj stik trikotnika stopala: pete, baze palca in baze mezinca.",
                 "Sočasno upogibaj kolena in kolke ter se nadzorovano spuščaj. Kolena naj sledijo smeri stopal. Trup ohranjaj nadzorovan in razmeroma pokončen, vendar ne sili v navpičen položaj, če se s tem dvigujejo prsti ali teža uhaja nazaj.",
