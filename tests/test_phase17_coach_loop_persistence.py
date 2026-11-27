@@ -97,7 +97,7 @@ def test_saved_movement_assessment_is_used_when_generating_next_programme(monkey
     response = client.post(
         f"/coach/profile/{profile_id}/program",
         headers={"X-Profile-Token": token},
-        json={"no_current_pain_or_restrictions": True},
+        json={"current_safety_confirmation": True},
     )
     assert response.status_code == 200
     assert called["movement_assessment"] is None
@@ -112,7 +112,7 @@ def test_saved_profile_programme_blocks_when_all_patterns_are_unassessable(monke
     response = client.post(
         f"/coach/profile/{profile_id}/program",
         headers={"X-Profile-Token": token},
-        json={"no_current_pain_or_restrictions": True},
+        json={"current_safety_confirmation": True},
     )
     assert response.status_code == 409
     body = response.get_json()
@@ -135,7 +135,7 @@ def test_programme_versions_are_listed_and_included_in_export(monkeypatch, tmp_p
     generated = client.post(
         f"/coach/profile/{profile_id}/program",
         headers={"X-Profile-Token": token},
-        json={"no_current_pain_or_restrictions": True},
+        json={"current_safety_confirmation": True},
     )
     assert generated.status_code == 200
     version_id = generated.get_json()["program_version_id"]
@@ -328,7 +328,7 @@ def test_five_persona_saved_profile_training_feedback_cycle(monkeypatch, tmp_pat
         first_response = client.post(
             f"/coach/profile/{profile_id}/program",
             headers=headers,
-            json={"no_current_pain_or_restrictions": True},
+            json={"current_safety_confirmation": True},
         )
         assert first_response.status_code == 200, (persona_name, first_response.get_json())
         first = first_response.get_json()
@@ -385,7 +385,7 @@ def test_five_persona_saved_profile_training_feedback_cycle(monkeypatch, tmp_pat
         next_response = client.post(
             f"/coach/profile/{profile_id}/program",
             headers=headers,
-            json={"no_current_pain_or_restrictions": True},
+            json={"current_safety_confirmation": True},
         )
         assert next_response.status_code == 200, (persona_name, next_response.get_json())
         second = next_response.get_json()
