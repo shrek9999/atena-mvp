@@ -19,7 +19,7 @@ def _six_pattern_decisions():
     from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
 
     methods = {
-        "squat": "reaching_counterbalance",
+        "squat": "air_squat_counterweight",
         "hinge": "dowel_four_point",
         "horizontal_push": "incline_push_up",
         "horizontal_pull": "scapular_coordination",
@@ -592,7 +592,7 @@ def test_learn_decision_creates_learning_task_not_a_loaded_work_set(monkeypatch)
         **build_movement_decision(
             "squat",
             "LEARN",
-            selected_learning_method="reaching_counterbalance",
+            selected_learning_method="air_squat_counterweight",
             user_report={"status": "comfortable"},
             decision_reason="Prijetna samoocena še ne potrdi motoričnega nadzora.",
         ),
@@ -609,7 +609,7 @@ def test_learn_decision_creates_learning_task_not_a_loaded_work_set(monkeypatch)
         movement_decisions=decisions,
     )
 
-    safe_squat_starters = {"supported_squat", "chair_sit_to_stand", "reaching_squat"}
+    safe_squat_starters = {"supported_squat", "chair_sit_to_stand", "air_squat"}
     for session in program["sessions"]:
         squat_exercises = [item for item in session["exercises"] if item["pattern"] == "squat"]
         assert all(item["exercise_id"] in safe_squat_starters for item in squat_exercises)
@@ -618,7 +618,7 @@ def test_learn_decision_creates_learning_task_not_a_loaded_work_set(monkeypatch)
             if task["movement_pattern"] == "squat"
         ]
         assert len(squat_tasks) == 1
-        assert squat_tasks[0]["method_id"] == "reaching_counterbalance"
+        assert squat_tasks[0]["method_id"] == "air_squat_counterweight"
         assert squat_tasks[0]["exercise_id"] in safe_squat_starters
         assert squat_tasks[0]["decision"] == "LEARN"
 
@@ -627,7 +627,7 @@ def test_unavailable_pull_and_overhead_press_are_omitted_without_inventing_equip
     from training.movement_coaching import PATTERN_DEFINITIONS, build_movement_decision
 
     methods = {
-        "squat": "reaching_counterbalance",
+        "squat": "air_squat_counterweight",
         "hinge": "dowel_four_point",
         "horizontal_push": "incline_push_up",
         "horizontal_pull": "scapular_coordination",
