@@ -25,24 +25,24 @@ def _pattern_exercises(plan, pattern):
     ]
 
 
-def test_learn_decision_selects_reaching_squat_and_adds_learning_task():
+def test_learn_decision_selects_air_squat_and_adds_learning_task():
     decision = build_movement_decision(
         "squat", "LEARN",
-        selected_learning_method="reaching_counterbalance",
+        selected_learning_method="air_squat_counterweight",
         decision_reason="Najprej utrdi osnovno koordinacijo in ravnotežje.",
     )
     plan = generate_program(BASE, movement_decisions={"squat": decision})
     squats = _pattern_exercises(plan, "squat")
     assert squats
-    assert all(item["exercise_id"] == "reaching_squat" for item in squats)
+    assert all(item["exercise_id"] == "air_squat" for item in squats)
     assert all(item["prescription"]["sets"] <= 2 for item in squats)
     assert all(item["prescription"]["rir"] >= 3 for item in squats)
     tasks = [task for session in plan["sessions"] for task in session["learning_tasks"]]
     assert tasks
-    assert all(task["method_id"] == "reaching_counterbalance" for task in tasks)
+    assert all(task["method_id"] == "air_squat_counterweight" for task in tasks)
 
 
-def test_standard_bodyweight_squat_is_primary_and_reaching_squat_remains_a_regression():
+def test_standard_bodyweight_squat_is_primary_and_air_squat_remains_a_regression():
     decision = build_movement_decision(
         "squat", "LEARN",
         selected_learning_method="bodyweight_squat",
