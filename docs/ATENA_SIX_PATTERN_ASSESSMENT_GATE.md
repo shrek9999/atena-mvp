@@ -62,7 +62,7 @@ This keeps the learning task distinct from movement assessment: ticking checklis
 
 ## Programme gate
 
-`POST /coach/profile/{profile_id}/program` still requires the current safety confirmation. It requires at least one saved, assessable pattern in the current schema version. Missing patterns are not a blocker: they are omitted from the programme until assessed. If no pattern is assessable, the endpoint returns HTTP 409 with `assessment_required=true`.
+Both `POST /coach/program` and `POST /coach/profile/{profile_id}/program` require `current_safety_confirmation=true`. For an initial programme, a profile with a reported restriction must receive an explicit confirmation; no new, severe, worsening or unexplained symptom, recent injury or important restriction requiring professional assessment may be present. Stable, previously assessed discomfort can proceed through pattern-specific assessment and regression. The profile-program endpoint requires at least one saved, assessable pattern in the current schema version. Missing patterns are not a blocker: they are omitted from the programme until assessed. If no pattern is assessable, the endpoint returns HTTP 409 with `assessment_required=true`.
 
 Whenever structured movement decisions are supplied, the deterministic programme engine uses strict pattern scope: only explicitly assessed patterns can contribute exercises or learning tasks. `UNASSESSABLE`, `uncertain`, `not_assessed`, and entirely missing patterns are omitted. A missing assessment is never treated as READY. Symptoms are kept distinct from movement-quality observations; ATENA does not diagnose or automatically substitute a different exercise.
 
