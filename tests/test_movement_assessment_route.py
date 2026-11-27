@@ -640,7 +640,7 @@ def test_profile_program_accepts_partial_saved_assessment_and_reports_remaining_
     response = client.post(
         "/coach/profile/test-profile/program",
         headers={"X-Profile-Token": "profile-token"},
-        json={"no_current_pain_or_restrictions": True},
+        json={"current_safety_confirmation": True},
     )
 
     assert response.status_code == 200
