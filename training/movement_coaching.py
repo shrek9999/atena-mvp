@@ -21,7 +21,51 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
     "squat": {
         "label": "Počep",
         "task_id": "controlled_squat",
-        "task": "Kontroliran počep v osebno ustrezni amplitudi; ohrani nadzor medenice in ledveno-medeničnega položaja brez nenadzorovanega podvijanja medenice (butt-wink); ne zahtevaj položaja počitka.",
+        "task": "Nadzorovan počep z lastno težo. Trup naj bo čim bolj pokončen, kolikor dopuščata telesna zgradba in udobna amplituda; gibanja ne sili v pokončen položaj.",
+        "learning_protocol": {
+            "repetitions": 5,
+            "tempo": "3–1–1",
+            "tempo_seconds": {"lowering": 3, "bottom_pause": 1, "rising": 1},
+            "instruction": "Izvedi pet ponovitev: 3 sekunde spuščanja, 1 sekunda mirne pavze in 1 sekunda vstajanja.",
+            "criteria": [
+                {
+                    "id": "tempo",
+                    "label": "Nadzorovan tempo",
+                    "success": "Vseh pet ponovitev izvedem tekoče v tempu 3–1–1, brez padanja ali odboja.",
+                    "adjustment": "Zmanjšaj globino in ponovi pet počasnih ponovitev. Osredotoči se na enakomeren spust, mirno pavzo in nadzorovano vstajanje."
+                },
+                {
+                    "id": "balance",
+                    "label": "Ravnotežje",
+                    "success": "Ravnotežje ohranjam nad celotnim stopalom, brez nenadzorovanega prevesa naprej ali nazaj.",
+                    "adjustment": "Iztegni obe roki naprej kot protiutež in po potrebi zmanjša globino počepa."
+                },
+                {
+                    "id": "foot_stability",
+                    "label": "Stabilnost stopal",
+                    "success": "Stopali ostajata stabilni; peta in sprednji del stopala sta podprta, stopalni lok pa se ne seseda izrazito.",
+                    "adjustment": "Preveri udoben položaj stopal. Če se pete dvigujejo, poskusi stabilno podporo pod petama; po potrebi zmanjša globino."
+                },
+                {
+                    "id": "knee_control",
+                    "label": "Stabilnost kolen",
+                    "success": "Koleni ostajata stabilni in sledita smeri stopal, brez nenadzorovanega uhajanja navznoter.",
+                    "adjustment": "Zmanjšaj globino in usmeri pozornost na stabilno gibanje kolen v smeri stopal."
+                },
+                {
+                    "id": "trunk_control",
+                    "label": "Nadzor trupa",
+                    "success": "Trup ohranjam čim bolj pokončen glede na svojo telesno zgradbo; gibanje trupa in medenice ostaja nadzorovano.",
+                    "adjustment": "Zmanjšaj globino. Poišči položaj, v katerem lahko ohranjaš bolj pokončen trup brez siljenja ali izgube ravnotežja."
+                },
+                {
+                    "id": "tolerated_rom",
+                    "label": "Nadzor amplitude",
+                    "success": "Dosegam ponovljivo globino, pri kateri ohranjam nadzor stopal, kolen in trupa, brez siljenja v amplitudo.",
+                    "adjustment": "Začasno uporabi manjšo, udobno globino in jo postopno povečuj šele, ko ohranjaš nadzor."
+                }
+            ]
+        },
         "exercise_ids": [
             "supported_squat", "chair_sit_to_stand", "reaching_squat", "air_squat", "squat_goblet", "loaded_deep_squat",
             "two_dumbbell_squat", "dumbbell_squat_side",
@@ -31,7 +75,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             {
                 "id": "bodyweight_squat",
                 "label": "Počep z lastno težo",
-                "description": "Najprej vadi osnovni počep z lastno težo v ponovljivi amplitudi. Ohrani stabilna stopala, nadzor kolen ter trupa in medenice. Če ravnotežje ali stabilnost omejujeta izvedbo, uporabi reaching squat kot regresijo: med spuščanjem iztegni obe roki naprej; seganje deluje kot protiutež in lahko olajša ravnotežje ter koordinacijo.",
+                "description": "Izvedi pet nadzorovanih ponovitev s tempom 3 sekunde spuščanja, 1 sekunda pavze in 1 sekunda vstajanja. Trup ohranjaj čim bolj pokončen, kolikor dopuščata telesna zgradba in udobna amplituda. Če ravnotežje otežuje izvedbo, iztegni obe roki naprej kot protiutež. Če se pete dvigujejo, poskusi stabilno podporo pod petama; če izgubljaš nadzor, zmanjša globino počepa.",
                 "exercise_id": "air_squat",
             },
             {
