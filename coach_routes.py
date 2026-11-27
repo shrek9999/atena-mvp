@@ -75,6 +75,51 @@ DEFAULT_LEARNING_METHODS = {
     "lunge": "supported_split_squat",
 }
 
+# The UI receives the same six concise control points that its progress payload
+# must later return. These are coaching observations, not a pass/fail diagnosis.
+LEARNING_CRITERIA_PRESENTATION = {
+    "hinge": [
+        ("tempo", "Nadzorovan tempo", "Gib izvedem počasi in enakomerno."),
+        ("hip_movement", "Gibanje kolkov", "Boke pomikam nazaj; gibanje izhaja iz kolkov."),
+        ("knee_control", "Položaj kolen", "Kolena ostanejo rahlo pokrčena; ne prevzamejo giba."),
+        ("spine_control", "Nadzor hrbtenice", "Ohranjam naraven, nevtralen položaj hrbtenice."),
+        ("balance", "Ravnotežje", "Teža ostaja stabilno nad stopali."),
+        ("tolerated_rom", "Amplituda", "Uporabim obseg, v katerem ohranim nadzor."),
+    ],
+    "horizontal_push": [
+        ("tempo", "Nadzorovan tempo", "Spust in odriv sta nadzorovana."),
+        ("trunk_control", "Nadzor trupa", "Trup ostaja čvrst; medenica se ne poveša."),
+        ("shoulder_elbow_control", "Rame in komolci", "Komolci se gibljejo v udobni smeri, brez siljenja."),
+        ("scapular_control", "Nadzor lopatic", "Lopatice se naravno gibljejo ob prsnem košu."),
+        ("wrist_hand_support", "Opora dlani", "Dlani ostajajo stabilno na opori."),
+        ("tolerated_rom", "Amplituda", "Globina sklece je obvladljiva."),
+    ],
+    "horizontal_pull": [
+        ("tempo", "Nadzorovan tempo", "Poteg in vračanje sta nadzorovana."),
+        ("base_stability", "Stabilna osnova", "Položaj stopal in telesa ostaja stabilen."),
+        ("trunk_position", "Položaj trupa", "Trup ohranja stabilen položaj."),
+        ("elbow_path", "Pot komolcev", "Komolci potujejo nadzorovano."),
+        ("scapular_arm_control", "Lopatice in roke", "Lopatice in roke se gibajo usklajeno."),
+        ("tolerated_rom", "Amplituda", "Poteg poteka brez siljenja v obseg."),
+    ],
+    "vertical_push": [
+        ("tempo", "Nadzorovan tempo", "Dvig in spust potekata nadzorovano."),
+        ("press_path", "Pot potiska", "Pripomoček potuje po nadzorovani poti nad glavo."),
+        ("scapular_control", "Nadzor lopatic", "Lopatice se gibajo naravno; ramen ne silim navzgor."),
+        ("trunk_control", "Nadzor trupa", "Rebra in medenica ostanejo pod nadzorom."),
+        ("bilateral_control", "Usklajenost rok", "Obe roki delujeta usklajeno."),
+        ("tolerated_load_rom", "Breme in amplituda", "Breme je zelo lahko, obseg pa udoben."),
+    ],
+    "lunge": [
+        ("tempo", "Nadzorovan tempo", "Spust in dvig sta nadzorovana."),
+        ("balance", "Ravnotežje", "Ravnotežje ohranjam; po potrebi uporabim oporo."),
+        ("foot_knee_control", "Stopalo in koleno", "Stopalo ostane stabilno; koleno sledi smeri stopala."),
+        ("pelvis_control", "Nadzor medenice", "Medenica ostane stabilna."),
+        ("trunk_control", "Nadzor trupa", "Trup ostane pod nadzorom."),
+        ("tolerated_rom", "Amplituda", "Globina je obvladljiva, brez siljenja."),
+    ],
+}
+
 
 def _build_guided_learning_tasks(patterns=None):
     """Return concise, frontend-ready guidance for the requested movement patterns."""
@@ -101,6 +146,19 @@ def _build_guided_learning_tasks(patterns=None):
         }
         if pattern == "squat":
             task["learning_protocol"] = definition["learning_protocol"]
+            task["control_criteria"] = [
+                {
+                    "id": item["id"],
+                    "label": item["label"],
+                    "check": item["success"],
+                }
+                for item in definition["learning_protocol"]["criteria"]
+            ]
+        else:
+            task["control_criteria"] = [
+                {"id": criterion_id, "label": label, "check": check}
+                for criterion_id, label, check in LEARNING_CRITERIA_PRESENTATION[pattern]
+            ]
         tasks.append(task)
     return tasks
 
