@@ -33,7 +33,7 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
                 "Spuščaj se 3 sekunde, miruj 1 sekundo in v 1 sekundi vstani. Med vstajanjem naj se roke naravno vrnejo ob trup. Ohranjaj stik celotnega stopala s podlago in nadzorovan položaj trupa."
             ],
             "adaptations": {
-                "heel_lift": "Ob dvigu pete zmanjša globino in preveri dorzalno fleksijo gležnja. Podpora pod petama je začasna možnost le, če ohrani stik celotnega stopala. Dvig pete sam ne potrjuje vzroka.",
+                "heel_lift": "Ob dvigu pete zmanjša globino in preveri dorzalno fleksijo gležnja. Podpora pod petama je začasna možnost le, če ohrani stik celotnega stopala. Dvig pete sam po sebi ne dokazuje vzroka.",
                 "forefoot_lift": "Ob dvigu prstov ne podlagaj pet. Dovoli naraven predklon, zmanjša globino ali uporabi protiutež 1–4 kg pred telesom. To je znak izgube ravnotežja, ne diagnoza omejene gibljivosti gležnja.",
                 "excessive_forward_lean": "Če je predklon pretiran ali se hrbtenica zaokroži, zmanjša globino in se vrni k učenju predklona z nevtralno hrbtenico. Po potrebi uporabi počep do stabilne tarče.",
                 "balance": "Če ravnotežje ni stabilno, zmanjša globino. Po potrebi uporabi protiutež 1–4 kg pred telesom; če to ne zadošča, uporabi TRX ali fiksen drog kot oporo za roke in vadi počep ob opori.",
