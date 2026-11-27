@@ -26,15 +26,15 @@ PATTERN_DEFINITIONS: dict[str, dict[str, Any]] = {
             "repetitions": 5,
             "tempo": "3–1–1",
             "tempo_seconds": {"lowering": 3, "bottom_pause": 1, "rising": 1},
-            "instruction": "Pri vseh ponovitvah imej roke v predročenju. Izvedi pet ponovitev: 3 sekunde spuščanja, 1 sekunda mirne pavze in 1 sekunda vstajanja.",
+            "instruction": "Pri vseh ponovitvah imej roke v predročenju. Ohranij pritisk prek trikotnika stopala (peta, baza palca, baza mezinca). Trup naj bo čim bolj pokončen, vendar ne na račun ravnotežja ali opore celotnega stopala; dovoli naraven predklon. Izvedi pet ponovitev v tempu 3–1–1.",
             "how_to_perform": [
-                "Stopali postavi v udoben položaj, roke iztegni v predročenje in ohranjaj oporo prek celotnega stopala.",
-                "Sočasno upogibaj kolena in kolke ter se nadzorovano spuščaj. Kolena naj sledijo smeri stopal, trup pa ohranjaj čim bolj pokončen, kolikor dopuščata telesna zgradba in udobna amplituda.",
-                "Po enosekundni pavzi tekoče vstani, brez odboja in brez izgube ravnotežja."
+                "Stopali postavi v udoben položaj, roke iztegni v predročenje in ohranjaj stik trikotnika stopala: pete, baze palca in baze mezinca.",
+                "Sočasno upogibaj kolena in kolke ter se nadzorovano spuščaj. Kolena naj sledijo smeri stopal. Trup ohranjaj nadzorovan in razmeroma pokončen, vendar ne sili v navpičen položaj, če se s tem dvigujejo prsti ali teža uhaja nazaj.",
+                "Po enosekundni pavzi tekoče vstani, brez odboja in brez izgube ravnotežja. Če se dvigujejo pete, zmanjša globino in preveri dorzalno fleksijo; če se dvigujejo prsti, ne podlagaj pet, temveč dovoli naraven predklon ali uporabi protiutež pred telesom."
             ],
             "adaptations": {
-                "heel_lift": "Če se dviguje peta, najprej zmanjša globino in preveri dorzalno fleksijo gležnja. Stabilna podpora pod petama je lahko začasna prilagoditev, vendar le, če izboljša ravnotežje in ohrani oporo celotnega stopala.",
-                "forefoot_lift": "Če se dvigujejo prsti oziroma sprednji del stopala, ne dviguj pet. Ne sili v navpičen trup: dovoli naraven, nadzorovan predklon trupa, zmanjša globino ali uporabi lahko protiutež 1–4 kg v predročenju.",
+                "heel_lift": "Če se dviguje peta, najprej zmanjša globino in preveri dorzalno fleksijo gležnja. Stabilna podpora pod petama je lahko začasna prilagoditev, vendar le, če izboljša ravnotežje in ohrani stik celotnega stopala. Dvig pete sam po sebi ne dokazuje vzroka.",
+                "forefoot_lift": "Če se dvigujejo prsti oziroma sprednji del stopala, ne dviguj pet. Ne sili v navpičen trup: dovoli naraven, nadzorovan predklon trupa, zmanjša globino ali uporabi lahko protiutež 1–4 kg v predročenju. To je opažanje ravnotežja, ne diagnoza omejene dorzalne fleksije.",
                 "excessive_forward_lean": "Če je predklon pretiran ali se hrbtenica zaokroži, zmanjša globino in se vrni k učenju predklona z nevtralno hrbtenico. Po potrebi uporabi počep do stabilne tarče.",
                 "balance": "Roke ostanejo v predročenju. Če ravnotežje kljub temu otežuje izvedbo, uporabi lahko protiutež (npr. ročko ali kolut 1–4 kg) pred telesom.",
                 "range": "Če izgubljaš nadzor, zmanjša globino počepa."
