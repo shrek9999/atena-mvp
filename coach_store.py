@@ -162,11 +162,15 @@ def _now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 def _init(conn, dialect):
-    # Multiple Gunicorn workers and overlapping pilot checks may initialize the
-    # schema at the same time. Serialize PostgreSQL DDL for this schema only;
-    # the transaction-scoped lock is released automatically on commit/rollback.
-    if dialect == "postgres":
-        _execute(conn, dialect, "SELECT pg_advisory_xact_lock(4707463712915539010)")
+    """Initialize only local SQLite storage; hosted PostgreSQL is migration-managed.
+
+    Request-time DDL is deliberately disabled for Supabase: the service_role
+    connection is not a schema owner and must not attempt CREATE/ALTER/GRANT.
+    Guided-learning progress is stored in a reserved key inside profile_json,
+    so it does not require a separate production table or migration.
+    """
+    if dialect != "sqlite":
+        return
     statements = [
         """CREATE TABLE IF NOT EXISTS atena_profiles (
             profile_id TEXT PRIMARY KEY,
@@ -192,11 +196,6 @@ def _init(conn, dialect):
             assessment_json JSONB NOT NULL,
             updated_at TEXT NOT NULL
         )""",
-        """CREATE TABLE IF NOT EXISTS atena_learning_progress (
-            profile_id TEXT PRIMARY KEY REFERENCES atena_profiles(profile_id) ON DELETE CASCADE,
-            progress_json JSONB NOT NULL,
-            updated_at TEXT NOT NULL
-        )""",
         """CREATE TABLE IF NOT EXISTS atena_program_versions (
             program_version_id TEXT PRIMARY KEY,
             profile_id TEXT NOT NULL REFERENCES atena_profiles(profile_id) ON DELETE CASCADE,
@@ -209,30 +208,10 @@ def _init(conn, dialect):
     ]
     for statement in statements:
         _execute(conn, dialect, statement)
-    if dialect == "sqlite":
-        session_columns = {row[1] for row in conn.execute("PRAGMA table_info(atena_training_sessions)")}
-        if "program_version_id" not in session_columns:
-            conn.execute("ALTER TABLE atena_training_sessions ADD COLUMN program_version_id TEXT REFERENCES atena_program_versions(program_version_id) ON DELETE SET NULL")
+    session_columns = {row[1] for row in conn.execute("PRAGMA table_info(atena_training_sessions)")}
+    if "program_version_id" not in session_columns:
+        conn.execute("ALTER TABLE atena_training_sessions ADD COLUMN program_version_id TEXT REFERENCES atena_program_versions(program_version_id) ON DELETE SET NULL")
     _execute(conn, dialect, "CREATE INDEX IF NOT EXISTS atena_sessions_program_version ON atena_training_sessions(program_version_id)")
-    if dialect == "postgres":
-        # These tables live in Supabase's exposed public schema. The app connects
-        # through the server-side database role; browser/API roles must never
-        # be able to read or mutate profile data directly.
-        postgres_safety = [
-            "ALTER TABLE atena_profiles ENABLE ROW LEVEL SECURITY",
-            "ALTER TABLE atena_training_sessions ENABLE ROW LEVEL SECURITY",
-            "ALTER TABLE atena_movement_assessments ENABLE ROW LEVEL SECURITY",
-            "ALTER TABLE atena_learning_progress ENABLE ROW LEVEL SECURITY",
-            "ALTER TABLE atena_program_versions ENABLE ROW LEVEL SECURITY",
-            "REVOKE ALL PRIVILEGES ON TABLE atena_profiles FROM PUBLIC, anon, authenticated",
-            "REVOKE ALL PRIVILEGES ON TABLE atena_training_sessions FROM PUBLIC, anon, authenticated",
-            "REVOKE ALL PRIVILEGES ON TABLE atena_movement_assessments FROM PUBLIC, anon, authenticated",
-            "REVOKE ALL PRIVILEGES ON TABLE atena_learning_progress FROM PUBLIC, anon, authenticated",
-            "REVOKE ALL PRIVILEGES ON TABLE atena_program_versions FROM PUBLIC, anon, authenticated",
-        ]
-        for statement in postgres_safety:
-            _execute(conn, dialect, statement)
-
 
 def check_database_connection():
     """Verify hosted PostgreSQL reachability without enabling or creating user-data tables."""
@@ -293,14 +272,16 @@ def create_profile(profile_id: str, token: str, profile: dict, health_data_conse
     try:
         _init(conn, dialect)
         now = _now()
+        profile_to_store = dict(profile)
+        profile_to_store.pop("_atena_learning_progress", None)
         _execute(conn, dialect, """INSERT INTO atena_profiles
             (profile_id, token_hash, profile_json, privacy_notice_version,
              privacy_acknowledged, health_data_consent, health_data_consent_at, created_at, updated_at)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-            (profile_id, hash_access_token(token), _encode_json(profile, dialect),
+            (profile_id, hash_access_token(token), _encode_json(profile_to_store, dialect),
              notice_version, True, bool(health_data_consent), now if health_data_consent else None, now, now))
         conn.commit()
-        return {"profile_id": profile_id, "profile": profile, "created_at": now, "updated_at": now,
+        return {"profile_id": profile_id, "profile": profile_to_store, "created_at": now, "updated_at": now,
                 "health_data_consent": bool(health_data_consent),
                 "health_data_consent_at": now if health_data_consent else None,
                 "privacy_notice_version": notice_version}
@@ -316,9 +297,27 @@ def _authorized_profile(conn, dialect, profile_id: str, token: str):
     stored_hash, profile_json, notice_version, health_consent, health_consent_at, created_at, updated_at = row
     if not token or not __import__("hmac").compare_digest(stored_hash, hash_access_token(token)):
         raise ProfileNotFound()
-    return {"profile_id": profile_id, "profile": _decode_json(profile_json), "created_at": created_at,
+    profile_data = _decode_json(profile_json)
+    if isinstance(profile_data, dict):
+        profile_data.pop("_atena_learning_progress", None)
+    return {"profile_id": profile_id, "profile": profile_data, "created_at": created_at,
             "updated_at": updated_at, "health_data_consent": bool(health_consent), "health_data_consent_at": health_consent_at,
             "privacy_notice_version": notice_version}
+
+
+def _profile_json_for_update(conn, dialect, profile_id: str):
+    """Read the profile JSON under a row lock before updating internal metadata."""
+    lock = " FOR UPDATE" if dialect == "postgres" else ""
+    row = _execute(
+        conn, dialect,
+        "SELECT profile_json FROM atena_profiles WHERE profile_id = %s" + lock,
+        (profile_id,),
+    ).fetchone()
+    if not row:
+        raise ProfileNotFound()
+    value = _decode_json(row[0])
+    return dict(value) if isinstance(value, dict) else {}
+
 
 def get_profile(profile_id: str, token: str):
     conn, dialect = _connect(require_enabled=False)
@@ -333,9 +332,15 @@ def update_profile(profile_id: str, token: str, profile: dict):
     try:
         _init(conn, dialect)
         _authorized_profile(conn, dialect, profile_id, token)
+        profile_to_store = dict(profile)
+        profile_to_store.pop("_atena_learning_progress", None)
+        existing = _profile_json_for_update(conn, dialect, profile_id)
+        learning_progress = existing.get("_atena_learning_progress")
+        if learning_progress is not None:
+            profile_to_store["_atena_learning_progress"] = learning_progress
         now = _now()
         _execute(conn, dialect, "UPDATE atena_profiles SET profile_json = %s, updated_at = %s WHERE profile_id = %s",
-                 (_encode_json(profile, dialect), now, profile_id))
+                 (_encode_json(profile_to_store, dialect), now, profile_id))
         conn.commit()
         return _authorized_profile(conn, dialect, profile_id, token)
     finally:
@@ -473,18 +478,17 @@ def get_movement_assessment(profile_id: str, token: str):
 
 
 def save_learning_progress(profile_id: str, token: str, progress: dict):
-    """Persist minimal guided-learning completion without health-data consent."""
+    """Persist minimal guided-learning progress inside the profile JSON, without health-data consent."""
     conn, dialect = _connect()
     try:
         _init(conn, dialect)
         _authorized_profile(conn, dialect, profile_id, token)
+        profile_data = _profile_json_for_update(conn, dialect, profile_id)
+        profile_data["_atena_learning_progress"] = progress
         now = _now()
-        _execute(conn, dialect, """INSERT INTO atena_learning_progress
-            (profile_id, progress_json, updated_at) VALUES (%s, %s, %s)
-            ON CONFLICT(profile_id) DO UPDATE SET
-                progress_json = excluded.progress_json,
-                updated_at = excluded.updated_at""",
-            (profile_id, _encode_json(progress, dialect), now))
+        _execute(conn, dialect,
+                 "UPDATE atena_profiles SET profile_json = %s, updated_at = %s WHERE profile_id = %s",
+                 (_encode_json(profile_data, dialect), now, profile_id))
         conn.commit()
         return {"learning_progress": progress, "updated_at": now}
     finally:
@@ -498,14 +502,17 @@ def get_learning_progress(profile_id: str, token: str):
         _init(conn, dialect)
         _authorized_profile(conn, dialect, profile_id, token)
         row = _execute(conn, dialect,
-            "SELECT progress_json, updated_at FROM atena_learning_progress WHERE profile_id = %s",
+            "SELECT profile_json, updated_at FROM atena_profiles WHERE profile_id = %s",
             (profile_id,)).fetchone()
         if not row:
+            raise ProfileNotFound()
+        profile_data = _decode_json(row[0])
+        progress = profile_data.get("_atena_learning_progress") if isinstance(profile_data, dict) else None
+        if progress is None:
             return None
-        return {"learning_progress": _decode_json(row[0]), "updated_at": row[1]}
+        return {"learning_progress": progress, "updated_at": row[1]}
     finally:
         conn.close()
-
 
 def add_program_version(profile_id: str, token: str, program_version_id: str,
                         program: dict, decision: dict):
