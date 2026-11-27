@@ -2813,7 +2813,7 @@ def coach_program():
             "error": "Gibalne odločitve vsebujejo neznane vzorce.",
             "unknown_patterns": unknown_patterns,
         }), 400
-    valid_report_statuses = {"comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled"}
+    valid_report_statuses = {"selected_for_learning", "comfortable", "needs_support", "uncertain", "symptoms_reported", "not_assessed", "movement_controlled"}
     control_criteria = {
         "squat": {"tempo", "balance", "knee_hip_foot_control", "lumbopelvic_control", "tolerated_rom"},
         "hinge": {"tempo", "hip_hinge_coordination", "spine_control", "balance", "tolerated_rom"},
@@ -2834,6 +2834,8 @@ def coach_program():
         if report_status not in valid_report_statuses:
             invalid_report_patterns.append(pattern)
         elif supplied_phase is not None and supplied_phase != expected_phase:
+            invalid_report_patterns.append(pattern)
+        elif report_status == "selected_for_learning" and decision != "LEARN":
             invalid_report_patterns.append(pattern)
         elif report_status in {"uncertain", "not_assessed"} and decision != "UNASSESSABLE":
             invalid_report_patterns.append(pattern)
