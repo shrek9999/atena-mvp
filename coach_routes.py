@@ -3836,11 +3836,12 @@ def save_six_pattern_movement_assessment(profile_id):
                     or not {
                         "status", "variation_id", "pain_during", "worsened",
                         "tempo", "load_adjustment", "range_adjustment", "acute_warning_signs",
+                        "symptom_context",
                     }.issubset(regression_test)
                     or set(regression_test) - {
                         "status", "variation_id", "pain_during", "worsened",
                         "tempo", "load_adjustment", "range_adjustment", "acute_warning_signs",
-                        "support_method", "anchor_point_confirmed",
+                        "support_method", "anchor_point_confirmed", "symptom_context",
                     }
                     or regression_test.get("status") not in {"tolerated", "not_tolerated"}
                     or isinstance(regression_test.get("pain_during"), bool)
