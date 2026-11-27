@@ -173,7 +173,7 @@ def test_program_route_blocks_when_all_six_patterns_are_unassessable(monkeypatch
     )
     assert response.status_code == 409
     assert response.get_json()["assessment_required"] is True
-    assert "vsaj en vzorec varno oceniti" in response.get_json()["message"]
+    assert "vsaj en vzorec za varno učenje" in response.get_json()["message"]
 
 
 def test_program_route_requires_explicit_user_report_for_each_pattern(client):
