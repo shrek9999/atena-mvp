@@ -634,6 +634,11 @@ def generate_program(
             if decision not in VALID_DECISIONS:
                 raise ProgramValidationError(f"Neveljavna odločitev za {pattern}.")
             method_id = record.get("selected_learning_method")
+            # Compatibility bridge for the current Pages mapper. The canonical
+            # registry ID is light_overhead_press; retire this alias once the
+            # frontend and its proxy allow-list send that canonical ID.
+            if pattern == "vertical_push" and method_id == "light_implement_press":
+                method_id = "light_overhead_press"
             method_options = PATTERN_DEFINITIONS[pattern]["learning_methods"]
             method = next((item for item in method_options if item["id"] == method_id), None)
             if method_id is not None and method is None:
@@ -1737,9 +1742,17 @@ def generate_program(
             raise ProgramValidationError(
                 f"Z razpoložljivim časom {p['session_minutes']} min ni mogoče sestaviti uravnoteženega treninga. Povečaj čas ali zmanjša zahtevnost cilja."
             )
-        if len(selected) < 3:
+        selected_pattern_count = sum(
+            record.get("decision") in {"READY", "LEARN", "REGRESS"}
+            for record in movement_decisions_by_pattern.values()
+        ) if movement_decisions is not None else 3
+        # Selective learning can deliberately create a focused session from one
+        # pattern. Require at least one compatible exercise per eligible pattern
+        # (capped at three); never add unassessed patterns merely to fill a quota.
+        minimum_selected_exercises = min(3, max(1, selected_pattern_count))
+        if len(selected) < minimum_selected_exercises:
             raise ProgramValidationError(
-                "Za izbrano opremo in omejitve ni dovolj preverjenih vaj. Potrebujem več opreme ali manj izključitev."
+                "Za izbrane gibalne vzorce in razpoložljivo opremo ni dovolj preverjenih vaj."
             )
         plans.append({
             "session": session_index + 1,
