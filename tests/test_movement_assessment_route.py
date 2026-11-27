@@ -491,3 +491,77 @@ def test_saved_six_pattern_assessment_rejects_malformed_control_criteria(monkeyp
     )
 
     assert response.status_code == 400
+
+
+
+def test_saved_movement_assessment_accepts_one_pattern_and_preserves_previous_results(monkeypatch, client):
+    import coach_routes
+    from training.movement_coaching import build_movement_decision
+
+    captured = {}
+    previous_hinge = build_movement_decision(
+        "hinge", "LEARN",
+        user_report={"status": "comfortable"},
+        decision_reason="Previously learned hinge pattern.",
+    )
+    monkeypatch.setattr(coach_routes, "_profile_token", lambda: "profile-token")
+    monkeypatch.setattr(
+        coach_routes, "store_get_profile",
+        lambda profile_id, token: {"health_data_consent": True},
+    )
+    monkeypatch.setattr(
+        coach_routes, "store_get_movement_assessment",
+        lambda profile_id, token: {
+            "assessment": {
+                "assessment_version": "six-pattern-coaching-v1",
+                "decisions": {"hinge": previous_hinge},
+            }
+        },
+    )
+
+    def save_assessment(profile_id, token, record):
+        captured["record"] = record
+        return {"updated_at": "2026-11-27T12:00:00Z"}
+
+    monkeypatch.setattr(coach_routes, "store_save_movement_assessment", save_assessment)
+    response = client.put(
+        "/coach/profile/test-profile/movement-assessment",
+        headers={"X-Profile-Token": "profile-token"},
+        json={
+            "movement_assessment_consent": True,
+            "movement_patterns": {
+                "squat": {
+                    "status": "comfortable",
+                    "movement_control": _movement_control_for("squat"),
+                }
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["movement_decisions"]["squat"]["decision"] == "READY"
+    assert body["movement_decisions"]["hinge"]["decision"] == "LEARN"
+    assert set(body["missing_patterns"]) == {
+        "horizontal_push", "horizontal_pull", "vertical_push", "lunge"
+    }
+    assert set(captured["record"]["decisions"]) == {"squat", "hinge"}
+
+
+def test_saved_movement_assessment_rejects_unknown_pattern_without_requiring_all_six(monkeypatch, client):
+    import coach_routes
+    monkeypatch.setattr(coach_routes, "_profile_token", lambda: "profile-token")
+    monkeypatch.setattr(
+        coach_routes, "store_get_profile",
+        lambda profile_id, token: {"health_data_consent": True},
+    )
+    response = client.put(
+        "/coach/profile/test-profile/movement-assessment",
+        headers={"X-Profile-Token": "profile-token"},
+        json={
+            "movement_assessment_consent": True,
+            "movement_patterns": {"not_a_pattern": {"status": "comfortable"}},
+        },
+    )
+    assert response.status_code == 400
+    assert response.get_json()["unknown_patterns"] == ["not_a_pattern"]
