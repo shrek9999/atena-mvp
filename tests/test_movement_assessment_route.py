@@ -25,7 +25,7 @@ def _learning_progress(complete=True):
 
 def _decisions(status="selected_for_learning"):
     methods = {
-        "squat": "reaching_counterbalance",
+        "squat": "air_squat_counterweight",
         "hinge": "wall_hip_hinge",
         "horizontal_push": "incline_push_up",
         "horizontal_pull": "scapular_coordination",
