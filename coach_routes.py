@@ -4139,9 +4139,9 @@ def coach_profile_program(profile_id):
     if not storage_enabled():
         return _storage_error(StorageUnavailable("Profile storage is not enabled or approved."))
     payload = request.get_json(silent=True)
-    if not isinstance(payload, dict) or set(payload) != {"no_current_pain_or_restrictions"}:
+    if not isinstance(payload, dict) or set(payload) != {"current_safety_confirmation"}:
         return jsonify({"error": "Potrjena mora biti samo trenutna varnostna izjava."}), 400
-    if payload.get("no_current_pain_or_restrictions") is not True:
+    if payload.get("current_safety_confirmation") is not True:
         return jsonify({
             "blocked": True,
             "message": "Programa nisem ustvaril. Ob novi, hudi, slabšajoči se ali nepojasnjeni bolečini, sveži poškodbi ali pomembni zdravstveni omejitvi je najprej potrebna presoja ustreznega zdravstvenega strokovnjaka. Blago, znano nelagodje samo po sebi ne pomeni prepovedi vse vadbe; prizadeti gibalni vzorec je treba posebej razjasniti in prilagoditi.",
