@@ -71,7 +71,7 @@ DEFAULT_LEARNING_METHODS = {
     "hinge": "dowel_four_point",
     "horizontal_push": "incline_push_up",
     "horizontal_pull": "scapular_coordination",
-    "vertical_push": "unloaded_overhead_reach",
+    "vertical_push": "light_overhead_press",
     "lunge": "supported_split_squat",
 }
 
@@ -103,12 +103,12 @@ LEARNING_CRITERIA_PRESENTATION = {
         ("tolerated_rom", "Amplituda", "Poteg poteka brez siljenja v obseg."),
     ],
     "vertical_push": [
-        ("tempo", "Nadzorovan tempo", "Dvig in spust potekata nadzorovano."),
-        ("press_path", "Pot rok", "Roki potujeta nadzorovano nad glavo, brez siljenja."),
-        ("scapular_control", "Nadzor lopatic", "Lopatice se gibajo naravno; ramen ne silim navzgor."),
-        ("trunk_control", "Nadzor trupa", "Rebra in medenica ostanejo pod nadzorom."),
-        ("bilateral_control", "Usklajenost rok", "Obe roki delujeta usklajeno."),
-        ("tolerated_load_rom", "Udobna amplituda", "Dosežem udoben obseg brez zunanjega bremena."),
+        ("tempo", "Nadzorovan tempo", "Potisk in vračanje potekata nadzorovano."),
+        ("press_path", "Pot bremena", "Breme potuje po udobni in nadzorovani poti nad glavo."),
+        ("scapular_control", "Nadzor lopatic", "Lopatice se med dvigom naravno rotirajo navzgor."),
+        ("trunk_control", "Nadzor trupa", "Rebra in medenica ostanejo pod nadzorom; ne usločam križa."),
+        ("bilateral_control", "Usklajenost rok", "Obe roki potiskata in vračata breme usklajeno."),
+        ("tolerated_load_rom", "Breme in amplituda", "Zelo lahko breme in uporabljena amplituda ostaneta udobna in nadzorovana."),
     ],
     "lunge": [
         ("tempo", "Nadzorovan tempo", "Spust in dvig sta nadzorovana."),
