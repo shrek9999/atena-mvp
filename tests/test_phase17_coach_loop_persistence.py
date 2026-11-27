@@ -118,7 +118,7 @@ def test_saved_profile_programme_blocks_when_all_patterns_are_unassessable(monke
     body = response.get_json()
     assert body["blocked"] is True
     assert body["assessment_required"] is True
-    assert "vsaj en vzorec varno oceniti" in body["message"]
+    assert "varno preveriti vsaj en vzorec" in body["message"]
 
 
 def test_programme_versions_are_listed_and_included_in_export(monkeypatch, tmp_path):
